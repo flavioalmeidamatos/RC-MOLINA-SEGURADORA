@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { validarEmailRFC5322, traduzirErroSupabase } from '../lib/validacoes';
@@ -8,6 +8,43 @@ export const RecuperarSenha: React.FC = () => {
   const [email, setEmail] = useState('');
   const [mensagem, setMensagem] = useState({ texto: '', tipo: '' }); // tipo: 'sucesso' ou 'erro'
   const [carregando, setCarregando] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+
+  // Inicializa o cooldown a partir do LocalStorage (persiste se o usuário atualizar a página)
+  useEffect(() => {
+    const savedTime = localStorage.getItem('rcmolina_reset_cooldown');
+    if (savedTime) {
+      const elapsed = Math.floor((Date.now() - parseInt(savedTime)) / 1000);
+      const remaining = 60 - elapsed;
+      if (remaining > 0) {
+        setCooldown(remaining);
+      } else {
+        localStorage.removeItem('rcmolina_reset_cooldown');
+      }
+    }
+  }, []);
+
+  // Controla o decremento do temporizador a cada segundo
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (cooldown > 0) {
+      timer = setInterval(() => {
+        setCooldown((prev) => {
+          if (prev <= 1) {
+            localStorage.removeItem('rcmolina_reset_cooldown');
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [cooldown]);
+
+  const handleSetCooldown = () => {
+    setCooldown(60);
+    localStorage.setItem('rcmolina_reset_cooldown', Date.now().toString());
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -33,6 +70,10 @@ export const RecuperarSenha: React.FC = () => {
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setMensagem({ texto: '', tipo: '' });
+
+    if (cooldown > 0) {
+      return; // Bloqueio de segurança
+    }
 
     if (!validarEmailRFC5322(email)) {
       setMensagem({ texto: 'Por favor, insira um e-mail válido.', tipo: 'erro' });
@@ -63,9 +104,15 @@ export const RecuperarSenha: React.FC = () => {
           tipo: 'erro',
           texto: 'Erro ao enviar o e-mail: ' + traduzirErroSupabase(error.message)
         });
+
+        // Se for erro de muitas tentativas, engatilha o cooldown também para forçar a pausa
+        if (error.message.toLowerCase().includes('rate limit')) {
+          handleSetCooldown();
+        }
       } else {
         setMensagem({ texto: 'Um e-mail será enviado para redefinição de senha.', tipo: 'sucesso' });
         await supabase.from('auditoria').insert([{ perfil_id: perfilData.id, acao: 'SOLICITAR_RESET_SENHA', detalhes: { email } }]);
+        handleSetCooldown(); // Trava envios repetidos por 60 segundos
       }
     } catch (err) {
       console.error(err);
@@ -101,18 +148,24 @@ export const RecuperarSenha: React.FC = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               onKeyDown={handleKeyDown}
+              disabled={cooldown > 0}
               placeholder="você@exemplo.com"
-              className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 focus:outline-none focus:border-[#ccff00] transition"
+              className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 focus:outline-none focus:border-[#ccff00] transition disabled:opacity-50 disabled:cursor-not-allowed"
               required
             />
           </div>
 
           <button
             type="submit"
-            disabled={carregando || mensagem.tipo === 'sucesso'}
-            className="w-full bg-[#ccff00] text-black font-black text-lg rounded-xl p-4 hover:bg-[#b3e600] transition flex justify-center items-center gap-2 mt-4"
+            disabled={carregando || cooldown > 0}
+            className="w-full bg-[#ccff00] text-black font-black text-lg rounded-xl p-4 hover:bg-[#b3e600] transition flex justify-center items-center gap-2 mt-4 disabled:bg-gray-700 disabled:text-gray-400 disabled:cursor-not-allowed"
           >
-            {carregando ? 'Aguarde...' : 'Enviar link de recuperação ->'}
+            {carregando
+              ? 'Aguarde...'
+              : cooldown > 0
+                ? `Aguarde ${cooldown}s para reenviar`
+                : 'Enviar link de recuperação ->'
+            }
           </button>
         </form>
 
