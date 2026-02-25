@@ -10,7 +10,7 @@ export const Preloader: React.FC<PreloaderProps> = ({ onComplete }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
 
   useEffect(() => {
-    // Incremento mais lento: 1% a cada 50ms
+    // Incremento mais lento: 1% a cada 100ms (total ~10 segundos)
     const timer = setInterval(() => {
       setProgress((prev) => {
         // Se já bateu 100, para
@@ -26,7 +26,7 @@ export const Preloader: React.FC<PreloaderProps> = ({ onComplete }) => {
 
         return prev + 1;
       });
-    }, 50);
+    }, 100);
 
     return () => clearInterval(timer);
   }, [imageLoaded]);
@@ -34,7 +34,7 @@ export const Preloader: React.FC<PreloaderProps> = ({ onComplete }) => {
   // Efeito isolado para disparar o onComplete quando tudo estiver pronto
   useEffect(() => {
     if (progress === 100 && imageLoaded) {
-      setTimeout(onComplete, 800);
+      setTimeout(onComplete, 1200);
     }
   }, [progress, imageLoaded, onComplete]);
 

@@ -57,8 +57,14 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
+  const [showPreloader, setShowPreloader] = useState(true);
+
+  if (showPreloader) {
+    return <Preloader onComplete={() => setShowPreloader(false)} />;
+  }
+
   if (loading) {
-    return <Preloader onComplete={() => { }} />;
+    return <div className="min-h-screen bg-[#121212]" />; // Tela escura rápida caso Supabase ainda esteja carregando
   }
 
   return (
