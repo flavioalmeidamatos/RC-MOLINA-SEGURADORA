@@ -8,7 +8,7 @@ export const Cadastro: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const [formData, setFormData] = useState({
     nome: '',
     email: '',
@@ -16,8 +16,9 @@ export const Cadastro: React.FC = () => {
     confirmarSenha: '',
     organizacao: '',
   });
-  
+
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -28,8 +29,8 @@ export const Cadastro: React.FC = () => {
     if (location.state) {
       const { email, password } = location.state as any;
       if (email || password) {
-        setFormData(prev => ({ 
-          ...prev, 
+        setFormData(prev => ({
+          ...prev,
           email: email || prev.email,
           senha: password || prev.senha,
           confirmarSenha: password || prev.confirmarSenha
@@ -48,7 +49,7 @@ export const Cadastro: React.FC = () => {
             return element.tagName === 'INPUT' && (element as HTMLInputElement).type !== 'file';
           }
         ) as HTMLElement[];
-        
+
         const index = elements.indexOf(e.currentTarget);
         if (index > -1 && index < elements.length - 1) {
           e.preventDefault();
@@ -62,6 +63,7 @@ export const Cadastro: React.FC = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setAvatarFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setAvatarUrl(reader.result as string);
@@ -147,23 +149,44 @@ export const Cadastro: React.FC = () => {
       setError('Este e-mail já está em uso. Por favor, faça login ou recupere sua senha.');
       setLoading(false);
     } else {
+      let finalAvatarUrl = null;
+
+      if (avatarFile && signUpData.user) {
+        const fileExt = avatarFile.name.split('.').pop();
+        const filePath = `${signUpData.user.id}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(filePath, avatarFile);
+
+        if (uploadError) {
+          console.error('Erro no upload do avatar:', uploadError);
+        } else {
+          const { data: publicUrlData } = supabase.storage
+            .from('avatars')
+            .getPublicUrl(filePath);
+          finalAvatarUrl = publicUrlData.publicUrl;
+        }
+      }
+
       // Tenta criar o perfil na tabela 'perfis' com nomes em português
       const { error: profileError } = await supabase
         .from('perfis')
         .insert([
-          { 
+          {
             id: signUpData.user?.id,
-            email: normalizedEmail, 
+            email: normalizedEmail,
             nome_completo: formData.nome.toUpperCase(),
-            organizacao: formData.organizacao 
+            organizacao: formData.organizacao,
+            avatar_url: finalAvatarUrl
           }
         ]);
 
       if (profileError) {
         console.error('Erro ao criar perfil:', profileError);
       }
-      
-      alert('Usuário logado');
+
+      alert('Usuário cadastrado com sucesso! Faça seu login.');
       navigate('/login');
     }
   };
@@ -177,7 +200,7 @@ export const Cadastro: React.FC = () => {
         </div>
 
         <div className="flex flex-col items-center mb-8">
-          <div 
+          <div
             onClick={triggerFileInput}
             className="w-24 h-24 rounded-full border-2 border-[#ccff00] flex items-center justify-center relative bg-[#121212] overflow-hidden group cursor-pointer"
           >
@@ -194,12 +217,12 @@ export const Cadastro: React.FC = () => {
             <Camera size={14} className="text-[#ccff00]" />
             <span className="text-[#ccff00] text-[10px] font-bold uppercase tracking-widest">foto</span>
           </div>
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            onChange={handleFileChange} 
-            accept="image/*" 
-            className="hidden" 
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            accept="image/*"
+            className="hidden"
           />
         </div>
 

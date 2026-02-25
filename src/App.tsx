@@ -20,7 +20,7 @@ export default function App() {
         .select('*')
         .eq('id', userId)
         .single();
-      
+
       if (!error && data) {
         setPerfil(data);
       }
@@ -58,7 +58,7 @@ export default function App() {
   }, []);
 
   if (loading) {
-    return <Preloader onComplete={() => {}} />;
+    return <Preloader onComplete={() => { }} />;
   }
 
   return (
@@ -72,6 +72,9 @@ export default function App() {
         <Route path="/dashboard" element={
           session ? (
             <div className="flex flex-col items-center justify-center min-h-screen bg-[#121212] text-white p-8">
+              {perfil?.avatar_url && (
+                <img src={perfil.avatar_url} alt="Avatar" className="w-24 h-24 rounded-full border-4 border-[#ccff00] mb-4 object-cover" />
+              )}
               <h1 className="text-4xl font-bold mb-4 text-[#ccff00]">
                 Bem-vindo, {perfil?.nome_completo || session.user?.email}!
               </h1>
@@ -84,7 +87,7 @@ export default function App() {
                   <p><span className="text-gray-500">Membro desde:</span> {new Date(perfil.criado_em).toLocaleDateString('pt-BR')}</p>
                 </div>
               )}
-              <button 
+              <button
                 onClick={() => supabase.auth.signOut()}
                 className="bg-red-600 px-6 py-2 rounded-lg font-bold hover:bg-red-700 transition"
               >
