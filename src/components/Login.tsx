@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { validarEmailRFC5322 } from '../lib/validacoes';
+import { validarEmailRFC5322, traduzirErroSupabase } from '../lib/validacoes';
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -12,6 +12,7 @@ export const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -37,6 +38,7 @@ export const Login: React.FC = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
 
     const normalizedEmail = email.trim().toLowerCase();
 
@@ -74,7 +76,7 @@ export const Login: React.FC = () => {
 
       if (profile) {
         // Se o perfil existe, o erro com certeza é a senha
-        setError('Senha incorreta. Verifique sua senha ou use "Esqueceu sua senha?".');
+        setError(traduzirErroSupabase(error.message));
       } else {
         // Se não encontrou no perfil, pode ser que não exista
         setError('E-mail não cadastrado ou senha incorreta.');
@@ -89,8 +91,8 @@ export const Login: React.FC = () => {
         }
       }, 50);
     } else {
-      alert('Usuário logado');
-      navigate('/dashboard');
+      setSuccess('Conectado com sucesso! Entrando...');
+      setTimeout(() => navigate('/dashboard'), 1500);
     }
   };
 
@@ -100,7 +102,7 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-[#121212] text-white p-4">
+    <div id="SCR-002" data-name="telalogin" className="flex flex-col items-center justify-center min-h-screen bg-[#121212] text-white p-4">
       <div className="w-full max-w-md bg-[#1a1a1a] p-8 rounded-2xl shadow-2xl border border-gray-800">
         <div className="flex flex-col items-center mb-8">
           <div className="bg-black px-6 py-3 rounded mb-6">
@@ -127,8 +129,14 @@ export const Login: React.FC = () => {
         </div>
 
         {error && (
-          <div className="bg-red-900/30 border border-red-500 text-red-200 p-3 rounded-lg mb-6 text-sm text-center">
+          <div className="bg-red-900/10 border border-red-500 text-red-200 p-4 rounded-xl mb-6 text-sm text-center">
             {error}
+          </div>
+        )}
+
+        {success && (
+          <div className="bg-green-900/10 border border-green-500 text-green-200 p-4 rounded-xl mb-6 text-sm text-center">
+            {success}
           </div>
         )}
 
@@ -140,6 +148,14 @@ export const Login: React.FC = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               onKeyDown={handleKeyDown}
+              onBlur={(e) => {
+                if (!email || !validarEmailRFC5322(email.trim().toLowerCase())) {
+                  setError('Obrigatório preencher um e-mail válido.');
+                  e.target.focus();
+                } else {
+                  setError('');
+                }
+              }}
               placeholder="você@exemplo.com"
               autoComplete="off"
               className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 focus:outline-none focus:border-[#ccff00] transition"
@@ -165,6 +181,14 @@ export const Login: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 onKeyDown={handleKeyDown}
+                onBlur={(e) => {
+                  if (!password || password.length < 8) {
+                    setError('Obrigatório informar senha com no mínimo 8 caracteres.');
+                    e.target.focus();
+                  } else {
+                    setError('');
+                  }
+                }}
                 placeholder="Digite sua senha"
                 autoComplete="new-password"
                 className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 pr-12 focus:outline-none focus:border-[#ccff00] transition"

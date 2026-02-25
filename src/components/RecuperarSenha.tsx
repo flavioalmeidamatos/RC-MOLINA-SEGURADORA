@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { validarEmailRFC5322 } from '../lib/validacoes';
+import { validarEmailRFC5322, traduzirErroSupabase } from '../lib/validacoes';
 
 export const RecuperarSenha: React.FC = () => {
   const navigate = useNavigate();
@@ -19,7 +19,7 @@ export const RecuperarSenha: React.FC = () => {
             return element.tagName === 'INPUT' || (element.tagName === 'BUTTON' && (element as HTMLButtonElement).type === 'submit');
           }
         ) as HTMLElement[];
-        
+
         const index = elements.indexOf(e.currentTarget);
         if (index > -1 && index < elements.length - 1) {
           e.preventDefault();
@@ -40,7 +40,7 @@ export const RecuperarSenha: React.FC = () => {
     }
 
     setCarregando(true);
-    
+
     try {
       const { data: perfilData, error: perfilError } = await supabase
         .from('perfis')
@@ -59,7 +59,10 @@ export const RecuperarSenha: React.FC = () => {
       });
 
       if (error) {
-        setMensagem({ texto: 'Falha ao processar solicitação. Tente novamente mais tarde.', tipo: 'erro' });
+        setMensagem({
+          tipo: 'erro',
+          texto: 'Erro ao enviar o e-mail: ' + traduzirErroSupabase(error.message)
+        });
       } else {
         setMensagem({ texto: 'Um e-mail será enviado para redefinição de senha.', tipo: 'sucesso' });
         await supabase.from('auditoria').insert([{ perfil_id: perfilData.id, acao: 'SOLICITAR_RESET_SENHA', detalhes: { email } }]);
@@ -73,7 +76,7 @@ export const RecuperarSenha: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-[#121212] text-white p-4">
+    <div id="SCR-004" data-name="recriasenha" className="flex flex-col items-center justify-center min-h-screen bg-[#121212] text-white p-4">
       <div className="w-full max-w-md bg-[#1a1a1a] p-8 rounded-2xl shadow-2xl border border-gray-800">
         <div className="flex flex-col items-center mb-8">
           <div className="bg-black px-6 py-3 rounded mb-6">
@@ -85,7 +88,7 @@ export const RecuperarSenha: React.FC = () => {
         </div>
 
         {mensagem.texto && (
-          <div className={`p-4 rounded-xl mb-6 text-sm text-center ${mensagem.tipo === 'sucesso' ? 'bg-green-900/30 border border-green-500 text-green-200' : 'bg-red-900/30 border border-red-500 text-red-200'}`}>
+          <div className={`p-4 rounded-xl mb-6 text-sm text-center ${mensagem.tipo === 'sucesso' ? 'bg-green-900/10 border border-green-500 text-green-200' : 'bg-red-900/10 border border-red-500 text-red-200'}`}>
             {mensagem.texto}
           </div>
         )}
@@ -93,8 +96,8 @@ export const RecuperarSenha: React.FC = () => {
         <form onSubmit={handleResetPassword} className="space-y-6">
           <div>
             <label className="block text-sm font-bold mb-2">E-mail Cadastrado</label>
-            <input 
-              type="email" 
+            <input
+              type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -104,8 +107,8 @@ export const RecuperarSenha: React.FC = () => {
             />
           </div>
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             disabled={carregando || mensagem.tipo === 'sucesso'}
             className="w-full bg-[#ccff00] text-black font-black text-lg rounded-xl p-4 hover:bg-[#b3e600] transition flex justify-center items-center gap-2 mt-4"
           >

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, Camera, User } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { validarEmailRFC5322 } from '../lib/validacoes';
+import { validarEmailRFC5322, traduzirErroSupabase } from '../lib/validacoes';
 
 export const Cadastro: React.FC = () => {
   const navigate = useNavigate();
@@ -23,6 +23,7 @@ export const Cadastro: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   // Preenche o e-mail e senha se vierem da tela de login
   useEffect(() => {
@@ -79,6 +80,7 @@ export const Cadastro: React.FC = () => {
   const handleCadastro = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
 
     // Validação de Nome (Mínimo 2 palavras)
     if (formData.nome.trim().split(' ').length < 2) {
@@ -143,7 +145,7 @@ export const Cadastro: React.FC = () => {
     });
 
     if (signUpError) {
-      setError(signUpError.message);
+      setError(traduzirErroSupabase(signUpError.message));
       setLoading(false);
     } else if (signUpData.user && signUpData.user.identities && signUpData.user.identities.length === 0) {
       setError('Este e-mail já está em uso. Por favor, faça login ou recupere sua senha.');
@@ -186,13 +188,13 @@ export const Cadastro: React.FC = () => {
         console.error('Erro ao criar perfil:', profileError);
       }
 
-      alert('Usuário cadastrado com sucesso! Faça seu login.');
-      navigate('/login');
+      setSuccess('Usuário cadastrado com sucesso! Redirecionando para login...');
+      setTimeout(() => navigate('/login'), 2500);
     }
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-[#121212] text-white p-4">
+    <div id="SCR-003" data-name="crieconta" className="flex flex-col items-center justify-center min-h-screen bg-[#121212] text-white p-4">
       <div className="w-full max-w-md bg-[#1a1a1a] p-8 rounded-2xl shadow-2xl border border-gray-800">
         <div className="flex flex-col items-center mb-8">
           <h1 className="text-3xl font-bold mb-2">Crie sua conta</h1>
@@ -227,8 +229,14 @@ export const Cadastro: React.FC = () => {
         </div>
 
         {error && (
-          <div className="bg-red-900/30 border border-red-500 text-red-200 p-3 rounded-lg mb-6 text-sm text-center">
+          <div className="bg-red-900/10 border border-red-500 text-red-200 p-4 rounded-xl mb-6 text-sm text-center">
             {error}
+          </div>
+        )}
+
+        {success && (
+          <div className="bg-green-900/10 border border-green-500 text-green-200 p-4 rounded-xl mb-6 text-sm text-center">
+            {success}
           </div>
         )}
 
@@ -238,8 +246,19 @@ export const Cadastro: React.FC = () => {
             <input
               type="text"
               value={formData.nome}
-              onChange={(e) => setFormData({ ...formData, nome: e.target.value.toUpperCase() })}
+              onChange={(e) => {
+                const alphaOnly = e.target.value.toUpperCase().replace(/[^A-ZÀ-Ÿ\s]/g, '');
+                setFormData({ ...formData, nome: alphaOnly });
+              }}
               onKeyDown={handleKeyDown}
+              onBlur={(e) => {
+                if (formData.nome.trim().split(' ').length < 2) {
+                  setError('Obrigatório informar o nome completo válido (mín. 2 nomes).');
+                  e.target.focus();
+                } else {
+                  setError('');
+                }
+              }}
               placeholder="SOMENTE LETRAS MAIÚSCULAS"
               className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 focus:outline-none focus:border-[#ccff00] transition uppercase"
               required
@@ -253,6 +272,14 @@ export const Cadastro: React.FC = () => {
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               onKeyDown={handleKeyDown}
+              onBlur={(e) => {
+                if (!formData.email || !validarEmailRFC5322(formData.email.trim().toLowerCase())) {
+                  setError('Obrigatório preencher um e-mail válido.');
+                  e.target.focus();
+                } else {
+                  setError('');
+                }
+              }}
               placeholder="você@exemplo.com"
               className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 focus:outline-none focus:border-[#ccff00] transition"
               required
@@ -267,6 +294,18 @@ export const Cadastro: React.FC = () => {
                 value={formData.senha}
                 onChange={(e) => setFormData({ ...formData, senha: e.target.value })}
                 onKeyDown={handleKeyDown}
+                onBlur={(e) => {
+                  const regexSenhaForte = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+                  if (!formData.senha || formData.senha.length < 8) {
+                    setError('Obrigatório preencher a senha com no mínimo 8 caracteres.');
+                    e.target.focus();
+                  } else if (!regexSenhaForte.test(formData.senha)) {
+                    setError('A senha deve ser forte: ter letras maiúsculas, minúsculas, números e caracteres especiais.');
+                    e.target.focus();
+                  } else {
+                    setError('');
+                  }
+                }}
                 placeholder="Pelo menos 8 caracteres"
                 className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 pr-12 focus:outline-none focus:border-[#ccff00] transition"
                 required
@@ -289,6 +328,14 @@ export const Cadastro: React.FC = () => {
                 value={formData.confirmarSenha}
                 onChange={(e) => setFormData({ ...formData, confirmarSenha: e.target.value })}
                 onKeyDown={handleKeyDown}
+                onBlur={(e) => {
+                  if (!formData.confirmarSenha || formData.confirmarSenha !== formData.senha) {
+                    setError('A confirmação deve ser preenchida e idêntica à senha.');
+                    e.target.focus();
+                  } else {
+                    setError('');
+                  }
+                }}
                 placeholder="Confirme sua senha"
                 className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 pr-12 focus:outline-none focus:border-[#ccff00] transition"
                 required
@@ -308,10 +355,13 @@ export const Cadastro: React.FC = () => {
             <input
               type="text"
               value={formData.organizacao}
-              onChange={(e) => setFormData({ ...formData, organizacao: e.target.value })}
+              onChange={(e) => {
+                const alphaOnly = e.target.value.toUpperCase().replace(/[^A-ZÀ-Ÿ\s]/g, '');
+                setFormData({ ...formData, organizacao: alphaOnly });
+              }}
               onKeyDown={handleKeyDown}
-              placeholder="Nome da sua organização"
-              className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 focus:outline-none focus:border-[#ccff00] transition"
+              placeholder="NOME DA SUA ORGANIZAÇÃO (OPCIONAL)"
+              className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 focus:outline-none focus:border-[#ccff00] transition uppercase"
             />
           </div>
 

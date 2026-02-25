@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { traduzirErroSupabase } from '../lib/validacoes';
 
 export const AtualizarSenha: React.FC = () => {
   const navigate = useNavigate();
@@ -23,7 +24,7 @@ export const AtualizarSenha: React.FC = () => {
             return element.tagName === 'INPUT' || (element.tagName === 'BUTTON' && (element as HTMLButtonElement).type === 'submit');
           }
         ) as HTMLElement[];
-        
+
         const index = elements.indexOf(e.currentTarget);
         if (index > -1 && index < elements.length - 1) {
           e.preventDefault();
@@ -62,7 +63,7 @@ export const AtualizarSenha: React.FC = () => {
     });
 
     if (error) {
-      setError(error.message);
+      setError(traduzirErroSupabase(error.message));
       setLoading(false);
     } else {
       setSuccess(true);
@@ -83,13 +84,13 @@ export const AtualizarSenha: React.FC = () => {
         </div>
 
         {error && (
-          <div className="bg-red-900/30 border border-red-500 text-red-200 p-3 rounded-lg mb-6 text-sm text-center">
+          <div className="bg-red-900/10 border border-red-500 text-red-200 p-4 rounded-xl mb-6 text-sm text-center">
             {error}
           </div>
         )}
 
         {success && (
-          <div className="bg-green-900/30 border border-green-500 text-green-200 p-3 rounded-lg mb-6 text-sm text-center">
+          <div className="bg-green-900/10 border border-green-500 text-green-200 p-4 rounded-xl mb-6 text-sm text-center">
             Senha atualizada com sucesso! Redirecionando...
           </div>
         )}
