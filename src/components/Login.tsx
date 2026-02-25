@@ -23,7 +23,7 @@ export const Login: React.FC = () => {
             return element.tagName === 'INPUT' && (element as HTMLInputElement).type !== 'file';
           }
         ) as HTMLElement[];
-        
+
         const index = elements.indexOf(e.currentTarget);
         if (index > -1 && index < elements.length - 1) {
           e.preventDefault();
@@ -55,7 +55,7 @@ export const Login: React.FC = () => {
 
     if (error) {
       console.error('Erro de login:', error.message);
-      
+
       // Se o erro for de confirmação de e-mail
       if (error.message.includes('Email not confirmed')) {
         setError('Por favor, confirme seu e-mail antes de acessar.');
@@ -79,7 +79,7 @@ export const Login: React.FC = () => {
         // Se não encontrou no perfil, pode ser que não exista
         setError('E-mail não cadastrado ou senha incorreta.');
       }
-      
+
       setLoading(false);
       // Devolve o foco para o campo de senha e seleciona o texto
       setTimeout(() => {
@@ -132,7 +132,7 @@ export const Login: React.FC = () => {
           </div>
         )}
 
-        <form onSubmit={handleLogin} className="space-y-6">
+        <form onSubmit={handleLogin} className="space-y-6" autoComplete="off">
           <div>
             <label className="block text-sm font-bold mb-2">E-mail</label>
             <input
@@ -141,6 +141,7 @@ export const Login: React.FC = () => {
               onChange={(e) => setEmail(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="você@exemplo.com"
+              autoComplete="off"
               className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 focus:outline-none focus:border-[#ccff00] transition"
               required
             />
@@ -165,6 +166,7 @@ export const Login: React.FC = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Digite sua senha"
+                autoComplete="new-password"
                 className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 pr-12 focus:outline-none focus:border-[#ccff00] transition"
                 required
               />
