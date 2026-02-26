@@ -13,6 +13,7 @@ export const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showPopup, setShowPopup] = useState(false);
 
   // Controles do Fluxo de Login
   const [loginMethod, setLoginMethod] = useState<'password' | 'otp'>('password');
@@ -136,8 +137,9 @@ export const Login: React.FC = () => {
         }
       }, 50);
     } else {
-      setSuccess('Conectado com sucesso! Entrando...');
-      setTimeout(() => navigate('/dashboard'), 1500);
+      setSuccess('');
+      setShowPopup(true);
+      setTimeout(() => navigate('/dashboard'), 2500);
     }
   };
 
@@ -196,8 +198,8 @@ export const Login: React.FC = () => {
     setError('');
     setSuccess('');
 
-    if (otpCode.length !== 6) {
-      setError('O código deve conter exatamente 6 dígitos.');
+    if (otpCode.length < 6 || otpCode.length > 8) {
+      setError('O código deve conter entre 6 a 8 dígitos.');
       return;
     }
 
@@ -214,8 +216,9 @@ export const Login: React.FC = () => {
       setError('Código inválido ou expirado. Verifique novamente.');
       setLoading(false);
     } else {
-      setSuccess('Conectado com sucesso! Entrando...');
-      setTimeout(() => navigate('/dashboard'), 1500);
+      setSuccess('');
+      setShowPopup(true);
+      setTimeout(() => navigate('/dashboard'), 2500);
     }
   };
 
@@ -354,7 +357,7 @@ export const Login: React.FC = () => {
                 ? 'Aguarde...'
                 : cooldown > 0
                   ? `Aguarde ${cooldown}s para reenviar`
-                  : 'Enviar Código 6 Dígitos ->'
+                  : 'Enviar Código de Acesso ->'
               }
             </button>
           </form>
@@ -363,25 +366,25 @@ export const Login: React.FC = () => {
         {loginMethod === 'otp' && otpStage === 'verify' && (
           <form onSubmit={handleVerifyOtp} className="space-y-6" autoComplete="off">
             <div className="bg-green-900/10 border border-green-500 text-green-200 p-4 rounded-xl text-sm mb-4">
-              Enviamos um código de 6 números para <strong>{email}</strong>
+              Enviamos um código de acesso para <strong>{email}</strong>
             </div>
 
             <div>
               <label className="block text-sm font-bold mb-2">Código de Acesso</label>
               <input
                 type="text"
-                maxLength={6}
+                maxLength={8}
                 value={otpCode}
                 onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))} // Apenas Numeros
-                placeholder="000000"
-                className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 text-center tracking-[1em] text-2xl focus:outline-none focus:border-[#ccff00] transition"
+                placeholder="00000000"
+                className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 text-center tracking-[0.5em] text-2xl focus:outline-none focus:border-[#ccff00] transition"
                 required
               />
             </div>
 
             <button
               type="submit"
-              disabled={loading || otpCode.length !== 6}
+              disabled={loading || otpCode.length < 6}
               className="w-full bg-[#ccff00] text-black font-black text-lg rounded-xl p-4 hover:bg-[#b3e600] transition flex justify-center items-center gap-2 disabled:opacity-50"
             >
               {loading ? 'Verificando...' : 'Confirmar e Entrar ->'}
@@ -438,6 +441,28 @@ export const Login: React.FC = () => {
           CKDEV Soluções em TI – (21) 98868-1799
         </div>
       </div>
+
+      {/* POPUP DE BOAS-VINDAS */}
+      {showPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-[#1a1a1a] shadow-2xl border border-[#ccff00]/50 rounded-2xl p-8 max-w-sm w-full flex flex-col items-center animate-in fade-in zoom-in duration-300">
+            <div className="w-20 h-20 bg-[#ccff00]/10 text-[#ccff00] rounded-full flex items-center justify-center mb-6">
+              <svg className="w-10 h-10 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-2">Bem-vindo(a)!</h2>
+            <p className="text-gray-400 text-center mb-8">
+              Login realizado com sucesso. Redirecionando para sua conta...
+            </p>
+            <div className="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-[#ccff00] animate-progress-bar"
+              ></div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
