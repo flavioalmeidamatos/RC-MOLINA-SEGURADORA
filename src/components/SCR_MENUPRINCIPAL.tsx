@@ -1,12 +1,9 @@
 import React from "react";
 import {
-  Home,
   Calendar,
-  Monitor,
   Info,
   Lightbulb,
   Banknote,
-  Laptop,
   Briefcase,
   PhoneCall,
   FolderOpen,
@@ -40,10 +37,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   };
 
   const cards = [
-    { line1: "Meu", line2: "site", icon: Laptop },
     { line1: "Sugestões", line2: "", icon: Lightbulb },
-    { line1: "Indicações", line2: "mídia", icon: Monitor },
-    { line1: "Indicações", line2: "loja", icon: Home },
     { line1: "Meus", line2: "clientes", icon: Briefcase },
     { line1: "Todas", line2: "indicações", icon: User },
     { line1: "Ligações", line2: "", icon: PhoneCall },
@@ -164,7 +158,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
         {/* DASHBOARD BODY */}
         <div className="flex-1 overflow-y-auto p-6 md:p-8 flex flex-col lg:flex-row gap-6">
           {/* GRID DE CARDS */}
-          <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 content-start">
+          <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 content-start">
             {cards.map((card, idx) => {
               const Icon = card.icon;
               return (
@@ -227,9 +221,8 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
               {agendaItems.map((item, idx) => (
                 <div
                   key={idx}
-                  className={`flex items-start gap-4 p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${
-                    item.highlight ? "text-red-500" : "text-gray-600"
-                  }`}
+                  className={`flex items-start gap-4 p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${item.highlight ? "text-red-500" : "text-gray-600"
+                    }`}
                 >
                   <div className="flex flex-col items-center gap-2 mt-1">
                     <User
