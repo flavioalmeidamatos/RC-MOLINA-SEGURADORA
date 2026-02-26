@@ -1,0 +1,133 @@
+﻿diff --git a/src/components/SCR_MENUPRINCIPAL.tsx b/src/components/SCR_MENUPRINCIPAL.tsx
+index a5febe7..92a8b27 100644
+--- a/src/components/SCR_MENUPRINCIPAL.tsx
++++ b/src/components/SCR_MENUPRINCIPAL.tsx
+@@ -33,36 +33,22 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({ session, perfil })
+     const userName = perfil?.nome_completo || session?.user?.email?.split('@')[0] || 'Nome do Usu├írio';
+     const avatarUrl = perfil?.avatar_url || null;
+ 
+-    const [activeMenu, setActiveMenu] = useState('Home');
+-
+     const handleLogout = async () => {
+         await supabase.auth.signOut();
+         navigate('/login');
+     };
+ 
+-    const menuItems = [
+-        { title: 'Home', icon: Home, active: true },
+-        { title: 'Indica├º├Áes', icon: User, hasArrow: true },
+-        { title: 'Agenda', icon: Calendar },
+-        { title: 'Simulador', icon: FolderOpen },
+-        { title: 'Webmail', icon: Mail },
+-        { title: 'Informa├º├Áes', icon: Info },
+-        { title: 'Sugest├Áes', icon: Lightbulb },
+-        { title: 'Financeiro', icon: Banknote },
+-        { title: 'Configura├º├Áes', icon: Wrench },
+-    ];
+-
+     const cards = [
++        { line1: 'Meu', line2: 'site', icon: Laptop },
++        { line1: 'Sugest├Áes', line2: '', icon: Lightbulb },
+         { line1: 'Indica├º├Áes', line2: 'm├¡dia', icon: Monitor },
+         { line1: 'Indica├º├Áes', line2: 'loja', icon: Home },
+-        { line1: 'Meu', line2: 'site', icon: Laptop },
+         { line1: 'Meus', line2: 'clientes', icon: Briefcase },
+         { line1: 'Todas', line2: 'indica├º├Áes', icon: User },
+         { line1: 'Liga├º├Áes', line2: '', icon: PhoneCall },
+         { line1: 'Agenda', line2: '', icon: Calendar },
+         { line1: 'Simulador', line2: '', icon: FolderOpen },
+         { line1: 'Informa├º├Áes', line2: '', icon: Info },
+-        { line1: 'Sugest├Áes', line2: '', icon: Lightbulb },
+         { line1: 'Financeiro', line2: '', icon: Banknote },
+         { line1: 'Configurar', line2: '', icon: Wrench },
+     ];
+@@ -121,46 +107,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({ session, perfil })
+ 
+     return (
+         <div className="flex h-screen w-full bg-[#F0F4F8] font-sans overflow-hidden">
+-            {/* SIDEBAR */}
+-            <div className="w-64 flex-shrink-0 bg-[#0c1826] flex flex-col shadow-xl z-20">
+-                {/* Profile Area */}
+-                <div className="h-44 bg-gradient-to-b from-[#b58c2a] to-[#806117] flex flex-col items-center justify-center pt-4 pb-2 shadow-inner">
+-                    <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center overflow-hidden mb-3 border-2 border-white/50 shadow-md cursor-pointer hover:border-white transition-all">
+-                        {avatarUrl ? (
+-                            <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+-                        ) : (
+-                            <User size={32} className="text-gray-400" />
+-                        )}
+-                    </div>
+-                    <span className="text-white font-medium text-sm px-4 text-center">
+-                        {userName}
+-                    </span>
+-                </div>
+-
+-                {/* Menu Items */}
+-                <div className="flex-1 overflow-y-auto py-4 custom-scrollbar">
+-                    {menuItems.map((item, idx) => {
+-                        const Icon = item.icon;
+-                        return (
+-                            <div
+-                                key={idx}
+-                                onClick={() => setActiveMenu(item.title)}
+-                                className={`flex items-center justify-between px-6 py-3 cursor-pointer transition-colors border-l-4 ${activeMenu === item.title
+-                                    ? 'bg-[#152a42] border-[#b58c2a] text-white'
+-                                    : 'border-transparent text-gray-400 hover:bg-[#112338] hover:text-white'
+-                                    }`}
+-                            >
+-                                <div className="flex items-center gap-3">
+-                                    <Icon size={18} className={activeMenu === item.title ? 'text-[#b58c2a]' : 'text-gray-500'} />
+-                                    <span className="text-sm">{item.title}</span>
+-                                </div>
+-                                {item.hasArrow && <ChevronLeft size={16} className="text-gray-600" />}
+-                            </div>
+-                        );
+-                    })}
+-                </div>
+-            </div>
+-
+             {/* MAIN CONTENT WRAPPER */}
+             <div className="flex-1 flex flex-col min-w-0">
+                 {/* HEADER */}
+@@ -176,14 +122,30 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({ session, perfil })
+                     <div className="flex items-center gap-6">
+                         <button className="flex items-center gap-2 text-gray-500 hover:text-[#b58c2a] transition-colors">
+                             <Calendar size={18} />
+-                            <span className="text-sm">Agenda</span>
++                            <span className="text-sm hidden sm:inline">Agenda</span>
+                         </button>
++
++                        <div className="h-8 w-px bg-gray-200 mx-2"></div>
++
++                        <div className="flex items-center gap-3">
++                            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-200 shadow-sm cursor-pointer">
++                                {avatarUrl ? (
++                                    <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
++                                ) : (
++                                    <User size={16} className="text-gray-400" />
++                                )}
++                            </div>
++                            <span className="text-gray-700 font-medium text-sm hidden md:inline">
++                                {userName}
++                            </span>
++                        </div>
++
+                         <button
+                             onClick={handleLogout}
+-                            className="flex items-center gap-2 text-gray-500 hover:text-red-600 transition-colors"
++                            className="flex items-center gap-2 text-gray-500 hover:text-red-600 transition-colors ml-2"
+                         >
+                             <LogOut size={18} />
+-                            <span className="text-sm">Sair</span>
++                            <span className="text-sm hidden sm:inline">Sair</span>
+                         </button>
+                     </div>
+                 </div>
+@@ -192,7 +154,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({ session, perfil })
+                 <div className="flex-1 overflow-y-auto p-6 md:p-8 flex flex-col lg:flex-row gap-6">
+ 
+                     {/* GRID DE CARDS */}
+-                    <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 content-start">
++                    <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 content-start">
+                         {cards.map((card, idx) => {
+                             const Icon = card.icon;
+                             return (
