@@ -7,6 +7,7 @@ export const FooterAdmin: React.FC = () => {
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [adminPassword, setAdminPassword] = useState('');
     const [passwordError, setPasswordError] = useState('');
+    const [adminHash, setAdminHash] = useState('');
 
     const [showAdminPanel, setShowAdminPanel] = useState(false);
     const [users, setUsers] = useState<any[]>([]);
@@ -36,9 +37,21 @@ export const FooterAdmin: React.FC = () => {
         setLoading(false);
     };
 
-    const handlePasswordSubmit = (e: React.FormEvent) => {
+    const hashPassword = async (password: string) => {
+        const msgBuffer = new TextEncoder().encode(password);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    };
+
+    const handlePasswordSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (adminPassword === 'P@ssw0rd21071998') {
+        const hash = await hashPassword(adminPassword);
+        // Hash de P@ssw0rd21071998
+        const correctHash = '92bdea102b044dfc646c30841c2dd350c777b0d9431753def74336af64964fd5';
+
+        if (hash === correctHash) {
+            setAdminHash(hash);
             setShowPasswordModal(false);
             setAdminPassword('');
             setShowAdminPanel(true);
@@ -105,25 +118,26 @@ export const FooterAdmin: React.FC = () => {
 
                 const { error: uploadError } = await supabase.storage
                     .from('avatars')
-                    .upload(filePath, avatarFile);
+                    .upload(filePath, avatarFile, { upsert: true });
 
-                if (!uploadError) {
-                    const { data: publicUrlData } = supabase.storage
-                        .from('avatars')
-                        .getPublicUrl(filePath);
-                    finalAvatarUrl = publicUrlData.publicUrl;
+                if (uploadError) {
+                    throw new Error(`Erro no upload da foto: ${uploadError.message}`);
                 }
+
+                const { data: publicUrlData } = supabase.storage
+                    .from('avatars')
+                    .getPublicUrl(filePath);
+                finalAvatarUrl = publicUrlData.publicUrl;
             }
 
-            const { error } = await supabase
-                .from('perfis')
-                .update({
-                    nome_completo: formData.nome.toUpperCase(),
-                    email: formData.email.trim().toLowerCase(),
-                    organizacao: formData.organizacao.toUpperCase(),
-                    avatar_url: finalAvatarUrl
-                })
-                .eq('id', selectedUserId);
+            const { error } = await supabase.rpc('admin_update_user', {
+                p_id: selectedUserId,
+                p_nome: formData.nome.toUpperCase(),
+                p_email: formData.email.trim().toLowerCase(),
+                p_org: formData.organizacao.toUpperCase(),
+                p_avatar_url: finalAvatarUrl,
+                p_admin_hash: adminHash
+            });
 
             if (error) throw error;
 
@@ -143,10 +157,10 @@ export const FooterAdmin: React.FC = () => {
         setMessage({ text: '', type: '' });
 
         try {
-            const { error } = await supabase
-                .from('perfis')
-                .delete()
-                .eq('id', selectedUserId);
+            const { error } = await supabase.rpc('admin_delete_user', {
+                p_id: selectedUserId,
+                p_admin_hash: adminHash
+            });
 
             if (error) throw error;
 
@@ -174,6 +188,8 @@ export const FooterAdmin: React.FC = () => {
                         <button
                             onClick={() => { setShowPasswordModal(false); setPasswordError(''); setAdminPassword(''); }}
                             className="absolute top-4 right-4 text-gray-500 hover:text-white"
+                            title="Fechar"
+                            aria-label="Fechar"
                         >
                             <X size={20} />
                         </button>
@@ -189,12 +205,15 @@ export const FooterAdmin: React.FC = () => {
                             </div>
                         )}
 
-                        <form onSubmit={handlePasswordSubmit} className="w-full space-y-4">
+                        <form onSubmit={handlePasswordSubmit} className="w-full space-y-4" autoComplete="off">
                             <input
+                                id="admin_secret_key"
+                                name="admin_secret_key"
                                 type="password"
                                 value={adminPassword}
                                 onChange={(e) => setAdminPassword(e.target.value)}
                                 placeholder="Senha"
+                                autoComplete="new-password"
                                 className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 focus:outline-none focus:border-[#ccff00] transition"
                                 autoFocus
                             />
@@ -216,6 +235,8 @@ export const FooterAdmin: React.FC = () => {
                         <button
                             onClick={() => setShowAdminPanel(false)}
                             className="absolute top-4 right-4 text-gray-500 hover:text-white bg-black/50 rounded-full p-2"
+                            title="Fechar painel"
+                            aria-label="Fechar painel"
                         >
                             <X size={20} />
                         </button>
@@ -227,6 +248,8 @@ export const FooterAdmin: React.FC = () => {
 
                         <div className="mb-6">
                             <select
+                                id="select_user"
+                                title="Selecionar usuário"
                                 value={selectedUserId}
                                 onChange={handleSelectUser}
                                 className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 focus:outline-none focus:border-[#ccff00] text-white transition cursor-pointer"
@@ -268,6 +291,8 @@ export const FooterAdmin: React.FC = () => {
                                         <span className="text-[#ccff00] text-[10px] font-bold uppercase tracking-widest">foto</span>
                                     </div>
                                     <input
+                                        id="upload_avatar"
+                                        title="Selecionar foto"
                                         type="file"
                                         ref={fileInputRef}
                                         onChange={handleFileChange}
@@ -278,8 +303,10 @@ export const FooterAdmin: React.FC = () => {
 
                                 <form onSubmit={handleSaveUser} className="space-y-4">
                                     <div>
-                                        <label className="block text-sm font-bold mb-2">Nome Completo</label>
+                                        <label htmlFor="edit_nome" className="block text-sm font-bold mb-2">Nome Completo</label>
                                         <input
+                                            id="edit_nome"
+                                            title="Nome Completo"
                                             type="text"
                                             value={formData.nome}
                                             onChange={(e) => {
@@ -292,9 +319,12 @@ export const FooterAdmin: React.FC = () => {
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm font-bold mb-2">E-mail</label>
+                                        <label htmlFor="edit_email" className="block text-sm font-bold mb-2">E-mail</label>
                                         <input
+                                            id="edit_email"
+                                            title="E-mail"
                                             type="email"
+                                            autoComplete="off"
                                             value={formData.email}
                                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                             className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 focus:outline-none focus:border-[#ccff00] transition"
@@ -303,8 +333,10 @@ export const FooterAdmin: React.FC = () => {
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm font-bold mb-2">Organização</label>
+                                        <label htmlFor="edit_org" className="block text-sm font-bold mb-2">Organização</label>
                                         <input
+                                            id="edit_org"
+                                            title="Organização"
                                             type="text"
                                             value={formData.organizacao}
                                             onChange={(e) => {

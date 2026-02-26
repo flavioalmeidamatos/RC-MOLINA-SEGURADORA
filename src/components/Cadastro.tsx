@@ -221,6 +221,8 @@ export const Cadastro: React.FC = () => {
             <span className="text-[#ccff00] text-[10px] font-bold uppercase tracking-widest">foto</span>
           </div>
           <input
+            id="cadastro_avatar_upload"
+            title="Selecionar foto de perfil"
             type="file"
             ref={fileInputRef}
             onChange={handleFileChange}
