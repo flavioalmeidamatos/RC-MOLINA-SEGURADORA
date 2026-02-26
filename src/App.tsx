@@ -6,6 +6,7 @@ import { Cadastro } from './components/Cadastro';
 import { RecuperarSenha } from './components/RecuperarSenha';
 import { AtualizarSenha } from './components/AtualizarSenha';
 import { DebugDatabase } from './components/DebugDatabase';
+import { SCR_MENUPRINCIPAL } from './components/SCR_MENUPRINCIPAL';
 import { supabase } from './lib/supabase';
 
 export default function App() {
@@ -76,33 +77,7 @@ export default function App() {
         <Route path="/atualizar-senha" element={<AtualizarSenha />} />
         <Route path="/debug-db" element={<DebugDatabase />} />
         <Route path="/dashboard" element={
-          session ? (
-            <div className="flex flex-col items-center justify-center min-h-screen bg-[#121212] text-white p-8">
-              {perfil?.avatar_url && (
-                <img src={perfil.avatar_url} alt="Avatar" className="w-24 h-24 rounded-full border-4 border-[#ccff00] mb-4 object-cover" />
-              )}
-              <h1 className="text-4xl font-bold mb-4 text-[#ccff00]">
-                Bem-vindo, {perfil?.nome_completo || session.user?.email}!
-              </h1>
-              {perfil && (
-                <div className="bg-[#1a1a1a] p-6 rounded-xl border border-gray-800 w-full max-w-lg mb-8 space-y-3">
-                  <h2 className="text-xl font-bold mb-4 border-b border-gray-800 pb-2">Seus Dados</h2>
-                  <p><span className="text-gray-500">Nome:</span> {perfil.nome_completo}</p>
-                  <p><span className="text-gray-500">E-mail:</span> {perfil.email}</p>
-                  <p><span className="text-gray-500">Organização:</span> {perfil.organizacao || 'Não informada'}</p>
-                  <p><span className="text-gray-500">Membro desde:</span> {new Date(perfil.criado_em).toLocaleDateString('pt-BR')}</p>
-                </div>
-              )}
-              <button
-                onClick={() => supabase.auth.signOut()}
-                className="bg-red-600 px-6 py-2 rounded-lg font-bold hover:bg-red-700 transition"
-              >
-                Sair do Sistema
-              </button>
-            </div>
-          ) : (
-            <Navigate to="/login" replace />
-          )
+          session ? <SCR_MENUPRINCIPAL session={session} perfil={perfil} /> : <Navigate to="/login" replace />
         } />
         <Route path="/" element={<Navigate to={session ? "/dashboard" : "/login"} replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
