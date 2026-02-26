@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { traduzirErroSupabase } from '../lib/validacoes';
+import { FooterAdmin } from './FooterAdmin';
 
 export const AtualizarSenha: React.FC = () => {
   const navigate = useNavigate();
@@ -153,9 +154,7 @@ export const AtualizarSenha: React.FC = () => {
           Lembrou a senha? <button onClick={() => navigate('/login')} className="text-[#ccff00] font-bold hover:underline">Voltar ao Login</button>
         </p>
 
-        <div className="mt-12 text-center text-sm text-gray-500 font-black">
-          CKDEV Soluções em TI – (21) 98868-1799
-        </div>
+        <FooterAdmin />
       </div>
     </div>
   );

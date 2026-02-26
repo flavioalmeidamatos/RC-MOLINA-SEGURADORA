@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Mail, KeyRound } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { validarEmailRFC5322, traduzirErroSupabase } from '../lib/validacoes';
+import { FooterAdmin } from './FooterAdmin';
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -437,9 +438,7 @@ export const Login: React.FC = () => {
           Ainda não tem conta? <button onClick={() => navigate('/cadastro')} className="text-[#ccff00] font-bold hover:underline">Cadastre-se</button>
         </p>
 
-        <div className="mt-8 text-center text-sm text-gray-500 font-black">
-          CKDEV Soluções em TI – (21) 98868-1799
-        </div>
+        <FooterAdmin />
       </div>
 
       {/* POPUP DE BOAS-VINDAS */}

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { validarEmailRFC5322, traduzirErroSupabase } from '../lib/validacoes';
+import { FooterAdmin } from './FooterAdmin';
 
 export const RecuperarSenha: React.FC = () => {
   const navigate = useNavigate();
@@ -173,9 +174,7 @@ export const RecuperarSenha: React.FC = () => {
           Lembrou a senha? <button onClick={() => navigate('/login')} className="text-[#ccff00] font-bold hover:underline">Voltar ao Login</button>
         </p>
 
-        <div className="mt-12 text-center text-sm text-gray-500 font-black">
-          CKDEV Soluções em TI – (21) 98868-1799
-        </div>
+        <FooterAdmin />
       </div>
     </div>
   );
