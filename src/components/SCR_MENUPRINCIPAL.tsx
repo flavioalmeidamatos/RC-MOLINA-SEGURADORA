@@ -146,8 +146,8 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({ session, perfil })
                                 key={idx}
                                 onClick={() => setActiveMenu(item.title)}
                                 className={`flex items-center justify-between px-6 py-3 cursor-pointer transition-colors border-l-4 ${activeMenu === item.title
-                                        ? 'bg-[#152a42] border-[#b58c2a] text-white'
-                                        : 'border-transparent text-gray-400 hover:bg-[#112338] hover:text-white'
+                                    ? 'bg-[#152a42] border-[#b58c2a] text-white'
+                                    : 'border-transparent text-gray-400 hover:bg-[#112338] hover:text-white'
                                     }`}
                             >
                                 <div className="flex items-center gap-3">
@@ -166,9 +166,9 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({ session, perfil })
                 {/* HEADER */}
                 <div className="h-16 bg-white shadow-sm flex items-center justify-between px-8 z-10 flex-shrink-0">
                     <div className="flex items-center gap-4">
-                        <div className="font-serif">
-                            <span className="text-[#0c1826] text-xl font-bold tracking-widest">QUER</span>
-                            <span className="text-[#b58c2a] text-xl font-bold tracking-widest ml-1">SEGUROS</span>
+                        <div className="bg-white px-2 py-1 flex flex-col items-center">
+                            <div className="text-[#d4af37] font-serif text-xl tracking-widest font-bold leading-none">RC MOLINA</div>
+                            <div className="text-[#0c1826] text-[10px] tracking-[0.3em] text-center font-bold mt-1">SEGUROS</div>
                         </div>
                         <span className="text-gray-400 text-sm ml-4 border-l pl-4 border-gray-200">Painel Administrativo</span>
                     </div>
