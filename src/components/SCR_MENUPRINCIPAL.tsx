@@ -1,5 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import {
+  Home,
+  Mail,
   Calendar,
   Info,
   Lightbulb,
@@ -31,10 +33,24 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     "Nome do Usuário";
   const avatarUrl = perfil?.avatar_url || null;
 
+  const [activeMenu, setActiveMenu] = useState("Home");
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/login");
   };
+
+  const menuItems = [
+    { title: "Home", icon: Home, active: true },
+    { title: "Indicações", icon: User },
+    { title: "Agenda", icon: Calendar },
+    { title: "Simulador", icon: FolderOpen },
+    { title: "Webmail", icon: Mail },
+    { title: "Informações", icon: Info },
+    { title: "Sugestões", icon: Lightbulb },
+    { title: "Financeiro", icon: Banknote },
+    { title: "Configurações", icon: Wrench },
+  ];
 
   const cards = [
     { line1: "Sugestões", line2: "", icon: Lightbulb },
@@ -102,6 +118,56 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
   return (
     <div className="flex h-screen w-full bg-[#F0F4F8] font-sans overflow-hidden">
+      {/* SIDEBAR */}
+      <div className="w-64 flex-shrink-0 bg-[#0c1826] flex flex-col shadow-xl z-20">
+        {/* Profile Area */}
+        <div className="h-44 bg-gradient-to-b from-[#b58c2a] to-[#806117] flex flex-col items-center justify-center pt-4 pb-2 shadow-inner">
+          <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center overflow-hidden mb-3 border-2 border-white/50 shadow-md cursor-pointer hover:border-white transition-all">
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt="Avatar"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <User size={32} className="text-gray-400" />
+            )}
+          </div>
+          <span className="text-white font-medium text-sm px-4 text-center">
+            {userName}
+          </span>
+        </div>
+
+        {/* Menu Items */}
+        <div className="flex-1 overflow-y-auto py-4 custom-scrollbar">
+          {menuItems.map((item, idx) => {
+            const Icon = item.icon;
+            return (
+              <div
+                key={idx}
+                onClick={() => setActiveMenu(item.title)}
+                className={`flex items-center justify-between px-6 py-3 cursor-pointer transition-colors border-l-4 ${activeMenu === item.title
+                  ? "bg-[#152a42] border-[#b58c2a] text-white"
+                  : "border-transparent text-gray-400 hover:bg-[#112338] hover:text-white"
+                  }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Icon
+                    size={18}
+                    className={
+                      activeMenu === item.title
+                        ? "text-[#b58c2a]"
+                        : "text-gray-500"
+                    }
+                  />
+                  <span className="text-sm">{item.title}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       {/* MAIN CONTENT WRAPPER */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* HEADER */}
