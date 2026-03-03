@@ -14,7 +14,10 @@ import {
   LogOut,
   Phone,
   Loader2,
-  ExternalLink
+  ExternalLink,
+  MapPin,
+  FileText,
+  Users
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useNavigate } from "react-router-dom";
@@ -38,7 +41,11 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const [activeMenu, setActiveMenu] = useState("Home");
   const [showImportModal, setShowImportModal] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
-  const [credential, setCredential] = useState({ login: '', senha: '', leadUrl: '' });
+  const [credential, setCredential] = useState({
+    login: 'Rosilene Rodrigues de Carvalho Molina',
+    senha: '123',
+    leadUrl: ''
+  });
   const [importResult, setImportResult] = useState<any>(null);
 
   const handleImportLead = async (e: React.FormEvent) => {
@@ -387,8 +394,8 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       {/* MODAL DE IMPORTAÇÃO */}
       {showImportModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
-            <div className="bg-[#0c1826] p-4 flex justify-between items-center">
+          <div className="bg-white w-full max-w-2xl rounded-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300 flex flex-col" style={{ maxHeight: '90vh' }}>
+            <div className="bg-[#0c1826] p-4 flex justify-between items-center flex-shrink-0">
               <h3 className="text-[#b58c2a] font-bold flex items-center gap-2">
                 <ExternalLink size={20} />
                 Importar do Sistema Quer
@@ -401,7 +408,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
               </button>
             </div>
 
-            <div className="p-6">
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
               {!importResult?.data ? (
                 <form onSubmit={handleImportLead} className="space-y-4">
                   <p className="text-xs text-gray-500 mb-4">
@@ -453,28 +460,105 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                   </button>
                 </form>
               ) : (
-                <div className="space-y-4 animate-in slide-in-from-bottom-2">
-                  <div className="bg-green-50 text-green-700 p-4 rounded-lg flex flex-col items-center text-center gap-2">
-                    <span className="font-bold">Dados Recuperados!</span>
-                    <div className="text-sm border-t border-green-200 pt-2 w-full mt-2 grid grid-cols-2 gap-2 text-left">
-                      <span className="text-green-900/60 text-xs">Nome:</span>
-                      <span className="font-medium">{importResult.data.nome || 'Não identificado'}</span>
-                      <span className="text-green-900/60 text-xs">Telefone:</span>
-                      <span className="font-medium">{importResult.data.telefone || 'Não identificado'}</span>
-                      <span className="text-green-900/60 text-xs">E-mail:</span>
-                      <span className="font-medium truncate">{importResult.data.email || 'Não identificado'}</span>
+                <div className="space-y-6 animate-in slide-in-from-bottom-2 pb-4">
+                  <div className="flex items-center justify-center gap-2 text-green-600 font-bold text-lg mb-2">
+                    <Loader2 className="animate-pulse" size={24} />
+                    Dados Recuperados com Sucesso!
+                  </div>
+
+                  {/* SEÇÃO: DADOS PESSOAIS */}
+                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                    <div className="bg-gray-50 px-4 py-2 border-b border-gray-200 flex items-center gap-2">
+                      <User size={16} className="text-[#b58c2a]" />
+                      <span className="text-xs font-bold uppercase text-gray-700">Dados Pessoais</span>
+                    </div>
+                    <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-[10px] text-gray-400 uppercase font-bold">Nome</label>
+                        <p className="text-sm font-medium text-gray-800">{importResult.data.nome}</p>
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-gray-400 uppercase font-bold">Telefone</label>
+                        <p className="text-sm font-medium text-gray-800">{importResult.data.telefone}</p>
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-gray-400 uppercase font-bold">E-mail</label>
+                        <p className="text-sm font-medium text-gray-800 break-all">{importResult.data.email}</p>
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-gray-400 uppercase font-bold">CPF/CNPJ</label>
+                        <p className="text-sm font-medium text-gray-800">{importResult.data.cpf_cnpj || '---'}</p>
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-gray-400 uppercase font-bold">Data Nascimento</label>
+                        <p className="text-sm font-medium text-gray-800">{importResult.data.nascimento || '---'}</p>
+                      </div>
                     </div>
                   </div>
+
+                  {/* SEÇÃO: ENDEREÇO */}
+                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                    <div className="bg-gray-50 px-4 py-2 border-b border-gray-200 flex items-center gap-2">
+                      <MapPin size={16} className="text-[#b58c2a]" />
+                      <span className="text-xs font-bold uppercase text-gray-700">Localização</span>
+                    </div>
+                    <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="md:col-span-2">
+                        <label className="text-[10px] text-gray-400 uppercase font-bold">Endereço</label>
+                        <p className="text-sm font-medium text-gray-800">
+                          {importResult.data.endereco} {importResult.data.numero ? `, ${importResult.data.numero}` : ''}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-gray-400 uppercase font-bold">Bairro</label>
+                        <p className="text-sm font-medium text-gray-800">{importResult.data.bairro || '---'}</p>
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-gray-400 uppercase font-bold">Cidade</label>
+                        <p className="text-sm font-medium text-gray-800">{importResult.data.cidade || '---'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* SEÇÃO: DADOS DO CÁLCULO */}
+                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                    <div className="bg-gray-50 px-4 py-2 border-b border-gray-200 flex items-center gap-2">
+                      <FileText size={16} className="text-[#b58c2a]" />
+                      <span className="text-xs font-bold uppercase text-gray-700">Dados do Cálculo / Observações</span>
+                    </div>
+                    <div className="p-4">
+                      <p className="text-sm text-gray-700 whitespace-pre-wrap bg-yellow-50/50 p-3 rounded border border-yellow-100">
+                        {importResult.data.observacao || 'Nenhuma observação encontrada.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* SEÇÃO: COMPOSIÇÃO DE VIDAS */}
+                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                    <div className="bg-gray-50 px-4 py-2 border-b border-gray-200 flex items-center gap-2">
+                      <Users size={16} className="text-[#b58c2a]" />
+                      <span className="text-xs font-bold uppercase text-gray-700">Composição de Vidas (Faixas Etárias)</span>
+                    </div>
+                    <div className="p-4 grid grid-cols-2 sm:grid-cols-5 gap-3">
+                      {Object.entries(importResult.data.vidas || {}).map(([faixa, qtd]: [any, any]) => (
+                        <div key={faixa} className="bg-gray-50 p-2 rounded border border-gray-100 text-center">
+                          <label className="text-[9px] text-gray-400 uppercase block leading-none mb-1">{faixa}</label>
+                          <span className={`${qtd !== "0" ? "text-[#b58c2a] font-bold" : "text-gray-300"} text-sm`}>{qtd}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
                   <button
                     onClick={() => setShowImportModal(false)}
-                    className="w-full bg-gray-800 text-white py-2 rounded text-sm hover:bg-black transition-colors"
+                    className="w-full bg-[#0c1826] text-white py-4 rounded font-bold text-sm hover:bg-black transition-all shadow-lg flex items-center justify-center gap-2"
                   >
-                    CONCLUIR
+                    CONCLUIR E USAR DADOS
                   </button>
                 </div>
               )}
             </div>
-            <div className="bg-gray-50 p-3 text-[10px] text-gray-400 text-center uppercase tracking-widest">
+            <div className="bg-gray-50 p-3 text-[10px] text-gray-400 text-center uppercase tracking-widest flex-shrink-0">
               Sessão temporária • Criptografada
             </div>
           </div>

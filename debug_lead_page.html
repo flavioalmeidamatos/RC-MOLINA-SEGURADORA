@@ -48,7 +48,7 @@
 		}
 				function alerta(){
 			setTimeout(function () {
-				$( "#todasIndicacoesNovasRepetir" ).load( "cod-contagem-corretor.php?pagina=/alterar-indicacao.php?indicacao_id=275775", function(){
+				$( "#todasIndicacoesNovasRepetir" ).load( "cod-contagem-corretor.php?pagina=/alterar-indicacao.php?indicacao_id=276596", function(){
 					valorHtml = $( "#todasIndicacoesNovasRepetir" ).html();
 					var displayDiv = $("#alertaNova").css('display');
 					if(textoTotal != valorHtml){
@@ -69,7 +69,7 @@
 		}
 		function alerta2(){
 			setTimeout(function () {
-				$( "#todasIndicacoesNovasRepetir" ).load( "cod-contagem-corretor.php?pagina=/alterar-indicacao.php?indicacao_id=275775", function() {
+				$( "#todasIndicacoesNovasRepetir" ).load( "cod-contagem-corretor.php?pagina=/alterar-indicacao.php?indicacao_id=276596", function() {
 					var quantidade = $("#quantidadeIndicacoesTotal").val();
 					if(quantidade != '0'){
 						//$("#alertaNova").slideToggle('', function(){
@@ -338,7 +338,7 @@ $( document ).ready(function() {
 
 function alterarHistorico(id){
 	$('#alteracaoTotal').slideToggle('', function(){
-		$('#alterarStatus22').load('/gatilhos/alterar-status-indicacao.php?status='+id+'&indicacao_id=275775', function(){
+		$('#alterarStatus22').load('/gatilhos/alterar-status-indicacao.php?status='+id+'&indicacao_id=276596', function(){
 			$('#alterarStatus22').slideToggle('');
 			$("html,body").animate({scrollTop:$("#alterarStatus22").offset().top},"500");
 		});
@@ -433,24 +433,25 @@ function voltarIndicacao(){
 						
 
 							<p style="float:right; text-align:right;"><i class="icon-user"></i> <span class="nomePainel">Indicação</span><br/>
-							<strong>Nº 275775</strong><br/>
+							<strong>Nº 276596</strong><br/>
 
+														<a href="https://querplanodesaude.com.br/anuncios/2024.png" target="_blank" id="botaoRepasse">VER ANÚNCIO</a>
 														</p>
-							<form method="post" name="incluirindicacao" onSubmit="return validacao(this);" action="alterar-indicacao.php?indicacao_id=275775">
+							<form method="post" name="incluirindicacao" onSubmit="return validacao(this);" action="alterar-indicacao.php?indicacao_id=276596">
 							<div id="obrigacoes">
 
 							</div>
 							<div class="nomeEmailAltIndicacao">
 								<p>Nome<span style="color:#FF0000">*</span>:</p>
-								<input type="text" name="nome" id="nome" class="input2 obrigatoriedade" value="Renato Silva"/>
+								<input type="text" name="nome" id="nome" class="input2 obrigatoriedade" value="Déborah"/>
 							</div>
 							<div class="nomeEmailAltIndicacao">
 								<p>E-mail:</p>
-								<input type="text" name="email" class="input2 " value="Renato@renatovieira.com"/>
+								<input type="text" name="email" class="input2 " value="deborahidumas@hotmail.com"/>
 							</div>
 							<div class="nomeEmailAltIndicacao">
 								<p>Telefone(s)<span style="color:#FF0000">*</span>:</p>
-								<input type="text" name="telefone" id="telefone" class="input2 obrigatoriedade" value="21996166516"/>
+								<input type="text" name="telefone" id="telefone" class="input2 obrigatoriedade" value="21992534287"/>
 							</div>
 							<div style="clear:both"> </div>
 							<div class="enderecoAltIndicacao flutuarAltIndicacao">
@@ -600,7 +601,7 @@ function voltarIndicacao(){
 														<div class="flutuarAltIndicacao origemAltIndicacao" style="display:none;">
 								<p>Origem:</p>
 								<select name="origem">
-									<option value="LAKS Facebook" style="border:1px #FF0000 solid" >LAKS Facebook - Selecionado</option>
+									<option value="ASSIM A20 (SEM COPART.) CNPJ - RJ" style="border:1px #FF0000 solid" >ASSIM A20 (SEM COPART.) CNPJ - RJ - Selecionado</option>
 								</select>
 							</div>
 														<div style="clear:both"> </div>
@@ -662,13 +663,13 @@ function voltarIndicacao(){
 								<p style="margin-bottom:10px;" class="tituloDiferenciado"> <strong>Histórico de negociação</strong></p>
 
 								    								        <div class="umHistorico historicoNaoConcluido">
-								            <a href="javascript:;" onclick="alterarHistorico('165614');" title="Alterar">
-								            <p><strong>27/02/2026 |</strong> ligarei novamente </p>
-								            <p>Observação: liguei e enviei e-mail </p>
+								            <a href="javascript:;" onclick="alterarHistorico('166281');" title="Alterar">
+								            <p><strong>03/03/2026 |</strong> ligarei novamente </p>
+								            <p>Observação: liguei e deixei recado no watsapp </p>
 								            </a>
 								            <a href="javascript:;" onclick="finalizarContato();" class="botaoFinalizarContato">Finalizar esse contato.</a>
 								        </div>
-								        <input value="165614" type="hidden" name="idHistorico">
+								        <input value="166281" type="hidden" name="idHistorico">
 								        <div id="resultadoContatoAnterior" style="display:none;">
 								            <p>Resultado do contato:</p>
 								            <textarea name="resultadoContato" id="resultadoContato" class="input2 obrigatoriedade" style="width:94%; max-width:94%; height:40px; margin-bottom:30px;"></textarea>
@@ -698,14 +699,13 @@ function voltarIndicacao(){
 							<div style="clear: both;"></div>
 
 							<p>Dados do C&aacute;lculo e Observa&ccedil;&otilde;es Gerais<span id="fechadoo2" style="color:#FF0000; display:none;">*</span>:<br/><span style="margin-top:15px; font-size:12px;">Exemplo: Qual plano foi desejado, preço do plano separado por vidas e outras informações importantes</span></p>
-							<textarea name="observacao" id="observacao obrigatoriedade" class="input2" style="width:94%; max-width:94%; height:100px; margin-bottom:30px;">Possui CNPJ Ativo? ltda_
-Objetivo do plano: Empresa
-Plano ativo atualmente: Não
-Valor plano atual: Não tenho plano
-Quantas pessoas no plano? 02 vidas
-Idade das vidas: 32 e 50</textarea>
+							<textarea name="observacao" id="observacao obrigatoriedade" class="input2" style="width:94%; max-width:94%; height:100px; margin-bottom:30px;">Nome: Déborah Email: deborahidumas@hotmail.com Telefone/Whatsapp: +5521992534287 Qual tipo CNPJ? Outro Para quantas vidas e idade das vidas: 3 pessoas 
+
+38 anos
+12 anos 
+8 anos</textarea>
 							<div style="clear:both"> </div>
-							<input type="hidden" value="275775" name="indicacao_id"/>
+							<input type="hidden" value="276596" name="indicacao_id"/>
 							<input type="hidden" value="1" name="tipo"/>
 						
 					</div>
@@ -758,7 +758,7 @@ Idade das vidas: 32 e 50</textarea>
 								</div>
 								<p><a title="Concluir tarefa" href="alterar-indicacao.php?indicacao_id=276596">ligarei novamente </a></p>
 															</div>
-														<div class="tarefaDoDia " id="tarefaNaoConcluida166282">
+														<div class="tarefaDoDia tarefaDoDiaAtrasada" id="tarefaNaoConcluida166282">
 																<div class="iconeClienteTarefaDia">
 									<a title="Concluir tarefa" href="alterar-indicacao.php?indicacao_id=276595"><i class="icon-user"></i></a>
 								</div>

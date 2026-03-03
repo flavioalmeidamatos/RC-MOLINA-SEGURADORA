@@ -34,12 +34,12 @@ export default function App() {
 
   useEffect(() => {
     // Força o logout logo na inicialização para garantir que uma nova sessão seja sempre exigida
-    const forceNewSession = async () => {
-      await supabase.auth.signOut();
-      setSession(null);
-      setPerfil(null);
-      setLoading(false);
-    };
+    // const forceNewSession = async () => {
+    //   await supabase.auth.signOut();
+    //   setSession(null);
+    //   setPerfil(null);
+    //   setLoading(false);
+    // };
 
     // forceNewSession();
 

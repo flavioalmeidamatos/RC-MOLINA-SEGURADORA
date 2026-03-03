@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
-      hmr: false,
+      hmr: true,
       watch: {
         ignored: ['**/debug_*', '**/cookies_*', '**/*.html', '**/*.txt']
       }

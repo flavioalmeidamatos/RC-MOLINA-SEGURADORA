@@ -17,6 +17,12 @@ async function startServer() {
   app.use(express.json());
 
   app.post("/api/import-lead", async (req, res) => {
+    // Anti-cache headers para navegadores teimosos (Firefox)
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.setHeader('Surrogate-Control', 'no-store');
+
     const login = req.body.login?.trim();
     const senha = req.body.senha?.trim();
     const originalLeadUrl = req.body.leadUrl?.trim();
