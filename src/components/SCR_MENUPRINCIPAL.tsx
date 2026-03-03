@@ -13,6 +13,8 @@ import {
   User,
   LogOut,
   Phone,
+  Loader2,
+  ExternalLink
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useNavigate } from "react-router-dom";
@@ -34,6 +36,33 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const avatarUrl = perfil?.avatar_url || null;
 
   const [activeMenu, setActiveMenu] = useState("Home");
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importLoading, setImportLoading] = useState(false);
+  const [credential, setCredential] = useState({ login: '', senha: '', leadUrl: '' });
+  const [importResult, setImportResult] = useState<any>(null);
+
+  const handleImportLead = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setImportLoading(true);
+    setImportResult(null);
+    try {
+      const response = await fetch('/api/import-lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(credential)
+      });
+      const data = await response.json();
+      if (data.success) {
+        setImportResult({ type: 'success', message: 'Lead importada com sucesso!', data: data.data });
+      } else {
+        setImportResult({ type: 'error', message: data.error || 'Erro ao importar' });
+      }
+    } catch (err) {
+      setImportResult({ type: 'error', message: 'Erro de conexão com o servidor' });
+    } finally {
+      setImportLoading(false);
+    }
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -242,6 +271,10 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                     key={idx}
                     onClick={() => {
                       if (card.line1 === "Simulador") setActiveMenu("Simulador");
+                      if (card.line1 === "Informações") {
+                        setCredential(prev => ({ ...prev, leadUrl: 'http://sistemaquer.com.br/alterar-indicacao.php?indicacao_id=274959' }));
+                        setShowImportModal(true);
+                      }
                     }}
                     className="bg-white flex h-[100px] shadow-sm hover:shadow-md transition-shadow cursor-pointer group"
                   >
@@ -350,6 +383,103 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
           </div>
         )}
       </div>
+
+      {/* MODAL DE IMPORTAÇÃO */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+            <div className="bg-[#0c1826] p-4 flex justify-between items-center">
+              <h3 className="text-[#b58c2a] font-bold flex items-center gap-2">
+                <ExternalLink size={20} />
+                Importar do Sistema Quer
+              </h3>
+              <button
+                onClick={() => { setShowImportModal(false); setImportResult(null); }}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-6">
+              {!importResult?.data ? (
+                <form onSubmit={handleImportLead} className="space-y-4">
+                  <p className="text-xs text-gray-500 mb-4">
+                    Insira suas credenciais do <b>Sistema Quer</b> para capturarmos os dados da indicação automaticamente.
+                  </p>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Login</label>
+                    <input
+                      type="text"
+                      required
+                      className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:border-[#b58c2a] outline-none transition-colors"
+                      value={credential.login}
+                      onChange={e => setCredential({ ...credential, login: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Senha</label>
+                    <input
+                      type="password"
+                      required
+                      className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:border-[#b58c2a] outline-none transition-colors"
+                      value={credential.senha}
+                      onChange={e => setCredential({ ...credential, senha: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 uppercase mb-1">URL da Indicação (Link)</label>
+                    <input
+                      type="url"
+                      required
+                      placeholder="Cole o link do Sistema Quer aqui"
+                      className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:border-[#b58c2a] outline-none transition-colors italic"
+                      value={credential.leadUrl}
+                      onChange={e => setCredential({ ...credential, leadUrl: e.target.value })}
+                    />
+                  </div>
+
+                  {importResult?.type === 'error' && (
+                    <div className="bg-red-50 text-red-600 p-3 rounded text-xs border border-red-100">
+                      {importResult.message}
+                    </div>
+                  )}
+
+                  <button
+                    disabled={importLoading}
+                    className="w-full bg-[#b58c2a] hover:bg-[#806117] text-white font-bold py-3 rounded shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    {importLoading ? <Loader2 className="animate-spin" size={18} /> : 'IMPORTAR AGORA'}
+                  </button>
+                </form>
+              ) : (
+                <div className="space-y-4 animate-in slide-in-from-bottom-2">
+                  <div className="bg-green-50 text-green-700 p-4 rounded-lg flex flex-col items-center text-center gap-2">
+                    <span className="font-bold">Dados Recuperados!</span>
+                    <div className="text-sm border-t border-green-200 pt-2 w-full mt-2 grid grid-cols-2 gap-2 text-left">
+                      <span className="text-green-900/60 text-xs">Nome:</span>
+                      <span className="font-medium">{importResult.data.nome || 'Não identificado'}</span>
+                      <span className="text-green-900/60 text-xs">Telefone:</span>
+                      <span className="font-medium">{importResult.data.telefone || 'Não identificado'}</span>
+                      <span className="text-green-900/60 text-xs">E-mail:</span>
+                      <span className="font-medium truncate">{importResult.data.email || 'Não identificado'}</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowImportModal(false)}
+                    className="w-full bg-gray-800 text-white py-2 rounded text-sm hover:bg-black transition-colors"
+                  >
+                    CONCLUIR
+                  </button>
+                </div>
+              )}
+            </div>
+            <div className="bg-gray-50 p-3 text-[10px] text-gray-400 text-center uppercase tracking-widest">
+              Sessão temporária • Criptografada
+            </div>
+          </div>
+        </div>
+      )}
 
       <style>{`
         .custom-scrollbar::-webkit-scrollbar {

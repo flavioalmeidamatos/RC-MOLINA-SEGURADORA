@@ -41,7 +41,7 @@ export default function App() {
       setLoading(false);
     };
 
-    forceNewSession();
+    // forceNewSession();
 
     // Escuta mudanças na autenticação (login, logout, confirmação de e-mail)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
