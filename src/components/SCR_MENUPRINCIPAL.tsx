@@ -34,6 +34,13 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const avatarUrl = perfil?.avatar_url || null;
 
   const [activeMenu, setActiveMenu] = useState("Home");
+  const simuladorFormRef = React.useRef<HTMLFormElement>(null);
+
+  React.useEffect(() => {
+    if (activeMenu === "Simulador" && simuladorFormRef.current) {
+      simuladorFormRef.current.submit();
+    }
+  }, [activeMenu]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -222,119 +229,152 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
         </div>
 
         {/* DASHBOARD BODY */}
-        <div className="flex-1 overflow-y-auto p-6 md:p-8 flex flex-col lg:flex-row gap-6">
-          {/* GRID DE CARDS */}
-          <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 content-start">
-            {cards.map((card, idx) => {
-              const Icon = card.icon;
-              return (
-                <div
-                  key={idx}
-                  className="bg-white flex h-[100px] shadow-sm hover:shadow-md transition-shadow cursor-pointer group"
-                >
-                  <div className="w-2/3 p-5 flex flex-col justify-center border-l-4 border-transparent group-hover:border-[#b58c2a] transition-all">
-                    <span className="text-[#a48641] text-sm leading-tight transition-colors group-hover:text-[#8e733b]">
-                      {card.line1}
-                    </span>
-                    {card.line2 && (
-                      <span className="text-[#8e733b] font-bold text-sm leading-tight">
-                        {card.line2}
-                      </span>
-                    )}
-                  </div>
-                  <div className="w-1/3 bg-[#a2812a] group-hover:bg-[#8f7124] transition-colors flex items-center justify-center text-white">
-                    <Icon
-                      size={34}
-                      strokeWidth={1.5}
-                      className="group-hover:scale-110 transition-transform duration-300"
-                    />
-                  </div>
-                </div>
-              );
-            })}
+        {activeMenu === "Simulador" ? (
+          <div className="flex-1 w-full relative bg-gray-50 flex items-center justify-center">
+            <div className="absolute inset-0 z-0 flex items-center justify-center">
+              <span className="text-gray-400 animate-pulse">Autenticando Simulador...</span>
+            </div>
+            <iframe
+              name="simulador-iframe"
+              src="https://app.simuladoronline.com/login/"
+              title="Simulador Online"
+              className="absolute inset-0 w-full h-full border-none z-10 bg-white"
+              allowFullScreen
+            />
+            {/* Hidden form to auto-login if the third party supports normal POST auth */}
+            <form
+              ref={simuladorFormRef}
+              target="simulador-iframe"
+              action="https://app.simuladoronline.com/login/"
+              method="POST"
+              className="hidden"
+            >
+              <input type="hidden" name="usuario" value="rosilene.apss" />
+              <input type="hidden" name="login" value="rosilene.apss" />
+              <input type="hidden" name="email" value="rosilene.apss" />
+              <input type="hidden" name="username" value="rosilene.apss" />
+              <input type="hidden" name="senha" value="rosilene@apss" />
+              <input type="hidden" name="password" value="rosilene@apss" />
+            </form>
           </div>
-
-          {/* RIGHT SIDEBAR (AGENDA DO DIA) */}
-          <div className="w-full lg:w-80 flex-shrink-0 bg-white shadow-sm flex flex-col border border-gray-100 rounded-sm overflow-hidden h-fit max-h-full">
-            <div className="bg-[#0c1826] text-white py-3 px-4 text-center text-xs font-bold tracking-[0.15em] uppercase">
-              Agenda do dia
+        ) : (
+          <div className="flex-1 overflow-y-auto p-6 md:p-8 flex flex-col lg:flex-row gap-6">
+            {/* GRID DE CARDS */}
+            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 content-start">
+              {cards.map((card, idx) => {
+                const Icon = card.icon;
+                return (
+                  <div
+                    key={idx}
+                    onClick={() => {
+                      if (card.line1 === "Simulador") setActiveMenu("Simulador");
+                    }}
+                    className="bg-white flex h-[100px] shadow-sm hover:shadow-md transition-shadow cursor-pointer group"
+                  >
+                    <div className="w-2/3 p-5 flex flex-col justify-center border-l-4 border-transparent group-hover:border-[#b58c2a] transition-all">
+                      <span className="text-[#a48641] text-sm leading-tight transition-colors group-hover:text-[#8e733b]">
+                        {card.line1}
+                      </span>
+                      {card.line2 && (
+                        <span className="text-[#8e733b] font-bold text-sm leading-tight">
+                          {card.line2}
+                        </span>
+                      )}
+                    </div>
+                    <div className="w-1/3 bg-[#a2812a] group-hover:bg-[#8f7124] transition-colors flex items-center justify-center text-white">
+                      <Icon
+                        size={34}
+                        strokeWidth={1.5}
+                        className="group-hover:scale-110 transition-transform duration-300"
+                      />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
-            {/* Input Rápido */}
-            <div className="px-4 py-3 flex border-b border-gray-100 items-center justify-between text-sm">
-              <input
-                type="text"
-                placeholder="Nova tarefa..."
-                className="w-2/3 outline-none text-gray-500 placeholder-gray-400 italic bg-transparent"
-              />
-              <div className="flex items-center gap-1 text-gray-400">
+            {/* RIGHT SIDEBAR (AGENDA DO DIA) */}
+            <div className="w-full lg:w-80 flex-shrink-0 bg-white shadow-sm flex flex-col border border-gray-100 rounded-sm overflow-hidden h-fit max-h-full">
+              <div className="bg-[#0c1826] text-white py-3 px-4 text-center text-xs font-bold tracking-[0.15em] uppercase">
+                Agenda do dia
+              </div>
+
+              {/* Input Rápido */}
+              <div className="px-4 py-3 flex border-b border-gray-100 items-center justify-between text-sm">
                 <input
                   type="text"
-                  placeholder="Hora"
-                  className="w-10 text-center outline-none bg-transparent"
+                  placeholder="Nova tarefa..."
+                  className="w-2/3 outline-none text-gray-500 placeholder-gray-400 italic bg-transparent"
                 />
-                <span>:</span>
-                <input
-                  type="text"
-                  placeholder="Min."
-                  className="w-10 text-center outline-none bg-transparent"
-                />
+                <div className="flex items-center gap-1 text-gray-400">
+                  <input
+                    type="text"
+                    placeholder="Hora"
+                    className="w-10 text-center outline-none bg-transparent"
+                  />
+                  <span>:</span>
+                  <input
+                    type="text"
+                    placeholder="Min."
+                    className="w-10 text-center outline-none bg-transparent"
+                  />
+                </div>
+              </div>
+
+              {/* Lista de Tarefas */}
+              <div className="flex-1 overflow-y-auto custom-scrollbar">
+                {agendaItems.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className={`flex items-start gap-4 p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${item.highlight ? "text-red-500" : "text-gray-600"
+                      }`}
+                  >
+                    <div className="flex flex-col items-center gap-2 mt-1">
+                      <User
+                        fill="currentColor"
+                        size={14}
+                        className={
+                          item.highlight ? "text-red-500" : "text-gray-500"
+                        }
+                      />
+                      <Phone
+                        fill="currentColor"
+                        size={14}
+                        className={
+                          item.highlight ? "text-red-500" : "text-gray-500"
+                        }
+                      />
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <div
+                        className={`text-sm font-semibold ${item.highlight ? "text-red-500" : "text-[#555]"}`}
+                      >
+                        {item.name}
+                      </div>
+                      <div
+                        className={`text-xs ${item.highlight ? "text-red-500" : "text-gray-500"}`}
+                      >
+                        {item.phone}
+                      </div>
+                      <div className="flex gap-2 items-center text-xs text-gray-500">
+                        <span
+                          className={
+                            item.highlight ? "text-red-400 font-medium" : ""
+                          }
+                        >
+                          {item.time}
+                        </span>
+                        <span className={item.highlight ? "text-red-400" : ""}>
+                          {item.status}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-
-            {/* Lista de Tarefas */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar">
-              {agendaItems.map((item, idx) => (
-                <div
-                  key={idx}
-                  className={`flex items-start gap-4 p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${item.highlight ? "text-red-500" : "text-gray-600"
-                    }`}
-                >
-                  <div className="flex flex-col items-center gap-2 mt-1">
-                    <User
-                      fill="currentColor"
-                      size={14}
-                      className={
-                        item.highlight ? "text-red-500" : "text-gray-500"
-                      }
-                    />
-                    <Phone
-                      fill="currentColor"
-                      size={14}
-                      className={
-                        item.highlight ? "text-red-500" : "text-gray-500"
-                      }
-                    />
-                  </div>
-                  <div className="flex-1 space-y-1">
-                    <div
-                      className={`text-sm font-semibold ${item.highlight ? "text-red-500" : "text-[#555]"}`}
-                    >
-                      {item.name}
-                    </div>
-                    <div
-                      className={`text-xs ${item.highlight ? "text-red-500" : "text-gray-500"}`}
-                    >
-                      {item.phone}
-                    </div>
-                    <div className="flex gap-2 items-center text-xs text-gray-500">
-                      <span
-                        className={
-                          item.highlight ? "text-red-400 font-medium" : ""
-                        }
-                      >
-                        {item.time}
-                      </span>
-                      <span className={item.highlight ? "text-red-400" : ""}>
-                        {item.status}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <style>{`
