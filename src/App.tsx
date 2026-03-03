@@ -5,7 +5,6 @@ import { Login } from './components/Login';
 import { Cadastro } from './components/Cadastro';
 import { RecuperarSenha } from './components/RecuperarSenha';
 import { AtualizarSenha } from './components/AtualizarSenha';
-import { DebugDatabase } from './components/DebugDatabase';
 import { SCR_MENUPRINCIPAL } from './components/SCR_MENUPRINCIPAL';
 import { supabase } from './lib/supabase';
 
@@ -33,16 +32,6 @@ export default function App() {
   };
 
   useEffect(() => {
-    // Força o logout logo na inicialização para garantir que uma nova sessão seja sempre exigida
-    // const forceNewSession = async () => {
-    //   await supabase.auth.signOut();
-    //   setSession(null);
-    //   setPerfil(null);
-    //   setLoading(false);
-    // };
-
-    // forceNewSession();
-
     // Escuta mudanças na autenticação (login, logout, confirmação de e-mail)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
@@ -75,7 +64,6 @@ export default function App() {
         <Route path="/cadastro" element={session ? <Navigate to="/dashboard" replace /> : <Cadastro />} />
         <Route path="/recuperar-senha" element={<RecuperarSenha />} />
         <Route path="/atualizar-senha" element={<AtualizarSenha />} />
-        <Route path="/debug-db" element={<DebugDatabase />} />
         <Route path="/dashboard" element={
           session ? <SCR_MENUPRINCIPAL session={session} perfil={perfil} /> : <Navigate to="/login" replace />
         } />

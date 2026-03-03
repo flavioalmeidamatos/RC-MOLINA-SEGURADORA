@@ -3,7 +3,6 @@ import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
 import * as cheerio from 'cheerio';
-import * as fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -107,7 +106,6 @@ async function startServer() {
       updateCookies(rFinal);
 
       let finalHtml = await rFinal.text();
-      fs.writeFileSync('debug_lead_page.html', finalHtml);
       const $ = cheerio.load(finalHtml);
 
       if (finalHtml.includes('login100-form') || $('title').text().includes('Login')) {

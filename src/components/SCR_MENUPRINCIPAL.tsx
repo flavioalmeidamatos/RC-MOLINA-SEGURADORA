@@ -107,49 +107,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       time: "14:00",
       status: "ligarei novamente",
       highlight: true,
-    },
-    {
-      name: "Sonia Pompeo",
-      phone: "21997847136",
-      time: "15:00",
-      status: "ligarei novamente",
-      highlight: false,
-    },
-    {
-      name: "Fernando Rocha",
-      phone: "(21) 99741-4301",
-      time: "15:00",
-      status: "ligarei novamente",
-      highlight: false,
-    },
-    {
-      name: "Regina Célia",
-      phone: "21988563903",
-      time: "15:00",
-      status: "Ligarei novamente",
-      highlight: false,
-    },
-    {
-      name: "Ana Cristina",
-      phone: "22997200969",
-      time: "16:00",
-      status: "ligarei novamente",
-      highlight: false,
-    },
-    {
-      name: "Marseile Peixoto",
-      phone: "21965522650",
-      time: "16:00",
-      status: "ligarei novamente",
-      highlight: false,
-    },
-    {
-      name: "Frederico Alexandre",
-      phone: "21974531502",
-      time: "16:00",
-      status: "ligarei novamente",
-      highlight: false,
-    },
+    }
   ];
 
   return (
