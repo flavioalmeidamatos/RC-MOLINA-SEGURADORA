@@ -34,13 +34,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const avatarUrl = perfil?.avatar_url || null;
 
   const [activeMenu, setActiveMenu] = useState("Home");
-  const simuladorFormRef = React.useRef<HTMLFormElement>(null);
-
-  React.useEffect(() => {
-    if (activeMenu === "Simulador" && simuladorFormRef.current) {
-      simuladorFormRef.current.submit();
-    }
-  }, [activeMenu]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -230,32 +223,13 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
         {/* DASHBOARD BODY */}
         {activeMenu === "Simulador" ? (
-          <div className="flex-1 w-full relative bg-gray-50 flex items-center justify-center">
-            <div className="absolute inset-0 z-0 flex items-center justify-center">
-              <span className="text-gray-400 animate-pulse">Autenticando Simulador...</span>
-            </div>
+          <div className="flex-1 w-full relative bg-gray-50 flex items-center justify-center overflow-hidden">
             <iframe
-              name="simulador-iframe"
               src="https://app.simuladoronline.com/login/"
               title="Simulador Online"
               className="absolute inset-0 w-full h-full border-none z-10 bg-white"
               allowFullScreen
             />
-            {/* Hidden form to auto-login if the third party supports normal POST auth */}
-            <form
-              ref={simuladorFormRef}
-              target="simulador-iframe"
-              action="https://app.simuladoronline.com/login/"
-              method="POST"
-              className="hidden"
-            >
-              <input type="hidden" name="usuario" value="rosilene.apss" />
-              <input type="hidden" name="login" value="rosilene.apss" />
-              <input type="hidden" name="email" value="rosilene.apss" />
-              <input type="hidden" name="username" value="rosilene.apss" />
-              <input type="hidden" name="senha" value="rosilene@apss" />
-              <input type="hidden" name="password" value="rosilene@apss" />
-            </form>
           </div>
         ) : (
           <div className="flex-1 overflow-y-auto p-6 md:p-8 flex flex-col lg:flex-row gap-6">

@@ -33,15 +33,15 @@ export default function App() {
   };
 
   useEffect(() => {
-    // Verifica sessão atual
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session?.user?.id) {
-        fetchPerfil(session.user.id);
-      } else {
-        setLoading(false);
-      }
-    });
+    // Força o logout logo na inicialização para garantir que uma nova sessão seja sempre exigida
+    const forceNewSession = async () => {
+      await supabase.auth.signOut();
+      setSession(null);
+      setPerfil(null);
+      setLoading(false);
+    };
+
+    forceNewSession();
 
     // Escuta mudanças na autenticação (login, logout, confirmação de e-mail)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
