@@ -125,7 +125,9 @@ async function startServer() {
               val = $(el).next('td').find('input, textarea, select').val()?.toString().trim() || "";
             }
             if (val && val.length > 1) {
-              if (keywords.includes('Telefone')) val = val.replace(/^p:/i, '').replace(/\D/g, '');
+              if (keywords.some(k => k.toLowerCase() === 'telefone')) {
+                val = val.replace(/\D/g, '');
+              }
               found = val;
               return false; // break each
             }
@@ -138,7 +140,9 @@ async function startServer() {
             $(selector).each((_, el) => {
               let val = $(el).val()?.toString().trim() || "";
               if (val) {
-                if (keywords.includes('Telefone')) val = val.replace(/^p:/i, '').replace(/\D/g, '');
+                if (keywords.some(k => k.toLowerCase() === 'telefone')) {
+                  val = val.replace(/\D/g, '');
+                }
                 found = val;
                 return false;
               }
