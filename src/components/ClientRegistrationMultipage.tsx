@@ -195,6 +195,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
   const [formState, setFormState] = useState<ClientFormState>(initialFormState);
   const [contacts, setContacts] = useState<ContactRow[]>(initialContacts);
   const [uploadedDocuments, setUploadedDocuments] = useState<UploadedDocument[]>([]);
+  const [selectedDocumentPreview, setSelectedDocumentPreview] = useState<UploadedDocument | null>(null);
   const [isDraggingDocuments, setIsDraggingDocuments] = useState(false);
   const [feedback, setFeedback] = useState('');
   const [fieldErrors, setFieldErrors] = useState<FieldErrorState>(initialFieldErrors);
@@ -224,6 +225,17 @@ export const ClientRegistrationMultipage: React.FC = () => {
     return () => {
       revogarPreviews(uploadedDocumentsRef.current);
     };
+  }, []);
+
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setSelectedDocumentPreview(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
   }, []);
 
   const handleFieldChange = <K extends keyof ClientFormState>(field: K, value: ClientFormState[K]) => {
@@ -980,6 +992,15 @@ export const ClientRegistrationMultipage: React.FC = () => {
                     {uploadedDocuments.map((documento) => (
                       <article
                         key={documento.id}
+                        onClick={() => setSelectedDocumentPreview(documento)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            setSelectedDocumentPreview(documento);
+                          }
+                        }}
                         className="min-w-[220px] max-w-[220px] snap-start rounded-[24px] border border-slate-200 bg-white shadow-sm"
                       >
                         <div className="relative h-36 overflow-hidden rounded-t-[24px] bg-slate-100">
@@ -1017,7 +1038,10 @@ export const ClientRegistrationMultipage: React.FC = () => {
 
                           <button
                             type="button"
-                            onClick={() => removeUploadedDocument(documento.id)}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              removeUploadedDocument(documento.id);
+                            }}
                             className="absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-slate-500 shadow-sm transition hover:text-red-500"
                             aria-label={`Remover ${documento.name}`}
                           >
@@ -1031,6 +1055,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                             <span className="truncate uppercase">{documento.extension || 'arquivo'}</span>
                             <span>{formatarTamanhoArquivo(documento.size)}</span>
                           </div>
+                          <p className="text-xs font-semibold text-[#3d8ed8]">Clique para ampliar</p>
                         </div>
                       </article>
                     ))}
@@ -1089,6 +1114,78 @@ export const ClientRegistrationMultipage: React.FC = () => {
               <ChevronRight size={18} />
             </button>
           </div>
+        </div>
+      </div>
+
+      <div
+        className={`fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 p-4 backdrop-blur-sm transition-all duration-200 ${
+          selectedDocumentPreview ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
+        }`}
+        onClick={() => setSelectedDocumentPreview(null)}
+      >
+        <div
+          className={`w-full max-w-6xl rounded-[32px] bg-white shadow-2xl transition-all duration-200 ${
+            selectedDocumentPreview ? 'translate-y-0 scale-100' : 'translate-y-4 scale-95'
+          }`}
+          onClick={(event) => event.stopPropagation()}
+        >
+          {selectedDocumentPreview ? (
+            <>
+              <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 sm:px-6">
+                <div className="min-w-0">
+                  <p className="truncate text-base font-black text-slate-900">{selectedDocumentPreview.name}</p>
+                  <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                    {selectedDocumentPreview.extension || 'arquivo'} • {formatarTamanhoArquivo(selectedDocumentPreview.size)}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedDocumentPreview(null)}
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 transition hover:text-slate-900"
+                  aria-label="Fechar visualização"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="max-h-[80vh] overflow-auto p-3 sm:p-5">
+                {selectedDocumentPreview.previewKind === 'image' ? (
+                  <div className="overflow-hidden rounded-[24px] bg-slate-100">
+                    <img
+                      src={selectedDocumentPreview.previewUrl}
+                      alt={selectedDocumentPreview.name}
+                      className="max-h-[72vh] w-full object-contain"
+                    />
+                  </div>
+                ) : selectedDocumentPreview.previewKind === 'pdf' ? (
+                  <div className="overflow-hidden rounded-[24px] border border-slate-200">
+                    <iframe
+                      title={selectedDocumentPreview.name}
+                      src={selectedDocumentPreview.previewUrl}
+                      className="h-[72vh] w-full border-0"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex min-h-[320px] flex-col items-center justify-center rounded-[24px] border border-slate-200 bg-slate-50 px-6 py-8 text-center">
+                    <File size={44} className="text-[#3d8ed8]" />
+                    <p className="mt-4 text-lg font-black text-slate-900">{selectedDocumentPreview.name}</p>
+                    <p className="mt-2 max-w-lg text-sm leading-6 text-slate-500">
+                      Este formato nÃ£o tem leitura embutida na tela. VocÃª ainda pode abrir o arquivo em uma nova aba para visualizar o conteÃºdo completo.
+                    </p>
+                    <a
+                      href={selectedDocumentPreview.previewUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-5 inline-flex min-h-11 items-center justify-center rounded-2xl bg-[#0c1826] px-4 py-2.5 text-sm font-black text-white transition hover:bg-[#16273b]"
+                    >
+                      Abrir arquivo
+                    </a>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : null}
         </div>
       </div>
     </section>
