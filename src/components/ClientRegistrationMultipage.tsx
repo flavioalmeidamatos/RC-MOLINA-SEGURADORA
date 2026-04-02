@@ -238,6 +238,16 @@ export const ClientRegistrationMultipage: React.FC = () => {
     return () => window.removeEventListener('keydown', handleEscape);
   }, []);
 
+  useEffect(() => {
+    if (!feedback) return;
+
+    const timeout = window.setTimeout(() => {
+      setFeedback('');
+    }, 3500);
+
+    return () => window.clearTimeout(timeout);
+  }, [feedback]);
+
   const handleFieldChange = <K extends keyof ClientFormState>(field: K, value: ClientFormState[K]) => {
     setFormState((prev) => ({ ...prev, [field]: value }));
   };
@@ -896,65 +906,67 @@ export const ClientRegistrationMultipage: React.FC = () => {
 
         <section className={activeTab === 'documentacao' ? 'block' : 'hidden'}>
           <div className={sectionCardClassName}>
-            <div className="grid gap-3">
-              <div
-                onDragOver={(event) => {
-                  event.preventDefault();
-                  setIsDraggingDocuments(true);
-                }}
-                onDragLeave={() => setIsDraggingDocuments(false)}
-                onDrop={handleDocumentDrop}
-                className={`rounded-[28px] border-2 border-dashed px-4 py-5 text-center transition sm:px-5 ${
-                  isDraggingDocuments
-                    ? 'border-[#3d8ed8] bg-[#3d8ed8]/5'
-                    : 'border-slate-300 bg-slate-50/80 hover:border-[#3d8ed8]/50 hover:bg-[#3d8ed8]/[0.03]'
-                }`}
-              >
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  accept={documentInputAccept}
-                  onChange={handleDocumentsSelected}
-                  className="hidden"
-                />
+            <div className="grid gap-2.5">
+              <div className="grid gap-2.5 xl:grid-cols-[1.05fr_0.95fr]">
+                <div
+                  onDragOver={(event) => {
+                    event.preventDefault();
+                    setIsDraggingDocuments(true);
+                  }}
+                  onDragLeave={() => setIsDraggingDocuments(false)}
+                  onDrop={handleDocumentDrop}
+                  className={`rounded-[28px] border-2 border-dashed px-4 py-4 text-center transition sm:px-5 xl:h-full ${
+                    isDraggingDocuments
+                      ? 'border-[#3d8ed8] bg-[#3d8ed8]/5'
+                      : 'border-slate-300 bg-slate-50/80 hover:border-[#3d8ed8]/50 hover:bg-[#3d8ed8]/[0.03]'
+                  }`}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept={documentInputAccept}
+                    onChange={handleDocumentsSelected}
+                    className="hidden"
+                  />
 
-                <div className="mx-auto flex max-w-2xl flex-col items-center gap-3">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-[#3d8ed8] shadow-sm">
-                    <Upload size={24} />
+                  <div className="mx-auto flex max-w-2xl flex-col items-center gap-2.5 xl:justify-center">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-[#3d8ed8] shadow-sm">
+                      <Upload size={22} />
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="text-base font-black text-slate-900">Arraste e solte os arquivos aqui</h3>
+                      <p className="text-sm leading-5 text-slate-500">
+                        Aceita imagens, PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, TXT e CSV.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="inline-flex min-h-10 items-center justify-center gap-2 rounded-2xl bg-[#0c1826] px-4 py-2.5 text-sm font-black text-white transition hover:bg-[#16273b]"
+                    >
+                      <PlusCircle size={18} />
+                      Selecionar arquivos
+                    </button>
                   </div>
-                  <div className="space-y-1">
-                    <h3 className="text-base font-black text-slate-900 sm:text-lg">Arraste e solte os arquivos aqui</h3>
-                    <p className="text-sm text-slate-500">
-                      Aceita imagens, PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, TXT e CSV.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-[#0c1826] px-4 py-2.5 text-sm font-black text-white transition hover:bg-[#16273b] sm:min-h-10"
-                  >
-                    <PlusCircle size={18} />
-                    Selecionar arquivos
-                  </button>
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-sm font-bold text-slate-700">Documentação</label>
+                  <textarea
+                    className={`${textAreaClassName} min-h-28 resize-y xl:min-h-[204px]`}
+                    value={formState.documentacao}
+                    onChange={(event) => handleFieldChange('documentacao', event.target.value)}
+                    placeholder="Registre documentos, anexos, números de apólice, vencimentos e observações importantes"
+                  />
                 </div>
               </div>
 
-              <div>
-                <label className="mb-2 block text-sm font-bold text-slate-700">Documentação</label>
-                <textarea
-                  className={`${textAreaClassName} min-h-40 resize-y`}
-                  value={formState.documentacao}
-                  onChange={(event) => handleFieldChange('documentacao', event.target.value)}
-                  placeholder="Registre documentos, anexos, números de apólice, vencimentos e observações importantes"
-                />
-              </div>
-
-              <div className="rounded-[28px] border border-slate-200 bg-slate-50/70 p-3 sm:p-4">
-                <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="rounded-[28px] border border-slate-200 bg-slate-50/70 p-3 sm:p-3.5">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h3 className="text-sm font-black uppercase tracking-[0.18em] text-slate-500">Arquivos anexados</h3>
-                    <p className="mt-1 text-sm text-slate-500">
+                    <p className="mt-1 text-sm leading-5 text-slate-500">
                       {uploadedDocuments.length
                         ? 'Deslize para visualizar as miniaturas dos arquivos adicionados.'
                         : 'As miniaturas vão aparecer aqui conforme você anexar arquivos.'}
@@ -982,104 +994,102 @@ export const ClientRegistrationMultipage: React.FC = () => {
                 </div>
 
                 {uploadedDocuments.length ? (
-                  <div
-                    className={`mt-3 ${shouldShowDocumentCarouselControls ? 'xl:max-w-[1380px]' : ''}`}
-                  >
+                  <div className={`mt-2.5 ${shouldShowDocumentCarouselControls ? 'xl:max-w-[1140px]' : ''}`}>
                     <div
                       ref={carouselRef}
-                      className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                      className="flex snap-x snap-mandatory gap-2.5 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
                     >
-                    {uploadedDocuments.map((documento) => (
-                      <article
-                        key={documento.id}
-                        onClick={() => setSelectedDocumentPreview(documento)}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(event) => {
-                          if (event.key === 'Enter' || event.key === ' ') {
-                            event.preventDefault();
-                            setSelectedDocumentPreview(documento);
-                          }
-                        }}
-                        className="min-w-[220px] max-w-[220px] snap-start rounded-[24px] border border-slate-200 bg-white shadow-sm"
-                      >
-                        <div className="relative h-36 overflow-hidden rounded-t-[24px] bg-slate-100">
-                          {documento.previewKind === 'image' ? (
-                            <img
-                              src={documento.previewUrl}
-                              alt={documento.name}
-                              className="h-full w-full object-cover"
-                            />
-                          ) : documento.previewKind === 'pdf' ? (
-                            <iframe
-                              title={documento.name}
-                              src={`${documento.previewUrl}#toolbar=0&navpanes=0&scrollbar=0`}
-                              className="h-full w-full border-0"
-                            />
-                          ) : (
-                            <div className="flex h-full flex-col items-center justify-center gap-3 px-4 text-center">
-                              {documento.mimeType.startsWith('image/') ? (
-                                <FileImage size={30} className="text-[#3d8ed8]" />
-                              ) : documento.extension === 'pdf' ? (
-                                <FileText size={30} className="text-[#ef6b74]" />
-                              ) : (
-                                <File size={30} className="text-[#3d8ed8]" />
-                              )}
-                              <div>
-                                <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">
-                                  {documento.extension || 'arquivo'}
-                                </p>
-                                <p className="mt-1 line-clamp-2 text-sm font-semibold text-slate-700">
-                                  Pré-visualização disponível após download
-                                </p>
+                      {uploadedDocuments.map((documento) => (
+                        <article
+                          key={documento.id}
+                          onClick={() => setSelectedDocumentPreview(documento)}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                              event.preventDefault();
+                              setSelectedDocumentPreview(documento);
+                            }
+                          }}
+                          className="min-w-[176px] max-w-[176px] snap-start rounded-[22px] border border-slate-200 bg-white shadow-sm xl:min-w-[184px] xl:max-w-[184px]"
+                        >
+                          <div className="relative h-24 overflow-hidden rounded-t-[22px] bg-slate-100 xl:h-28">
+                            {documento.previewKind === 'image' ? (
+                              <img
+                                src={documento.previewUrl}
+                                alt={documento.name}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : documento.previewKind === 'pdf' ? (
+                              <iframe
+                                title={documento.name}
+                                src={`${documento.previewUrl}#toolbar=0&navpanes=0&scrollbar=0`}
+                                className="h-full w-full border-0"
+                              />
+                            ) : (
+                              <div className="flex h-full flex-col items-center justify-center gap-3 px-4 text-center">
+                                {documento.mimeType.startsWith('image/') ? (
+                                  <FileImage size={30} className="text-[#3d8ed8]" />
+                                ) : documento.extension === 'pdf' ? (
+                                  <FileText size={30} className="text-[#ef6b74]" />
+                                ) : (
+                                  <File size={30} className="text-[#3d8ed8]" />
+                                )}
+                                <div>
+                                  <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">
+                                    {documento.extension || 'arquivo'}
+                                  </p>
+                                  <p className="mt-1 line-clamp-2 text-sm font-semibold text-slate-700">
+                                    Pré-visualização disponível após download
+                                  </p>
+                                </div>
                               </div>
-                            </div>
-                          )}
+                            )}
 
-                          <button
-                            type="button"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              removeUploadedDocument(documento.id);
-                            }}
-                            className="absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-slate-500 shadow-sm transition hover:text-red-500"
-                            aria-label={`Remover ${documento.name}`}
-                          >
-                            <X size={16} />
-                          </button>
-                        </div>
-
-                        <div className="space-y-2 p-3">
-                          <p className="truncate text-sm font-bold text-slate-800">{documento.name}</p>
-                          <div className="flex items-center justify-between gap-2 text-xs font-semibold text-slate-400">
-                            <span className="truncate uppercase">{documento.extension || 'arquivo'}</span>
-                            <span>{formatarTamanhoArquivo(documento.size)}</span>
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                removeUploadedDocument(documento.id);
+                              }}
+                              className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-slate-500 shadow-sm transition hover:text-red-500"
+                              aria-label={`Remover ${documento.name}`}
+                            >
+                              <X size={14} />
+                            </button>
                           </div>
-                          <p className="text-xs font-semibold text-[#3d8ed8]">Clique para ampliar</p>
-                        </div>
-                      </article>
-                    ))}
+
+                          <div className="space-y-1.5 p-2.5">
+                            <p className="truncate text-sm font-bold text-slate-800">{documento.name}</p>
+                            <div className="flex items-center justify-between gap-2 text-xs font-semibold text-slate-400">
+                              <span className="truncate uppercase">{documento.extension || 'arquivo'}</span>
+                              <span>{formatarTamanhoArquivo(documento.size)}</span>
+                            </div>
+                            <p className="text-xs font-semibold text-[#3d8ed8]">Clique para ampliar</p>
+                          </div>
+                        </article>
+                      ))}
                     </div>
                   </div>
                 ) : (
-                  <div className="mt-3 rounded-3xl border border-dashed border-slate-200 bg-white px-4 py-6 text-center text-sm text-slate-400">
+                  <div className="mt-2.5 rounded-3xl border border-dashed border-slate-200 bg-white px-4 py-5 text-center text-sm text-slate-400">
                     Nenhum arquivo anexado ainda.
                   </div>
                 )}
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                <div className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3">
+              <div className="grid gap-2.5 md:grid-cols-3">
+                <div className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-2.5">
                   <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Checklist</p>
-                  <p className="mt-2 text-sm text-slate-600">Use esta aba para centralizar RG, CPF, comprovantes e dados da apólice.</p>
+                  <p className="mt-1.5 text-sm leading-5 text-slate-600">Use esta aba para centralizar RG, CPF, comprovantes e dados da apólice.</p>
                 </div>
-                <div className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <div className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-2.5">
                   <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Organização</p>
-                  <p className="mt-2 text-sm text-slate-600">Mantenha um resumo rápido para consulta no celular sem precisar abrir vários blocos.</p>
+                  <p className="mt-1.5 text-sm leading-5 text-slate-600">Mantenha um resumo rápido para consulta no celular sem precisar abrir vários blocos.</p>
                 </div>
-                <div className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 sm:col-span-2 xl:col-span-1">
+                <div className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-2.5">
                   <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Próxima ação</p>
-                  <p className="mt-2 text-sm text-slate-600">Anote pendências de envio, retorno do cliente e validações que ainda faltam.</p>
+                  <p className="mt-1.5 text-sm leading-5 text-slate-600">Anote pendências de envio, retorno do cliente e validações que ainda faltam.</p>
                 </div>
               </div>
             </div>
