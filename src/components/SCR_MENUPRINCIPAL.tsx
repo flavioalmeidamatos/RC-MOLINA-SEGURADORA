@@ -3,6 +3,7 @@ import {
   Banknote,
   Briefcase,
   Calendar,
+  ExternalLink,
   FileText,
   FolderOpen,
   Home,
