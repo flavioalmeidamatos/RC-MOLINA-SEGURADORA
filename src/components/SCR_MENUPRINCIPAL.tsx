@@ -3,7 +3,6 @@ import {
   Banknote,
   Briefcase,
   Calendar,
-  ExternalLink,
   FileText,
   FolderOpen,
   Home,
@@ -21,7 +20,6 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ClientRegistrationMultipage } from "./ClientRegistrationMultipage";
-import { Login } from "./Login";
 import { supabase } from "../lib/supabase";
 
 interface DashboardProps {
@@ -97,7 +95,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   };
 
   const handleOpenWhatsAppAuth = () => {
-    setActiveMenu("WhatsApp");
+    window.open("https://web.whatsapp.com/", "_blank", "noopener,noreferrer");
   };
 
   const handleCardClick = (line1: string, line2: string) => {
@@ -158,7 +156,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
   const showSimulator = activeMenu === "Simulador";
   const showClientArea = activeMenu === "Meus clientes";
-  const showWhatsAppAuth = activeMenu === "WhatsApp";
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-[#F0F4F8] font-sans lg:h-screen lg:flex-row lg:overflow-hidden">
@@ -201,104 +198,63 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        {!showWhatsAppAuth ? (
-          <header className="flex flex-col gap-4 bg-white px-4 py-4 shadow-sm sm:px-6 md:px-8 lg:h-16 lg:flex-row lg:items-center lg:justify-between lg:gap-0 lg:py-0">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-              <div className="flex flex-col items-start bg-white px-2 py-1">
-                <div className="text-xl font-bold leading-none tracking-widest text-[#d4af37]">
-                  RC MOLINA
-                </div>
-                <div className="mt-1 text-center text-[10px] font-bold tracking-[0.3em] text-[#0c1826]">
-                  SEGUROS
-                </div>
+        <header className="flex flex-col gap-4 bg-white px-4 py-4 shadow-sm sm:px-6 md:px-8 lg:h-16 lg:flex-row lg:items-center lg:justify-between lg:gap-0 lg:py-0">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+            <div className="flex flex-col items-start bg-white px-2 py-1">
+              <div className="text-xl font-bold leading-none tracking-widest text-[#d4af37]">
+                RC MOLINA
               </div>
+              <div className="mt-1 text-center text-[10px] font-bold tracking-[0.3em] text-[#0c1826]">
+                SEGUROS
+              </div>
+            </div>
 
-              <span className="border-l border-gray-200 pl-4 text-sm text-gray-400">
-                {activeMenu === "Home" ? "Painel Administrativo" : activeMenu}
+            <span className="border-l border-gray-200 pl-4 text-sm text-gray-400">
+              {activeMenu === "Home" ? "Painel Administrativo" : activeMenu}
+            </span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+            <button
+              type="button"
+              onClick={handleOpenWhatsAppAuth}
+              className="flex min-h-11 items-center gap-2 rounded-full border border-[#25D366]/25 bg-[#25D366]/10 px-4 py-2 text-[#128C7E] transition-colors hover:bg-[#25D366]/18"
+            >
+              <WhatsAppIcon className="h-5 w-5" />
+              <span className="text-sm font-semibold">WhatsApp</span>
+            </button>
+
+            <button className="flex min-h-11 items-center gap-2 text-gray-500 transition-colors hover:text-[#b58c2a]">
+              <Calendar size={18} />
+              <span className="text-sm">Agenda</span>
+            </button>
+
+            <div className="hidden h-8 w-px bg-gray-200 sm:block" />
+
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-gray-100 shadow-sm">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
+                ) : (
+                  <User size={16} className="text-gray-400" />
+                )}
+              </div>
+              <span className="hidden text-sm font-medium text-gray-700 md:inline">
+                {userName}
               </span>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-              <button
-                type="button"
-                onClick={handleOpenWhatsAppAuth}
-                className="flex min-h-11 items-center gap-2 rounded-full border border-[#25D366]/25 bg-[#25D366]/10 px-4 py-2 text-[#128C7E] transition-colors hover:bg-[#25D366]/18"
-              >
-                <WhatsAppIcon className="h-5 w-5" />
-                <span className="text-sm font-semibold">WhatsApp</span>
-              </button>
-
-              <button className="flex min-h-11 items-center gap-2 text-gray-500 transition-colors hover:text-[#b58c2a]">
-                <Calendar size={18} />
-                <span className="text-sm">Agenda</span>
-              </button>
-
-              <div className="hidden h-8 w-px bg-gray-200 sm:block" />
-
-              <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-gray-100 shadow-sm">
-                  {avatarUrl ? (
-                    <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
-                  ) : (
-                    <User size={16} className="text-gray-400" />
-                  )}
-                </div>
-                <span className="hidden text-sm font-medium text-gray-700 md:inline">
-                  {userName}
-                </span>
-              </div>
-
-              <button
-                onClick={handleLogout}
-                className="flex min-h-11 items-center gap-2 text-gray-500 transition-colors hover:text-red-600"
-              >
-                <LogOut size={18} />
-                <span className="text-sm">Sair</span>
-              </button>
-            </div>
-          </header>
-        ) : null}
-
-        {showWhatsAppAuth ? (
-          <div className="flex flex-1 overflow-y-auto bg-[#0b1624] p-4 sm:p-6 lg:p-8">
-            <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 lg:flex-row lg:items-center">
-              <section className="w-full rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top,_rgba(37,211,102,0.22),_rgba(12,24,38,0.92)_58%)] p-6 text-white shadow-2xl sm:p-8 lg:flex-1 lg:p-10">
-                <span className="inline-flex rounded-full border border-white/15 bg-white/8 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#9df6bd]">
-                  Canal interno
-                </span>
-                <h2 className="mt-5 max-w-xl text-3xl font-bold leading-tight sm:text-4xl">
-                  Autenticacao do WhatsApp sem sair do painel
-                </h2>
-                <p className="mt-4 max-w-2xl text-sm leading-7 text-white/72 sm:text-base">
-                  O atalho da barra superior agora abre a autenticacao aqui dentro do aplicativo.
-                  A sidebar esquerda continua disponivel para voce navegar a qualquer momento.
-                </p>
-                <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-2xl border border-white/10 bg-black/15 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#9df6bd]">
-                      Fluxo interno
-                    </p>
-                    <p className="mt-2 text-sm leading-6 text-white/72">
-                      A autenticacao abre no conteudo principal, preservando a estrutura do painel.
-                    </p>
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-black/15 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#9df6bd]">
-                      Mobile-first
-                    </p>
-                    <p className="mt-2 text-sm leading-6 text-white/72">
-                      No celular tudo fica empilhado, com area de toque confortavel e leitura clara.
-                    </p>
-                  </div>
-                </div>
-              </section>
-
-              <div className="w-full lg:max-w-md lg:flex-shrink-0">
-                <Login embedded context="whatsapp" />
-              </div>
-            </div>
+            <button
+              onClick={handleLogout}
+              className="flex min-h-11 items-center gap-2 text-gray-500 transition-colors hover:text-red-600"
+            >
+              <LogOut size={18} />
+              <span className="text-sm">Sair</span>
+            </button>
           </div>
-        ) : showSimulator ? (
+        </header>
+
+        {showSimulator ? (
           <div className="relative flex-1 overflow-hidden bg-gray-50">
             <iframe
               src="https://app.simuladoronline.com/login/"
