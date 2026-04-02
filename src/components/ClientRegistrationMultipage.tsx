@@ -125,6 +125,7 @@ const sectionCardClassName = 'rounded-[28px] border border-slate-200 bg-white p-
 const errorMessageClassName = 'mt-2 text-xs font-semibold text-red-600';
 
 const somenteDigitos = (valor: string): string => valor.replace(/\D/g, '');
+const somenteLetrasEEspacos = (valor: string): string => valor.replace(/[^A-Za-zÀ-ÿ\s]/g, '');
 
 const formatarTelefoneContato = (valor: string, tipo: string): string => {
   const digitos = somenteDigitos(valor).slice(0, tipo === 'Celular' ? 11 : 10);
@@ -365,7 +366,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                 <input
                   className={fieldClassName}
                   value={formState.nome}
-                  onChange={(event) => handleFieldChange('nome', event.target.value)}
+                  onChange={(event) => handleFieldChange('nome', somenteLetrasEEspacos(event.target.value))}
                   placeholder="Nome completo do cliente"
                 />
               </div>
