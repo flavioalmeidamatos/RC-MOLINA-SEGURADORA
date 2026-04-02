@@ -5,7 +5,15 @@ import { supabase } from '../lib/supabase';
 import { validarEmailRFC5322, traduzirErroSupabase } from '../lib/validacoes';
 import { FooterAdmin } from './FooterAdmin';
 
-export const Login: React.FC = () => {
+interface LoginProps {
+  embedded?: boolean;
+  context?: 'default' | 'whatsapp';
+}
+
+export const Login: React.FC<LoginProps> = ({
+  embedded = false,
+  context = 'default',
+}) => {
   const navigate = useNavigate();
   const passwordInputRef = useRef<HTMLInputElement>(null);
   const [email, setEmail] = useState('');
@@ -21,6 +29,19 @@ export const Login: React.FC = () => {
   const [otpStage, setOtpStage] = useState<'request' | 'verify'>('request');
   const [otpCode, setOtpCode] = useState('');
   const [cooldown, setCooldown] = useState(0);
+  const isWhatsAppContext = embedded && context === 'whatsapp';
+  const heading = isWhatsAppContext ? 'Autentique o WhatsApp' : 'Bem vindo de volta';
+  const subtitle = isWhatsAppContext
+    ? 'Entre com seu acesso para continuar o atendimento pelo WhatsApp sem sair do painel.'
+    : loginMethod === 'password'
+      ? 'Inicie sessao na sua conta para continuar.'
+      : 'Acesso rapido e seguro sem senhas.';
+  const wrapperClassName = embedded
+    ? 'flex min-h-full flex-col items-center justify-center p-4 text-white sm:p-6 lg:p-8'
+    : 'flex min-h-screen flex-col items-center justify-center bg-[#121212] p-4 text-white';
+  const cardClassName = embedded
+    ? 'w-full max-w-md rounded-2xl border border-[#243447] bg-[#121212] p-6 shadow-2xl sm:p-8'
+    : 'w-full max-w-md rounded-2xl border border-gray-800 bg-[#1a1a1a] p-8 shadow-2xl';
 
   // ==============================
   // CONTROLE DE COOLDOWN (OTP)
@@ -224,16 +245,21 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div id="SCR-002" data-name="telalogin" className="flex flex-col items-center justify-center min-h-screen bg-[#121212] text-white p-4">
-      <div className="w-full max-w-md bg-[#1a1a1a] p-8 rounded-2xl shadow-2xl border border-gray-800">
+    <div id="SCR-002" data-name="telalogin" className={wrapperClassName}>
+      <div className={cardClassName}>
         <div className="flex flex-col items-center mb-8">
           <div className="bg-black px-6 py-3 rounded mb-6">
             <div className="text-[#d4af37] font-serif text-xl tracking-widest font-bold">RC MOLINA</div>
             <div className="text-white text-[10px] tracking-[0.3em] text-center">CORRETORA</div>
           </div>
-          <h1 className="text-3xl font-bold mb-2">Bem vindo de volta</h1>
-          <p className="text-gray-400 text-sm">
-            {loginMethod === 'password' ? 'Inicie sessão na sua conta para continuar.' : 'Acesso rápido e seguro sem senhas.'}
+          {isWhatsAppContext ? (
+            <span className="mb-4 rounded-full border border-[#25D366]/30 bg-[#25D366]/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#7ef0a8]">
+              Conexao interna
+            </span>
+          ) : null}
+          <h1 className="mb-2 text-center text-3xl font-bold">{heading}</h1>
+          <p className="text-center text-sm text-gray-400">
+            {subtitle}
           </p>
         </div>
 
@@ -280,13 +306,15 @@ export const Login: React.FC = () => {
             <div>
               <div className="flex justify-between mb-2">
                 <label className="text-sm font-bold">Senha</label>
-                <button
-                  type="button"
-                  onClick={() => navigate('/recuperar-senha')}
-                  className="text-xs text-gray-500 hover:text-[#ccff00]"
-                >
-                  Esqueceu sua senha?
-                </button>
+                {!embedded ? (
+                  <button
+                    type="button"
+                    onClick={() => navigate('/recuperar-senha')}
+                    className="text-xs text-gray-500 hover:text-[#ccff00]"
+                  >
+                    Esqueceu sua senha?
+                  </button>
+                ) : null}
               </div>
               <div className="relative">
                 <input
@@ -434,11 +462,15 @@ export const Login: React.FC = () => {
           </button>
         </div>
 
-        <p className="text-center text-sm text-gray-400 mt-8">
-          Ainda não tem conta? <button onClick={() => navigate('/cadastro')} className="text-[#ccff00] font-bold hover:underline">Cadastre-se</button>
-        </p>
+        {!embedded ? (
+          <>
+            <p className="mt-8 text-center text-sm text-gray-400">
+              Ainda não tem conta? <button onClick={() => navigate('/cadastro')} className="font-bold text-[#ccff00] hover:underline">Cadastre-se</button>
+            </p>
 
-        <FooterAdmin />
+            <FooterAdmin />
+          </>
+        ) : null}
       </div>
 
       {/* POPUP DE BOAS-VINDAS */}
