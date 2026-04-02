@@ -1,26 +1,27 @@
 import React, { useState } from "react";
 import {
-  Home,
-  Mail,
-  Calendar,
-  Info,
-  Lightbulb,
   Banknote,
   Briefcase,
-  PhoneCall,
-  FolderOpen,
-  Wrench,
-  User,
-  LogOut,
-  Phone,
-  Loader2,
+  Calendar,
   ExternalLink,
-  MapPin,
   FileText,
-  Users
+  FolderOpen,
+  Home,
+  Info,
+  Lightbulb,
+  Loader2,
+  LogOut,
+  Mail,
+  MapPin,
+  Phone,
+  PhoneCall,
+  User,
+  Users,
+  Wrench,
 } from "lucide-react";
-import { supabase } from "../lib/supabase";
 import { useNavigate } from "react-router-dom";
+import { ClientRegistrationMultipage } from "./ClientRegistrationMultipage";
+import { supabase } from "../lib/supabase";
 
 interface DashboardProps {
   session?: any;
@@ -35,16 +36,16 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const userName =
     perfil?.nome_completo ||
     session?.user?.email?.split("@")[0] ||
-    "Nome do Usuário";
+    "Nome do Usuario";
   const avatarUrl = perfil?.avatar_url || null;
 
   const [activeMenu, setActiveMenu] = useState("Home");
   const [showImportModal, setShowImportModal] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
   const [credential, setCredential] = useState({
-    login: 'Rosilene Rodrigues de Carvalho Molina',
-    senha: '123',
-    leadUrl: ''
+    login: "Rosilene Rodrigues de Carvalho Molina",
+    senha: "123",
+    leadUrl: "",
   });
   const [importResult, setImportResult] = useState<any>(null);
 
@@ -52,20 +53,32 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     e.preventDefault();
     setImportLoading(true);
     setImportResult(null);
+
     try {
-      const response = await fetch('/api/import-lead', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(credential)
+      const response = await fetch("/api/import-lead", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(credential),
       });
       const data = await response.json();
+
       if (data.success) {
-        setImportResult({ type: 'success', message: 'Lead importada com sucesso!', data: data.data });
+        setImportResult({
+          type: "success",
+          message: "Lead importada com sucesso!",
+          data: data.data,
+        });
       } else {
-        setImportResult({ type: 'error', message: data.error || 'Erro ao importar' });
+        setImportResult({
+          type: "error",
+          message: data.error || "Erro ao importar",
+        });
       }
-    } catch (err) {
-      setImportResult({ type: 'error', message: 'Erro de conexão com o servidor' });
+    } catch (_error) {
+      setImportResult({
+        type: "error",
+        message: "Erro de conexao com o servidor",
+      });
     } finally {
       setImportLoading(false);
     }
@@ -76,26 +89,48 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     navigate("/login");
   };
 
+  const handleCardClick = (line1: string, line2: string) => {
+    if (line1 === "Simulador") {
+      setActiveMenu("Simulador");
+      return;
+    }
+
+    if (line1 === "Meus" && line2 === "clientes") {
+      setActiveMenu("Meus clientes");
+      return;
+    }
+
+    if (line1 === "Informacoes") {
+      setCredential((prev) => ({
+        ...prev,
+        leadUrl: "http://sistemaquer.com.br/alterar-indicacao.php?indicacao_id=274959",
+      }));
+      setShowImportModal(true);
+      return;
+    }
+  };
+
   const menuItems = [
-    { title: "Home", icon: Home, active: true },
-    { title: "Indicações", icon: User },
+    { title: "Home", icon: Home },
+    { title: "Meus clientes", icon: Briefcase },
+    { title: "Indicacoes", icon: User },
     { title: "Agenda", icon: Calendar },
     { title: "Simulador", icon: FolderOpen },
     { title: "Webmail", icon: Mail },
-    { title: "Informações", icon: Info },
-    { title: "Sugestões", icon: Lightbulb },
+    { title: "Informacoes", icon: Info },
+    { title: "Sugestoes", icon: Lightbulb },
     { title: "Financeiro", icon: Banknote },
-    { title: "Configurações", icon: Wrench },
+    { title: "Configuracoes", icon: Wrench },
   ];
 
   const cards = [
-    { line1: "Sugestões", line2: "", icon: Lightbulb },
+    { line1: "Sugestoes", line2: "", icon: Lightbulb },
     { line1: "Meus", line2: "clientes", icon: Briefcase },
-    { line1: "Todas", line2: "indicações", icon: User },
-    { line1: "Ligações", line2: "", icon: PhoneCall },
+    { line1: "Todas", line2: "indicacoes", icon: User },
+    { line1: "Ligacoes", line2: "", icon: PhoneCall },
     { line1: "Agenda", line2: "", icon: Calendar },
     { line1: "Simulador", line2: "", icon: FolderOpen },
-    { line1: "Informações", line2: "", icon: Info },
+    { line1: "Informacoes", line2: "", icon: Info },
     { line1: "Financeiro", line2: "", icon: Banknote },
     { line1: "Configurar", line2: "", icon: Wrench },
   ];
@@ -107,401 +142,395 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       time: "14:00",
       status: "ligarei novamente",
       highlight: true,
-    }
+    },
   ];
 
+  const showSimulator = activeMenu === "Simulador";
+  const showClientArea = activeMenu === "Meus clientes";
+
   return (
-    <div className="flex h-screen w-full bg-[#F0F4F8] font-sans overflow-hidden">
-      {/* SIDEBAR */}
-      <div className="w-64 flex-shrink-0 bg-[#0c1826] flex flex-col shadow-xl z-20">
-        {/* Profile Area */}
-        <div className="h-44 bg-gradient-to-b from-[#b58c2a] to-[#806117] flex flex-col items-center justify-center pt-4 pb-2 shadow-inner">
-          <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center overflow-hidden mb-3 border-2 border-white/50 shadow-md cursor-pointer hover:border-white transition-all">
+    <div className="flex min-h-screen w-full flex-col bg-[#F0F4F8] font-sans lg:h-screen lg:flex-row lg:overflow-hidden">
+      <aside className="w-full flex-shrink-0 bg-[#0c1826] shadow-xl lg:w-64 lg:z-20">
+        <div className="flex flex-col items-center justify-center bg-gradient-to-b from-[#b58c2a] to-[#806117] px-4 py-6 shadow-inner lg:h-44 lg:pt-4 lg:pb-2">
+          <div className="mb-3 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-2 border-white/50 bg-white shadow-md transition-all hover:border-white">
             {avatarUrl ? (
-              <img
-                src={avatarUrl}
-                alt="Avatar"
-                className="w-full h-full object-cover"
-              />
+              <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
             ) : (
               <User size={32} className="text-gray-400" />
             )}
           </div>
-          <span className="text-white font-medium text-sm px-4 text-center">
-            {userName}
-          </span>
+          <span className="px-4 text-center text-sm font-medium text-white">{userName}</span>
         </div>
 
-        {/* Menu Items */}
-        <div className="flex-1 overflow-y-auto py-4 custom-scrollbar">
-          {menuItems.map((item, idx) => {
+        <div className="custom-scrollbar flex gap-2 overflow-x-auto px-3 py-3 lg:block lg:space-y-0 lg:overflow-y-auto lg:px-0 lg:py-4">
+          {menuItems.map((item) => {
             const Icon = item.icon;
+            const isActive = activeMenu === item.title;
+
             return (
-              <div
-                key={idx}
+              <button
+                key={item.title}
+                type="button"
                 onClick={() => setActiveMenu(item.title)}
-                className={`flex items-center justify-between px-6 py-3 cursor-pointer transition-colors border-l-4 ${activeMenu === item.title
-                  ? "bg-[#152a42] border-[#b58c2a] text-white"
-                  : "border-transparent text-gray-400 hover:bg-[#112338] hover:text-white"
-                  }`}
+                className={`flex min-w-max items-center justify-between gap-3 rounded-2xl border-l-4 px-4 py-3 text-left transition-colors lg:w-full lg:rounded-none lg:px-6 ${
+                  isActive
+                    ? "border-[#b58c2a] bg-[#152a42] text-white"
+                    : "border-transparent text-gray-400 hover:bg-[#112338] hover:text-white"
+                }`}
               >
                 <div className="flex items-center gap-3">
-                  <Icon
-                    size={18}
-                    className={
-                      activeMenu === item.title
-                        ? "text-[#b58c2a]"
-                        : "text-gray-500"
-                    }
-                  />
+                  <Icon size={18} className={isActive ? "text-[#b58c2a]" : "text-gray-500"} />
                   <span className="text-sm">{item.title}</span>
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
-      </div>
+      </aside>
 
-      {/* MAIN CONTENT WRAPPER */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* HEADER */}
-        <div className="h-16 bg-white shadow-sm flex items-center justify-between px-8 z-10 flex-shrink-0">
-          <div className="flex items-center gap-4">
-            <div className="bg-white px-2 py-1 flex flex-col items-center">
-              <div className="text-[#d4af37] font-serif text-xl tracking-widest font-bold leading-none">
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="flex flex-col gap-4 bg-white px-4 py-4 shadow-sm sm:px-6 md:px-8 lg:h-16 lg:flex-row lg:items-center lg:justify-between lg:gap-0 lg:py-0">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+            <div className="flex flex-col items-start bg-white px-2 py-1">
+              <div className="text-xl font-bold leading-none tracking-widest text-[#d4af37]">
                 RC MOLINA
               </div>
-              <div className="text-[#0c1826] text-[10px] tracking-[0.3em] text-center font-bold mt-1">
+              <div className="mt-1 text-center text-[10px] font-bold tracking-[0.3em] text-[#0c1826]">
                 SEGUROS
               </div>
             </div>
-            <span className="text-gray-400 text-sm ml-4 border-l pl-4 border-gray-200">
-              Painel Administrativo
+
+            <span className="border-l border-gray-200 pl-4 text-sm text-gray-400">
+              {activeMenu === "Home" ? "Painel Administrativo" : activeMenu}
             </span>
           </div>
 
-          <div className="flex items-center gap-6">
-            <button className="flex items-center gap-2 text-gray-500 hover:text-[#b58c2a] transition-colors">
+          <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+            <button className="flex items-center gap-2 text-gray-500 transition-colors hover:text-[#b58c2a]">
               <Calendar size={18} />
-              <span className="text-sm hidden sm:inline">Agenda</span>
+              <span className="text-sm">Agenda</span>
             </button>
 
-            <div className="h-8 w-px bg-gray-200 mx-2"></div>
+            <div className="hidden h-8 w-px bg-gray-200 sm:block" />
 
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-200 shadow-sm cursor-pointer">
+              <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-gray-100 shadow-sm">
                 {avatarUrl ? (
-                  <img
-                    src={avatarUrl}
-                    alt="Avatar"
-                    className="w-full h-full object-cover"
-                  />
+                  <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
                 ) : (
                   <User size={16} className="text-gray-400" />
                 )}
               </div>
-              <span className="text-gray-700 font-medium text-sm hidden md:inline">
+              <span className="hidden text-sm font-medium text-gray-700 md:inline">
                 {userName}
               </span>
             </div>
 
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 text-gray-500 hover:text-red-600 transition-colors ml-2"
+              className="flex items-center gap-2 text-gray-500 transition-colors hover:text-red-600"
             >
               <LogOut size={18} />
-              <span className="text-sm hidden sm:inline">Sair</span>
+              <span className="text-sm">Sair</span>
             </button>
           </div>
-        </div>
+        </header>
 
-        {/* DASHBOARD BODY */}
-        {activeMenu === "Simulador" ? (
-          <div className="flex-1 w-full relative bg-gray-50 flex items-center justify-center overflow-hidden">
+        {showSimulator ? (
+          <div className="relative flex-1 overflow-hidden bg-gray-50">
             <iframe
               src="https://app.simuladoronline.com/login/"
               title="Simulador Online"
-              className="absolute inset-0 w-full h-full border-none z-10 bg-white"
+              className="absolute inset-0 h-full w-full border-none bg-white"
               allowFullScreen
             />
           </div>
+        ) : showClientArea ? (
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
+            <ClientRegistrationMultipage />
+          </div>
         ) : (
-          <div className="flex-1 overflow-y-auto p-6 md:p-8 flex flex-col lg:flex-row gap-6">
-            {/* GRID DE CARDS */}
-            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 content-start">
-              {cards.map((card, idx) => {
-                const Icon = card.icon;
-                return (
-                  <div
-                    key={idx}
-                    onClick={() => {
-                      if (card.line1 === "Simulador") setActiveMenu("Simulador");
-                      if (card.line1 === "Informações") {
-                        setCredential(prev => ({ ...prev, leadUrl: 'http://sistemaquer.com.br/alterar-indicacao.php?indicacao_id=274959' }));
-                        setShowImportModal(true);
-                      }
-                    }}
-                    className="bg-white flex h-[100px] shadow-sm hover:shadow-md transition-shadow cursor-pointer group"
-                  >
-                    <div className="w-2/3 p-5 flex flex-col justify-center border-l-4 border-transparent group-hover:border-[#b58c2a] transition-all">
-                      <span className="text-[#a48641] text-sm leading-tight transition-colors group-hover:text-[#8e733b]">
-                        {card.line1}
-                      </span>
-                      {card.line2 && (
-                        <span className="text-[#8e733b] font-bold text-sm leading-tight">
-                          {card.line2}
-                        </span>
-                      )}
-                    </div>
-                    <div className="w-1/3 bg-[#a2812a] group-hover:bg-[#8f7124] transition-colors flex items-center justify-center text-white">
-                      <Icon
-                        size={34}
-                        strokeWidth={1.5}
-                        className="group-hover:scale-110 transition-transform duration-300"
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
+            <div className="flex flex-col gap-6 lg:flex-row">
+              <div className="grid flex-1 grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                {cards.map((card) => {
+                  const Icon = card.icon;
 
-            {/* RIGHT SIDEBAR (AGENDA DO DIA) */}
-            <div className="w-full lg:w-80 flex-shrink-0 bg-white shadow-sm flex flex-col border border-gray-100 rounded-sm overflow-hidden h-fit max-h-full">
-              <div className="bg-[#0c1826] text-white py-3 px-4 text-center text-xs font-bold tracking-[0.15em] uppercase">
-                Agenda do dia
+                  return (
+                    <button
+                      key={`${card.line1}-${card.line2}`}
+                      type="button"
+                      onClick={() => handleCardClick(card.line1, card.line2)}
+                      className="group flex h-auto min-h-[112px] overflow-hidden bg-white text-left shadow-sm transition-shadow hover:shadow-md"
+                    >
+                      <div className="flex w-2/3 flex-col justify-center border-l-4 border-transparent p-5 transition-all group-hover:border-[#b58c2a]">
+                        <span className="text-sm leading-tight text-[#a48641] transition-colors group-hover:text-[#8e733b]">
+                          {card.line1}
+                        </span>
+                        {card.line2 ? (
+                          <span className="text-sm font-bold leading-tight text-[#8e733b]">
+                            {card.line2}
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="flex w-1/3 items-center justify-center bg-[#a2812a] text-white transition-colors group-hover:bg-[#8f7124]">
+                        <Icon
+                          size={34}
+                          strokeWidth={1.5}
+                          className="transition-transform duration-300 group-hover:scale-110"
+                        />
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
 
-              {/* Input Rápido */}
-              <div className="px-4 py-3 flex border-b border-gray-100 items-center justify-between text-sm">
-                <input
-                  type="text"
-                  placeholder="Nova tarefa..."
-                  className="w-2/3 outline-none text-gray-500 placeholder-gray-400 italic bg-transparent"
-                />
-                <div className="flex items-center gap-1 text-gray-400">
-                  <input
-                    type="text"
-                    placeholder="Hora"
-                    className="w-10 text-center outline-none bg-transparent"
-                  />
-                  <span>:</span>
-                  <input
-                    type="text"
-                    placeholder="Min."
-                    className="w-10 text-center outline-none bg-transparent"
-                  />
+              <aside className="h-fit w-full max-h-full flex-shrink-0 overflow-hidden rounded-sm border border-gray-100 bg-white shadow-sm lg:w-80">
+                <div className="bg-[#0c1826] px-4 py-3 text-center text-xs font-bold uppercase tracking-[0.15em] text-white">
+                  Agenda do dia
                 </div>
-              </div>
 
-              {/* Lista de Tarefas */}
-              <div className="flex-1 overflow-y-auto custom-scrollbar">
-                {agendaItems.map((item, idx) => (
-                  <div
-                    key={idx}
-                    className={`flex items-start gap-4 p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${item.highlight ? "text-red-500" : "text-gray-600"
-                      }`}
-                  >
-                    <div className="flex flex-col items-center gap-2 mt-1">
-                      <User
-                        fill="currentColor"
-                        size={14}
-                        className={
-                          item.highlight ? "text-red-500" : "text-gray-500"
-                        }
-                      />
-                      <Phone
-                        fill="currentColor"
-                        size={14}
-                        className={
-                          item.highlight ? "text-red-500" : "text-gray-500"
-                        }
-                      />
-                    </div>
-                    <div className="flex-1 space-y-1">
-                      <div
-                        className={`text-sm font-semibold ${item.highlight ? "text-red-500" : "text-[#555]"}`}
-                      >
-                        {item.name}
-                      </div>
-                      <div
-                        className={`text-xs ${item.highlight ? "text-red-500" : "text-gray-500"}`}
-                      >
-                        {item.phone}
-                      </div>
-                      <div className="flex gap-2 items-center text-xs text-gray-500">
-                        <span
-                          className={
-                            item.highlight ? "text-red-400 font-medium" : ""
-                          }
-                        >
-                          {item.time}
-                        </span>
-                        <span className={item.highlight ? "text-red-400" : ""}>
-                          {item.status}
-                        </span>
-                      </div>
-                    </div>
+                <div className="flex flex-col gap-3 border-b border-gray-100 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+                  <input
+                    type="text"
+                    placeholder="Nova tarefa..."
+                    className="w-full bg-transparent italic text-gray-500 outline-none placeholder-gray-400 sm:w-2/3"
+                  />
+                  <div className="flex items-center gap-1 text-gray-400">
+                    <input
+                      type="text"
+                      placeholder="Hora"
+                      className="w-12 bg-transparent text-center outline-none"
+                    />
+                    <span>:</span>
+                    <input
+                      type="text"
+                      placeholder="Min."
+                      className="w-12 bg-transparent text-center outline-none"
+                    />
                   </div>
-                ))}
-              </div>
+                </div>
+
+                <div className="custom-scrollbar flex-1 overflow-y-auto">
+                  {agendaItems.map((item) => (
+                    <div
+                      key={`${item.name}-${item.time}`}
+                      className={`flex cursor-pointer items-start gap-4 border-b border-gray-100 p-4 transition-colors hover:bg-gray-50 ${
+                        item.highlight ? "text-red-500" : "text-gray-600"
+                      }`}
+                    >
+                      <div className="mt-1 flex flex-col items-center gap-2">
+                        <User
+                          fill="currentColor"
+                          size={14}
+                          className={item.highlight ? "text-red-500" : "text-gray-500"}
+                        />
+                        <Phone
+                          fill="currentColor"
+                          size={14}
+                          className={item.highlight ? "text-red-500" : "text-gray-500"}
+                        />
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <div
+                          className={`text-sm font-semibold ${
+                            item.highlight ? "text-red-500" : "text-[#555]"
+                          }`}
+                        >
+                          {item.name}
+                        </div>
+                        <div
+                          className={`text-xs ${
+                            item.highlight ? "text-red-500" : "text-gray-500"
+                          }`}
+                        >
+                          {item.phone}
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                          <span className={item.highlight ? "font-medium text-red-400" : ""}>
+                            {item.time}
+                          </span>
+                          <span className={item.highlight ? "text-red-400" : ""}>
+                            {item.status}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </aside>
             </div>
           </div>
         )}
       </div>
 
-      {/* MODAL DE IMPORTAÇÃO */}
-      {showImportModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-2xl rounded-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300 flex flex-col" style={{ maxHeight: '90vh' }}>
-            <div className="bg-[#0c1826] p-4 flex justify-between items-center flex-shrink-0">
-              <h3 className="text-[#b58c2a] font-bold flex items-center gap-2">
+      {showImportModal ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div
+            className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-lg bg-white shadow-2xl animate-in fade-in zoom-in duration-300"
+          >
+            <div className="flex flex-shrink-0 items-center justify-between bg-[#0c1826] p-4">
+              <h3 className="flex items-center gap-2 font-bold text-[#b58c2a]">
                 <ExternalLink size={20} />
                 Importar do Sistema Quer
               </h3>
               <button
-                onClick={() => { setShowImportModal(false); setImportResult(null); }}
-                className="text-gray-400 hover:text-white transition-colors"
+                onClick={() => {
+                  setShowImportModal(false);
+                  setImportResult(null);
+                }}
+                className="text-gray-400 transition-colors hover:text-white"
               >
-                ✕
+                X
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
+            <div className="custom-scrollbar flex-1 overflow-y-auto p-6">
               {!importResult?.data ? (
                 <form onSubmit={handleImportLead} className="space-y-4">
-                  <p className="text-xs text-gray-500 mb-4">
-                    Insira suas credenciais do <b>Sistema Quer</b> para capturarmos os dados da indicação automaticamente.
+                  <p className="mb-4 text-xs text-gray-500">
+                    Insira suas credenciais do <b>Sistema Quer</b> para capturarmos os dados da indicacao automaticamente.
                   </p>
+
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Login</label>
+                    <label className="mb-1 block text-xs font-bold uppercase text-gray-700">Login</label>
                     <input
                       type="text"
                       required
-                      className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:border-[#b58c2a] outline-none transition-colors"
+                      className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none transition-colors focus:border-[#b58c2a]"
                       value={credential.login}
-                      onChange={e => setCredential({ ...credential, login: e.target.value })}
+                      onChange={(e) => setCredential({ ...credential, login: e.target.value })}
                     />
                   </div>
+
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Senha</label>
+                    <label className="mb-1 block text-xs font-bold uppercase text-gray-700">Senha</label>
                     <input
                       type="password"
                       required
-                      className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:border-[#b58c2a] outline-none transition-colors"
+                      className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none transition-colors focus:border-[#b58c2a]"
                       value={credential.senha}
-                      onChange={e => setCredential({ ...credential, senha: e.target.value })}
+                      onChange={(e) => setCredential({ ...credential, senha: e.target.value })}
                     />
                   </div>
+
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase mb-1">URL da Indicação (Link)</label>
+                    <label className="mb-1 block text-xs font-bold uppercase text-gray-700">
+                      URL da Indicacao (Link)
+                    </label>
                     <input
                       type="url"
                       required
                       placeholder="Cole o link do Sistema Quer aqui"
-                      className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:border-[#b58c2a] outline-none transition-colors italic"
+                      className="w-full rounded border border-gray-300 px-3 py-2 text-sm italic outline-none transition-colors focus:border-[#b58c2a]"
                       value={credential.leadUrl}
-                      onChange={e => setCredential({ ...credential, leadUrl: e.target.value })}
+                      onChange={(e) => setCredential({ ...credential, leadUrl: e.target.value })}
                     />
                   </div>
 
-                  {importResult?.type === 'error' && (
-                    <div className="bg-red-50 text-red-600 p-3 rounded text-xs border border-red-100">
+                  {importResult?.type === "error" ? (
+                    <div className="rounded border border-red-100 bg-red-50 p-3 text-xs text-red-600">
                       {importResult.message}
                     </div>
-                  )}
+                  ) : null}
 
                   <button
                     disabled={importLoading}
-                    className="w-full bg-[#b58c2a] hover:bg-[#806117] text-white font-bold py-3 rounded shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                    className="flex w-full items-center justify-center gap-2 rounded bg-[#b58c2a] py-3 font-bold text-white shadow-lg transition-all hover:bg-[#806117] disabled:opacity-50"
                   >
-                    {importLoading ? <Loader2 className="animate-spin" size={18} /> : 'IMPORTAR AGORA'}
+                    {importLoading ? <Loader2 className="animate-spin" size={18} /> : "IMPORTAR AGORA"}
                   </button>
                 </form>
               ) : (
-                <div className="space-y-6 animate-in slide-in-from-bottom-2 pb-4">
-                  <div className="flex items-center justify-center gap-2 text-green-600 font-bold text-lg mb-2">
+                <div className="animate-in slide-in-from-bottom-2 space-y-6 pb-4">
+                  <div className="mb-2 flex items-center justify-center gap-2 text-lg font-bold text-green-600">
                     <Loader2 className="animate-pulse" size={24} />
                     Dados Recuperados com Sucesso!
                   </div>
 
-                  {/* SEÇÃO: DADOS PESSOAIS */}
-                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-                    <div className="bg-gray-50 px-4 py-2 border-b border-gray-200 flex items-center gap-2">
+                  <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+                    <div className="flex items-center gap-2 border-b border-gray-200 bg-gray-50 px-4 py-2">
                       <User size={16} className="text-[#b58c2a]" />
                       <span className="text-xs font-bold uppercase text-gray-700">Dados Pessoais</span>
                     </div>
-                    <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid gap-4 p-4 md:grid-cols-2">
                       <div>
-                        <label className="text-[10px] text-gray-400 uppercase font-bold">Nome</label>
+                        <label className="block text-[10px] font-bold uppercase text-gray-400">Nome</label>
                         <p className="text-sm font-medium text-gray-800">{importResult.data.nome}</p>
                       </div>
                       <div>
-                        <label className="text-[10px] text-gray-400 uppercase font-bold">Telefone</label>
+                        <label className="block text-[10px] font-bold uppercase text-gray-400">Telefone</label>
                         <p className="text-sm font-medium text-gray-800">{importResult.data.telefone}</p>
                       </div>
                       <div>
-                        <label className="text-[10px] text-gray-400 uppercase font-bold">E-mail</label>
-                        <p className="text-sm font-medium text-gray-800 break-all">{importResult.data.email}</p>
+                        <label className="block text-[10px] font-bold uppercase text-gray-400">E-mail</label>
+                        <p className="break-all text-sm font-medium text-gray-800">{importResult.data.email}</p>
                       </div>
                       <div>
-                        <label className="text-[10px] text-gray-400 uppercase font-bold">CPF/CNPJ</label>
-                        <p className="text-sm font-medium text-gray-800">{importResult.data.cpf_cnpj || '---'}</p>
+                        <label className="block text-[10px] font-bold uppercase text-gray-400">CPF/CNPJ</label>
+                        <p className="text-sm font-medium text-gray-800">{importResult.data.cpf_cnpj || "---"}</p>
                       </div>
                       <div>
-                        <label className="text-[10px] text-gray-400 uppercase font-bold">Data Nascimento</label>
-                        <p className="text-sm font-medium text-gray-800">{importResult.data.nascimento || '---'}</p>
+                        <label className="block text-[10px] font-bold uppercase text-gray-400">Data Nascimento</label>
+                        <p className="text-sm font-medium text-gray-800">{importResult.data.nascimento || "---"}</p>
                       </div>
                     </div>
                   </div>
 
-                  {/* SEÇÃO: ENDEREÇO */}
-                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-                    <div className="bg-gray-50 px-4 py-2 border-b border-gray-200 flex items-center gap-2">
+                  <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+                    <div className="flex items-center gap-2 border-b border-gray-200 bg-gray-50 px-4 py-2">
                       <MapPin size={16} className="text-[#b58c2a]" />
-                      <span className="text-xs font-bold uppercase text-gray-700">Localização</span>
+                      <span className="text-xs font-bold uppercase text-gray-700">Localizacao</span>
                     </div>
-                    <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid gap-4 p-4 md:grid-cols-2">
                       <div className="md:col-span-2">
-                        <label className="text-[10px] text-gray-400 uppercase font-bold">Endereço</label>
+                        <label className="block text-[10px] font-bold uppercase text-gray-400">Endereco</label>
                         <p className="text-sm font-medium text-gray-800">
-                          {importResult.data.endereco} {importResult.data.numero ? `, ${importResult.data.numero}` : ''}
+                          {importResult.data.endereco} {importResult.data.numero ? `, ${importResult.data.numero}` : ""}
                         </p>
                       </div>
                       <div>
-                        <label className="text-[10px] text-gray-400 uppercase font-bold">Bairro</label>
-                        <p className="text-sm font-medium text-gray-800">{importResult.data.bairro || '---'}</p>
+                        <label className="block text-[10px] font-bold uppercase text-gray-400">Bairro</label>
+                        <p className="text-sm font-medium text-gray-800">{importResult.data.bairro || "---"}</p>
                       </div>
                       <div>
-                        <label className="text-[10px] text-gray-400 uppercase font-bold">Cidade</label>
-                        <p className="text-sm font-medium text-gray-800">{importResult.data.cidade || '---'}</p>
+                        <label className="block text-[10px] font-bold uppercase text-gray-400">Cidade</label>
+                        <p className="text-sm font-medium text-gray-800">{importResult.data.cidade || "---"}</p>
                       </div>
                     </div>
                   </div>
 
-                  {/* SEÇÃO: DADOS DO CÁLCULO */}
-                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-                    <div className="bg-gray-50 px-4 py-2 border-b border-gray-200 flex items-center gap-2">
+                  <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+                    <div className="flex items-center gap-2 border-b border-gray-200 bg-gray-50 px-4 py-2">
                       <FileText size={16} className="text-[#b58c2a]" />
-                      <span className="text-xs font-bold uppercase text-gray-700">Dados do Cálculo / Observações</span>
+                      <span className="text-xs font-bold uppercase text-gray-700">Dados do Calculo / Observacoes</span>
                     </div>
                     <div className="p-4">
-                      <p className="text-sm text-gray-700 whitespace-pre-wrap bg-yellow-50/50 p-3 rounded border border-yellow-100">
-                        {importResult.data.observacao || 'Nenhuma observação encontrada.'}
+                      <p className="whitespace-pre-wrap rounded border border-yellow-100 bg-yellow-50/50 p-3 text-sm text-gray-700">
+                        {importResult.data.observacao || "Nenhuma observacao encontrada."}
                       </p>
                     </div>
                   </div>
 
-                  {/* SEÇÃO: COMPOSIÇÃO DE VIDAS */}
-                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-                    <div className="bg-gray-50 px-4 py-2 border-b border-gray-200 flex items-center gap-2">
+                  <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+                    <div className="flex items-center gap-2 border-b border-gray-200 bg-gray-50 px-4 py-2">
                       <Users size={16} className="text-[#b58c2a]" />
-                      <span className="text-xs font-bold uppercase text-gray-700">Composição de Vidas (Faixas Etárias)</span>
+                      <span className="text-xs font-bold uppercase text-gray-700">
+                        Composicao de Vidas (Faixas Etarias)
+                      </span>
                     </div>
-                    <div className="p-4 grid grid-cols-2 sm:grid-cols-5 gap-3">
+                    <div className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-5">
                       {Object.entries(importResult.data.vidas || {}).map(([faixa, qtd]: [any, any]) => (
-                        <div key={faixa} className="bg-gray-50 p-2 rounded border border-gray-100 text-center">
-                          <label className="text-[9px] text-gray-400 uppercase block leading-none mb-1">{faixa}</label>
-                          <span className={`${qtd !== "0" ? "text-[#b58c2a] font-bold" : "text-gray-300"} text-sm`}>{qtd}</span>
+                        <div
+                          key={faixa}
+                          className="rounded border border-gray-100 bg-gray-50 p-2 text-center"
+                        >
+                          <label className="mb-1 block text-[9px] uppercase leading-none text-gray-400">
+                            {faixa}
+                          </label>
+                          <span className={`${qtd !== "0" ? "font-bold text-[#b58c2a]" : "text-gray-300"} text-sm`}>
+                            {qtd}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -509,23 +538,25 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
                   <button
                     onClick={() => setShowImportModal(false)}
-                    className="w-full bg-[#0c1826] text-white py-4 rounded font-bold text-sm hover:bg-black transition-all shadow-lg flex items-center justify-center gap-2"
+                    className="flex w-full items-center justify-center gap-2 rounded bg-[#0c1826] py-4 text-sm font-bold text-white shadow-lg transition-all hover:bg-black"
                   >
                     CONCLUIR E USAR DADOS
                   </button>
                 </div>
               )}
             </div>
-            <div className="bg-gray-50 p-3 text-[10px] text-gray-400 text-center uppercase tracking-widest flex-shrink-0">
-              Sessão temporária • Criptografada
+
+            <div className="bg-gray-50 p-3 text-center text-[10px] uppercase tracking-widest text-gray-400">
+              Sessao temporaria • Criptografada
             </div>
           </div>
         </div>
-      )}
+      ) : null}
 
       <style>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 5px;
+          height: 5px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
           background: transparent;

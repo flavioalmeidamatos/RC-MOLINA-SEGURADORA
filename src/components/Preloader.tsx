@@ -52,6 +52,7 @@ export const Preloader: React.FC<PreloaderProps> = ({ onComplete }) => {
           className="w-64 mb-8"
           referrerPolicy="no-referrer"
           onLoad={() => setImageLoaded(true)}
+          onError={() => setImageLoaded(true)}
         />
 
         <div className="w-64 h-1 bg-[#1a1a1a] rounded-full overflow-hidden">
