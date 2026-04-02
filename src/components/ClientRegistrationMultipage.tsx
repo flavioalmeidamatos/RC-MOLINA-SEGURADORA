@@ -104,7 +104,7 @@ const citiesByState: Record<string, string[]> = {
 };
 
 const inputClassName =
-  'w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#3d8ed8] focus:ring-4 focus:ring-[#3d8ed8]/10';
+  'w-full rounded-2xl border border-black bg-white px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-black focus:ring-4 focus:ring-black/10';
 
 const sectionCardClassName = 'rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm sm:p-6';
 
@@ -164,26 +164,18 @@ export const ClientRegistrationMultipage: React.FC = () => {
 
   return (
     <section className="flex-1 space-y-4 sm:space-y-6">
-      <div className="rounded-[32px] bg-gradient-to-br from-white via-[#f8fbff] to-[#eef6ff] p-5 shadow-sm ring-1 ring-slate-200 sm:p-8">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-[#3d8ed8]">
-              <span className="text-xs font-black uppercase tracking-[0.24em]">Cadastro de Clientes</span>
-              <Info size={16} className="shrink-0" />
-            </div>
-            <h2 className="max-w-2xl text-2xl font-black text-slate-900 sm:text-3xl">
-              MultiPage de clientes com foco total em usabilidade no celular.
-            </h2>
-            <p className="max-w-2xl text-sm leading-6 text-slate-500 sm:text-base">
-              Ao tocar nas abas, voce navega entre as quatro telas do cadastro sem perder o contexto do preenchimento.
-            </p>
+      <div className="rounded-[28px] border border-slate-200 bg-white p-2 shadow-sm">
+        <div className="flex flex-col gap-3 border-b border-slate-100 px-3 pb-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2 text-[#3d8ed8]">
+            <span className="text-xs font-black uppercase tracking-[0.24em]">Cadastro de Clientes</span>
+            <Info size={16} className="shrink-0" />
           </div>
 
           <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
             <button
               type="button"
               onClick={saveClient}
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-black text-white shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-600"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-black text-white shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-600"
             >
               <Save size={18} />
               Salvar
@@ -191,7 +183,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
             <button
               type="button"
               onClick={resetForm}
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#4e9bdd] px-4 py-3 text-sm font-black text-white shadow-lg shadow-[#4e9bdd]/20 transition hover:bg-[#377fbf]"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-[#4e9bdd] px-4 py-3 text-sm font-black text-white shadow-lg shadow-[#4e9bdd]/20 transition hover:bg-[#377fbf]"
             >
               <PlusCircle size={18} />
               Novo Cliente
@@ -200,13 +192,13 @@ export const ClientRegistrationMultipage: React.FC = () => {
         </div>
 
         {feedback ? (
-          <div className="mt-4 rounded-2xl border border-[#3d8ed8]/20 bg-[#3d8ed8]/5 px-4 py-3 text-sm text-[#225f97]">
-            {feedback}
+          <div className="px-3 pt-3">
+            <div className="rounded-2xl border border-[#3d8ed8]/20 bg-[#3d8ed8]/5 px-4 py-3 text-sm text-[#225f97]">
+              {feedback}
+            </div>
           </div>
         ) : null}
-      </div>
 
-      <div className="rounded-[28px] border border-slate-200 bg-white p-2 shadow-sm">
         <div className="flex gap-2 overflow-x-auto px-1 pb-1">
           {tabs.map((tab) => {
             const Icon = tab.icon;
