@@ -18,6 +18,7 @@ import {
   validarCNPJ,
   validarCPF,
   validarDataNascimentoBR,
+  validarEmailRFC5322,
 } from '../lib/validacoes';
 
 type TabId = 'geral' | 'endereco' | 'extras';
@@ -60,6 +61,8 @@ type FieldErrorState = {
   cnpj: string;
   dataNascimento: string;
 };
+
+type ContactErrorState = Record<number, string>;
 
 const tabs: Array<{ id: TabId; label: string; icon: React.ComponentType<{ size?: number; className?: string }> }> = [
   { id: 'geral', label: 'Geral', icon: UserRound },
@@ -121,12 +124,29 @@ const sectionCardClassName = 'rounded-[28px] border border-slate-200 bg-white p-
 
 const errorMessageClassName = 'mt-2 text-xs font-semibold text-red-600';
 
+const somenteDigitos = (valor: string): string => valor.replace(/\D/g, '');
+
+const formatarTelefoneContato = (valor: string, tipo: string): string => {
+  const digitos = somenteDigitos(valor).slice(0, tipo === 'Celular' ? 11 : 10);
+
+  if (tipo === 'Celular') {
+    if (digitos.length <= 2) return digitos;
+    if (digitos.length <= 7) return `(${digitos.slice(0, 2)}) ${digitos.slice(2)}`;
+    return `(${digitos.slice(0, 2)}) ${digitos.slice(2, 7)}-${digitos.slice(7)}`;
+  }
+
+  if (digitos.length <= 2) return digitos;
+  if (digitos.length <= 6) return `(${digitos.slice(0, 2)}) ${digitos.slice(2)}`;
+  return `(${digitos.slice(0, 2)}) ${digitos.slice(2, 6)}-${digitos.slice(6)}`;
+};
+
 export const ClientRegistrationMultipage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabId>('geral');
   const [formState, setFormState] = useState<ClientFormState>(initialFormState);
   const [contacts, setContacts] = useState<ContactRow[]>(initialContacts);
   const [feedback, setFeedback] = useState('');
   const [fieldErrors, setFieldErrors] = useState<FieldErrorState>(initialFieldErrors);
+  const [contactErrors, setContactErrors] = useState<ContactErrorState>({});
 
   const activeTabIndex = tabs.findIndex((tab) => tab.id === activeTab);
 
@@ -188,6 +208,53 @@ export const ClientRegistrationMultipage: React.FC = () => {
     );
   };
 
+  const handleContactTypeChange = (id: number, nextType: string) => {
+    setContacts((prev) =>
+      prev.map((contact) =>
+        contact.id === id
+          ? {
+              ...contact,
+              type: nextType,
+              value:
+                nextType === 'E-mail'
+                  ? ''
+                  : formatarTelefoneContato(contact.value, nextType),
+            }
+          : contact,
+      ),
+    );
+    setContactErrors((prev) => ({ ...prev, [id]: '' }));
+  };
+
+  const handleContactValueChange = (id: number, type: string, value: string) => {
+    const nextValue = type === 'E-mail' ? value.trimStart() : formatarTelefoneContato(value, type);
+    handleContactChange(id, 'value', nextValue);
+    setContactErrors((prev) => ({ ...prev, [id]: '' }));
+  };
+
+  const validateContactValue = (id: number) => {
+    const contact = contacts.find((item) => item.id === id);
+    if (!contact || !contact.value) {
+      setContactErrors((prev) => ({ ...prev, [id]: '' }));
+      return;
+    }
+
+    if (contact.type === 'E-mail') {
+      setContactErrors((prev) => ({
+        ...prev,
+        [id]: validarEmailRFC5322(contact.value) ? '' : 'Informe um e-mail válido.',
+      }));
+      return;
+    }
+
+    const totalDigitos = somenteDigitos(contact.value).length;
+    const minimo = contact.type === 'Celular' ? 11 : 10;
+    setContactErrors((prev) => ({
+      ...prev,
+      [id]: totalDigitos === minimo ? '' : 'Informe um telefone válido.',
+    }));
+  };
+
   const addContact = () => {
     setContacts((prev) => [
       ...prev,
@@ -203,6 +270,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
     setFormState(initialFormState);
     setContacts(initialContacts);
     setFieldErrors(initialFieldErrors);
+    setContactErrors({});
     setActiveTab('geral');
     setFeedback('Novo cliente pronto para preenchimento.');
   };
@@ -211,6 +279,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
     validateCPFField();
     validateCNPJField();
     validateBirthDateField();
+    contacts.forEach((contact) => validateContactValue(contact.id));
     setFeedback('Layout multipage de clientes pronto. O próximo passo pode ser conectar ao Supabase.');
   };
 
@@ -378,7 +447,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                     <select
                       className={fieldClassName}
                       value={contact.type}
-                      onChange={(event) => handleContactChange(contact.id, 'type', event.target.value)}
+                      onChange={(event) => handleContactTypeChange(contact.id, event.target.value)}
                     >
                       <option>Celular</option>
                       <option>E-mail</option>
@@ -389,7 +458,10 @@ export const ClientRegistrationMultipage: React.FC = () => {
                     <input
                       className={fieldClassName}
                       value={contact.value}
-                      onChange={(event) => handleContactChange(contact.id, 'value', event.target.value)}
+                      onChange={(event) => handleContactValueChange(contact.id, contact.type, event.target.value)}
+                      onBlur={() => validateContactValue(contact.id)}
+                      inputMode={contact.type === 'E-mail' ? 'email' : 'numeric'}
+                      maxLength={contact.type === 'Celular' ? 15 : contact.type === 'E-mail' ? 120 : 14}
                       placeholder={contact.type === 'E-mail' ? 'E-mail' : 'Número'}
                     />
 
@@ -407,7 +479,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                       placeholder="Observações"
                     />
 
-                    <div className="grid grid-cols-2 gap-2 xl:grid-cols-1">
+                    <div className="flex items-start gap-2">
                       <button
                         type="button"
                         onClick={() => handleContactChange(contact.id, 'favorite', !contact.favorite)}
@@ -428,6 +500,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                       </button>
                     </div>
                   </div>
+                  {contactErrors[contact.id] ? <p className={errorMessageClassName}>{contactErrors[contact.id]}</p> : null}
                 </div>
               ))}
             </div>
