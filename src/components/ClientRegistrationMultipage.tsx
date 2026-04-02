@@ -150,6 +150,7 @@ const sectionCardClassName = 'rounded-[28px] border border-slate-200 bg-white p-
 const errorMessageClassName = 'mt-2 text-xs font-semibold text-red-600';
 const documentInputAccept =
   '.png,.jpg,.jpeg,.webp,.gif,.bmp,.svg,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv';
+const maxVisibleDocumentsBeforeCarouselControls = 6;
 
 const somenteDigitos = (valor: string): string => valor.replace(/\D/g, '');
 const somenteLetrasEEspacos = (valor: string): string => valor.replace(/[^A-Za-zÀ-ÿ\s]/g, '');
@@ -205,6 +206,8 @@ export const ClientRegistrationMultipage: React.FC = () => {
   const activeTabIndex = tabs.findIndex((tab) => tab.id === activeTab);
 
   const cidadeOptions = useMemo(() => cidadesPorEstado[formState.enderecoEstado] || [], [formState.enderecoEstado]);
+  const shouldShowDocumentCarouselControls =
+    uploadedDocuments.length > maxVisibleDocumentsBeforeCarouselControls;
   const hasFormChanges = useMemo(
     () =>
       JSON.stringify(formState) !== JSON.stringify(initialFormState) ||
@@ -946,7 +949,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                     </p>
                   </div>
 
-                  {uploadedDocuments.length > 1 ? (
+                  {shouldShowDocumentCarouselControls ? (
                     <div className="grid grid-cols-2 gap-2 sm:flex">
                       <button
                         type="button"
@@ -968,9 +971,12 @@ export const ClientRegistrationMultipage: React.FC = () => {
 
                 {uploadedDocuments.length ? (
                   <div
-                    ref={carouselRef}
-                    className="mt-3 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                    className={`mt-3 ${shouldShowDocumentCarouselControls ? 'xl:max-w-[1380px]' : ''}`}
                   >
+                    <div
+                      ref={carouselRef}
+                      className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                    >
                     {uploadedDocuments.map((documento) => (
                       <article
                         key={documento.id}
@@ -1028,6 +1034,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                         </div>
                       </article>
                     ))}
+                    </div>
                   </div>
                 ) : (
                   <div className="mt-3 rounded-3xl border border-dashed border-slate-200 bg-white px-4 py-6 text-center text-sm text-slate-400">
