@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Banknote,
   Briefcase,
@@ -49,12 +49,44 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const [activeMenu, setActiveMenu] = useState("Home");
   const [showImportModal, setShowImportModal] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
+  const [whatsAppConnected, setWhatsAppConnected] = useState(false);
+  const [whatsAppChecking, setWhatsAppChecking] = useState(true);
   const [credential, setCredential] = useState({
     login: "Rosilene Rodrigues de Carvalho Molina",
     senha: "123",
     leadUrl: "",
   });
   const [importResult, setImportResult] = useState<any>(null);
+
+  const syncWhatsAppStatus = async () => {
+    setWhatsAppChecking(true);
+
+    try {
+      const response = await fetch("/api/whatsapp-instance", {
+        method: "GET",
+        cache: "no-store",
+      });
+      const data = await response.json();
+
+      if (response.ok) {
+        setWhatsAppConnected(Boolean(data.connected));
+      }
+    } catch (_error) {
+      setWhatsAppConnected(false);
+    } finally {
+      setWhatsAppChecking(false);
+    }
+  };
+
+  useEffect(() => {
+    void syncWhatsAppStatus();
+
+    const intervalId = window.setInterval(() => {
+      void syncWhatsAppStatus();
+    }, 20000);
+
+    return () => window.clearInterval(intervalId);
+  }, []);
 
   const handleImportLead = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,11 +124,27 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   };
 
   const handleLogout = async () => {
+    try {
+      await fetch("/api/whatsapp-instance", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ action: "logout" }),
+      });
+    } catch (_error) {
+      console.warn("Nao foi possivel derrubar a instancia do WhatsApp no logout.");
+    } finally {
+      setWhatsAppConnected(false);
+      setWhatsAppChecking(false);
+    }
+
     await supabase.auth.signOut();
     navigate("/login");
   };
 
-  const handleOpenWhatsAppAuth = () => {
+  const handleOpenWhatsAppAuth = async () => {
+    await syncWhatsAppStatus();
     setActiveMenu("WhatsApp");
   };
 
@@ -160,6 +208,10 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const showClientArea = activeMenu === "Meus clientes";
   const showWhatsAppAuth = activeMenu === "WhatsApp";
 
+  const whatsAppButtonClassName = whatsAppConnected
+    ? "border-[#25D366]/25 bg-[#25D366]/10 text-[#128C7E] hover:bg-[#25D366]/18"
+    : "border-red-200 bg-red-50 text-red-600 hover:bg-red-100";
+
   return (
     <div className="flex min-h-screen w-full flex-col bg-[#F0F4F8] font-sans lg:h-screen lg:flex-row lg:overflow-hidden">
       <aside className="w-full flex-shrink-0 bg-[#0c1826] shadow-xl lg:w-64 lg:z-20">
@@ -221,10 +273,19 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
             <button
               type="button"
               onClick={handleOpenWhatsAppAuth}
-              className="flex min-h-11 items-center gap-2 rounded-full border border-[#25D366]/25 bg-[#25D366]/10 px-4 py-2 text-[#128C7E] transition-colors hover:bg-[#25D366]/18"
+              className={`flex min-h-11 items-center gap-2 rounded-full border px-4 py-2 transition-colors ${whatsAppButtonClassName}`}
             >
               <WhatsAppIcon className="h-5 w-5" />
               <span className="text-sm font-semibold">WhatsApp</span>
+              <span
+                className={`h-2.5 w-2.5 rounded-full ${
+                  whatsAppChecking
+                    ? "bg-amber-400"
+                    : whatsAppConnected
+                      ? "bg-[#25D366]"
+                      : "bg-red-500"
+                }`}
+              />
             </button>
 
             <button className="flex min-h-11 items-center gap-2 text-gray-500 transition-colors hover:text-[#b58c2a]">
@@ -258,7 +319,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
         </header>
 
         {showWhatsAppAuth ? (
-          <WhatsAppQrPanel />
+          <WhatsAppQrPanel onConnectionChange={setWhatsAppConnected} />
         ) : showSimulator ? (
           <div className="relative flex-1 overflow-hidden bg-gray-50">
             <iframe

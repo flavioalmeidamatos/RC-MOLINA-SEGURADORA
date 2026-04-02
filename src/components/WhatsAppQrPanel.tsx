@@ -57,7 +57,13 @@ type WhatsAppChatApiResponse = {
   error?: string;
 };
 
-export const WhatsAppQrPanel: React.FC = () => {
+interface WhatsAppQrPanelProps {
+  onConnectionChange?: (connected: boolean) => void;
+}
+
+export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
+  onConnectionChange,
+}) => {
   const requestInFlightRef = useRef(false);
   const historyInFlightRef = useRef(false);
   const [qrCode, setQrCode] = useState("");
@@ -111,6 +117,7 @@ export const WhatsAppQrPanel: React.FC = () => {
       }
 
       setConnected(nextConnected);
+      onConnectionChange?.(nextConnected);
       setStateInstance(data.stateInstance || "");
       setStatusInstance(data.statusInstance || "");
       setQrCode(data.qrCode || "");
