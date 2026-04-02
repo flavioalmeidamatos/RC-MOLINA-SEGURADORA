@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
-  BadgeDollarSign,
   ChevronLeft,
   ChevronRight,
   FileText,
@@ -12,8 +11,16 @@ import {
   Trash2,
   UserRound,
 } from 'lucide-react';
+import {
+  formatarCNPJ,
+  formatarCPF,
+  formatarDataBR,
+  validarCNPJ,
+  validarCPF,
+  validarDataNascimentoBR,
+} from '../lib/validacoes';
 
-type TabId = 'geral' | 'endereco' | 'extras' | 'credito';
+type TabId = 'geral' | 'endereco' | 'extras';
 
 type ContactRow = {
   id: number;
@@ -46,18 +53,18 @@ type ClientFormState = {
   codigo: string;
   dataCadastro: string;
   dataAtualizacao: string;
-  limiteCredito: string;
-  creditoDisponivel: string;
-  vencimentoCredito: string;
-  responsavelFinanceiro: string;
-  observacoesCredito: string;
+};
+
+type FieldErrorState = {
+  cpf: string;
+  cnpj: string;
+  dataNascimento: string;
 };
 
 const tabs: Array<{ id: TabId; label: string; icon: React.ComponentType<{ size?: number; className?: string }> }> = [
   { id: 'geral', label: 'Geral', icon: UserRound },
-  { id: 'endereco', label: 'Endereco', icon: MapPinned },
+  { id: 'endereco', label: 'Endereço', icon: MapPinned },
   { id: 'extras', label: 'Extras', icon: FileText },
-  { id: 'credito', label: 'Credito do Cliente', icon: BadgeDollarSign },
 ];
 
 const initialFormState: ClientFormState = {
@@ -76,17 +83,18 @@ const initialFormState: ClientFormState = {
   enderecoCidade: '',
   observacoes: '',
   marcacoes: '',
-  comoConheceu: '0 - Nao informado',
+  comoConheceu: '0 - Não informado',
   permiteAgendarOnline: true,
   status: 'ATIVO',
   codigo: 'Novo',
   dataCadastro: '',
   dataAtualizacao: '',
-  limiteCredito: '',
-  creditoDisponivel: '',
-  vencimentoCredito: '',
-  responsavelFinanceiro: '',
-  observacoesCredito: '',
+};
+
+const initialFieldErrors: FieldErrorState = {
+  cpf: '',
+  cnpj: '',
+  dataNascimento: '',
 };
 
 const initialContacts: ContactRow[] = [
@@ -95,29 +103,83 @@ const initialContacts: ContactRow[] = [
   { id: 3, type: 'Residencial', value: '', extra: 'Complemento', notes: '', favorite: false },
 ];
 
-const states = ['Selecione...', 'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MG', 'MS', 'MT', 'PA', 'PB', 'PE', 'PI', 'PR', 'RJ', 'RN', 'RO', 'RR', 'RS', 'SC', 'SE', 'SP', 'TO'];
+const estados = ['Selecione...', 'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MG', 'MS', 'MT', 'PA', 'PB', 'PE', 'PI', 'PR', 'RJ', 'RN', 'RO', 'RR', 'RS', 'SC', 'SE', 'SP', 'TO'];
 
-const citiesByState: Record<string, string[]> = {
-  RJ: ['Rio de Janeiro', 'Niteroi', 'Petropolis', 'Volta Redonda'],
-  SP: ['Sao Paulo', 'Campinas', 'Santos', 'Ribeirao Preto'],
-  MG: ['Belo Horizonte', 'Juiz de Fora', 'Uberlandia', 'Contagem'],
+const cidadesPorEstado: Record<string, string[]> = {
+  RJ: ['Rio de Janeiro', 'Niterói', 'Petrópolis', 'Volta Redonda'],
+  SP: ['São Paulo', 'Campinas', 'Santos', 'Ribeirão Preto'],
+  MG: ['Belo Horizonte', 'Juiz de Fora', 'Uberlândia', 'Contagem'],
 };
 
-const inputClassName =
+const fieldClassName =
+  'h-12 w-full rounded-2xl border border-black bg-white px-4 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-black focus:ring-4 focus:ring-black/10';
+
+const textAreaClassName =
   'w-full rounded-2xl border border-black bg-white px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-black focus:ring-4 focus:ring-black/10';
 
 const sectionCardClassName = 'rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm sm:p-6';
+
+const errorMessageClassName = 'mt-2 text-xs font-semibold text-red-600';
 
 export const ClientRegistrationMultipage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabId>('geral');
   const [formState, setFormState] = useState<ClientFormState>(initialFormState);
   const [contacts, setContacts] = useState<ContactRow[]>(initialContacts);
   const [feedback, setFeedback] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<FieldErrorState>(initialFieldErrors);
 
   const activeTabIndex = tabs.findIndex((tab) => tab.id === activeTab);
 
+  const cidadeOptions = useMemo(() => cidadesPorEstado[formState.enderecoEstado] || [], [formState.enderecoEstado]);
+
   const handleFieldChange = <K extends keyof ClientFormState>(field: K, value: ClientFormState[K]) => {
     setFormState((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const updateFieldError = (field: keyof FieldErrorState, message: string) => {
+    setFieldErrors((prev) => ({ ...prev, [field]: message }));
+  };
+
+  const handleCPFChange = (value: string) => {
+    handleFieldChange('cpf', formatarCPF(value));
+    updateFieldError('cpf', '');
+  };
+
+  const handleCNPJChange = (value: string) => {
+    handleFieldChange('cnpj', formatarCNPJ(value));
+    updateFieldError('cnpj', '');
+  };
+
+  const handleDataNascimentoChange = (value: string) => {
+    handleFieldChange('dataNascimento', formatarDataBR(value));
+    updateFieldError('dataNascimento', '');
+  };
+
+  const validateCPFField = () => {
+    if (!formState.cpf) {
+      updateFieldError('cpf', '');
+      return;
+    }
+    updateFieldError('cpf', validarCPF(formState.cpf) ? '' : 'Informe um CPF válido.');
+  };
+
+  const validateCNPJField = () => {
+    if (!formState.cnpj) {
+      updateFieldError('cnpj', '');
+      return;
+    }
+    updateFieldError('cnpj', validarCNPJ(formState.cnpj) ? '' : 'Informe um CNPJ válido.');
+  };
+
+  const validateBirthDateField = () => {
+    if (!formState.dataNascimento) {
+      updateFieldError('dataNascimento', '');
+      return;
+    }
+    updateFieldError(
+      'dataNascimento',
+      validarDataNascimentoBR(formState.dataNascimento) ? '' : 'Informe uma data de nascimento válida.',
+    );
   };
 
   const handleContactChange = (id: number, field: keyof ContactRow, value: string | boolean) => {
@@ -140,12 +202,16 @@ export const ClientRegistrationMultipage: React.FC = () => {
   const resetForm = () => {
     setFormState(initialFormState);
     setContacts(initialContacts);
+    setFieldErrors(initialFieldErrors);
     setActiveTab('geral');
     setFeedback('Novo cliente pronto para preenchimento.');
   };
 
   const saveClient = () => {
-    setFeedback('Layout multipage de clientes pronto. O proximo passo pode ser conectar ao Supabase.');
+    validateCPFField();
+    validateCNPJField();
+    validateBirthDateField();
+    setFeedback('Layout multipage de clientes pronto. O próximo passo pode ser conectar ao Supabase.');
   };
 
   const goToPreviousTab = () => {
@@ -160,14 +226,12 @@ export const ClientRegistrationMultipage: React.FC = () => {
     }
   };
 
-  const cityOptions = citiesByState[formState.enderecoEstado] || [];
-
   return (
     <section className="flex-1 space-y-4 sm:space-y-6">
       <div className="rounded-[28px] border border-slate-200 bg-white p-2 shadow-sm">
         <div className="flex flex-col gap-3 border-b border-slate-100 px-3 pb-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2 text-[#3d8ed8]">
-            <span className="text-xs font-black uppercase tracking-[0.24em]">Cadastro de Clientes</span>
+            <span className="text-xs font-black uppercase tracking-[0.24em]">Cadastro de clientes</span>
             <Info size={16} className="shrink-0" />
           </div>
 
@@ -186,7 +250,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
               className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-[#4e9bdd] px-4 py-3 text-sm font-black text-white shadow-lg shadow-[#4e9bdd]/20 transition hover:bg-[#377fbf]"
             >
               <PlusCircle size={18} />
-              Novo Cliente
+              Novo cliente
             </button>
           </div>
         </div>
@@ -230,7 +294,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
               <div className="lg:col-span-2">
                 <label className="mb-2 block text-sm font-bold text-slate-700">Nome*</label>
                 <input
-                  className={inputClassName}
+                  className={fieldClassName}
                   value={formState.nome}
                   onChange={(event) => handleFieldChange('nome', event.target.value)}
                   placeholder="Nome completo do cliente"
@@ -240,17 +304,21 @@ export const ClientRegistrationMultipage: React.FC = () => {
               <div>
                 <label className="mb-2 block text-sm font-bold text-slate-700">CPF</label>
                 <input
-                  className={inputClassName}
+                  className={fieldClassName}
                   value={formState.cpf}
-                  onChange={(event) => handleFieldChange('cpf', event.target.value)}
+                  onChange={(event) => handleCPFChange(event.target.value)}
+                  onBlur={validateCPFField}
+                  inputMode="numeric"
+                  maxLength={14}
                   placeholder="000.000.000-00"
                 />
+                {fieldErrors.cpf ? <p className={errorMessageClassName}>{fieldErrors.cpf}</p> : null}
               </div>
 
               <div>
                 <label className="mb-2 block text-sm font-bold text-slate-700">RG</label>
                 <input
-                  className={inputClassName}
+                  className={fieldClassName}
                   value={formState.rg}
                   onChange={(event) => handleFieldChange('rg', event.target.value)}
                   placeholder="RG"
@@ -260,21 +328,31 @@ export const ClientRegistrationMultipage: React.FC = () => {
               <div>
                 <label className="mb-2 block text-sm font-bold text-slate-700">CNPJ</label>
                 <input
-                  className={inputClassName}
+                  className={fieldClassName}
                   value={formState.cnpj}
-                  onChange={(event) => handleFieldChange('cnpj', event.target.value)}
+                  onChange={(event) => handleCNPJChange(event.target.value)}
+                  onBlur={validateCNPJField}
+                  inputMode="numeric"
+                  maxLength={18}
                   placeholder="00.000.000/0000-00"
                 />
+                {fieldErrors.cnpj ? <p className={errorMessageClassName}>{fieldErrors.cnpj}</p> : null}
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold text-slate-700">Data Nascimento</label>
+                <label className="mb-2 block text-sm font-bold text-slate-700">Data de nascimento</label>
                 <input
-                  className={inputClassName}
+                  className={fieldClassName}
                   value={formState.dataNascimento}
-                  onChange={(event) => handleFieldChange('dataNascimento', event.target.value)}
+                  onChange={(event) => handleDataNascimentoChange(event.target.value)}
+                  onBlur={validateBirthDateField}
+                  inputMode="numeric"
+                  maxLength={10}
                   placeholder="dd/mm/aaaa"
                 />
+                {fieldErrors.dataNascimento ? (
+                  <p className={errorMessageClassName}>{fieldErrors.dataNascimento}</p>
+                ) : null}
               </div>
             </div>
 
@@ -282,7 +360,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h3 className="text-lg font-black text-slate-900">Contatos*</h3>
-                  <p className="text-sm text-slate-500">Mantenha os canais principais sempre visiveis e tocaveis.</p>
+                  <p className="text-sm text-slate-500">Mantenha os canais principais sempre visíveis e tocáveis.</p>
                 </div>
                 <button
                   type="button"
@@ -290,18 +368,15 @@ export const ClientRegistrationMultipage: React.FC = () => {
                   className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-[#4e9bdd] px-4 py-3 text-sm font-black text-white shadow-lg shadow-[#4e9bdd]/20 transition hover:bg-[#377fbf]"
                 >
                   <PlusCircle size={18} />
-                  Contatos
+                  Adicionar contato
                 </button>
               </div>
 
               {contacts.map((contact) => (
-                <div
-                  key={contact.id}
-                  className="rounded-3xl border border-slate-200 bg-slate-50/80 p-3 sm:p-4"
-                >
-                  <div className="grid gap-3 xl:grid-cols-[1.1fr_1.6fr_1.2fr_1.6fr_auto]">
+                <div key={contact.id} className="rounded-3xl border border-slate-200 bg-white p-3 sm:p-4">
+                  <div className="grid gap-3 xl:grid-cols-[1fr_1.3fr_1.3fr_1.3fr_auto]">
                     <select
-                      className={inputClassName}
+                      className={fieldClassName}
                       value={contact.type}
                       onChange={(event) => handleContactChange(contact.id, 'type', event.target.value)}
                     >
@@ -312,34 +387,34 @@ export const ClientRegistrationMultipage: React.FC = () => {
                     </select>
 
                     <input
-                      className={inputClassName}
+                      className={fieldClassName}
                       value={contact.value}
                       onChange={(event) => handleContactChange(contact.id, 'value', event.target.value)}
-                      placeholder={contact.type === 'E-mail' ? 'Email' : 'Numero'}
+                      placeholder={contact.type === 'E-mail' ? 'E-mail' : 'Número'}
                     />
 
                     <input
-                      className={inputClassName}
+                      className={fieldClassName}
                       value={contact.extra}
                       onChange={(event) => handleContactChange(contact.id, 'extra', event.target.value)}
-                      placeholder="Outro / Complemento"
+                      placeholder="Outro / complemento"
                     />
 
                     <input
-                      className={inputClassName}
+                      className={fieldClassName}
                       value={contact.notes}
                       onChange={(event) => handleContactChange(contact.id, 'notes', event.target.value)}
-                      placeholder="Observacoes"
+                      placeholder="Observações"
                     />
 
                     <div className="grid grid-cols-2 gap-2 xl:grid-cols-1">
                       <button
                         type="button"
                         onClick={() => handleContactChange(contact.id, 'favorite', !contact.favorite)}
-                        className={`inline-flex min-h-12 items-center justify-center rounded-2xl border transition ${
+                        className={`inline-flex h-12 items-center justify-center rounded-2xl border transition ${
                           contact.favorite
                             ? 'border-rose-200 bg-rose-50 text-rose-500'
-                            : 'border-slate-200 bg-white text-slate-400 hover:text-rose-500'
+                            : 'border-black bg-white text-slate-400 hover:text-rose-500'
                         }`}
                       >
                         <Heart size={18} fill={contact.favorite ? 'currentColor' : 'none'} />
@@ -347,7 +422,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => removeContact(contact.id)}
-                        className="inline-flex min-h-12 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-400 transition hover:text-red-500"
+                        className="inline-flex h-12 items-center justify-center rounded-2xl border border-black bg-white text-slate-400 transition hover:text-red-500"
                       >
                         <Trash2 size={18} />
                       </button>
@@ -365,7 +440,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
               <div>
                 <label className="mb-2 block text-sm font-bold text-slate-700">CEP</label>
                 <input
-                  className={inputClassName}
+                  className={fieldClassName}
                   value={formState.enderecoCep}
                   onChange={(event) => handleFieldChange('enderecoCep', event.target.value)}
                   placeholder="Pesquisar"
@@ -373,9 +448,9 @@ export const ClientRegistrationMultipage: React.FC = () => {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold text-slate-700">Endereco</label>
+                <label className="mb-2 block text-sm font-bold text-slate-700">Endereço</label>
                 <input
-                  className={inputClassName}
+                  className={fieldClassName}
                   value={formState.enderecoRua}
                   onChange={(event) => handleFieldChange('enderecoRua', event.target.value)}
                   placeholder="Rua, avenida ou logradouro"
@@ -383,19 +458,19 @@ export const ClientRegistrationMultipage: React.FC = () => {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold text-slate-700">Numero</label>
+                <label className="mb-2 block text-sm font-bold text-slate-700">Número</label>
                 <input
-                  className={inputClassName}
+                  className={fieldClassName}
                   value={formState.enderecoNumero}
                   onChange={(event) => handleFieldChange('enderecoNumero', event.target.value)}
-                  placeholder="Numero"
+                  placeholder="Número"
                 />
               </div>
 
               <div>
                 <label className="mb-2 block text-sm font-bold text-slate-700">Complemento</label>
                 <input
-                  className={inputClassName}
+                  className={fieldClassName}
                   value={formState.enderecoComplemento}
                   onChange={(event) => handleFieldChange('enderecoComplemento', event.target.value)}
                   placeholder="Apartamento, bloco, sala"
@@ -403,19 +478,19 @@ export const ClientRegistrationMultipage: React.FC = () => {
               </div>
 
               <div className="xl:col-span-2">
-                <label className="mb-2 block text-sm font-bold text-slate-700">Ponto de referencia</label>
+                <label className="mb-2 block text-sm font-bold text-slate-700">Ponto de referência</label>
                 <input
-                  className={inputClassName}
+                  className={fieldClassName}
                   value={formState.enderecoReferencia}
                   onChange={(event) => handleFieldChange('enderecoReferencia', event.target.value)}
-                  placeholder="Ex.: proximo a praca central"
+                  placeholder="Ex.: próximo à praça central"
                 />
               </div>
 
               <div>
                 <label className="mb-2 block text-sm font-bold text-slate-700">Bairro</label>
                 <input
-                  className={inputClassName}
+                  className={fieldClassName}
                   value={formState.enderecoBairro}
                   onChange={(event) => handleFieldChange('enderecoBairro', event.target.value)}
                   placeholder="Bairro"
@@ -425,14 +500,14 @@ export const ClientRegistrationMultipage: React.FC = () => {
               <div>
                 <label className="mb-2 block text-sm font-bold text-slate-700">Estado</label>
                 <select
-                  className={inputClassName}
+                  className={fieldClassName}
                   value={formState.enderecoEstado}
                   onChange={(event) => {
                     handleFieldChange('enderecoEstado', event.target.value);
                     handleFieldChange('enderecoCidade', '');
                   }}
                 >
-                  {states.map((state) => (
+                  {estados.map((state) => (
                     <option key={state} value={state === 'Selecione...' ? '' : state}>
                       {state}
                     </option>
@@ -443,12 +518,12 @@ export const ClientRegistrationMultipage: React.FC = () => {
               <div>
                 <label className="mb-2 block text-sm font-bold text-slate-700">Cidade</label>
                 <select
-                  className={inputClassName}
+                  className={fieldClassName}
                   value={formState.enderecoCidade}
                   onChange={(event) => handleFieldChange('enderecoCidade', event.target.value)}
                 >
                   <option value="">Selecione uma cidade...</option>
-                  {cityOptions.map((city) => (
+                  {cidadeOptions.map((city) => (
                     <option key={city} value={city}>
                       {city}
                     </option>
@@ -463,9 +538,9 @@ export const ClientRegistrationMultipage: React.FC = () => {
           <div className={sectionCardClassName}>
             <div className="grid gap-4">
               <div>
-                <label className="mb-2 block text-sm font-bold text-slate-700">Observacoes</label>
+                <label className="mb-2 block text-sm font-bold text-slate-700">Observações</label>
                 <textarea
-                  className={`${inputClassName} min-h-40 resize-y`}
+                  className={`${textAreaClassName} min-h-40 resize-y`}
                   value={formState.observacoes}
                   onChange={(event) => handleFieldChange('observacoes', event.target.value)}
                   placeholder="Registre detalhes importantes sobre este cliente"
@@ -474,9 +549,9 @@ export const ClientRegistrationMultipage: React.FC = () => {
 
               <div className="grid gap-4 xl:grid-cols-[1.2fr_1fr_0.8fr]">
                 <div>
-                  <label className="mb-2 block text-sm font-bold text-slate-700">Marcacoes</label>
+                  <label className="mb-2 block text-sm font-bold text-slate-700">Marcações</label>
                   <input
-                    className={inputClassName}
+                    className={fieldClassName}
                     value={formState.marcacoes}
                     onChange={(event) => handleFieldChange('marcacoes', event.target.value)}
                     placeholder="Digite o texto e pressione enter"
@@ -486,12 +561,12 @@ export const ClientRegistrationMultipage: React.FC = () => {
                 <div>
                   <label className="mb-2 block text-sm font-bold text-slate-700">Como nos conheceu?</label>
                   <select
-                    className={inputClassName}
+                    className={fieldClassName}
                     value={formState.comoConheceu}
                     onChange={(event) => handleFieldChange('comoConheceu', event.target.value)}
                   >
-                    <option>0 - Nao informado</option>
-                    <option>1 - Indicacao</option>
+                    <option>0 - Não informado</option>
+                    <option>1 - Indicação</option>
                     <option>2 - Google</option>
                     <option>3 - Instagram</option>
                     <option>4 - Evento</option>
@@ -499,7 +574,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-bold text-slate-700">Permite Agendar Online?</label>
+                  <label className="mb-2 block text-sm font-bold text-slate-700">Permite agendar online?</label>
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
@@ -507,7 +582,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                       className={`min-h-12 rounded-2xl border px-4 py-3 text-sm font-black transition ${
                         formState.permiteAgendarOnline
                           ? 'border-teal-500 bg-teal-500 text-white'
-                          : 'border-slate-200 bg-slate-50 text-slate-500'
+                          : 'border-black bg-white text-slate-500'
                       }`}
                     >
                       SIM
@@ -518,10 +593,10 @@ export const ClientRegistrationMultipage: React.FC = () => {
                       className={`min-h-12 rounded-2xl border px-4 py-3 text-sm font-black transition ${
                         !formState.permiteAgendarOnline
                           ? 'border-slate-700 bg-slate-700 text-white'
-                          : 'border-slate-200 bg-slate-50 text-slate-500'
+                          : 'border-black bg-white text-slate-500'
                       }`}
                     >
-                      NAO
+                      NÃO
                     </button>
                   </div>
                 </div>
@@ -537,7 +612,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                       className={`min-h-12 rounded-2xl border px-4 py-3 text-sm font-black transition ${
                         formState.status === 'ATIVO'
                           ? 'border-teal-500 bg-teal-500 text-white'
-                          : 'border-slate-200 bg-slate-50 text-slate-500'
+                          : 'border-black bg-white text-slate-500'
                       }`}
                     >
                       ATIVO
@@ -548,7 +623,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                       className={`min-h-12 rounded-2xl border px-4 py-3 text-sm font-black transition ${
                         formState.status === 'INATIVO'
                           ? 'border-slate-700 bg-slate-700 text-white'
-                          : 'border-slate-200 bg-slate-50 text-slate-500'
+                          : 'border-black bg-white text-slate-500'
                       }`}
                     >
                       INATIVO
@@ -557,9 +632,9 @@ export const ClientRegistrationMultipage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-bold text-slate-700">Codigo</label>
+                  <label className="mb-2 block text-sm font-bold text-slate-700">Código</label>
                   <input
-                    className={`${inputClassName} bg-slate-100`}
+                    className={`${fieldClassName} bg-slate-100`}
                     value={formState.codigo}
                     onChange={(event) => handleFieldChange('codigo', event.target.value)}
                     placeholder="Novo"
@@ -567,9 +642,9 @@ export const ClientRegistrationMultipage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-bold text-slate-700">Data Cadastro</label>
+                  <label className="mb-2 block text-sm font-bold text-slate-700">Data de cadastro</label>
                   <input
-                    className={inputClassName}
+                    className={fieldClassName}
                     value={formState.dataCadastro}
                     onChange={(event) => handleFieldChange('dataCadastro', event.target.value)}
                     placeholder="dd/mm/aaaa"
@@ -577,9 +652,9 @@ export const ClientRegistrationMultipage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-bold text-slate-700">Data Atualizacao</label>
+                  <label className="mb-2 block text-sm font-bold text-slate-700">Data de atualização</label>
                   <input
-                    className={inputClassName}
+                    className={fieldClassName}
                     value={formState.dataAtualizacao}
                     onChange={(event) => handleFieldChange('dataAtualizacao', event.target.value)}
                     placeholder="dd/mm/aaaa"
@@ -589,68 +664,12 @@ export const ClientRegistrationMultipage: React.FC = () => {
             </div>
           </div>
         </section>
-
-        <section className={activeTab === 'credito' ? 'block' : 'hidden'}>
-          <div className={sectionCardClassName}>
-            <div className="grid gap-4 lg:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-sm font-bold text-slate-700">Limite de credito</label>
-                <input
-                  className={inputClassName}
-                  value={formState.limiteCredito}
-                  onChange={(event) => handleFieldChange('limiteCredito', event.target.value)}
-                  placeholder="R$ 0,00"
-                />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-bold text-slate-700">Credito disponivel</label>
-                <input
-                  className={inputClassName}
-                  value={formState.creditoDisponivel}
-                  onChange={(event) => handleFieldChange('creditoDisponivel', event.target.value)}
-                  placeholder="R$ 0,00"
-                />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-bold text-slate-700">Vencimento do credito</label>
-                <input
-                  className={inputClassName}
-                  value={formState.vencimentoCredito}
-                  onChange={(event) => handleFieldChange('vencimentoCredito', event.target.value)}
-                  placeholder="dd/mm/aaaa"
-                />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-bold text-slate-700">Responsavel financeiro</label>
-                <input
-                  className={inputClassName}
-                  value={formState.responsavelFinanceiro}
-                  onChange={(event) => handleFieldChange('responsavelFinanceiro', event.target.value)}
-                  placeholder="Nome do responsavel"
-                />
-              </div>
-
-              <div className="lg:col-span-2">
-                <label className="mb-2 block text-sm font-bold text-slate-700">Observacoes do credito</label>
-                <textarea
-                  className={`${inputClassName} min-h-36 resize-y`}
-                  value={formState.observacoesCredito}
-                  onChange={(event) => handleFieldChange('observacoesCredito', event.target.value)}
-                  placeholder="Condicoes especiais, historico e acordos"
-                />
-              </div>
-            </div>
-          </div>
-        </section>
       </div>
 
       <div className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="text-sm text-slate-500">
-            Etapa {activeTabIndex + 1} de {tabs.length}. Todas as telas do multipage estao prontas para navegacao.
+            Etapa {activeTabIndex + 1} de {tabs.length}. Todas as telas do multipage estão prontas para navegação.
           </div>
 
           <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
@@ -658,7 +677,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
               type="button"
               onClick={goToPreviousTab}
               disabled={activeTabIndex === 0}
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-600 transition disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-black bg-white px-4 py-3 text-sm font-bold text-slate-600 transition disabled:cursor-not-allowed disabled:opacity-50"
             >
               <ChevronLeft size={18} />
               Voltar
@@ -670,7 +689,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
               disabled={activeTabIndex === tabs.length - 1}
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#0c1826] px-4 py-3 text-sm font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Proximo
+              Próximo
               <ChevronRight size={18} />
             </button>
           </div>

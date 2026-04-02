@@ -1,5 +1,5 @@
 /**
- * Validates an email address using a regex that follows RFC 5322.
+ * Valida um e-mail com regex inspirada na RFC 5322.
  */
 export const validarEmailRFC5322 = (email: string): boolean => {
   const re = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
@@ -15,5 +15,107 @@ export const traduzirErroSupabase = (msg: string): string => {
   if (m.includes('email not confirmed')) return 'Por favor, confirme seu e-mail antes de acessar.';
   if (m.includes('weak password') || m.includes('password should be at least')) return 'A senha é muito fraca ou menor que 8 caracteres.';
   if (m.includes('rate limit')) return 'Muitas tentativas. Aguarde um instante e tente novamente.';
-  return msg; // Retorna original caso não mapeado
+  return msg;
+};
+
+const somenteDigitos = (valor: string): string => valor.replace(/\D/g, '');
+
+export const formatarCPF = (valor: string): string => {
+  const digitos = somenteDigitos(valor).slice(0, 11);
+  return digitos
+    .replace(/^(\d{3})(\d)/, '$1.$2')
+    .replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
+    .replace(/\.(\d{3})(\d)/, '.$1-$2');
+};
+
+export const validarCPF = (valor: string): boolean => {
+  const cpf = somenteDigitos(valor);
+
+  if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) {
+    return false;
+  }
+
+  let soma = 0;
+  for (let i = 0; i < 9; i += 1) {
+    soma += Number(cpf.charAt(i)) * (10 - i);
+  }
+
+  let resto = (soma * 10) % 11;
+  if (resto === 10) resto = 0;
+  if (resto !== Number(cpf.charAt(9))) return false;
+
+  soma = 0;
+  for (let i = 0; i < 10; i += 1) {
+    soma += Number(cpf.charAt(i)) * (11 - i);
+  }
+
+  resto = (soma * 10) % 11;
+  if (resto === 10) resto = 0;
+
+  return resto === Number(cpf.charAt(10));
+};
+
+export const formatarCNPJ = (valor: string): string => {
+  const digitos = somenteDigitos(valor).slice(0, 14);
+  return digitos
+    .replace(/^(\d{2})(\d)/, '$1.$2')
+    .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+    .replace(/\.(\d{3})(\d)/, '.$1/$2')
+    .replace(/(\d{4})(\d)/, '$1-$2');
+};
+
+export const validarCNPJ = (valor: string): boolean => {
+  const cnpj = somenteDigitos(valor);
+
+  if (cnpj.length !== 14 || /^(\d)\1+$/.test(cnpj)) {
+    return false;
+  }
+
+  const calcularDigito = (base: string, pesos: number[]) => {
+    const soma = base
+      .split('')
+      .reduce((acc, numero, index) => acc + Number(numero) * pesos[index], 0);
+    const resto = soma % 11;
+    return resto < 2 ? 0 : 11 - resto;
+  };
+
+  const base = cnpj.slice(0, 12);
+  const digito1 = calcularDigito(base, [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
+  const digito2 = calcularDigito(`${base}${digito1}`, [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
+
+  return cnpj === `${base}${digito1}${digito2}`;
+};
+
+export const formatarDataBR = (valor: string): string => {
+  const digitos = somenteDigitos(valor).slice(0, 8);
+  if (digitos.length <= 2) return digitos;
+  if (digitos.length <= 4) return `${digitos.slice(0, 2)}/${digitos.slice(2)}`;
+  return `${digitos.slice(0, 2)}/${digitos.slice(2, 4)}/${digitos.slice(4)}`;
+};
+
+export const validarDataNascimentoBR = (valor: string): boolean => {
+  const match = valor.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!match) return false;
+
+  const dia = Number(match[1]);
+  const mes = Number(match[2]);
+  const ano = Number(match[3]);
+
+  if (mes < 1 || mes > 12 || ano < 1900) return false;
+
+  const data = new Date(ano, mes - 1, dia);
+  const hoje = new Date();
+
+  if (
+    data.getFullYear() !== ano ||
+    data.getMonth() !== mes - 1 ||
+    data.getDate() !== dia
+  ) {
+    return false;
+  }
+
+  if (data > hoje) return false;
+
+  const idade = hoje.getFullYear() - ano;
+  return idade <= 130;
 };

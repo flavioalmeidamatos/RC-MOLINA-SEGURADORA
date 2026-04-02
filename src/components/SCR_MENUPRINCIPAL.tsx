@@ -36,7 +36,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const userName =
     perfil?.nome_completo ||
     session?.user?.email?.split("@")[0] ||
-    "Nome do Usuario";
+    "Nome do Usuário";
   const avatarUrl = perfil?.avatar_url || null;
 
   const [activeMenu, setActiveMenu] = useState("Home");
@@ -77,7 +77,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     } catch (_error) {
       setImportResult({
         type: "error",
-        message: "Erro de conexao com o servidor",
+        message: "Erro de conexão com o servidor",
       });
     } finally {
       setImportLoading(false);
@@ -100,7 +100,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       return;
     }
 
-    if (line1 === "Informacoes") {
+    if (line1 === "Informações") {
       setCredential((prev) => ({
         ...prev,
         leadUrl: "http://sistemaquer.com.br/alterar-indicacao.php?indicacao_id=274959",
@@ -113,24 +113,24 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const menuItems = [
     { title: "Home", icon: Home },
     { title: "Meus clientes", icon: Briefcase },
-    { title: "Indicacoes", icon: User },
+    { title: "Indicações", icon: User },
     { title: "Agenda", icon: Calendar },
     { title: "Simulador", icon: FolderOpen },
     { title: "Webmail", icon: Mail },
-    { title: "Informacoes", icon: Info },
-    { title: "Sugestoes", icon: Lightbulb },
+    { title: "Informações", icon: Info },
+    { title: "Sugestões", icon: Lightbulb },
     { title: "Financeiro", icon: Banknote },
-    { title: "Configuracoes", icon: Wrench },
+    { title: "Configurações", icon: Wrench },
   ];
 
   const cards = [
-    { line1: "Sugestoes", line2: "", icon: Lightbulb },
+    { line1: "Sugestões", line2: "", icon: Lightbulb },
     { line1: "Meus", line2: "clientes", icon: Briefcase },
-    { line1: "Todas", line2: "indicacoes", icon: User },
-    { line1: "Ligacoes", line2: "", icon: PhoneCall },
+    { line1: "Todas", line2: "indicações", icon: User },
+    { line1: "Ligações", line2: "", icon: PhoneCall },
     { line1: "Agenda", line2: "", icon: Calendar },
     { line1: "Simulador", line2: "", icon: FolderOpen },
-    { line1: "Informacoes", line2: "", icon: Info },
+    { line1: "Informações", line2: "", icon: Info },
     { line1: "Financeiro", line2: "", icon: Banknote },
     { line1: "Configurar", line2: "", icon: Wrench },
   ];
@@ -389,7 +389,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
               {!importResult?.data ? (
                 <form onSubmit={handleImportLead} className="space-y-4">
                   <p className="mb-4 text-xs text-gray-500">
-                    Insira suas credenciais do <b>Sistema Quer</b> para capturarmos os dados da indicacao automaticamente.
+                    Insira suas credenciais do <b>Sistema Quer</b> para capturarmos os dados da indicação automaticamente.
                   </p>
 
                   <div>
@@ -416,7 +416,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
                   <div>
                     <label className="mb-1 block text-xs font-bold uppercase text-gray-700">
-                      URL da Indicacao (Link)
+                      URL da Indicação (Link)
                     </label>
                     <input
                       type="url"
@@ -480,11 +480,11 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                   <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
                     <div className="flex items-center gap-2 border-b border-gray-200 bg-gray-50 px-4 py-2">
                       <MapPin size={16} className="text-[#b58c2a]" />
-                      <span className="text-xs font-bold uppercase text-gray-700">Localizacao</span>
+                      <span className="text-xs font-bold uppercase text-gray-700">Localização</span>
                     </div>
                     <div className="grid gap-4 p-4 md:grid-cols-2">
                       <div className="md:col-span-2">
-                        <label className="block text-[10px] font-bold uppercase text-gray-400">Endereco</label>
+                        <label className="block text-[10px] font-bold uppercase text-gray-400">Endereço</label>
                         <p className="text-sm font-medium text-gray-800">
                           {importResult.data.endereco} {importResult.data.numero ? `, ${importResult.data.numero}` : ""}
                         </p>
@@ -503,11 +503,11 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                   <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
                     <div className="flex items-center gap-2 border-b border-gray-200 bg-gray-50 px-4 py-2">
                       <FileText size={16} className="text-[#b58c2a]" />
-                      <span className="text-xs font-bold uppercase text-gray-700">Dados do Calculo / Observacoes</span>
+                      <span className="text-xs font-bold uppercase text-gray-700">Dados do Cálculo / Observações</span>
                     </div>
                     <div className="p-4">
                       <p className="whitespace-pre-wrap rounded border border-yellow-100 bg-yellow-50/50 p-3 text-sm text-gray-700">
-                        {importResult.data.observacao || "Nenhuma observacao encontrada."}
+                        {importResult.data.observacao || "Nenhuma observação encontrada."}
                       </p>
                     </div>
                   </div>
@@ -516,7 +516,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                     <div className="flex items-center gap-2 border-b border-gray-200 bg-gray-50 px-4 py-2">
                       <Users size={16} className="text-[#b58c2a]" />
                       <span className="text-xs font-bold uppercase text-gray-700">
-                        Composicao de Vidas (Faixas Etarias)
+                        Composição de Vidas (Faixas Etárias)
                       </span>
                     </div>
                     <div className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-5">
@@ -547,7 +547,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
             </div>
 
             <div className="bg-gray-50 p-3 text-center text-[10px] uppercase tracking-widest text-gray-400">
-              Sessao temporaria • Criptografada
+              Sessão temporária • Criptografada
             </div>
           </div>
         </div>
