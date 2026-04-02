@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ClientRegistrationMultipage } from "./ClientRegistrationMultipage";
+import { WhatsAppQrPanel } from "./WhatsAppQrPanel";
 import { supabase } from "../lib/supabase";
 
 interface DashboardProps {
@@ -95,7 +96,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   };
 
   const handleOpenWhatsAppAuth = () => {
-    window.open("https://web.whatsapp.com/", "_blank", "noopener,noreferrer");
+    setActiveMenu("WhatsApp");
   };
 
   const handleCardClick = (line1: string, line2: string) => {
@@ -156,6 +157,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
   const showSimulator = activeMenu === "Simulador";
   const showClientArea = activeMenu === "Meus clientes";
+  const showWhatsAppAuth = activeMenu === "WhatsApp";
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-[#F0F4F8] font-sans lg:h-screen lg:flex-row lg:overflow-hidden">
@@ -254,7 +256,9 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
           </div>
         </header>
 
-        {showSimulator ? (
+        {showWhatsAppAuth ? (
+          <WhatsAppQrPanel />
+        ) : showSimulator ? (
           <div className="relative flex-1 overflow-hidden bg-gray-50">
             <iframe
               src="https://app.simuladoronline.com/login/"
