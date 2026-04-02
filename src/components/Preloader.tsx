@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
+import preloaderImage from './prereloader.png';
 
 interface PreloaderProps {
   onComplete: () => void;
@@ -47,10 +48,9 @@ export const Preloader: React.FC<PreloaderProps> = ({ onComplete }) => {
         className="flex flex-col items-center"
       >
         <img
-          src="https://www.dropbox.com/scl/fi/1kots6b9qvk66ap2gqr2f/PRELOADER_RC.png?rlkey=xnnu1tr1dqcpzc7arksuv2gx6&raw=1"
+          src={preloaderImage}
           alt="Logo"
           className="w-64 mb-8"
-          referrerPolicy="no-referrer"
           onLoad={() => setImageLoaded(true)}
           onError={() => setImageLoaded(true)}
         />
