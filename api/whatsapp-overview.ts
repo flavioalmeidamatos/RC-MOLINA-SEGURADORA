@@ -36,6 +36,13 @@ type GreenApiStatusResponse = {
   statusInstance?: string;
 };
 
+type GreenApiContact = {
+  id?: string;
+  name?: string;
+  contactName?: string;
+  type?: "user" | "group";
+};
+
 export const config = {
   maxDuration: 30,
 };
@@ -101,23 +108,62 @@ const formatPhoneNumber = (chatId: string) => {
   return chatId.replace(/@.+$/, "");
 };
 
-const buildChatTitle = (message: GreenApiMessage) => {
+const getPreferredContactName = (contact?: GreenApiContact) => {
+  const contactBookName = String(contact?.contactName || "").trim();
+  const profileName = String(contact?.name || "").trim();
+
+  if (contactBookName) {
+    return contactBookName;
+  }
+
+  if (profileName) {
+    return profileName;
+  }
+
+  return "";
+};
+
+const buildChatTitle = (message: GreenApiMessage, contact?: GreenApiContact) => {
+  const mappedName = getPreferredContactName(contact);
+
+  if (mappedName) {
+    return mappedName;
+  }
+
   const senderName = String(message.senderContactName || message.senderName || "").trim();
 
   if (senderName) {
     return senderName;
   }
 
-  if (String(message.chatId || "").endsWith("@g.us")) {
-    const groupId = String(message.chatId || "").replace("@g.us", "");
+  const chatId = String(message.chatId || "");
+
+  if (chatId.endsWith("@g.us")) {
+    const groupId = chatId.replace("@g.us", "");
     return `Grupo ${groupId.slice(0, 12)}`;
   }
 
-  return formatPhoneNumber(String(message.chatId || ""));
+  return formatPhoneNumber(chatId);
 };
 
-const buildChatSubtitle = (message: GreenApiMessage) => {
+const buildChatSubtitle = (message: GreenApiMessage, contact?: GreenApiContact) => {
+  const preferredName = getPreferredContactName(contact);
+  const profileName = String(contact?.name || "").trim();
   const chatId = String(message.chatId || "");
+
+  if (contact?.type === "group") {
+    return preferredName && preferredName !== profileName && profileName
+      ? `Grupo • ${profileName}`
+      : "Grupo do WhatsApp";
+  }
+
+  if (preferredName && profileName && preferredName !== profileName) {
+    return profileName;
+  }
+
+  if (preferredName) {
+    return "Contato do WhatsApp";
+  }
 
   if (chatId.endsWith("@g.us")) {
     return "Grupo";
@@ -156,8 +202,17 @@ const buildPreview = (message: GreenApiMessage) => {
   return typeMap[String(message.typeMessage || "")] || "Midia recebida";
 };
 
-const buildChats = (incomingMessages: GreenApiMessage[], outgoingMessages: GreenApiMessage[]) => {
+const buildChats = (
+  incomingMessages: GreenApiMessage[],
+  outgoingMessages: GreenApiMessage[],
+  contacts: GreenApiContact[]
+) => {
   const latestByChat = new Map<string, GreenApiMessage>();
+  const contactsById = new Map(
+    contacts
+      .map((contact) => [String(contact.id || "").trim(), contact] as const)
+      .filter(([id]) => id)
+  );
 
   [...incomingMessages, ...outgoingMessages]
     .sort((a, b) => Number(b.timestamp || 0) - Number(a.timestamp || 0))
@@ -174,17 +229,22 @@ const buildChats = (incomingMessages: GreenApiMessage[], outgoingMessages: Green
   return Array.from(latestByChat.values())
     .sort((a, b) => Number(b.timestamp || 0) - Number(a.timestamp || 0))
     .slice(0, MAX_CHAT_CARDS)
-    .map((message) => ({
-      chatId: String(message.chatId || ""),
-      title: buildChatTitle(message),
-      subtitle: buildChatSubtitle(message),
-      preview: buildPreview(message),
-      timestamp: Number(message.timestamp || 0),
-      direction: message.type || "incoming",
-      typeMessage: String(message.typeMessage || ""),
-      statusMessage: String(message.statusMessage || ""),
-      isGroup: String(message.chatId || "").endsWith("@g.us"),
-    }));
+    .map((message) => {
+      const chatId = String(message.chatId || "").trim();
+      const contact = contactsById.get(chatId);
+
+      return {
+        chatId,
+        title: buildChatTitle(message, contact),
+        subtitle: buildChatSubtitle(message, contact),
+        preview: buildPreview(message),
+        timestamp: Number(message.timestamp || 0),
+        direction: message.type || "incoming",
+        typeMessage: String(message.typeMessage || ""),
+        statusMessage: String(message.statusMessage || ""),
+        isGroup: String(contact?.type || "") === "group" || chatId.endsWith("@g.us"),
+      };
+    });
 };
 
 export default async function handler(request: VercelRequest, response: VercelResponse) {
@@ -224,7 +284,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
       });
     }
 
-    const [incomingMessages, outgoingMessages] = await Promise.all([
+    const [incomingMessages, outgoingMessages, contacts] = await Promise.all([
       fetchGreenApiWithQuery<GreenApiMessage[]>(
         "lastIncomingMessages",
         `minutes=${CHATS_LOOKBACK_MINUTES}`
@@ -233,6 +293,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
         "lastOutgoingMessages",
         `minutes=${CHATS_LOOKBACK_MINUTES}`
       ),
+      fetchGreenApi<GreenApiContact[]>("getContacts"),
     ]);
 
     return response.status(200).json({
@@ -240,7 +301,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
       connected: true,
       stateInstance,
       statusInstance,
-      chats: buildChats(incomingMessages || [], outgoingMessages || []),
+      chats: buildChats(incomingMessages || [], outgoingMessages || [], contacts || []),
       fetchedAt: new Date().toISOString(),
     });
   } catch (error) {
