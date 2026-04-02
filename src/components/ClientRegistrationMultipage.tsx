@@ -906,7 +906,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
 
         <section className={activeTab === 'documentacao' ? 'block' : 'hidden'}>
           <div className={sectionCardClassName}>
-            <div className="grid gap-2.5">
+            <div className="grid gap-2">
               <div className="grid gap-2.5 xl:grid-cols-[1.05fr_0.95fr]">
                 <div
                   onDragOver={(event) => {
@@ -915,7 +915,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                   }}
                   onDragLeave={() => setIsDraggingDocuments(false)}
                   onDrop={handleDocumentDrop}
-                  className={`rounded-[28px] border-2 border-dashed px-4 py-4 text-center transition sm:px-5 xl:h-full ${
+                  className={`rounded-[28px] border-2 border-dashed px-4 py-3.5 text-center transition sm:px-5 xl:h-full ${
                     isDraggingDocuments
                       ? 'border-[#3d8ed8] bg-[#3d8ed8]/5'
                       : 'border-slate-300 bg-slate-50/80 hover:border-[#3d8ed8]/50 hover:bg-[#3d8ed8]/[0.03]'
@@ -954,7 +954,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                 <div>
                   <label className="mb-1.5 block text-sm font-bold text-slate-700">Documentação</label>
                   <textarea
-                    className={`${textAreaClassName} min-h-28 resize-y xl:min-h-[204px]`}
+                    className={`${textAreaClassName} min-h-24 resize-y xl:min-h-[188px]`}
                     value={formState.documentacao}
                     onChange={(event) => handleFieldChange('documentacao', event.target.value)}
                     placeholder="Registre documentos, anexos, números de apólice, vencimentos e observações importantes"
@@ -962,7 +962,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="rounded-[28px] border border-slate-200 bg-slate-50/70 p-3 sm:p-3.5">
+              <div className="rounded-[28px] border border-slate-200 bg-slate-50/70 p-3">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h3 className="text-sm font-black uppercase tracking-[0.18em] text-slate-500">Arquivos anexados</h3>
@@ -1076,21 +1076,6 @@ export const ClientRegistrationMultipage: React.FC = () => {
                     Nenhum arquivo anexado ainda.
                   </div>
                 )}
-              </div>
-
-              <div className="grid gap-2.5 md:grid-cols-3">
-                <div className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-2.5">
-                  <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Checklist</p>
-                  <p className="mt-1.5 text-sm leading-5 text-slate-600">Use esta aba para centralizar RG, CPF, comprovantes e dados da apólice.</p>
-                </div>
-                <div className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-2.5">
-                  <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Organização</p>
-                  <p className="mt-1.5 text-sm leading-5 text-slate-600">Mantenha um resumo rápido para consulta no celular sem precisar abrir vários blocos.</p>
-                </div>
-                <div className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-2.5">
-                  <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Próxima ação</p>
-                  <p className="mt-1.5 text-sm leading-5 text-slate-600">Anote pendências de envio, retorno do cliente e validações que ainda faltam.</p>
-                </div>
               </div>
             </div>
           </div>
