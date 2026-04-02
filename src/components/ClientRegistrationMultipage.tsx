@@ -1,7 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
+  File,
+  FileImage,
   FileText,
   Heart,
   Info,
@@ -9,7 +11,9 @@ import {
   PlusCircle,
   Save,
   Trash2,
+  Upload,
   UserRound,
+  X,
 } from 'lucide-react';
 import {
   formatarCNPJ,
@@ -64,6 +68,17 @@ type FieldErrorState = {
 };
 
 type ContactErrorState = Record<number, string>;
+
+type UploadedDocument = {
+  id: number;
+  file: File;
+  name: string;
+  size: number;
+  mimeType: string;
+  extension: string;
+  previewUrl: string;
+  previewKind: 'image' | 'pdf' | 'document';
+};
 
 const tabs: Array<{ id: TabId; label: string; icon: React.ComponentType<{ size?: number; className?: string }> }> = [
   { id: 'geral', label: 'Geral', icon: UserRound },
@@ -133,6 +148,8 @@ const textAreaClassName =
 const sectionCardClassName = 'rounded-[28px] border border-slate-200 bg-white p-3 shadow-sm sm:p-4 xl:p-5';
 
 const errorMessageClassName = 'mt-2 text-xs font-semibold text-red-600';
+const documentInputAccept =
+  '.png,.jpg,.jpeg,.webp,.gif,.bmp,.svg,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv';
 
 const somenteDigitos = (valor: string): string => valor.replace(/\D/g, '');
 const somenteLetrasEEspacos = (valor: string): string => valor.replace(/[^A-Za-zÀ-ÿ\s]/g, '');
@@ -151,13 +168,39 @@ const formatarTelefoneContato = (valor: string, tipo: string): string => {
   return `(${digitos.slice(0, 2)}) ${digitos.slice(2, 6)}-${digitos.slice(6)}`;
 };
 
+const obterExtensaoArquivo = (nome: string): string => {
+  const partes = nome.split('.');
+  return partes.length > 1 ? partes[partes.length - 1].toLowerCase() : '';
+};
+
+const obterTipoPreview = (arquivo: File): UploadedDocument['previewKind'] => {
+  if (arquivo.type.startsWith('image/')) return 'image';
+  if (arquivo.type === 'application/pdf' || obterExtensaoArquivo(arquivo.name) === 'pdf') return 'pdf';
+  return 'document';
+};
+
+const formatarTamanhoArquivo = (bytes: number): string => {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+const revogarPreviews = (documentos: UploadedDocument[]) => {
+  documentos.forEach((documento) => URL.revokeObjectURL(documento.previewUrl));
+};
+
 export const ClientRegistrationMultipage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabId>('geral');
   const [formState, setFormState] = useState<ClientFormState>(initialFormState);
   const [contacts, setContacts] = useState<ContactRow[]>(initialContacts);
+  const [uploadedDocuments, setUploadedDocuments] = useState<UploadedDocument[]>([]);
+  const [isDraggingDocuments, setIsDraggingDocuments] = useState(false);
   const [feedback, setFeedback] = useState('');
   const [fieldErrors, setFieldErrors] = useState<FieldErrorState>(initialFieldErrors);
   const [contactErrors, setContactErrors] = useState<ContactErrorState>({});
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const carouselRef = useRef<HTMLDivElement | null>(null);
+  const uploadedDocumentsRef = useRef<UploadedDocument[]>([]);
 
   const activeTabIndex = tabs.findIndex((tab) => tab.id === activeTab);
 
@@ -165,9 +208,20 @@ export const ClientRegistrationMultipage: React.FC = () => {
   const hasFormChanges = useMemo(
     () =>
       JSON.stringify(formState) !== JSON.stringify(initialFormState) ||
-      JSON.stringify(contacts) !== JSON.stringify(initialContacts),
-    [contacts, formState],
+      JSON.stringify(contacts) !== JSON.stringify(initialContacts) ||
+      uploadedDocuments.length > 0,
+    [contacts, formState, uploadedDocuments.length],
   );
+
+  useEffect(() => {
+    uploadedDocumentsRef.current = uploadedDocuments;
+  }, [uploadedDocuments]);
+
+  useEffect(() => {
+    return () => {
+      revogarPreviews(uploadedDocumentsRef.current);
+    };
+  }, []);
 
   const handleFieldChange = <K extends keyof ClientFormState>(field: K, value: ClientFormState[K]) => {
     setFormState((prev) => ({ ...prev, [field]: value }));
@@ -283,9 +337,61 @@ export const ClientRegistrationMultipage: React.FC = () => {
     setContacts((prev) => (prev.length > 1 ? prev.filter((contact) => contact.id !== id) : prev));
   };
 
+  const adicionarArquivos = (arquivos: FileList | File[]) => {
+    const listaArquivos = Array.from(arquivos);
+
+    if (!listaArquivos.length) return;
+
+    const novosDocumentos = listaArquivos.map<UploadedDocument>((arquivo) => ({
+      id: Date.now() + Math.floor(Math.random() * 100000),
+      file: arquivo,
+      name: arquivo.name,
+      size: arquivo.size,
+      mimeType: arquivo.type,
+      extension: obterExtensaoArquivo(arquivo.name),
+      previewUrl: URL.createObjectURL(arquivo),
+      previewKind: obterTipoPreview(arquivo),
+    }));
+
+    setUploadedDocuments((prev) => [...prev, ...novosDocumentos]);
+    setFeedback(`${novosDocumentos.length} arquivo(s) adicionado(s) à documentação.`);
+  };
+
+  const handleDocumentsSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files?.length) return;
+    adicionarArquivos(event.target.files);
+    event.target.value = '';
+  };
+
+  const handleDocumentDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsDraggingDocuments(false);
+
+    if (!event.dataTransfer.files?.length) return;
+    adicionarArquivos(event.dataTransfer.files);
+  };
+
+  const removeUploadedDocument = (id: number) => {
+    setUploadedDocuments((prev) => {
+      const documento = prev.find((item) => item.id === id);
+      if (documento) URL.revokeObjectURL(documento.previewUrl);
+      return prev.filter((item) => item.id !== id);
+    });
+  };
+
+  const scrollDocumentsCarousel = (direction: 'left' | 'right') => {
+    if (!carouselRef.current) return;
+
+    const offset = direction === 'left' ? -260 : 260;
+    carouselRef.current.scrollBy({ left: offset, behavior: 'smooth' });
+  };
+
   const resetForm = () => {
+    revogarPreviews(uploadedDocumentsRef.current);
     setFormState(initialFormState);
     setContacts(initialContacts);
+    setUploadedDocuments([]);
+    setIsDraggingDocuments(false);
     setFieldErrors(initialFieldErrors);
     setContactErrors({});
     setActiveTab('geral');
@@ -776,6 +882,49 @@ export const ClientRegistrationMultipage: React.FC = () => {
         <section className={activeTab === 'documentacao' ? 'block' : 'hidden'}>
           <div className={sectionCardClassName}>
             <div className="grid gap-3">
+              <div
+                onDragOver={(event) => {
+                  event.preventDefault();
+                  setIsDraggingDocuments(true);
+                }}
+                onDragLeave={() => setIsDraggingDocuments(false)}
+                onDrop={handleDocumentDrop}
+                className={`rounded-[28px] border-2 border-dashed px-4 py-5 text-center transition sm:px-5 ${
+                  isDraggingDocuments
+                    ? 'border-[#3d8ed8] bg-[#3d8ed8]/5'
+                    : 'border-slate-300 bg-slate-50/80 hover:border-[#3d8ed8]/50 hover:bg-[#3d8ed8]/[0.03]'
+                }`}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept={documentInputAccept}
+                  onChange={handleDocumentsSelected}
+                  className="hidden"
+                />
+
+                <div className="mx-auto flex max-w-2xl flex-col items-center gap-3">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-[#3d8ed8] shadow-sm">
+                    <Upload size={24} />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-base font-black text-slate-900 sm:text-lg">Arraste e solte os arquivos aqui</h3>
+                    <p className="text-sm text-slate-500">
+                      Aceita imagens, PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, TXT e CSV.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-[#0c1826] px-4 py-2.5 text-sm font-black text-white transition hover:bg-[#16273b] sm:min-h-10"
+                  >
+                    <PlusCircle size={18} />
+                    Selecionar arquivos
+                  </button>
+                </div>
+              </div>
+
               <div>
                 <label className="mb-2 block text-sm font-bold text-slate-700">Documentação</label>
                 <textarea
@@ -784,6 +933,107 @@ export const ClientRegistrationMultipage: React.FC = () => {
                   onChange={(event) => handleFieldChange('documentacao', event.target.value)}
                   placeholder="Registre documentos, anexos, números de apólice, vencimentos e observações importantes"
                 />
+              </div>
+
+              <div className="rounded-[28px] border border-slate-200 bg-slate-50/70 p-3 sm:p-4">
+                <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h3 className="text-sm font-black uppercase tracking-[0.18em] text-slate-500">Arquivos anexados</h3>
+                    <p className="mt-1 text-sm text-slate-500">
+                      {uploadedDocuments.length
+                        ? 'Deslize para visualizar as miniaturas dos arquivos adicionados.'
+                        : 'As miniaturas vão aparecer aqui conforme você anexar arquivos.'}
+                    </p>
+                  </div>
+
+                  {uploadedDocuments.length > 1 ? (
+                    <div className="grid grid-cols-2 gap-2 sm:flex">
+                      <button
+                        type="button"
+                        onClick={() => scrollDocumentsCarousel('left')}
+                        className="inline-flex min-h-10 items-center justify-center rounded-2xl border border-slate-200 bg-white px-3 text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
+                      >
+                        <ChevronLeft size={18} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => scrollDocumentsCarousel('right')}
+                        className="inline-flex min-h-10 items-center justify-center rounded-2xl border border-slate-200 bg-white px-3 text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
+                      >
+                        <ChevronRight size={18} />
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+
+                {uploadedDocuments.length ? (
+                  <div
+                    ref={carouselRef}
+                    className="mt-3 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                  >
+                    {uploadedDocuments.map((documento) => (
+                      <article
+                        key={documento.id}
+                        className="min-w-[220px] max-w-[220px] snap-start rounded-[24px] border border-slate-200 bg-white shadow-sm"
+                      >
+                        <div className="relative h-36 overflow-hidden rounded-t-[24px] bg-slate-100">
+                          {documento.previewKind === 'image' ? (
+                            <img
+                              src={documento.previewUrl}
+                              alt={documento.name}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : documento.previewKind === 'pdf' ? (
+                            <iframe
+                              title={documento.name}
+                              src={`${documento.previewUrl}#toolbar=0&navpanes=0&scrollbar=0`}
+                              className="h-full w-full border-0"
+                            />
+                          ) : (
+                            <div className="flex h-full flex-col items-center justify-center gap-3 px-4 text-center">
+                              {documento.mimeType.startsWith('image/') ? (
+                                <FileImage size={30} className="text-[#3d8ed8]" />
+                              ) : documento.extension === 'pdf' ? (
+                                <FileText size={30} className="text-[#ef6b74]" />
+                              ) : (
+                                <File size={30} className="text-[#3d8ed8]" />
+                              )}
+                              <div>
+                                <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">
+                                  {documento.extension || 'arquivo'}
+                                </p>
+                                <p className="mt-1 line-clamp-2 text-sm font-semibold text-slate-700">
+                                  Pré-visualização disponível após download
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => removeUploadedDocument(documento.id)}
+                            className="absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-slate-500 shadow-sm transition hover:text-red-500"
+                            aria-label={`Remover ${documento.name}`}
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+
+                        <div className="space-y-2 p-3">
+                          <p className="truncate text-sm font-bold text-slate-800">{documento.name}</p>
+                          <div className="flex items-center justify-between gap-2 text-xs font-semibold text-slate-400">
+                            <span className="truncate uppercase">{documento.extension || 'arquivo'}</span>
+                            <span>{formatarTamanhoArquivo(documento.size)}</span>
+                          </div>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="mt-3 rounded-3xl border border-dashed border-slate-200 bg-white px-4 py-6 text-center text-sm text-slate-400">
+                    Nenhum arquivo anexado ainda.
+                  </div>
+                )}
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
