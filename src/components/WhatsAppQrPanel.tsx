@@ -43,6 +43,10 @@ type WhatsAppConversationMessage = {
   statusMessage: string;
   senderName: string;
   sendByApi: boolean;
+  mediaUrl?: string;
+  mimeType?: string;
+  thumbnailUrl?: string;
+  isAnimated?: boolean;
 };
 
 type WhatsAppChatApiResponse = {
@@ -265,6 +269,45 @@ export const WhatsAppQrPanel: React.FC = () => {
       minute: "2-digit",
     });
   const hasSelectedChat = Boolean(selectedChat);
+  const renderMessageBody = (message: WhatsAppConversationMessage) => {
+    const isImage = message.typeMessage === "imageMessage";
+    const isSticker = message.typeMessage === "stickerMessage";
+    const isAudio = message.typeMessage === "audioMessage";
+
+    if ((isImage || isSticker) && (message.mediaUrl || message.thumbnailUrl)) {
+      const source = message.mediaUrl || message.thumbnailUrl || "";
+      const imageClassName = isSticker
+        ? "h-28 w-28 object-contain"
+        : "max-h-72 w-full rounded-2xl object-cover";
+
+      return (
+        <div className="space-y-2">
+          <img
+            src={source}
+            alt={message.text || (isSticker ? "Sticker do WhatsApp" : "Imagem do WhatsApp")}
+            className={imageClassName}
+            loading="lazy"
+          />
+          {message.text && message.text !== "Imagem" && message.text !== "Sticker" ? (
+            <p className="whitespace-pre-wrap text-sm leading-6">{message.text}</p>
+          ) : null}
+        </div>
+      );
+    }
+
+    if (isAudio && message.mediaUrl) {
+      return (
+        <div className="space-y-2">
+          <audio controls preload="none" src={message.mediaUrl} className="w-full min-w-[220px]" />
+          {message.text && message.text !== "Audio" ? (
+            <p className="whitespace-pre-wrap text-sm leading-6">{message.text}</p>
+          ) : null}
+        </div>
+      );
+    }
+
+    return <p className="whitespace-pre-wrap text-sm leading-6">{message.text}</p>;
+  };
 
   return (
     <div className="flex flex-1 overflow-y-auto bg-[#eef3f7] p-4 sm:p-6 md:p-8">
@@ -434,9 +477,7 @@ export const WhatsAppQrPanel: React.FC = () => {
                                       {message.senderName}
                                     </p>
                                   ) : null}
-                                  <p className="whitespace-pre-wrap text-sm leading-6">
-                                    {message.text}
-                                  </p>
+                                  {renderMessageBody(message)}
                                   <p className="mt-2 text-[11px] text-[#6b7280]">
                                     {formatTimestamp(message.timestamp)}
                                     {message.direction === "outgoing" && message.statusMessage

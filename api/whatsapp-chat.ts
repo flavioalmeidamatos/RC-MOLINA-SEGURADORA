@@ -33,10 +33,18 @@ type GreenApiChatMessage = {
   textMessage?: string;
   caption?: string;
   fileName?: string;
+  downloadUrl?: string;
+  jpegThumbnail?: string;
+  mimeType?: string;
+  isAnimated?: boolean;
 };
 
 type GreenApiSendMessageResponse = {
   idMessage?: string;
+};
+
+type GreenApiDownloadFileResponse = {
+  downloadUrl?: string;
 };
 
 export const config = {
@@ -76,6 +84,12 @@ const fetchGreenApiPost = async <T>(path: string, body: unknown) => {
   return payload as T;
 };
 
+const needsDownloadLookup = (message: GreenApiChatMessage) =>
+  ["imageMessage", "audioMessage", "stickerMessage"].includes(String(message.typeMessage || "")) &&
+  !String(message.downloadUrl || "").trim() &&
+  String(message.chatId || "").trim() &&
+  String(message.idMessage || "").trim();
+
 const normalizePreview = (message: GreenApiChatMessage) => {
   const text = String(message.textMessage || "").trim();
   const caption = String(message.caption || "").trim();
@@ -108,20 +122,46 @@ const normalizePreview = (message: GreenApiChatMessage) => {
   return typeMap[String(message.typeMessage || "")] || "Mensagem";
 };
 
-const normalizeHistory = (messages: GreenApiChatMessage[]) =>
-  [...messages]
-    .sort((a, b) => Number(a.timestamp || 0) - Number(b.timestamp || 0))
-    .map((message) => ({
-      idMessage: String(message.idMessage || ""),
-      chatId: String(message.chatId || ""),
-      timestamp: Number(message.timestamp || 0),
-      direction: message.type || "incoming",
-      typeMessage: String(message.typeMessage || ""),
-      text: normalizePreview(message),
-      statusMessage: String(message.statusMessage || ""),
-      senderName: String(message.senderContactName || message.senderName || "").trim(),
-      sendByApi: Boolean(message.sendByApi),
-    }));
+const toDataImage = (jpegThumbnail: string) =>
+  jpegThumbnail ? `data:image/jpeg;base64,${jpegThumbnail}` : "";
+
+const normalizeHistory = async (messages: GreenApiChatMessage[]) => {
+  const orderedMessages = [...messages].sort((a, b) => Number(a.timestamp || 0) - Number(b.timestamp || 0));
+
+  return Promise.all(
+    orderedMessages.map(async (message) => {
+      let mediaUrl = String(message.downloadUrl || "").trim();
+
+      if (needsDownloadLookup(message)) {
+        try {
+          const downloadPayload = await fetchGreenApiPost<GreenApiDownloadFileResponse>("downloadFile", {
+            chatId: String(message.chatId || "").trim(),
+            idMessage: String(message.idMessage || "").trim(),
+          });
+          mediaUrl = String(downloadPayload.downloadUrl || "").trim();
+        } catch (error) {
+          console.warn("Nao foi possivel resolver a midia do WhatsApp:", error);
+        }
+      }
+
+      return {
+        idMessage: String(message.idMessage || ""),
+        chatId: String(message.chatId || ""),
+        timestamp: Number(message.timestamp || 0),
+        direction: message.type || "incoming",
+        typeMessage: String(message.typeMessage || ""),
+        text: normalizePreview(message),
+        statusMessage: String(message.statusMessage || ""),
+        senderName: String(message.senderContactName || message.senderName || "").trim(),
+        sendByApi: Boolean(message.sendByApi),
+        mediaUrl,
+        mimeType: String(message.mimeType || ""),
+        thumbnailUrl: toDataImage(String(message.jpegThumbnail || "").trim()),
+        isAnimated: Boolean(message.isAnimated),
+      };
+    })
+  );
+};
 
 export default async function handler(request: VercelRequest, response: VercelResponse) {
   applyHeaders(response);
@@ -147,7 +187,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
       return response.status(200).json({
         success: true,
         chatId,
-        messages: normalizeHistory(Array.isArray(history) ? history : []),
+        messages: await normalizeHistory(Array.isArray(history) ? history : []),
       });
     }
 
