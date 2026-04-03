@@ -47,6 +47,7 @@ type WhatsAppOverviewApiResponse = {
   statusInstance?: string;
   qrCode?: string;
   chats?: WhatsAppChatItem[];
+  contacts?: WhatsAppChatItem[];
   fetchedAt?: string;
   error?: string;
 };
@@ -137,11 +138,13 @@ type WhatsAppNotificationApiResponse = {
 
 interface WhatsAppQrPanelProps {
   onConnectionChange?: (connected: boolean) => void;
+  onSyncActivityChange?: (syncing: boolean) => void;
   embedded?: boolean;
 }
 
 export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
   onConnectionChange,
+  onSyncActivityChange,
   embedded = false,
 }) => {
   const requestInFlightRef = useRef(false);
@@ -155,8 +158,10 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
   const realtimeSyncEnabledRef = useRef(false);
   const [qrCode, setQrCode] = useState("");
   const [chats, setChats] = useState<WhatsAppChatItem[]>([]);
+  const [searchContacts, setSearchContacts] = useState<WhatsAppChatItem[]>([]);
   const [avatarUrls, setAvatarUrls] = useState<Record<string, string | null>>({});
   const [connected, setConnected] = useState(false);
+  const [realtimeWorkerActive, setRealtimeWorkerActive] = useState(false);
   const [stateInstance, setStateInstance] = useState("");
   const [statusInstance, setStatusInstance] = useState("");
   const [fetchedAt, setFetchedAt] = useState("");
@@ -600,7 +605,9 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
       setStatusInstance(data.statusInstance || "");
       setQrCode(data.qrCode || "");
       const nextChats = Array.isArray(data.chats) ? data.chats : [];
+      const nextContacts = Array.isArray(data.contacts) ? data.contacts : [];
       setChats((currentChats) => reconcileOverviewChats(currentChats, nextChats));
+      setSearchContacts(nextContacts);
       setFetchedAt(data.fetchedAt || "");
 
       if (!isManualRefresh && nextConnected && nextChats.length > 0 && !hasShownInitialSyncNoticeRef.current) {
@@ -1214,6 +1221,33 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
   }, [selectedChat]);
 
   useEffect(() => {
+    const isSyncing =
+      loading ||
+      refreshing ||
+      loadingMessages ||
+      sendingMessage ||
+      attachmentLoading ||
+      (connected && realtimeWorkerActive);
+
+    onSyncActivityChange?.(isSyncing);
+  }, [
+    attachmentLoading,
+    connected,
+    loading,
+    loadingMessages,
+    onSyncActivityChange,
+    realtimeWorkerActive,
+    refreshing,
+    sendingMessage,
+  ]);
+
+  useEffect(() => {
+    return () => {
+      onSyncActivityChange?.(false);
+    };
+  }, [onSyncActivityChange]);
+
+  useEffect(() => {
     return () => {
       stopRecordingTimer();
     };
@@ -1245,6 +1279,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
   useEffect(() => {
     if (!connected) {
       realtimeSyncEnabledRef.current = false;
+      setRealtimeWorkerActive(false);
       return;
     }
 
@@ -1254,11 +1289,13 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
     const startQueueLoop = async () => {
       try {
         await ensureRealtimeNotifications();
+        setRealtimeWorkerActive(true);
       } catch (queueError) {
         if (notificationLoopIdRef.current !== currentLoopId) {
           return;
         }
 
+        setRealtimeWorkerActive(false);
         const message =
           queueError instanceof Error
             ? queueError.message
@@ -1453,9 +1490,17 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
   );
   const filteredChats = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
+    const searchPool = normalizedSearch
+      ? [
+          ...chats,
+          ...searchContacts.filter(
+            (contact) => !chats.some((chat) => chat.chatId === contact.chatId)
+          ),
+        ]
+      : chats;
 
     return sortChatsByTimestamp(
-      chats.filter((chat) => {
+      searchPool.filter((chat) => {
         if (activeFilter === "incoming" && Number(chat.unreadCount || 0) <= 0) {
           return false;
         }
@@ -1472,7 +1517,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
         return haystack.includes(normalizedSearch);
       })
     );
-  }, [activeFilter, chats, searchTerm]);
+  }, [activeFilter, chats, searchContacts, searchTerm]);
   const filteredEmojiCategories = useMemo(() => {
     const normalizedSearch = emojiSearch.trim().toLowerCase();
 
@@ -2138,13 +2183,13 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
                         <p className="text-sm font-semibold text-[#cbd5db]">
                           {activeEmojiCategoryData.label}
                         </p>
-                        <div className="mt-1.5 grid grid-cols-8 gap-0 sm:grid-cols-10 lg:grid-cols-12">
+                        <div className="mt-2 grid grid-cols-7 gap-x-1 gap-y-2 sm:grid-cols-9 lg:grid-cols-10">
                           {activeEmojiCategoryData.emojis.map((emoji) => (
                             <button
                               key={`${activeEmojiCategoryData.id}-${emoji}`}
                               type="button"
                               onClick={() => handleInsertEmoji(emoji)}
-                              className="inline-flex h-8 w-full items-center justify-center rounded-lg text-[21px] leading-none transition-colors hover:bg-white/8"
+                              className="inline-flex h-9 w-full items-center justify-center rounded-lg text-[22px] leading-none transition-colors hover:bg-white/8"
                             >
                               {emoji}
                             </button>

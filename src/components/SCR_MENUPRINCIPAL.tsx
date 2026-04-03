@@ -54,6 +54,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const [importLoading, setImportLoading] = useState(false);
   const [whatsAppConnected, setWhatsAppConnected] = useState(false);
   const [whatsAppChecking, setWhatsAppChecking] = useState(true);
+  const [whatsAppSyncing, setWhatsAppSyncing] = useState(false);
   const [isWhatsAppPanelOpen, setIsWhatsAppPanelOpen] = useState(false);
   const [isWhatsAppPanelCollapsed, setIsWhatsAppPanelCollapsed] = useState(false);
   const [credential, setCredential] = useState({
@@ -146,6 +147,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     } finally {
       setWhatsAppConnected(false);
       setWhatsAppChecking(false);
+      setWhatsAppSyncing(false);
     }
 
     await supabase.auth.signOut();
@@ -157,6 +159,12 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     setWhatsAppConnected(isConnected);
     setIsWhatsAppPanelOpen(true);
     setIsWhatsAppPanelCollapsed(false);
+  };
+
+  const handleCloseWhatsAppPanel = () => {
+    setIsWhatsAppPanelOpen(false);
+    setIsWhatsAppPanelCollapsed(false);
+    setWhatsAppSyncing(false);
   };
 
   const handleCardClick = (line1: string, line2: string) => {
@@ -217,6 +225,13 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
   const showSimulator = activeMenu === "Simulador";
   const showClientArea = activeMenu === "Meus clientes";
+  const whatsAppIndicatorClassName = whatsAppChecking
+    ? "bg-amber-400"
+    : whatsAppConnected
+      ? whatsAppSyncing
+        ? "whatsapp-sync-indicator bg-[#25D366]"
+        : "bg-[#25D366]"
+      : "bg-red-500";
   const whatsAppButtonClassName = whatsAppConnected
     ? "border-[#25D366]/25 bg-[#25D366]/10 text-[#128C7E] hover:bg-[#25D366]/18"
     : "border-red-200 bg-red-50 text-red-600 hover:bg-red-100";
@@ -287,13 +302,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
               <WhatsAppIcon className="h-5 w-5" />
               <span className="text-sm font-semibold">WhatsApp</span>
               <span
-                className={`h-2.5 w-2.5 rounded-full ${
-                  whatsAppChecking
-                    ? "bg-amber-400"
-                    : whatsAppConnected
-                      ? "bg-[#25D366]"
-                      : "bg-red-500"
-                }`}
+                className={`h-2.5 w-2.5 rounded-full ${whatsAppIndicatorClassName}`}
               />
             </button>
 
@@ -481,17 +490,11 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                         <ChevronLeft className="h-4 w-4" />
                       </button>
                       <span
-                        className={`hidden h-2.5 w-2.5 rounded-full lg:block ${
-                          whatsAppChecking
-                            ? "bg-amber-400"
-                            : whatsAppConnected
-                              ? "bg-[#25D366]"
-                              : "bg-red-500"
-                        }`}
+                        className={`hidden h-3 w-3 rounded-full lg:block ${whatsAppIndicatorClassName}`}
                       />
                       <button
                         type="button"
-                        onClick={() => setIsWhatsAppPanelOpen(false)}
+                        onClick={handleCloseWhatsAppPanel}
                         className="hidden h-9 w-9 items-center justify-center rounded-full border border-[#dbe5ec] text-[#526170] transition-colors hover:bg-[#f8fbfd] lg:inline-flex"
                         aria-label="Fechar painel do WhatsApp"
                       >
@@ -523,7 +526,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                         </button>
                         <button
                           type="button"
-                          onClick={() => setIsWhatsAppPanelOpen(false)}
+                          onClick={handleCloseWhatsAppPanel}
                           className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#dbe5ec] text-[#526170] transition-colors hover:bg-[#f8fbfd]"
                           aria-label="Fechar painel do WhatsApp"
                         >
@@ -534,11 +537,20 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                   )}
                 </div>
 
-                {isWhatsAppPanelCollapsed ? null : (
-                  <div className="min-h-0 flex-1 overflow-hidden">
-                    <WhatsAppQrPanel embedded onConnectionChange={setWhatsAppConnected} />
-                  </div>
-                )}
+                <div
+                  className={`${
+                    isWhatsAppPanelCollapsed
+                      ? "pointer-events-none absolute inset-0 h-0 w-0 overflow-hidden opacity-0"
+                      : "min-h-0 flex-1 overflow-hidden"
+                  }`}
+                  aria-hidden={isWhatsAppPanelCollapsed}
+                >
+                  <WhatsAppQrPanel
+                    embedded
+                    onConnectionChange={setWhatsAppConnected}
+                    onSyncActivityChange={setWhatsAppSyncing}
+                  />
+                </div>
               </aside>
             </>
           ) : null}
@@ -748,6 +760,22 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
         }
         .custom-scrollbar:hover::-webkit-scrollbar-thumb {
           background-color: rgba(156, 163, 175, 0.5);
+        }
+        .whatsapp-sync-indicator {
+          animation: whatsappSyncPulse 1.6s ease-in-out infinite;
+          box-shadow: 0 0 0 rgba(37, 211, 102, 0.35);
+        }
+        @keyframes whatsappSyncPulse {
+          0%, 100% {
+            opacity: 0.35;
+            box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.12);
+            transform: scale(0.92);
+          }
+          50% {
+            opacity: 1;
+            box-shadow: 0 0 14px 3px rgba(37, 211, 102, 0.45);
+            transform: scale(1.12);
+          }
         }
       `}</style>
     </div>

@@ -43,6 +43,20 @@ type GreenApiContact = {
   type?: "user" | "group";
 };
 
+type WhatsAppOverviewChatItem = {
+  chatId: string;
+  title: string;
+  subtitle: string;
+  preview: string;
+  timestamp: number;
+  direction: string;
+  typeMessage: string;
+  statusMessage: string;
+  isGroup: boolean;
+  unreadCount: number;
+  latestIncomingTimestamp: number;
+};
+
 export const config = {
   maxDuration: 30,
 };
@@ -201,6 +215,34 @@ const buildPreview = (message: GreenApiMessage) => {
   return typeMap[String(message.typeMessage || "")] || "Midia recebida";
 };
 
+const buildContactPreview = (contact: GreenApiContact) =>
+  contact.type === "group" ? "Grupo disponível para abrir a conversa" : "Contato disponível para iniciar conversa";
+
+const buildContactChatItem = (contact: GreenApiContact): WhatsAppOverviewChatItem | null => {
+  const chatId = String(contact.id || "").trim();
+
+  if (!chatId || chatId === "status@broadcast") {
+    return null;
+  }
+
+  return {
+    chatId,
+    title: getPreferredContactName(contact) || formatPhoneNumber(chatId),
+    subtitle:
+      contact.type === "group"
+        ? buildChatSubtitle({ chatId }, contact)
+        : buildChatSubtitle({ chatId }, contact),
+    preview: buildContactPreview(contact),
+    timestamp: 0,
+    direction: "incoming",
+    typeMessage: "textMessage",
+    statusMessage: "",
+    isGroup: String(contact.type || "") === "group" || chatId.endsWith("@g.us"),
+    unreadCount: 0,
+    latestIncomingTimestamp: 0,
+  };
+};
+
 const buildChats = (
   incomingMessages: GreenApiMessage[],
   outgoingMessages: GreenApiMessage[],
@@ -266,6 +308,19 @@ const buildChats = (
     });
 };
 
+const buildSearchableContacts = (
+  contacts: GreenApiContact[],
+  activeChats: WhatsAppOverviewChatItem[]
+) => {
+  const activeChatIds = new Set(activeChats.map((chat) => chat.chatId));
+
+  return contacts
+    .map((contact) => buildContactChatItem(contact))
+    .filter((contact): contact is WhatsAppOverviewChatItem => Boolean(contact))
+    .filter((contact) => !activeChatIds.has(contact.chatId))
+    .sort((left, right) => left.title.localeCompare(right.title, "pt-BR"));
+};
+
 export default async function handler(request: VercelRequest, response: VercelResponse) {
   applyHeaders(response);
 
@@ -315,12 +370,16 @@ export default async function handler(request: VercelRequest, response: VercelRe
       fetchGreenApi<GreenApiContact[]>("getContacts"),
     ]);
 
+    const activeChats = buildChats(incomingMessages || [], outgoingMessages || [], contacts || []);
+    const searchableContacts = buildSearchableContacts(contacts || [], activeChats);
+
     return response.status(200).json({
       success: true,
       connected: true,
       stateInstance,
       statusInstance,
-      chats: buildChats(incomingMessages || [], outgoingMessages || [], contacts || []),
+      chats: activeChats,
+      contacts: searchableContacts,
       fetchedAt: new Date().toISOString(),
     });
   } catch (error) {
