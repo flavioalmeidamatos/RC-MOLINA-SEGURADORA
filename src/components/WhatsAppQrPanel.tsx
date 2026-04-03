@@ -1484,23 +1484,37 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
     () => ({
       all: chats.length,
       incoming: chats.filter((chat) => Number(chat.unreadCount || 0) > 0).length,
-      groups: chats.filter((chat) => chat.isGroup).length,
+      groups: [
+        ...chats,
+        ...searchContacts.filter(
+          (contact) => contact.isGroup && !chats.some((chat) => chat.chatId === contact.chatId)
+        ),
+      ].filter((chat) => chat.isGroup).length,
     }),
-    [chats]
+    [chats, searchContacts]
   );
   const filteredChats = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
-    const searchPool = normalizedSearch
-      ? [
-          ...chats,
-          ...searchContacts.filter(
-            (contact) => !chats.some((chat) => chat.chatId === contact.chatId)
-          ),
-        ]
-      : chats;
+    const basePool =
+      activeFilter === "groups"
+        ? [
+            ...chats.filter((chat) => chat.isGroup),
+            ...searchContacts.filter(
+              (contact) =>
+                contact.isGroup && !chats.some((chat) => chat.chatId === contact.chatId)
+            ),
+          ]
+        : normalizedSearch
+          ? [
+              ...chats,
+              ...searchContacts.filter(
+                (contact) => !chats.some((chat) => chat.chatId === contact.chatId)
+              ),
+            ]
+          : chats;
 
     return sortChatsByTimestamp(
-      searchPool.filter((chat) => {
+      basePool.filter((chat) => {
         if (activeFilter === "incoming" && Number(chat.unreadCount || 0) <= 0) {
           return false;
         }
@@ -1688,6 +1702,10 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
 
     if (isDocument) {
       const previewSource = message.thumbnailUrl || "";
+      const pdfPreviewUrl =
+        isPdf && !previewSource && message.mediaUrl
+          ? `${message.mediaUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`
+          : "";
       const downloadLabel = isPdf ? "Abrir PDF" : "Abrir arquivo";
       const showDescription =
         message.text &&
@@ -1708,6 +1726,19 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
                 alt={normalizedFileName || "Miniatura do documento"}
                 className="max-h-56 w-full object-cover"
                 loading="lazy"
+              />
+            </a>
+          ) : pdfPreviewUrl ? (
+            <a
+              href={message.mediaUrl || pdfPreviewUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="block overflow-hidden rounded-2xl border border-white/10 bg-[#1b2730]"
+            >
+              <iframe
+                src={pdfPreviewUrl}
+                title={normalizedFileName || "Prévia do PDF"}
+                className="h-56 w-full bg-white"
               />
             </a>
           ) : null}

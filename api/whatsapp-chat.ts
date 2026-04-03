@@ -59,6 +59,12 @@ type GreenApiChatMessage = {
   isAnimated?: boolean;
 };
 
+type GreenApiContact = {
+  id?: string;
+  name?: string;
+  contactName?: string;
+};
+
 type GreenApiSendMessageResponse = {
   idMessage?: string;
   urlFile?: string;
@@ -114,6 +120,24 @@ const fetchGreenApiPost = async <T>(path: string, body: unknown) => {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(body),
+  });
+
+  const responseText = await response.text();
+  const payload = responseText ? JSON.parse(responseText) : {};
+
+  if (!response.ok) {
+    throw new Error(`Falha ao consultar ${path}.`);
+  }
+
+  return payload as T;
+};
+
+const fetchGreenApiGet = async <T>(path: string) => {
+  const response = await fetch(`${GREEN_API_BASE_URL}/${path}/${GREEN_API_TOKEN}`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+    },
   });
 
   const responseText = await response.text();
@@ -186,7 +210,41 @@ const normalizePreview = (message: GreenApiChatMessage) => {
 const toDataImage = (jpegThumbnail: string) =>
   jpegThumbnail ? `data:image/jpeg;base64,${jpegThumbnail}` : "";
 
-const normalizeHistory = async (messages: GreenApiChatMessage[]) => {
+const getPreferredContactName = (contact?: GreenApiContact) => {
+  const contactBookName = String(contact?.contactName || "").trim();
+  const profileName = String(contact?.name || "").trim();
+
+  return contactBookName || profileName;
+};
+
+const normalizeParticipantId = (value: string) => {
+  const normalizedValue = String(value || "").trim();
+
+  if (!normalizedValue) {
+    return "";
+  }
+
+  return normalizedValue.includes("@")
+    ? normalizedValue
+    : `${normalizedValue.replace(/\D/g, "")}@c.us`;
+};
+
+const resolveSenderLabel = (
+  message: GreenApiChatMessage,
+  contactsById: Map<string, GreenApiContact>
+) => {
+  const senderId = normalizeParticipantId(String(message.senderId || "").trim());
+  const mappedName = getPreferredContactName(contactsById.get(senderId));
+  const contactName = String(message.senderContactName || "").trim();
+  const profileName = String(message.senderName || "").trim();
+
+  return mappedName || contactName || profileName || senderId.replace(/@.+$/, "");
+};
+
+const normalizeHistory = async (
+  messages: GreenApiChatMessage[],
+  contactsById: Map<string, GreenApiContact>
+) => {
   const orderedMessages = [...messages].sort((a, b) => Number(a.timestamp || 0) - Number(b.timestamp || 0));
 
   return Promise.all(
@@ -213,7 +271,7 @@ const normalizeHistory = async (messages: GreenApiChatMessage[]) => {
         typeMessage: String(message.typeMessage || ""),
         text: normalizePreview(message),
         statusMessage: String(message.statusMessage || ""),
-        senderName: String(message.senderContactName || message.senderName || "").trim(),
+        senderName: resolveSenderLabel(message, contactsById),
         sendByApi: Boolean(message.sendByApi),
         fileName: String(message.fileName || "").trim(),
         mediaUrl,
@@ -328,11 +386,17 @@ export default async function handler(request: VercelRequest, response: VercelRe
         chatId,
         count,
       });
+      const contacts = await fetchGreenApiGet<GreenApiContact[]>("getContacts");
+      const contactsById = new Map(
+        (Array.isArray(contacts) ? contacts : [])
+          .map((contact) => [normalizeParticipantId(String(contact.id || "").trim()), contact] as const)
+          .filter(([contactId]) => contactId)
+      );
 
       return response.status(200).json({
         success: true,
         chatId,
-        messages: await normalizeHistory(Array.isArray(history) ? history : []),
+        messages: await normalizeHistory(Array.isArray(history) ? history : [], contactsById),
       });
     }
 

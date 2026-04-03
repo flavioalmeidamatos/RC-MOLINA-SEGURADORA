@@ -321,6 +321,26 @@ const buildSearchableContacts = (
     .sort((left, right) => left.title.localeCompare(right.title, "pt-BR"));
 };
 
+const mergeContacts = (...contactLists: GreenApiContact[][]) => {
+  const contactsById = new Map<string, GreenApiContact>();
+
+  contactLists.flat().forEach((contact) => {
+    const contactId = String(contact?.id || "").trim();
+
+    if (!contactId) {
+      return;
+    }
+
+    const currentContact = contactsById.get(contactId);
+    contactsById.set(contactId, {
+      ...currentContact,
+      ...contact,
+    });
+  });
+
+  return Array.from(contactsById.values());
+};
+
 export default async function handler(request: VercelRequest, response: VercelResponse) {
   applyHeaders(response);
 
@@ -358,7 +378,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
       });
     }
 
-    const [incomingMessages, outgoingMessages, contacts] = await Promise.all([
+    const [incomingMessages, outgoingMessages, contacts, groups] = await Promise.all([
       fetchGreenApiWithQuery<GreenApiMessage[]>(
         "lastIncomingMessages",
         `minutes=${CHATS_LOOKBACK_MINUTES}`
@@ -368,10 +388,12 @@ export default async function handler(request: VercelRequest, response: VercelRe
         `minutes=${CHATS_LOOKBACK_MINUTES}`
       ),
       fetchGreenApi<GreenApiContact[]>("getContacts"),
+      fetchGreenApiWithQuery<GreenApiContact[]>("getContacts", "group=true"),
     ]);
 
-    const activeChats = buildChats(incomingMessages || [], outgoingMessages || [], contacts || []);
-    const searchableContacts = buildSearchableContacts(contacts || [], activeChats);
+    const mergedContacts = mergeContacts(contacts || [], groups || []);
+    const activeChats = buildChats(incomingMessages || [], outgoingMessages || [], mergedContacts);
+    const searchableContacts = buildSearchableContacts(mergedContacts, activeChats);
 
     return response.status(200).json({
       success: true,
