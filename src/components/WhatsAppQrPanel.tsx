@@ -10,15 +10,13 @@ import {
   MessageCircle,
   Mic,
   MoreVertical,
-  Plus,
   RefreshCw,
   Search,
   SendHorizontal,
-  ShieldCheck,
   Smartphone,
 } from "lucide-react";
 
-const CONNECTED_OVERVIEW_REFRESH_MS = 6000;
+const CONNECTED_OVERVIEW_REFRESH_MS = 4000;
 const DISCONNECTED_OVERVIEW_REFRESH_MS = 5000;
 const SELECTED_CHAT_REFRESH_MS = 4000;
 
@@ -32,6 +30,8 @@ type WhatsAppChatItem = {
   typeMessage: string;
   statusMessage: string;
   isGroup: boolean;
+  unreadCount?: number;
+  latestIncomingTimestamp?: number;
 };
 
 type WhatsAppOverviewApiResponse = {
@@ -89,6 +89,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
   const historyInFlightRef = useRef(false);
   const avatarInFlightRef = useRef(new Set<string>());
   const avatarCacheRef = useRef<Record<string, string | null>>({});
+  const readTimestampsRef = useRef<Record<string, number>>({});
   const [qrCode, setQrCode] = useState("");
   const [chats, setChats] = useState<WhatsAppChatItem[]>([]);
   const [avatarUrls, setAvatarUrls] = useState<Record<string, string | null>>({});
@@ -121,9 +122,21 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
     return sortChatsByTimestamp(
       incomingChats.map((chat) => {
         const existingChat = currentChatsById.get(chat.chatId);
+        const readTimestamp = Number(readTimestampsRef.current[chat.chatId] || 0);
+        const latestIncomingTimestamp = Number(
+          chat.latestIncomingTimestamp || existingChat?.latestIncomingTimestamp || 0
+        );
+        const unreadCount =
+          latestIncomingTimestamp > readTimestamp
+            ? Number(chat.unreadCount || existingChat?.unreadCount || 0)
+            : 0;
 
         if (!existingChat) {
-          return chat;
+          return {
+            ...chat,
+            unreadCount,
+            latestIncomingTimestamp,
+          };
         }
 
         if (Number(existingChat.timestamp || 0) > Number(chat.timestamp || 0)) {
@@ -134,12 +147,16 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
             direction: existingChat.direction || chat.direction,
             typeMessage: existingChat.typeMessage || chat.typeMessage,
             statusMessage: existingChat.statusMessage || chat.statusMessage,
+            unreadCount,
+            latestIncomingTimestamp,
           };
         }
 
         return {
           ...existingChat,
           ...chat,
+          unreadCount,
+          latestIncomingTimestamp,
         };
       })
     );
@@ -198,6 +215,14 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
           statusMessage: shouldPromotePreview
             ? latestMessage.statusMessage || currentChat.statusMessage
             : currentChat.statusMessage,
+          unreadCount:
+            latestMessage.direction === "incoming"
+              ? Number(currentChat.unreadCount || 0)
+              : 0,
+          latestIncomingTimestamp:
+            latestMessage.direction === "incoming"
+              ? latestTimestamp
+              : Number(currentChat.latestIncomingTimestamp || 0),
         },
         ...currentChats.filter((item) => item.chatId !== chat.chatId),
       ]);
@@ -226,6 +251,14 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
         statusMessage: shouldPromotePreview
           ? latestMessage.statusMessage || currentSelectedChat.statusMessage
           : currentSelectedChat.statusMessage,
+        unreadCount:
+          latestMessage.direction === "incoming"
+            ? Number(currentSelectedChat.unreadCount || 0)
+            : 0,
+        latestIncomingTimestamp:
+          latestMessage.direction === "incoming"
+            ? latestTimestamp
+            : Number(currentSelectedChat.latestIncomingTimestamp || 0),
       };
     });
   };
@@ -252,7 +285,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
       const data = (await response.json()) as WhatsAppAvatarApiResponse;
 
       if (!response.ok) {
-        throw new Error(data.error || "Nao foi possivel carregar o avatar do contato.");
+        throw new Error(data.error || "Não foi possível carregar o avatar do contato.");
       }
 
       setAvatarUrls((current) => ({
@@ -261,7 +294,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
       }));
       avatarCacheRef.current[normalizedChatId] = String(data.avatarUrl || "").trim() || null;
     } catch (avatarError) {
-      console.warn("Nao foi possivel carregar o avatar do chat:", avatarError);
+      console.warn("Não foi possível carregar o avatar do chat:", avatarError);
       setAvatarUrls((current) => ({
         ...current,
         [normalizedChatId]: null,
@@ -296,7 +329,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
       const data = (await response.json()) as WhatsAppOverviewApiResponse;
 
       if (!response.ok) {
-        throw new Error(data.error || "Nao foi possivel carregar o painel do WhatsApp.");
+        throw new Error(data.error || "Não foi possível carregar o painel do WhatsApp.");
       }
 
       const nextConnected = Boolean(data.connected);
@@ -349,12 +382,30 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
       const data = (await response.json()) as WhatsAppChatApiResponse;
 
       if (!response.ok) {
-        throw new Error(data.error || "Nao foi possivel carregar a conversa.");
+        throw new Error(data.error || "Não foi possível carregar a conversa.");
       }
 
       const nextMessages = Array.isArray(data.messages) ? data.messages : [];
+      const latestConversationTimestamp = nextMessages.reduce(
+        (latestTimestamp, message) => Math.max(latestTimestamp, Number(message.timestamp || 0)),
+        0
+      );
+
+      readTimestampsRef.current[chat.chatId] = latestConversationTimestamp;
       setMessages(nextMessages);
       syncChatSnapshot(chat, nextMessages);
+      setChats((currentChats) =>
+        sortChatsByTimestamp(
+          currentChats.map((currentChat) =>
+            currentChat.chatId === chat.chatId
+              ? {
+                  ...currentChat,
+                  unreadCount: 0,
+                }
+              : currentChat
+          )
+        )
+      );
     } catch (loadError) {
       const message =
         loadError instanceof Error ? loadError.message : "Erro inesperado ao abrir a conversa.";
@@ -390,7 +441,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
       const data = (await response.json()) as WhatsAppChatApiResponse;
 
       if (!response.ok) {
-        throw new Error(data.error || "Nao foi possivel enviar a mensagem.");
+        throw new Error(data.error || "Não foi possível enviar a mensagem.");
       }
 
       setMessageText("");
@@ -518,7 +569,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
       return `${stateInstance || "aguardando"} / ${statusInstance || "aguardando"}`;
     }
 
-    return "Aguardando autenticacao";
+    return "Aguardando autenticação";
   }, [connected, stateInstance, statusInstance]);
   const formatTimestamp = (timestamp: number) =>
     new Date(timestamp * 1000).toLocaleString("pt-BR", {
@@ -542,7 +593,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
   const chatStats = useMemo(
     () => ({
       all: chats.length,
-      incoming: chats.filter((chat) => chat.direction === "incoming").length,
+      incoming: chats.filter((chat) => Number(chat.unreadCount || 0) > 0).length,
       groups: chats.filter((chat) => chat.isGroup).length,
     }),
     [chats]
@@ -552,7 +603,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
 
     return sortChatsByTimestamp(
       chats.filter((chat) => {
-        if (activeFilter === "incoming" && chat.direction !== "incoming") {
+        if (activeFilter === "incoming" && Number(chat.unreadCount || 0) <= 0) {
           return false;
         }
 
@@ -775,13 +826,13 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
             <input
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Pesquisar ou comecar uma nova conversa"
+              placeholder="Pesquisar ou começar uma nova conversa"
               className="w-full bg-transparent text-sm text-white outline-none placeholder:text-[#93a2aa]"
             />
           </div>
         </div>
 
-        <div className="custom-scrollbar -mx-1 mt-4 flex items-center gap-2 overflow-x-auto px-1 pb-1">
+        <div className="mt-4 flex items-center gap-2 overflow-hidden">
           {[
             { id: "all" as const, label: "Tudo", count: chatStats.all },
             { id: "incoming" as const, label: "Entradas", count: chatStats.incoming },
@@ -791,7 +842,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
               key={filter.id}
               type="button"
               onClick={() => setActiveFilter(filter.id)}
-              className={`inline-flex min-h-11 flex-shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold whitespace-nowrap transition-colors ${
+              className={`inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-full border px-3 py-2 text-[13px] font-semibold whitespace-nowrap transition-colors ${
                 activeFilter === filter.id
                   ? "border-[#005c4b] bg-[#103529] text-[#d9fdd3]"
                   : "border-white/10 bg-transparent text-[#aebac1] hover:bg-white/6"
@@ -809,12 +860,6 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
               </span>
             </button>
           ))}
-          <button
-            type="button"
-            className="inline-flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full border border-white/10 bg-transparent text-[#d0d7db] transition-colors hover:bg-white/6"
-          >
-            <Plus className="h-4 w-4" />
-          </button>
         </div>
 
         <div className="mt-5 flex items-center gap-3 rounded-2xl border border-white/6 bg-white/4 px-4 py-3 text-[#d0d7db]">
@@ -861,9 +906,9 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
                       <span className="whitespace-nowrap text-xs font-medium text-[#d5dcdf]">
                         {formatTimestamp(chat.timestamp).slice(-5)}
                       </span>
-                      {chat.direction === "incoming" ? (
-                        <span className="rounded-full bg-[#25d366] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#082313]">
-                          novo
+                      {Number(chat.unreadCount || 0) > 0 ? (
+                        <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-[#25d366] px-2 py-0.5 text-[11px] font-bold text-[#082313]">
+                          {chat.unreadCount}
                         </span>
                       ) : null}
                     </div>
@@ -893,7 +938,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
       </div>
 
       <div className="flex-shrink-0 border-t border-white/6 px-5 py-3 text-xs text-[#7d8b92]">
-        {lastUpdatedLabel ? `Ultima atualizacao as ${lastUpdatedLabel}` : "Sincronizando chats"}
+        {lastUpdatedLabel ? `Última atualização às ${lastUpdatedLabel}` : "Sincronizando chats"}
       </div>
     </aside>
   );
@@ -1003,7 +1048,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
             ) : (
               <div className="flex min-h-[320px] flex-col items-center justify-center gap-3 px-6 text-center">
                 <MessageCircle className="h-10 w-10 text-[#00a884]" />
-                <p className="text-base font-semibold text-white">Ainda nao ha historico disponivel</p>
+                <p className="text-base font-semibold text-white">Ainda não há histórico disponível</p>
                 <p className="max-w-md text-sm leading-6 text-[#aebac1]">
                   Assim que a Green API devolver mensagens desse chat, elas aparecem aqui no mesmo
                   formato da conversa.
@@ -1076,14 +1121,14 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
               </div>
               <h3 className="mt-5 text-2xl font-semibold text-white">Selecione um chat</h3>
               <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-[#aebac1]">
-                Toque em uma conversa na lateral para abrir o historico, visualizar imagens,
-                stickers e audios e responder sem sair do painel.
+                Toque em uma conversa na lateral para abrir o histórico, visualizar imagens,
+                stickers e áudios e responder sem sair do painel.
               </p>
             </div>
           </div>
 
           <div className="border-t border-white/6 bg-[#111b21] px-5 py-3 text-xs text-[#7d8b92]">
-            {lastUpdatedLabel ? `Ultima atualizacao as ${lastUpdatedLabel}` : "Sincronizando chats"}
+            {lastUpdatedLabel ? `Última atualização às ${lastUpdatedLabel}` : "Sincronizando chats"}
           </div>
         </div>
       )}
@@ -1104,7 +1149,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
             className="overflow-hidden rounded-[32px] border border-white/6 bg-[#0b141a] shadow-[0_32px_80px_rgba(6,18,23,0.28)]"
             style={connectedPanelStyle}
           >
-            <div className="grid h-full min-h-0 xl:grid-cols-[390px_minmax(0,1fr)]">
+            <div className="grid h-full min-h-0 xl:grid-cols-[410px_minmax(0,1fr)]">
               <aside className="flex h-full min-h-0 flex-col border-r border-white/6 bg-[#111b21]">
                 <div className="flex-shrink-0 border-b border-white/6 px-5 py-5">
                   <div className="h-5 w-28 rounded-full bg-white/8" />
@@ -1133,7 +1178,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
                 <div className="flex flex-1 items-center justify-center">
                   <div className="flex flex-col items-center gap-4 text-[#d0d7db]">
                     <Loader2 className="h-10 w-10 animate-spin text-[#00a884]" />
-                    <p className="text-sm font-medium">Validando a instancia e carregando os chats...</p>
+                    <p className="text-sm font-medium">Validando a instância e carregando os chats...</p>
                   </div>
                 </div>
               </section>
@@ -1144,7 +1189,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
             className="overflow-hidden rounded-[32px] border border-white/6 bg-[#0b141a] shadow-[0_32px_80px_rgba(6,18,23,0.28)]"
             style={connectedPanelStyle}
           >
-            <div className="grid h-full min-h-0 xl:grid-cols-[390px_minmax(0,1fr)]">
+            <div className="grid h-full min-h-0 xl:grid-cols-[410px_minmax(0,1fr)]">
               {renderChatList()}
               {renderConversationPane()}
             </div>
@@ -1153,13 +1198,13 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
           <div className="flex w-full flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,420px)] lg:items-stretch lg:gap-6">
             <section className="rounded-[28px] border border-[#d7e2ea] bg-white p-5 shadow-sm sm:p-6 lg:p-8">
               <span className="inline-flex rounded-full bg-[#25D366]/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#128C7E]">
-                Conexao interna
+                Conexão interna
               </span>
               <h2 className="mt-4 text-2xl font-bold leading-tight text-[#0c1826] sm:text-3xl">
                 Conecte o WhatsApp sem sair do painel
               </h2>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-[#516072] sm:text-base">
-                A tela acompanha a conexao em tempo real. Assim que a instancia ficar autorizada e
+                A tela acompanha a conexão em tempo real. Assim que a instância ficar autorizada e
                 online, o QR desaparece e os chats em andamento assumem o lugar automaticamente.
               </p>
 
@@ -1167,7 +1212,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#128C7E]" />
                   <p className="text-sm leading-6 text-[#334155]">
-                    Status atual da instancia: <strong>{connectionLabel}</strong>.
+                    Status atual da instância: <strong>{connectionLabel}</strong>.
                   </p>
                 </div>
               </div>
@@ -1186,7 +1231,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
                     2. Leia o QR
                   </p>
                   <p className="mt-2 text-sm leading-6 text-[#334155]">
-                    Mire a camera no codigo. A checagem de conexao acontece sozinha a cada poucos
+                    Mire a câmera no código. A checagem de conexão acontece sozinha a cada poucos
                     segundos.
                   </p>
                 </div>
@@ -1226,7 +1271,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
                 {loading ? (
                   <div className="flex min-h-[300px] flex-col items-center justify-center gap-3 text-center text-[#516072]">
                     <Loader2 className="h-9 w-9 animate-spin text-[#128C7E]" />
-                    <p className="text-sm font-medium">Verificando a conexao do WhatsApp...</p>
+                    <p className="text-sm font-medium">Verificando a conexão do WhatsApp...</p>
                   </div>
                 ) : error ? (
                   <div className="flex min-h-[300px] flex-col items-center justify-center gap-4 text-center">
@@ -1235,7 +1280,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
                     </div>
                     <div className="space-y-2">
                       <p className="text-sm font-semibold text-[#0c1826]">
-                        Nao foi possivel validar a conexao
+                        Não foi possível validar a conexão
                       </p>
                       <p className="text-sm leading-6 text-[#64748b]">{error}</p>
                     </div>
@@ -1249,11 +1294,11 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
                     />
                     <div className="w-full rounded-2xl bg-white px-4 py-3 text-center shadow-sm">
                       <p className="text-sm font-medium text-[#0c1826]">
-                        Escaneie com o WhatsApp do aparelho que sera conectado.
+                        Escaneie com o WhatsApp do aparelho que será conectado.
                       </p>
                       {lastUpdatedLabel ? (
                         <p className="mt-1 text-xs text-[#64748b]">
-                          Ultima atualizacao as {lastUpdatedLabel}
+                          Última atualização às {lastUpdatedLabel}
                         </p>
                       ) : null}
                     </div>
@@ -1262,7 +1307,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
                   <div className="flex min-h-[300px] flex-col items-center justify-center gap-4 text-center">
                     <Smartphone className="h-9 w-9 text-[#128C7E]" />
                     <p className="text-sm leading-6 text-[#64748b]">
-                      O QR Code ainda nao esta disponivel. A tela segue verificando automaticamente.
+                      O QR Code ainda não está disponível. A tela segue verificando automaticamente.
                     </p>
                   </div>
                 )}

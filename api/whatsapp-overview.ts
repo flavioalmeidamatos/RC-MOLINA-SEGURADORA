@@ -207,11 +207,30 @@ const buildChats = (
   contacts: GreenApiContact[]
 ) => {
   const latestByChat = new Map<string, GreenApiMessage>();
+  const unreadCountByChat = new Map<string, number>();
+  const latestIncomingTimestampByChat = new Map<string, number>();
   const contactsById = new Map(
     contacts
       .map((contact) => [String(contact.id || "").trim(), contact] as const)
       .filter(([id]) => id)
   );
+
+  incomingMessages.forEach((message) => {
+    const chatId = String(message.chatId || "").trim();
+
+    if (!chatId) {
+      return;
+    }
+
+    unreadCountByChat.set(chatId, Number(unreadCountByChat.get(chatId) || 0) + 1);
+
+    const currentLatestTimestamp = Number(latestIncomingTimestampByChat.get(chatId) || 0);
+    const nextTimestamp = Number(message.timestamp || 0);
+
+    if (nextTimestamp > currentLatestTimestamp) {
+      latestIncomingTimestampByChat.set(chatId, nextTimestamp);
+    }
+  });
 
   [...incomingMessages, ...outgoingMessages]
     .sort((a, b) => Number(b.timestamp || 0) - Number(a.timestamp || 0))
@@ -241,6 +260,8 @@ const buildChats = (
         typeMessage: String(message.typeMessage || ""),
         statusMessage: String(message.statusMessage || ""),
         isGroup: String(contact?.type || "") === "group" || chatId.endsWith("@g.us"),
+        unreadCount: Number(unreadCountByChat.get(chatId) || 0),
+        latestIncomingTimestamp: Number(latestIncomingTimestampByChat.get(chatId) || 0),
       };
     });
 };
