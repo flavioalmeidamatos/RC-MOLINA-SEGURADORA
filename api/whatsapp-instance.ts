@@ -25,12 +25,18 @@ type GreenApiLogoutResponse = {
   isLogout?: boolean;
 };
 
+type GreenApiQrResponse = {
+  type?: string;
+  message?: string;
+};
+
 export const config = {
   maxDuration: 30,
 };
 
 const GREEN_API_BASE_URL = "https://7107.api.greenapi.com/waInstance7107375943";
 const GREEN_API_TOKEN = "0605c7c040e54a888ca58c312612109777c45c734bb049f782";
+const INSTANCE_RETRY_COUNT = 2;
 
 const applyHeaders = (response: VercelResponse) => {
   response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
@@ -55,6 +61,58 @@ const fetchGreenApiGet = async <T>(path: string) => {
   return (await response.json()) as T;
 };
 
+const fetchGreenApiGetWithRetry = async <T>(path: string, retries = INSTANCE_RETRY_COUNT) => {
+  let lastError: unknown = null;
+
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    try {
+      return await fetchGreenApiGet<T>(path);
+    } catch (error) {
+      lastError = error;
+
+      if (attempt === retries) {
+        break;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 350 * (attempt + 1)));
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error(`Falha ao consultar ${path}.`);
+};
+
+const resolveConnectionSnapshot = async () => {
+  const [stateResult, statusResult, qrResult] = await Promise.allSettled([
+    fetchGreenApiGetWithRetry<GreenApiStateResponse>("getStateInstance"),
+    fetchGreenApiGetWithRetry<GreenApiStatusResponse>("getStatusInstance"),
+    fetchGreenApiGetWithRetry<GreenApiQrResponse>("qr", 0),
+  ]);
+
+  const stateInstance =
+    stateResult.status === "fulfilled" ? String(stateResult.value.stateInstance || "").trim() : "";
+  const statusInstance =
+    statusResult.status === "fulfilled" ? String(statusResult.value.statusInstance || "").trim() : "";
+  const qrType = qrResult.status === "fulfilled" ? String(qrResult.value.type || "").trim() : "";
+  const qrMessage = qrResult.status === "fulfilled" ? String(qrResult.value.message || "").trim() : "";
+  const hasQrCode = qrType === "qrCode" && Boolean(qrMessage);
+  const connected =
+    (stateInstance === "authorized" && statusInstance === "online") ||
+    (stateInstance === "authorized" && !hasQrCode) ||
+    (statusInstance === "online" && !hasQrCode);
+  const validated =
+    stateResult.status === "fulfilled" ||
+    statusResult.status === "fulfilled" ||
+    qrResult.status === "fulfilled";
+
+  return {
+    connected,
+    validated,
+    stateInstance,
+    statusInstance,
+    qrCode: hasQrCode ? `data:image/png;base64,${qrMessage}` : "",
+  };
+};
+
 export default async function handler(request: VercelRequest, response: VercelResponse) {
   applyHeaders(response);
 
@@ -64,19 +122,15 @@ export default async function handler(request: VercelRequest, response: VercelRe
 
   try {
     if (request.method === "GET") {
-      const [statePayload, statusPayload] = await Promise.all([
-        fetchGreenApiGet<GreenApiStateResponse>("getStateInstance"),
-        fetchGreenApiGet<GreenApiStatusResponse>("getStatusInstance"),
-      ]);
-
-      const stateInstance = String(statePayload.stateInstance || "");
-      const statusInstance = String(statusPayload.statusInstance || "");
+      const snapshot = await resolveConnectionSnapshot();
 
       return response.status(200).json({
         success: true,
-        connected: stateInstance === "authorized" && statusInstance === "online",
-        stateInstance,
-        statusInstance,
+        connected: snapshot.connected,
+        validated: snapshot.validated,
+        stateInstance: snapshot.stateInstance,
+        statusInstance: snapshot.statusInstance,
+        qrCode: snapshot.qrCode,
       });
     }
 

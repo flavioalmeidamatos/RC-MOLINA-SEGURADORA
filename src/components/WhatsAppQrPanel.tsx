@@ -43,6 +43,7 @@ type WhatsAppChatItem = {
 type WhatsAppOverviewApiResponse = {
   success?: boolean;
   connected?: boolean;
+  validated?: boolean;
   stateInstance?: string;
   statusInstance?: string;
   qrCode?: string;
@@ -161,6 +162,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
   const [searchContacts, setSearchContacts] = useState<WhatsAppChatItem[]>([]);
   const [avatarUrls, setAvatarUrls] = useState<Record<string, string | null>>({});
   const [connected, setConnected] = useState(false);
+  const [connectionValidated, setConnectionValidated] = useState(true);
   const [realtimeWorkerActive, setRealtimeWorkerActive] = useState(false);
   const [stateInstance, setStateInstance] = useState("");
   const [statusInstance, setStatusInstance] = useState("");
@@ -591,6 +593,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
       }
 
       const nextConnected = Boolean(data.connected);
+      const nextValidated = data.validated !== false;
 
       if (nextConnected && !connected) {
         setStatusNote("WhatsApp conectado com sucesso. Conversas carregadas.");
@@ -600,6 +603,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
       }
 
       setConnected(nextConnected);
+      setConnectionValidated(nextValidated);
       onConnectionChange?.(nextConnected);
       setStateInstance(data.stateInstance || "");
       setStatusInstance(data.statusInstance || "");
@@ -1427,12 +1431,16 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
       return "Conectado e online";
     }
 
+    if (!connectionValidated) {
+      return "Validação instável da instância";
+    }
+
     if (stateInstance || statusInstance) {
       return `${stateInstance || "aguardando"} / ${statusInstance || "aguardando"}`;
     }
 
     return "Aguardando autenticação";
-  }, [connected, stateInstance, statusInstance]);
+  }, [connected, connectionValidated, stateInstance, statusInstance]);
   const formatTimestamp = (timestamp: number) =>
     new Date(timestamp * 1000).toLocaleString("pt-BR", {
       day: "2-digit",
@@ -2824,8 +2832,21 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
                 </div>
               </div>
 
+              {!connectionValidated ? (
+                <div
+                  className={`rounded-2xl border border-amber-200 bg-amber-50/90 ${
+                    embedded ? "mt-3 px-3 py-2.5" : "mt-5 px-4 py-3"
+                  }`}
+                >
+                  <p className={`${embedded ? "text-xs leading-5" : "text-sm leading-6"} text-amber-900`}>
+                    A validação da instância veio parcial. O painel continua tentando confirmar a
+                    autenticação automaticamente.
+                  </p>
+                </div>
+              ) : null}
+
               {embedded ? (
-                <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+                <div className="hidden mt-3 grid grid-cols-3 gap-2 text-center">
                   {[
                     { title: "Abra", text: "Dispositivos conectados" },
                     { title: "Leia", text: "Aponte para o QR" },
@@ -2843,7 +2864,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
                   ))}
                 </div>
               ) : (
-                <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                <div className="hidden mt-5 grid gap-3 sm:grid-cols-3">
                   <div className="rounded-2xl border border-[#dce6ed] bg-[#f7fafc] p-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#7a8ea3]">
                       1. Abra o app
@@ -2919,7 +2940,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
                     </div>
                     <div className="space-y-2">
                       <p className={`${embedded ? "text-xs" : "text-sm"} font-semibold text-[#0c1826]`}>
-                        Não foi possível validar a conexão
+                        Não foi possível consultar o WhatsApp agora
                       </p>
                       <p className={`${embedded ? "text-xs leading-5" : "text-sm leading-6"} text-[#64748b]`}>
                         {error}

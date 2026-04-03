@@ -65,6 +65,7 @@ const GREEN_API_BASE_URL =
   "https://7107.api.greenapi.com/waInstance7107375943";
 const GREEN_API_TOKEN = "0605c7c040e54a888ca58c312612109777c45c734bb049f782";
 const CHATS_LOOKBACK_MINUTES = 1440;
+const INSTANCE_RETRY_COUNT = 2;
 
 const applyHeaders = (response: VercelResponse) => {
   response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
@@ -105,6 +106,52 @@ const fetchGreenApiWithQuery = async <T>(path: string, query: string) => {
   }
 
   return (await response.json()) as T;
+};
+
+const fetchGreenApiWithRetry = async <T>(path: string, retries = INSTANCE_RETRY_COUNT) => {
+  let lastError: unknown = null;
+
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    try {
+      return await fetchGreenApi<T>(path);
+    } catch (error) {
+      lastError = error;
+
+      if (attempt === retries) {
+        break;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 350 * (attempt + 1)));
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error(`Falha ao consultar ${path}.`);
+};
+
+const fetchGreenApiWithQueryRetry = async <T>(
+  path: string,
+  query: string,
+  retries = INSTANCE_RETRY_COUNT
+) => {
+  let lastError: unknown = null;
+
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    try {
+      return await fetchGreenApiWithQuery<T>(path, query);
+    } catch (error) {
+      lastError = error;
+
+      if (attempt === retries) {
+        break;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 350 * (attempt + 1)));
+    }
+  }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new Error(`Falha ao consultar ${path}.`);
 };
 
 const formatPhoneNumber = (chatId: string) => {
@@ -341,6 +388,38 @@ const mergeContacts = (...contactLists: GreenApiContact[][]) => {
   return Array.from(contactsById.values());
 };
 
+const resolveConnectionSnapshot = async () => {
+  const [stateResult, statusResult, qrResult] = await Promise.allSettled([
+    fetchGreenApiWithRetry<GreenApiStateResponse>("getStateInstance"),
+    fetchGreenApiWithRetry<GreenApiStatusResponse>("getStatusInstance"),
+    fetchGreenApiWithRetry<GreenApiQrResponse>("qr", 0),
+  ]);
+
+  const stateInstance =
+    stateResult.status === "fulfilled" ? String(stateResult.value.stateInstance || "").trim() : "";
+  const statusInstance =
+    statusResult.status === "fulfilled" ? String(statusResult.value.statusInstance || "").trim() : "";
+  const qrType = qrResult.status === "fulfilled" ? String(qrResult.value.type || "").trim() : "";
+  const qrMessage = qrResult.status === "fulfilled" ? String(qrResult.value.message || "").trim() : "";
+  const hasQrCode = qrType === "qrCode" && Boolean(qrMessage);
+  const connected =
+    (stateInstance === "authorized" && statusInstance === "online") ||
+    (stateInstance === "authorized" && !hasQrCode) ||
+    (statusInstance === "online" && !hasQrCode);
+  const validated =
+    stateResult.status === "fulfilled" ||
+    statusResult.status === "fulfilled" ||
+    qrResult.status === "fulfilled";
+
+  return {
+    connected,
+    validated,
+    stateInstance,
+    statusInstance,
+    qrCode: hasQrCode ? `data:image/png;base64,${qrMessage}` : "",
+  };
+};
+
 export default async function handler(request: VercelRequest, response: VercelResponse) {
   applyHeaders(response);
 
@@ -353,42 +432,32 @@ export default async function handler(request: VercelRequest, response: VercelRe
   }
 
   try {
-    const [statePayload, statusPayload] = await Promise.all([
-      fetchGreenApi<GreenApiStateResponse>("getStateInstance"),
-      fetchGreenApi<GreenApiStatusResponse>("getStatusInstance"),
-    ]);
-
-    const stateInstance = String(statePayload.stateInstance || "");
-    const statusInstance = String(statusPayload.statusInstance || "");
-    const isConnected = stateInstance === "authorized" && statusInstance === "online";
+    const snapshot = await resolveConnectionSnapshot();
+    const isConnected = snapshot.connected;
 
     if (!isConnected) {
-      const qrPayload = await fetchGreenApi<GreenApiQrResponse>("qr");
-      const base64Image = String(qrPayload.message || "").trim();
-
       return response.status(200).json({
         success: true,
         connected: false,
-        stateInstance,
-        statusInstance,
-        qrCode: qrPayload.type === "qrCode" && base64Image
-          ? `data:image/png;base64,${base64Image}`
-          : "",
+        validated: snapshot.validated,
+        stateInstance: snapshot.stateInstance,
+        statusInstance: snapshot.statusInstance,
+        qrCode: snapshot.qrCode,
         fetchedAt: new Date().toISOString(),
       });
     }
 
     const [incomingMessages, outgoingMessages, contacts, groups] = await Promise.all([
-      fetchGreenApiWithQuery<GreenApiMessage[]>(
+      fetchGreenApiWithQueryRetry<GreenApiMessage[]>(
         "lastIncomingMessages",
         `minutes=${CHATS_LOOKBACK_MINUTES}`
       ),
-      fetchGreenApiWithQuery<GreenApiMessage[]>(
+      fetchGreenApiWithQueryRetry<GreenApiMessage[]>(
         "lastOutgoingMessages",
         `minutes=${CHATS_LOOKBACK_MINUTES}`
       ),
-      fetchGreenApi<GreenApiContact[]>("getContacts"),
-      fetchGreenApiWithQuery<GreenApiContact[]>("getContacts", "group=true"),
+      fetchGreenApiWithRetry<GreenApiContact[]>("getContacts"),
+      fetchGreenApiWithQueryRetry<GreenApiContact[]>("getContacts", "group=true"),
     ]);
 
     const mergedContacts = mergeContacts(contacts || [], groups || []);
@@ -398,8 +467,9 @@ export default async function handler(request: VercelRequest, response: VercelRe
     return response.status(200).json({
       success: true,
       connected: true,
-      stateInstance,
-      statusInstance,
+      validated: snapshot.validated,
+      stateInstance: snapshot.stateInstance,
+      statusInstance: snapshot.statusInstance,
       chats: activeChats,
       contacts: searchableContacts,
       fetchedAt: new Date().toISOString(),
