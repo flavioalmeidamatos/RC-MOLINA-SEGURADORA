@@ -4,6 +4,7 @@ import {
   Archive,
   CheckCircle2,
   CheckCheck,
+  FileText,
   Loader2,
   MessageCircle,
   MoreVertical,
@@ -42,6 +43,14 @@ type WhatsAppOverviewApiResponse = {
   error?: string;
 };
 
+type WhatsAppAvatarApiResponse = {
+  success?: boolean;
+  chatId?: string;
+  avatarUrl?: string;
+  available?: boolean;
+  error?: string;
+};
+
 type WhatsAppConversationMessage = {
   idMessage: string;
   chatId: string;
@@ -52,6 +61,7 @@ type WhatsAppConversationMessage = {
   statusMessage: string;
   senderName: string;
   sendByApi: boolean;
+  fileName?: string;
   mediaUrl?: string;
   mimeType?: string;
   thumbnailUrl?: string;
@@ -75,8 +85,11 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
 }) => {
   const requestInFlightRef = useRef(false);
   const historyInFlightRef = useRef(false);
+  const avatarInFlightRef = useRef(new Set<string>());
+  const avatarCacheRef = useRef<Record<string, string | null>>({});
   const [qrCode, setQrCode] = useState("");
   const [chats, setChats] = useState<WhatsAppChatItem[]>([]);
+  const [avatarUrls, setAvatarUrls] = useState<Record<string, string | null>>({});
   const [connected, setConnected] = useState(false);
   const [stateInstance, setStateInstance] = useState("");
   const [statusInstance, setStatusInstance] = useState("");
@@ -213,6 +226,48 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
           : currentSelectedChat.statusMessage,
       };
     });
+  };
+
+  const loadChatAvatar = async (chatId: string) => {
+    const normalizedChatId = String(chatId || "").trim();
+
+    if (
+      !normalizedChatId ||
+      Object.prototype.hasOwnProperty.call(avatarCacheRef.current, normalizedChatId) ||
+      avatarInFlightRef.current.has(normalizedChatId)
+    ) {
+      return;
+    }
+
+    avatarInFlightRef.current.add(normalizedChatId);
+
+    try {
+      const response = await fetch(`/api/whatsapp-avatar?chatId=${encodeURIComponent(normalizedChatId)}`, {
+        method: "GET",
+        cache: "no-store",
+      });
+
+      const data = (await response.json()) as WhatsAppAvatarApiResponse;
+
+      if (!response.ok) {
+        throw new Error(data.error || "Nao foi possivel carregar o avatar do contato.");
+      }
+
+      setAvatarUrls((current) => ({
+        ...current,
+        [normalizedChatId]: String(data.avatarUrl || "").trim() || null,
+      }));
+      avatarCacheRef.current[normalizedChatId] = String(data.avatarUrl || "").trim() || null;
+    } catch (avatarError) {
+      console.warn("Nao foi possivel carregar o avatar do chat:", avatarError);
+      setAvatarUrls((current) => ({
+        ...current,
+        [normalizedChatId]: null,
+      }));
+      avatarCacheRef.current[normalizedChatId] = null;
+    } finally {
+      avatarInFlightRef.current.delete(normalizedChatId);
+    }
   };
 
   const loadOverview = async (isManualRefresh = false) => {
@@ -422,6 +477,30 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
     }
   }, [chats, selectedChat]);
 
+  useEffect(() => {
+    if (!connected || chats.length === 0) {
+      return;
+    }
+
+    const candidateChatIds = Array.from(
+      new Set(
+        [selectedChat?.chatId, ...chats.map((chat) => chat.chatId)].filter(
+          (chatId): chatId is string => Boolean(chatId)
+        )
+      )
+    );
+
+    const timeoutIds = candidateChatIds.map((chatId, index) =>
+      window.setTimeout(() => {
+        void loadChatAvatar(chatId);
+      }, index * 140)
+    );
+
+    return () => {
+      timeoutIds.forEach((timeoutId) => window.clearTimeout(timeoutId));
+    };
+  }, [chats, connected, selectedChat]);
+
   const lastUpdatedLabel = fetchedAt
     ? new Date(fetchedAt).toLocaleTimeString("pt-BR", {
         hour: "2-digit",
@@ -503,10 +582,42 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
       ? "bg-gradient-to-br from-[#0f766e] to-[#14b8a6] text-white"
       : "bg-gradient-to-br from-[#2563eb] to-[#38bdf8] text-white";
   };
+  const renderChatAvatar = (
+    chat: WhatsAppChatItem,
+    sizeClassName: string,
+    textClassName: string
+  ) => {
+    const avatarUrl = avatarUrls[chat.chatId];
+
+    return (
+      <div
+        className={`flex flex-shrink-0 items-center justify-center overflow-hidden rounded-full font-bold ${sizeClassName} ${textClassName} ${getAvatarClassName(
+          chat
+        )}`}
+      >
+        {avatarUrl ? (
+          <img
+            src={avatarUrl}
+            alt={`Foto de perfil de ${chat.title}`}
+            className="h-full w-full object-cover"
+            loading="lazy"
+            referrerPolicy="no-referrer"
+          />
+        ) : (
+          getAvatarLabel(chat.title)
+        )}
+      </div>
+    );
+  };
   const renderMessageBody = (message: WhatsAppConversationMessage) => {
     const isImage = message.typeMessage === "imageMessage";
     const isSticker = message.typeMessage === "stickerMessage";
     const isAudio = message.typeMessage === "audioMessage";
+    const isDocument = message.typeMessage === "documentMessage";
+    const normalizedMimeType = String(message.mimeType || "").toLowerCase();
+    const normalizedFileName = String(message.fileName || message.text || "").trim();
+    const isPdf =
+      normalizedMimeType.includes("pdf") || normalizedFileName.toLowerCase().endsWith(".pdf");
 
     if ((isImage || isSticker) && (message.mediaUrl || message.thumbnailUrl)) {
       const source = message.mediaUrl || message.thumbnailUrl || "";
@@ -536,6 +647,66 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
           {message.text && message.text !== "Audio" ? (
             <p className="whitespace-pre-wrap text-sm leading-6">{message.text}</p>
           ) : null}
+        </div>
+      );
+    }
+
+    if (isDocument) {
+      const previewSource = message.thumbnailUrl || "";
+      const downloadLabel = isPdf ? "Abrir PDF" : "Abrir arquivo";
+      const showDescription =
+        message.text &&
+        message.text !== "Documento" &&
+        message.text !== normalizedFileName;
+
+      return (
+        <div className="space-y-3">
+          {previewSource ? (
+            <a
+              href={message.mediaUrl || previewSource}
+              target="_blank"
+              rel="noreferrer"
+              className="block overflow-hidden rounded-2xl border border-white/10 bg-[#1b2730]"
+            >
+              <img
+                src={previewSource}
+                alt={normalizedFileName || "Miniatura do documento"}
+                className="max-h-56 w-full object-cover"
+                loading="lazy"
+              />
+            </a>
+          ) : null}
+
+          <div className="rounded-2xl border border-white/10 bg-black/10 p-3">
+            <div className="flex items-start gap-3">
+              <div className="rounded-2xl bg-white/10 p-3 text-[#7ae3bf]">
+                <FileText className="h-5 w-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-current">
+                  {normalizedFileName || "Documento do WhatsApp"}
+                </p>
+                <p className="mt-1 text-xs text-inherit/70">
+                  {normalizedMimeType || "Arquivo recebido"}
+                </p>
+              </div>
+            </div>
+
+            {showDescription ? (
+              <p className="mt-3 whitespace-pre-wrap text-sm leading-6">{message.text}</p>
+            ) : null}
+
+            {message.mediaUrl ? (
+              <a
+                href={message.mediaUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-3 inline-flex min-h-10 items-center rounded-full bg-white/12 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-current transition-colors hover:bg-white/18"
+              >
+                {downloadLabel}
+              </a>
+            ) : null}
+          </div>
         </div>
       );
     }
@@ -649,13 +820,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
                 selectedChat?.chatId === chat.chatId ? "bg-white/12" : "hover:bg-white/6"
               }`}
             >
-              <div
-                className={`flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full text-sm font-bold ${getAvatarClassName(
-                  chat
-                )}`}
-              >
-                {getAvatarLabel(chat.title)}
-              </div>
+              {renderChatAvatar(chat, "h-14 w-14", "text-sm")}
               <div className="min-w-0 flex-1">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -726,13 +891,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
               >
                 <ArrowLeft className="h-4 w-4" />
               </button>
-              <div
-                className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full text-sm font-bold ${getAvatarClassName(
-                  selectedChat
-                )}`}
-              >
-                {getAvatarLabel(selectedChat.title)}
-              </div>
+              {renderChatAvatar(selectedChat, "h-11 w-11", "text-sm")}
               <div className="min-w-0">
                 <p className="truncate text-base font-semibold text-white sm:text-lg">
                   {selectedChat.title}

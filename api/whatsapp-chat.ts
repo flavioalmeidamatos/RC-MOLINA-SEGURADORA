@@ -85,7 +85,9 @@ const fetchGreenApiPost = async <T>(path: string, body: unknown) => {
 };
 
 const needsDownloadLookup = (message: GreenApiChatMessage) =>
-  ["imageMessage", "audioMessage", "stickerMessage"].includes(String(message.typeMessage || "")) &&
+  ["imageMessage", "audioMessage", "stickerMessage", "documentMessage", "videoMessage"].includes(
+    String(message.typeMessage || "")
+  ) &&
   !String(message.downloadUrl || "").trim() &&
   String(message.chatId || "").trim() &&
   String(message.idMessage || "").trim();
@@ -154,6 +156,7 @@ const normalizeHistory = async (messages: GreenApiChatMessage[]) => {
         statusMessage: String(message.statusMessage || ""),
         senderName: String(message.senderContactName || message.senderName || "").trim(),
         sendByApi: Boolean(message.sendByApi),
+        fileName: String(message.fileName || "").trim(),
         mediaUrl,
         mimeType: String(message.mimeType || ""),
         thumbnailUrl: toDataImage(String(message.jpegThumbnail || "").trim()),
