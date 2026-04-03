@@ -2012,7 +2012,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
                   <p className="text-sm font-semibold text-white">Compartilhar</p>
                   <p className="mt-0.5 text-xs text-[#8fa3ad]">Escolha o que deseja enviar</p>
                 </div>
-                <div className="p-1">
+                <div className="p-0.5">
                   {attachmentMenuItems.map((item) => (
                     <button
                       key={item.id}
@@ -2031,7 +2031,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
 
                         triggerFilePicker(item.id);
                       }}
-                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm text-white transition-colors hover:bg-white/6"
+                      className="flex w-full items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-left text-sm text-white transition-colors hover:bg-white/6"
                     >
                       <span className="text-lg">{item.icon}</span>
                       <span className="font-medium">{item.label}</span>
@@ -2100,13 +2100,13 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
                     {recentEmojis.length > 0 ? (
                       <div className="mb-4">
                         <p className="text-sm font-semibold text-[#cbd5db]">Recentes</p>
-                        <div className="mt-2 flex flex-wrap gap-1">
+                        <div className="mt-1.5 flex flex-wrap gap-0">
                           {recentEmojis.map((emoji) => (
                             <button
                               key={`recent-${emoji}`}
                               type="button"
                               onClick={() => handleInsertEmoji(emoji)}
-                              className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-[24px] transition-colors hover:bg-white/8"
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[22px] leading-none transition-colors hover:bg-white/8"
                             >
                               {emoji}
                             </button>
@@ -2115,13 +2115,13 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
                       </div>
                     ) : null}
 
-                    <div className="mb-3 flex gap-1.5 overflow-x-auto pb-1">
+                    <div className="mb-2.5 flex gap-1 overflow-x-auto pb-1">
                       {filteredEmojiCategories.map((category) => (
                         <button
                           key={category.id}
                           type="button"
                           onClick={() => setEmojiCategory(category.id)}
-                          className={`inline-flex min-h-10 items-center gap-2 rounded-full px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors ${
+                          className={`inline-flex min-h-9 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-medium whitespace-nowrap transition-colors ${
                             activeEmojiCategoryData?.id === category.id
                               ? "bg-[#103529] text-[#d9fdd3]"
                               : "bg-white/6 text-[#aebac1] hover:bg-white/10"
@@ -2138,13 +2138,13 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
                         <p className="text-sm font-semibold text-[#cbd5db]">
                           {activeEmojiCategoryData.label}
                         </p>
-                        <div className="mt-2 grid grid-cols-7 gap-1 sm:grid-cols-9 lg:grid-cols-10">
+                        <div className="mt-1.5 grid grid-cols-8 gap-0 sm:grid-cols-10 lg:grid-cols-12">
                           {activeEmojiCategoryData.emojis.map((emoji) => (
                             <button
                               key={`${activeEmojiCategoryData.id}-${emoji}`}
                               type="button"
                               onClick={() => handleInsertEmoji(emoji)}
-                              className="inline-flex h-9 w-full items-center justify-center rounded-xl text-[24px] leading-none transition-colors hover:bg-white/8"
+                              className="inline-flex h-8 w-full items-center justify-center rounded-lg text-[21px] leading-none transition-colors hover:bg-white/8"
                             >
                               {emoji}
                             </button>
@@ -2698,66 +2698,116 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
         ) : (
           <div
             className={`flex w-full flex-col gap-4 ${
-              embedded ? "min-h-0 flex-1 overflow-y-auto pr-1" : "lg:grid lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,420px)] lg:items-stretch lg:gap-6"
+              embedded
+                ? "min-h-0 flex-1 overflow-hidden gap-3"
+                : "lg:grid lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,420px)] lg:items-stretch lg:gap-6"
             }`}
           >
-            <section className="rounded-[28px] border border-[#d7e2ea] bg-white p-5 shadow-sm sm:p-6 lg:p-8">
-              <span className="inline-flex rounded-full bg-[#25D366]/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#128C7E]">
+            <section
+              className={`rounded-[28px] border border-[#d7e2ea] bg-white shadow-sm ${
+                embedded ? "p-4 sm:p-4" : "p-5 sm:p-6 lg:p-8"
+              }`}
+            >
+              <span
+                className={`inline-flex rounded-full bg-[#25D366]/10 px-3 py-1 font-semibold uppercase tracking-[0.22em] text-[#128C7E] ${
+                  embedded ? "text-[10px]" : "text-[11px]"
+                }`}
+              >
                 Conexão interna
               </span>
-              <h2 className="mt-4 text-2xl font-bold leading-tight text-[#0c1826] sm:text-3xl">
+              <h2
+                className={`mt-3 font-bold leading-tight text-[#0c1826] ${
+                  embedded ? "text-xl sm:text-[22px]" : "text-2xl sm:text-3xl"
+                }`}
+              >
                 Conecte o WhatsApp sem sair do painel
               </h2>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-[#516072] sm:text-base">
+              <p
+                className={`mt-2 max-w-2xl text-[#516072] ${
+                  embedded ? "text-xs leading-5 sm:text-[13px]" : "text-sm leading-6 sm:text-base"
+                }`}
+              >
                 A tela acompanha a conexão em tempo real. Assim que a instância ficar autorizada e
                 online, o QR desaparece e os chats em andamento assumem o lugar automaticamente.
               </p>
 
-              <div className="mt-5 rounded-2xl border border-[#dce6ed] bg-[#f8fbfd] p-4">
+              <div
+                className={`rounded-2xl border border-[#dce6ed] bg-[#f8fbfd] ${
+                  embedded ? "mt-4 p-3" : "mt-5 p-4"
+                }`}
+              >
                 <div className="flex items-start gap-3">
-                  <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#128C7E]" />
-                  <p className="text-sm leading-6 text-[#334155]">
+                  <CheckCircle2
+                    className={`mt-0.5 flex-shrink-0 text-[#128C7E] ${
+                      embedded ? "h-4 w-4" : "h-5 w-5"
+                    }`}
+                  />
+                  <p className={`${embedded ? "text-xs leading-5" : "text-sm leading-6"} text-[#334155]`}>
                     Status atual da instância: <strong>{connectionLabel}</strong>.
                   </p>
                 </div>
               </div>
 
-              <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                <div className="rounded-2xl border border-[#dce6ed] bg-[#f7fafc] p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#7a8ea3]">
-                    1. Abra o app
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-[#334155]">
-                    Entre no WhatsApp do celular e abra o menu de dispositivos conectados.
-                  </p>
+              {embedded ? (
+                <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+                  {[
+                    { title: "Abra", text: "Dispositivos conectados" },
+                    { title: "Leia", text: "Aponte para o QR" },
+                    { title: "Entre", text: "O chat assume sozinho" },
+                  ].map((item) => (
+                    <div
+                      key={item.title}
+                      className="rounded-2xl border border-[#dce6ed] bg-[#f7fafc] px-2 py-2.5"
+                    >
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#7a8ea3]">
+                        {item.title}
+                      </p>
+                      <p className="mt-1 text-[11px] leading-4 text-[#334155]">{item.text}</p>
+                    </div>
+                  ))}
                 </div>
-                <div className="rounded-2xl border border-[#dce6ed] bg-[#f7fafc] p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#7a8ea3]">
-                    2. Leia o QR
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-[#334155]">
-                    Mire a câmera no código. A checagem de conexão acontece sozinha a cada poucos
-                    segundos.
-                  </p>
+              ) : (
+                <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-2xl border border-[#dce6ed] bg-[#f7fafc] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#7a8ea3]">
+                      1. Abra o app
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-[#334155]">
+                      Entre no WhatsApp do celular e abra o menu de dispositivos conectados.
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-[#dce6ed] bg-[#f7fafc] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#7a8ea3]">
+                      2. Leia o QR
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-[#334155]">
+                      Mire a câmera no código. A checagem de conexão acontece sozinha a cada poucos
+                      segundos.
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-[#dce6ed] bg-[#f7fafc] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#7a8ea3]">
+                      3. Continue no painel
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-[#334155]">
+                      Depois da leitura, a tela troca automaticamente para a lista de conversas.
+                    </p>
+                  </div>
                 </div>
-                <div className="rounded-2xl border border-[#dce6ed] bg-[#f7fafc] p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#7a8ea3]">
-                    3. Continue no painel
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-[#334155]">
-                    Depois da leitura, a tela troca automaticamente para a lista de conversas.
-                  </p>
-                </div>
-              </div>
+              )}
             </section>
 
-            <aside className="rounded-[28px] border border-[#d7e2ea] bg-white p-5 shadow-sm sm:p-6 lg:p-7">
+            <aside
+              className={`rounded-[28px] border border-[#d7e2ea] bg-white shadow-sm ${
+                embedded ? "flex min-h-0 flex-1 flex-col p-4 sm:p-4" : "p-5 sm:p-6 lg:p-7"
+              }`}
+            >
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#7a8ea3]">
                     QR Code
                   </p>
-                  <h3 className="mt-2 text-lg font-semibold text-[#0c1826]">
+                  <h3 className={`mt-1 font-semibold text-[#0c1826] ${embedded ? "text-base" : "text-lg"}`}>
                     Leia com o celular
                   </h3>
                 </div>
@@ -2765,53 +2815,65 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
                   type="button"
                   onClick={() => void loadOverview(true)}
                   disabled={refreshing}
-                  className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[#d5e3db] bg-[#f4fbf7] px-4 py-2 text-sm font-semibold text-[#128C7E] transition-colors hover:bg-[#e8f8ee] disabled:cursor-not-allowed disabled:opacity-70"
+                  className={`inline-flex items-center gap-2 rounded-full border border-[#d5e3db] bg-[#f4fbf7] font-semibold text-[#128C7E] transition-colors hover:bg-[#e8f8ee] disabled:cursor-not-allowed disabled:opacity-70 ${
+                    embedded ? "min-h-9 px-3 py-1.5 text-xs" : "min-h-11 px-4 py-2 text-sm"
+                  }`}
                 >
-                  <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+                  <RefreshCw className={`${embedded ? "h-3.5 w-3.5" : "h-4 w-4"} ${refreshing ? "animate-spin" : ""}`} />
                   Atualizar
                 </button>
               </div>
 
-              <div className="mt-5 rounded-[24px] border border-dashed border-[#cfe0d5] bg-[#f7fbf8] p-4 sm:p-5">
+              <div
+                className={`rounded-[24px] border border-dashed border-[#cfe0d5] bg-[#f7fbf8] ${
+                  embedded ? "mt-3 flex min-h-0 flex-1 flex-col p-3" : "mt-5 p-4 sm:p-5"
+                }`}
+              >
                 {loading ? (
-                  <div className="flex min-h-[300px] flex-col items-center justify-center gap-3 text-center text-[#516072]">
-                    <Loader2 className="h-9 w-9 animate-spin text-[#128C7E]" />
-                    <p className="text-sm font-medium">Verificando a conexão do WhatsApp...</p>
+                  <div className={`flex flex-col items-center justify-center gap-3 text-center text-[#516072] ${embedded ? "min-h-0 flex-1" : "min-h-[300px]"}`}>
+                    <Loader2 className={`${embedded ? "h-7 w-7" : "h-9 w-9"} animate-spin text-[#128C7E]`} />
+                    <p className={`${embedded ? "text-xs" : "text-sm"} font-medium`}>
+                      Verificando a conexão do WhatsApp...
+                    </p>
                   </div>
                 ) : error ? (
-                  <div className="flex min-h-[300px] flex-col items-center justify-center gap-4 text-center">
-                    <div className="rounded-full bg-red-50 p-3 text-red-500">
-                      <Smartphone className="h-7 w-7" />
+                  <div className={`flex flex-col items-center justify-center gap-3 text-center ${embedded ? "min-h-0 flex-1" : "min-h-[300px]"}`}>
+                    <div className={`rounded-full bg-red-50 text-red-500 ${embedded ? "p-2.5" : "p-3"}`}>
+                      <Smartphone className={`${embedded ? "h-6 w-6" : "h-7 w-7"}`} />
                     </div>
                     <div className="space-y-2">
-                      <p className="text-sm font-semibold text-[#0c1826]">
+                      <p className={`${embedded ? "text-xs" : "text-sm"} font-semibold text-[#0c1826]`}>
                         Não foi possível validar a conexão
                       </p>
-                      <p className="text-sm leading-6 text-[#64748b]">{error}</p>
+                      <p className={`${embedded ? "text-xs leading-5" : "text-sm leading-6"} text-[#64748b]`}>
+                        {error}
+                      </p>
                     </div>
                   </div>
                 ) : qrCode ? (
-                  <div className="flex flex-col items-center gap-4">
+                  <div className={`flex flex-col items-center ${embedded ? "min-h-0 flex-1 justify-center gap-3" : "gap-4"}`}>
                     <img
                       src={qrCode}
                       alt="QR Code do WhatsApp"
-                      className="h-auto w-full max-w-[320px] rounded-[22px] bg-white p-3 shadow-sm"
+                      className={`h-auto w-full rounded-[22px] bg-white shadow-sm ${
+                        embedded ? "max-w-[220px] p-2.5" : "max-w-[320px] p-3"
+                      }`}
                     />
-                    <div className="w-full rounded-2xl bg-white px-4 py-3 text-center shadow-sm">
-                      <p className="text-sm font-medium text-[#0c1826]">
+                    <div className={`w-full rounded-2xl bg-white text-center shadow-sm ${embedded ? "px-3 py-2.5" : "px-4 py-3"}`}>
+                      <p className={`${embedded ? "text-xs" : "text-sm"} font-medium text-[#0c1826]`}>
                         Escaneie com o WhatsApp do aparelho que será conectado.
                       </p>
                       {lastUpdatedLabel ? (
-                        <p className="mt-1 text-xs text-[#64748b]">
+                        <p className={`mt-1 text-[#64748b] ${embedded ? "text-[11px]" : "text-xs"}`}>
                           Última atualização às {lastUpdatedLabel}
                         </p>
                       ) : null}
                     </div>
                   </div>
                 ) : (
-                  <div className="flex min-h-[300px] flex-col items-center justify-center gap-4 text-center">
-                    <Smartphone className="h-9 w-9 text-[#128C7E]" />
-                    <p className="text-sm leading-6 text-[#64748b]">
+                  <div className={`flex flex-col items-center justify-center gap-3 text-center ${embedded ? "min-h-0 flex-1" : "min-h-[300px]"}`}>
+                    <Smartphone className={`${embedded ? "h-7 w-7" : "h-9 w-9"} text-[#128C7E]`} />
+                    <p className={`${embedded ? "text-xs leading-5" : "text-sm leading-6"} text-[#64748b]`}>
                       O QR Code ainda não está disponível. A tela segue verificando automaticamente.
                     </p>
                   </div>
