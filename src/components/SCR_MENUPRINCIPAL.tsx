@@ -535,7 +535,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                 </div>
 
                 {isWhatsAppPanelCollapsed ? null : (
-                  <div className="min-h-0 flex-1">
+                  <div className="min-h-0 flex-1 overflow-hidden">
                     <WhatsAppQrPanel embedded onConnectionChange={setWhatsAppConnected} />
                   </div>
                 )}

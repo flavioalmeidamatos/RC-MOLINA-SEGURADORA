@@ -928,9 +928,11 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
     new Date(timestamp * 1000).toLocaleDateString("pt-BR");
   const hasSelectedChat = Boolean(selectedChat);
   const showPanelSkeleton = loading && chats.length === 0 && !qrCode && !error && !fetchedAt;
-  const connectedPanelStyle = {
-    height: embedded ? "100%" : "min(960px, calc(100dvh - 8rem))",
-  } as const;
+  const connectedPanelStyle = embedded
+    ? undefined
+    : ({
+        height: "min(960px, calc(100dvh - 8rem))",
+      } as const);
   const conversationWallpaper = {
     backgroundColor: "#0b141a",
     backgroundImage:
@@ -1496,13 +1498,13 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
 
   return (
     <div
-      className={`flex min-h-0 flex-1 overflow-y-auto bg-[#eef3f7] ${
-        embedded ? "p-0" : "p-3 sm:p-4 md:p-6"
+      className={`flex min-h-0 flex-1 bg-[#eef3f7] ${
+        embedded ? "h-full overflow-hidden p-0" : "overflow-y-auto p-3 sm:p-4 md:p-6"
       }`}
     >
       <div
         className={`flex w-full min-h-0 flex-col gap-4 ${
-          embedded ? "mx-0 max-w-none" : "mx-auto max-w-6xl"
+          embedded ? "h-full flex-1 overflow-hidden mx-0 max-w-none" : "mx-auto max-w-6xl"
         }`}
       >
         {statusNote ? (
@@ -1513,7 +1515,9 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
 
         {showPanelSkeleton ? (
           <section
-            className="overflow-hidden rounded-[32px] border border-white/6 bg-[#0b141a] shadow-[0_32px_80px_rgba(6,18,23,0.28)]"
+            className={`overflow-hidden rounded-[32px] border border-white/6 bg-[#0b141a] shadow-[0_32px_80px_rgba(6,18,23,0.28)] ${
+              embedded ? "flex min-h-0 flex-1 flex-col" : ""
+            }`}
             style={connectedPanelStyle}
           >
             <div className="grid h-full min-h-0 xl:grid-cols-[410px_minmax(0,1fr)]">
@@ -1553,7 +1557,9 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
           </section>
         ) : connected ? (
           <section
-            className="overflow-hidden rounded-[32px] border border-white/6 bg-[#0b141a] shadow-[0_32px_80px_rgba(6,18,23,0.28)]"
+            className={`overflow-hidden rounded-[32px] border border-white/6 bg-[#0b141a] shadow-[0_32px_80px_rgba(6,18,23,0.28)] ${
+              embedded ? "flex min-h-0 flex-1 flex-col" : ""
+            }`}
             style={connectedPanelStyle}
           >
             <div className="grid h-full min-h-0 xl:grid-cols-[410px_minmax(0,1fr)]">
@@ -1562,7 +1568,11 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
             </div>
           </section>
         ) : (
-          <div className="flex w-full flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,420px)] lg:items-stretch lg:gap-6">
+          <div
+            className={`flex w-full flex-col gap-4 ${
+              embedded ? "min-h-0 flex-1 overflow-y-auto pr-1" : "lg:grid lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,420px)] lg:items-stretch lg:gap-6"
+            }`}
+          >
             <section className="rounded-[28px] border border-[#d7e2ea] bg-white p-5 shadow-sm sm:p-6 lg:p-8">
               <span className="inline-flex rounded-full bg-[#25D366]/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#128C7E]">
                 Conexão interna
