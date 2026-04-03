@@ -2008,11 +2008,11 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
           >
             {isAttachmentMenuOpen ? (
               <div className="absolute bottom-[calc(100%+0.75rem)] left-3 z-30 w-[220px] overflow-hidden rounded-[24px] border border-white/10 bg-[#111b21] shadow-[0_24px_64px_rgba(0,0,0,0.38)]">
-                <div className="border-b border-white/8 px-4 py-3">
+                <div className="border-b border-white/8 px-4 py-2.5">
                   <p className="text-sm font-semibold text-white">Compartilhar</p>
-                  <p className="mt-1 text-xs text-[#8fa3ad]">Escolha o que deseja enviar</p>
+                  <p className="mt-0.5 text-xs text-[#8fa3ad]">Escolha o que deseja enviar</p>
                 </div>
-                <div className="p-2">
+                <div className="p-1">
                   {attachmentMenuItems.map((item) => (
                     <button
                       key={item.id}
@@ -2031,7 +2031,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
 
                         triggerFilePicker(item.id);
                       }}
-                      className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm text-white transition-colors hover:bg-white/6"
+                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm text-white transition-colors hover:bg-white/6"
                     >
                       <span className="text-lg">{item.icon}</span>
                       <span className="font-medium">{item.label}</span>
@@ -2098,15 +2098,15 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
                 {composerTab === "emoji" ? (
                   <div className="custom-scrollbar max-h-[360px] overflow-y-auto px-4 py-4">
                     {recentEmojis.length > 0 ? (
-                      <div className="mb-5">
+                      <div className="mb-4">
                         <p className="text-sm font-semibold text-[#cbd5db]">Recentes</p>
-                        <div className="mt-3 flex flex-wrap gap-2">
+                        <div className="mt-2 flex flex-wrap gap-1">
                           {recentEmojis.map((emoji) => (
                             <button
                               key={`recent-${emoji}`}
                               type="button"
                               onClick={() => handleInsertEmoji(emoji)}
-                              className="inline-flex h-11 w-11 items-center justify-center rounded-2xl text-2xl transition-colors hover:bg-white/8"
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-[24px] transition-colors hover:bg-white/8"
                             >
                               {emoji}
                             </button>
@@ -2115,7 +2115,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
                       </div>
                     ) : null}
 
-                    <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
+                    <div className="mb-3 flex gap-1.5 overflow-x-auto pb-1">
                       {filteredEmojiCategories.map((category) => (
                         <button
                           key={category.id}
@@ -2138,13 +2138,13 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
                         <p className="text-sm font-semibold text-[#cbd5db]">
                           {activeEmojiCategoryData.label}
                         </p>
-                        <div className="mt-3 grid grid-cols-6 gap-2 sm:grid-cols-8">
+                        <div className="mt-2 grid grid-cols-7 gap-1 sm:grid-cols-9 lg:grid-cols-10">
                           {activeEmojiCategoryData.emojis.map((emoji) => (
                             <button
                               key={`${activeEmojiCategoryData.id}-${emoji}`}
                               type="button"
                               onClick={() => handleInsertEmoji(emoji)}
-                              className="inline-flex h-11 w-full items-center justify-center rounded-2xl text-2xl transition-colors hover:bg-white/8"
+                              className="inline-flex h-9 w-full items-center justify-center rounded-xl text-[24px] leading-none transition-colors hover:bg-white/8"
                             >
                               {emoji}
                             </button>
