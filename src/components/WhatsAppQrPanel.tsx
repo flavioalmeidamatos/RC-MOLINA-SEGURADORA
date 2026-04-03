@@ -15,6 +15,10 @@ import {
   Smartphone,
 } from "lucide-react";
 
+const CONNECTED_OVERVIEW_REFRESH_MS = 6000;
+const DISCONNECTED_OVERVIEW_REFRESH_MS = 5000;
+const SELECTED_CHAT_REFRESH_MS = 4000;
+
 type WhatsAppChatItem = {
   chatId: string;
   title: string;
@@ -90,6 +94,127 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilter, setActiveFilter] = useState<"all" | "incoming" | "groups">("all");
 
+  const sortChatsByTimestamp = (items: WhatsAppChatItem[]) =>
+    [...items].sort((left, right) => Number(right.timestamp || 0) - Number(left.timestamp || 0));
+
+  const reconcileOverviewChats = (
+    currentChats: WhatsAppChatItem[],
+    incomingChats: WhatsAppChatItem[]
+  ) => {
+    const currentChatsById = new Map(currentChats.map((chat) => [chat.chatId, chat] as const));
+
+    return sortChatsByTimestamp(
+      incomingChats.map((chat) => {
+        const existingChat = currentChatsById.get(chat.chatId);
+
+        if (!existingChat) {
+          return chat;
+        }
+
+        if (Number(existingChat.timestamp || 0) > Number(chat.timestamp || 0)) {
+          return {
+            ...chat,
+            preview: existingChat.preview || chat.preview,
+            timestamp: existingChat.timestamp,
+            direction: existingChat.direction || chat.direction,
+            typeMessage: existingChat.typeMessage || chat.typeMessage,
+            statusMessage: existingChat.statusMessage || chat.statusMessage,
+          };
+        }
+
+        return {
+          ...existingChat,
+          ...chat,
+        };
+      })
+    );
+  };
+
+  const getConversationPreview = (message: WhatsAppConversationMessage) => {
+    const normalizedText = String(message.text || "").trim();
+
+    if (normalizedText) {
+      return normalizedText;
+    }
+
+    const typeLabels: Record<string, string> = {
+      imageMessage: "Imagem",
+      videoMessage: "Video",
+      audioMessage: "Audio",
+      documentMessage: "Documento",
+      extendedTextMessage: "Mensagem",
+      textMessage: "Mensagem",
+      stickerMessage: "Sticker",
+    };
+
+    return typeLabels[String(message.typeMessage || "")] || "Mensagem";
+  };
+
+  const syncChatSnapshot = (
+    chat: WhatsAppChatItem,
+    nextMessages: WhatsAppConversationMessage[]
+  ) => {
+    if (nextMessages.length === 0) {
+      return;
+    }
+
+    const latestMessage = nextMessages.reduce((latest, current) =>
+      Number(current.timestamp || 0) > Number(latest.timestamp || 0) ? current : latest
+    );
+
+    setChats((currentChats) => {
+      const currentChat = currentChats.find((item) => item.chatId === chat.chatId) || chat;
+      const latestTimestamp = Number(latestMessage.timestamp || 0);
+      const shouldPromotePreview = latestTimestamp >= Number(currentChat.timestamp || 0);
+
+      return sortChatsByTimestamp([
+        {
+          ...currentChat,
+          timestamp: Math.max(Number(currentChat.timestamp || 0), latestTimestamp),
+          preview: shouldPromotePreview
+            ? getConversationPreview(latestMessage) || currentChat.preview
+            : currentChat.preview,
+          direction: shouldPromotePreview
+            ? latestMessage.direction || currentChat.direction
+            : currentChat.direction,
+          typeMessage: shouldPromotePreview
+            ? latestMessage.typeMessage || currentChat.typeMessage
+            : currentChat.typeMessage,
+          statusMessage: shouldPromotePreview
+            ? latestMessage.statusMessage || currentChat.statusMessage
+            : currentChat.statusMessage,
+        },
+        ...currentChats.filter((item) => item.chatId !== chat.chatId),
+      ]);
+    });
+
+    setSelectedChat((currentSelectedChat) => {
+      if (!currentSelectedChat || currentSelectedChat.chatId !== chat.chatId) {
+        return currentSelectedChat;
+      }
+
+      const latestTimestamp = Number(latestMessage.timestamp || 0);
+      const shouldPromotePreview = latestTimestamp >= Number(currentSelectedChat.timestamp || 0);
+
+      return {
+        ...currentSelectedChat,
+        timestamp: Math.max(Number(currentSelectedChat.timestamp || 0), latestTimestamp),
+        preview: shouldPromotePreview
+          ? getConversationPreview(latestMessage) || currentSelectedChat.preview
+          : currentSelectedChat.preview,
+        direction: shouldPromotePreview
+          ? latestMessage.direction || currentSelectedChat.direction
+          : currentSelectedChat.direction,
+        typeMessage: shouldPromotePreview
+          ? latestMessage.typeMessage || currentSelectedChat.typeMessage
+          : currentSelectedChat.typeMessage,
+        statusMessage: shouldPromotePreview
+          ? latestMessage.statusMessage || currentSelectedChat.statusMessage
+          : currentSelectedChat.statusMessage,
+      };
+    });
+  };
+
   const loadOverview = async (isManualRefresh = false) => {
     if (requestInFlightRef.current) {
       return;
@@ -128,7 +253,8 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
       setStateInstance(data.stateInstance || "");
       setStatusInstance(data.statusInstance || "");
       setQrCode(data.qrCode || "");
-      setChats(Array.isArray(data.chats) ? data.chats : []);
+      const nextChats = Array.isArray(data.chats) ? data.chats : [];
+      setChats((currentChats) => reconcileOverviewChats(currentChats, nextChats));
       setFetchedAt(data.fetchedAt || "");
     } catch (loadError) {
       const message =
@@ -169,7 +295,9 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
         throw new Error(data.error || "Nao foi possivel carregar a conversa.");
       }
 
-      setMessages(Array.isArray(data.messages) ? data.messages : []);
+      const nextMessages = Array.isArray(data.messages) ? data.messages : [];
+      setMessages(nextMessages);
+      syncChatSnapshot(chat, nextMessages);
     } catch (loadError) {
       const message =
         loadError instanceof Error ? loadError.message : "Erro inesperado ao abrir a conversa.";
@@ -238,7 +366,9 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
   }, [statusNote]);
 
   useEffect(() => {
-    const refreshInterval = connected ? 15000 : 5000;
+    const refreshInterval = connected
+      ? CONNECTED_OVERVIEW_REFRESH_MS
+      : DISCONNECTED_OVERVIEW_REFRESH_MS;
     const intervalId = window.setInterval(() => {
       void loadOverview(true);
     }, refreshInterval);
@@ -253,10 +383,32 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
 
     const intervalId = window.setInterval(() => {
       void loadChatHistory(selectedChat, true);
-    }, 7000);
+    }, SELECTED_CHAT_REFRESH_MS);
 
     return () => window.clearInterval(intervalId);
   }, [connected, selectedChat]);
+
+  useEffect(() => {
+    const handleVisibilitySync = () => {
+      if (document.visibilityState !== "visible") {
+        return;
+      }
+
+      void loadOverview(true);
+
+      if (selectedChat) {
+        void loadChatHistory(selectedChat, true);
+      }
+    };
+
+    window.addEventListener("focus", handleVisibilitySync);
+    document.addEventListener("visibilitychange", handleVisibilitySync);
+
+    return () => {
+      window.removeEventListener("focus", handleVisibilitySync);
+      document.removeEventListener("visibilitychange", handleVisibilitySync);
+    };
+  }, [selectedChat]);
 
   useEffect(() => {
     if (!selectedChat) {
@@ -295,6 +447,9 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
       minute: "2-digit",
     });
   const hasSelectedChat = Boolean(selectedChat);
+  const connectedPanelStyle = {
+    height: "min(960px, calc(100dvh - 8rem))",
+  } as const;
   const conversationWallpaper = {
     backgroundColor: "#0b141a",
     backgroundImage:
@@ -313,22 +468,24 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
   const filteredChats = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
 
-    return chats.filter((chat) => {
-      if (activeFilter === "incoming" && chat.direction !== "incoming") {
-        return false;
-      }
+    return sortChatsByTimestamp(
+      chats.filter((chat) => {
+        if (activeFilter === "incoming" && chat.direction !== "incoming") {
+          return false;
+        }
 
-      if (activeFilter === "groups" && !chat.isGroup) {
-        return false;
-      }
+        if (activeFilter === "groups" && !chat.isGroup) {
+          return false;
+        }
 
-      if (!normalizedSearch) {
-        return true;
-      }
+        if (!normalizedSearch) {
+          return true;
+        }
 
-      const haystack = `${chat.title} ${chat.subtitle} ${chat.preview}`.toLowerCase();
-      return haystack.includes(normalizedSearch);
-    });
+        const haystack = `${chat.title} ${chat.subtitle} ${chat.preview}`.toLowerCase();
+        return haystack.includes(normalizedSearch);
+      })
+    );
   }, [activeFilter, chats, searchTerm]);
   const getAvatarLabel = (title: string) =>
     title
@@ -390,9 +547,9 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
     <aside
       className={`border-r border-white/6 bg-[#111b21] ${
         hasSelectedChat ? "hidden xl:flex" : "flex"
-      } min-h-[720px] flex-col`}
+      } h-full min-h-0 flex-col`}
     >
-      <div className="border-b border-white/6 px-5 py-5">
+      <div className="flex-shrink-0 border-b border-white/6 px-5 py-5">
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-[13px] font-semibold uppercase tracking-[0.28em] text-[#00a884]">
@@ -476,7 +633,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
         </div>
       </div>
 
-      <div className="custom-scrollbar flex-1 overflow-y-auto px-2 py-2">
+      <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-2">
         {loading && chats.length === 0 ? (
           <div className="flex min-h-[320px] flex-col items-center justify-center gap-3 text-center text-[#aebac1]">
             <Loader2 className="h-9 w-9 animate-spin text-[#00a884]" />
@@ -546,7 +703,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
         )}
       </div>
 
-      <div className="border-t border-white/6 px-5 py-3 text-xs text-[#7d8b92]">
+      <div className="flex-shrink-0 border-t border-white/6 px-5 py-3 text-xs text-[#7d8b92]">
         {lastUpdatedLabel ? `Ultima atualizacao as ${lastUpdatedLabel}` : "Sincronizando chats"}
       </div>
     </aside>
@@ -556,7 +713,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
     <section
       className={`${
         hasSelectedChat ? "flex" : "hidden xl:flex"
-      } min-h-[720px] flex-col bg-[#0b141a]`}
+      } h-full min-h-0 flex-col bg-[#0b141a]`}
     >
       {selectedChat ? (
         <>
@@ -601,7 +758,10 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
             </div>
           </div>
 
-          <div className="custom-scrollbar flex-1 overflow-y-auto px-3 py-4 sm:px-5" style={conversationWallpaper}>
+          <div
+            className="custom-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 sm:px-5"
+            style={conversationWallpaper}
+          >
             {loadingMessages ? (
               <div className="flex min-h-[320px] flex-col items-center justify-center gap-3 text-center text-[#d0d7db]">
                 <Loader2 className="h-9 w-9 animate-spin text-[#00a884]" />
@@ -698,7 +858,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
           </form>
         </>
       ) : (
-        <div className="flex min-h-[720px] flex-1 flex-col justify-between" style={conversationWallpaper}>
+        <div className="flex h-full min-h-0 flex-1 flex-col justify-between" style={conversationWallpaper}>
           <div className="border-b border-white/6 bg-[#202c33] px-4 py-4 sm:px-5">
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -748,8 +908,8 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
   );
 
   return (
-    <div className="flex flex-1 overflow-y-auto bg-[#eef3f7] p-4 sm:p-6 md:p-8">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-4">
+    <div className="flex min-h-0 flex-1 overflow-y-auto bg-[#eef3f7] p-3 sm:p-4 md:p-6">
+      <div className="mx-auto flex w-full max-w-6xl min-h-0 flex-col gap-4">
         {statusNote ? (
           <div className="rounded-2xl border border-[#b7efc5] bg-[#effcf3] px-4 py-3 text-sm font-medium text-[#166534]">
             {statusNote}
@@ -757,8 +917,11 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
         ) : null}
 
         {connected ? (
-          <section className="overflow-hidden rounded-[32px] border border-white/6 bg-[#0b141a] shadow-[0_32px_80px_rgba(6,18,23,0.28)]">
-            <div className="grid min-h-[720px] xl:grid-cols-[390px_minmax(0,1fr)]">
+          <section
+            className="overflow-hidden rounded-[32px] border border-white/6 bg-[#0b141a] shadow-[0_32px_80px_rgba(6,18,23,0.28)]"
+            style={connectedPanelStyle}
+          >
+            <div className="grid h-full min-h-0 xl:grid-cols-[390px_minmax(0,1fr)]">
               {renderChatList()}
               {renderConversationPane()}
             </div>

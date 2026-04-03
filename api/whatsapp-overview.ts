@@ -51,7 +51,6 @@ const GREEN_API_BASE_URL =
   "https://7107.api.greenapi.com/waInstance7107375943";
 const GREEN_API_TOKEN = "0605c7c040e54a888ca58c312612109777c45c734bb049f782";
 const CHATS_LOOKBACK_MINUTES = 1440;
-const MAX_CHAT_CARDS = 30;
 
 const applyHeaders = (response: VercelResponse) => {
   response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
@@ -228,7 +227,6 @@ const buildChats = (
 
   return Array.from(latestByChat.values())
     .sort((a, b) => Number(b.timestamp || 0) - Number(a.timestamp || 0))
-    .slice(0, MAX_CHAT_CARDS)
     .map((message) => {
       const chatId = String(message.chatId || "").trim();
       const contact = contactsById.get(chatId);
