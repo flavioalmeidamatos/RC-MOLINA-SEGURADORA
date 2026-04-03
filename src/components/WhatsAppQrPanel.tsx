@@ -16,9 +16,9 @@ import {
   Smartphone,
 } from "lucide-react";
 
-const CONNECTED_OVERVIEW_REFRESH_MS = 4000;
+const CONNECTED_OVERVIEW_REFRESH_MS = 3000;
 const DISCONNECTED_OVERVIEW_REFRESH_MS = 5000;
-const SELECTED_CHAT_REFRESH_MS = 4000;
+const SELECTED_CHAT_REFRESH_MS = 2500;
 
 type WhatsAppChatItem = {
   chatId: string;
@@ -578,6 +578,32 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
       hour: "2-digit",
       minute: "2-digit",
     });
+  const formatConversationDateLabel = (timestamp: number) => {
+    const messageDate = new Date(timestamp * 1000);
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+
+    const messageDateKey = messageDate.toLocaleDateString("pt-BR");
+    const todayKey = today.toLocaleDateString("pt-BR");
+    const yesterdayKey = yesterday.toLocaleDateString("pt-BR");
+
+    if (messageDateKey === todayKey) {
+      return "Hoje";
+    }
+
+    if (messageDateKey === yesterdayKey) {
+      return "Ontem";
+    }
+
+    return messageDate.toLocaleDateString("pt-BR", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  };
+  const getMessageDayKey = (timestamp: number) =>
+    new Date(timestamp * 1000).toLocaleDateString("pt-BR");
   const hasSelectedChat = Boolean(selectedChat);
   const showPanelSkeleton = loading && chats.length === 0 && !qrCode && !error && !fetchedAt;
   const connectedPanelStyle = {
@@ -1002,7 +1028,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
               </div>
             ) : messages.length > 0 ? (
               <div className="flex flex-col gap-2.5 pb-2">
-                {messages.map((message) => {
+                {messages.map((message, index) => {
                   const isOutgoing = message.direction === "outgoing";
                   const timeLabel = new Date(message.timestamp * 1000).toLocaleTimeString(
                     "pt-BR",
@@ -1011,37 +1037,48 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
                       minute: "2-digit",
                     }
                   );
+                  const previousMessage = index > 0 ? messages[index - 1] : null;
+                  const shouldShowDateDivider =
+                    !previousMessage ||
+                    getMessageDayKey(previousMessage.timestamp) !== getMessageDayKey(message.timestamp);
 
                   return (
-                    <div
-                      key={message.idMessage}
-                      className={`flex ${isOutgoing ? "justify-end" : "justify-start"}`}
-                    >
-                      <div
-                        className={`max-w-[92%] rounded-2xl px-3.5 py-2.5 shadow-[0_2px_8px_rgba(0,0,0,0.18)] sm:max-w-[78%] ${
-                          isOutgoing
-                            ? "bg-[#005c4b] text-white"
-                            : "bg-[#202c33] text-[#e9edef]"
-                        }`}
-                      >
-                        {!isOutgoing && message.senderName && selectedChat.isGroup ? (
-                          <p className="mb-1 text-xs font-semibold text-[#7ae3bf]">
-                            {message.senderName}
-                          </p>
-                        ) : null}
+                    <React.Fragment key={message.idMessage}>
+                      {shouldShowDateDivider ? (
+                        <div className="flex justify-center py-3">
+                          <span className="rounded-full bg-[#1f2c33]/90 px-4 py-1.5 text-xs font-medium text-[#dce3e7] shadow-[0_2px_10px_rgba(0,0,0,0.18)]">
+                            {formatConversationDateLabel(message.timestamp)}
+                          </span>
+                        </div>
+                      ) : null}
 
-                        <div className="text-sm leading-6">{renderMessageBody(message)}</div>
-
+                      <div className={`flex ${isOutgoing ? "justify-end" : "justify-start"}`}>
                         <div
-                          className={`mt-2 flex items-center justify-end gap-1 text-[11px] ${
-                            isOutgoing ? "text-[#d1f4cc]" : "text-[#8696a0]"
+                          className={`max-w-[92%] rounded-2xl px-3.5 py-2.5 shadow-[0_2px_8px_rgba(0,0,0,0.18)] sm:max-w-[78%] ${
+                            isOutgoing
+                              ? "bg-[#005c4b] text-white"
+                              : "bg-[#202c33] text-[#e9edef]"
                           }`}
                         >
-                          <span>{timeLabel}</span>
-                          {isOutgoing ? <CheckCheck className="h-3.5 w-3.5" /> : null}
+                          {!isOutgoing && message.senderName && selectedChat.isGroup ? (
+                            <p className="mb-1 text-xs font-semibold text-[#7ae3bf]">
+                              {message.senderName}
+                            </p>
+                          ) : null}
+
+                          <div className="text-sm leading-6">{renderMessageBody(message)}</div>
+
+                          <div
+                            className={`mt-2 flex items-center justify-end gap-1 text-[11px] ${
+                              isOutgoing ? "text-[#d1f4cc]" : "text-[#8696a0]"
+                            }`}
+                          >
+                            <span>{timeLabel}</span>
+                            {isOutgoing ? <CheckCheck className="h-3.5 w-3.5" /> : null}
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    </React.Fragment>
                   );
                 })}
               </div>
