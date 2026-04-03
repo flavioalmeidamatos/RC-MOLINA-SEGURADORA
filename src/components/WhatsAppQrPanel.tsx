@@ -1,10 +1,15 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
+  Archive,
   CheckCircle2,
+  CheckCheck,
   Loader2,
   MessageCircle,
+  MoreVertical,
+  Plus,
   RefreshCw,
+  Search,
   SendHorizontal,
   ShieldCheck,
   Smartphone,
@@ -82,6 +87,8 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
   const [sendingMessage, setSendingMessage] = useState(false);
   const [messageText, setMessageText] = useState("");
   const [chatError, setChatError] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeFilter, setActiveFilter] = useState<"all" | "incoming" | "groups">("all");
 
   const loadOverview = async (isManualRefresh = false) => {
     if (requestInFlightRef.current) {
@@ -251,6 +258,18 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
     return () => window.clearInterval(intervalId);
   }, [connected, selectedChat]);
 
+  useEffect(() => {
+    if (!selectedChat) {
+      return;
+    }
+
+    const refreshedChat = chats.find((chat) => chat.chatId === selectedChat.chatId);
+
+    if (refreshedChat && refreshedChat !== selectedChat) {
+      setSelectedChat(refreshedChat);
+    }
+  }, [chats, selectedChat]);
+
   const lastUpdatedLabel = fetchedAt
     ? new Date(fetchedAt).toLocaleTimeString("pt-BR", {
         hour: "2-digit",
@@ -276,6 +295,57 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
       minute: "2-digit",
     });
   const hasSelectedChat = Boolean(selectedChat);
+  const conversationWallpaper = {
+    backgroundColor: "#0b141a",
+    backgroundImage:
+      "radial-gradient(circle at 25px 25px, rgba(255,255,255,0.03) 2px, transparent 0), radial-gradient(circle at 75px 75px, rgba(255,255,255,0.02) 2px, transparent 0), linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px)",
+    backgroundSize: "100px 100px, 120px 120px, 36px 36px, 36px 36px",
+    backgroundPosition: "0 0, 30px 30px, 0 0, 0 0",
+  } as const;
+  const chatStats = useMemo(
+    () => ({
+      all: chats.length,
+      incoming: chats.filter((chat) => chat.direction === "incoming").length,
+      groups: chats.filter((chat) => chat.isGroup).length,
+    }),
+    [chats]
+  );
+  const filteredChats = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+
+    return chats.filter((chat) => {
+      if (activeFilter === "incoming" && chat.direction !== "incoming") {
+        return false;
+      }
+
+      if (activeFilter === "groups" && !chat.isGroup) {
+        return false;
+      }
+
+      if (!normalizedSearch) {
+        return true;
+      }
+
+      const haystack = `${chat.title} ${chat.subtitle} ${chat.preview}`.toLowerCase();
+      return haystack.includes(normalizedSearch);
+    });
+  }, [activeFilter, chats, searchTerm]);
+  const getAvatarLabel = (title: string) =>
+    title
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() || "")
+      .join("") || "WA";
+  const getAvatarClassName = (chat: WhatsAppChatItem) => {
+    if (chat.isGroup) {
+      return "bg-gradient-to-br from-[#5b4bdb] to-[#8b5cf6] text-white";
+    }
+
+    return chat.direction === "incoming"
+      ? "bg-gradient-to-br from-[#0f766e] to-[#14b8a6] text-white"
+      : "bg-gradient-to-br from-[#2563eb] to-[#38bdf8] text-white";
+  };
   const renderMessageBody = (message: WhatsAppConversationMessage) => {
     const isImage = message.typeMessage === "imageMessage";
     const isSticker = message.typeMessage === "stickerMessage";
@@ -316,6 +386,367 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
     return <p className="whitespace-pre-wrap text-sm leading-6">{message.text}</p>;
   };
 
+  const renderChatList = () => (
+    <aside
+      className={`border-r border-white/6 bg-[#111b21] ${
+        hasSelectedChat ? "hidden xl:flex" : "flex"
+      } min-h-[720px] flex-col`}
+    >
+      <div className="border-b border-white/6 px-5 py-5">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-[13px] font-semibold uppercase tracking-[0.28em] text-[#00a884]">
+              WhatsApp
+            </p>
+            <h2 className="mt-2 text-[30px] font-bold leading-none text-white">Conversas</h2>
+          </div>
+          <div className="flex items-center gap-2 text-[#aebac1]">
+            <button
+              type="button"
+              onClick={() => void loadOverview(true)}
+              disabled={refreshing}
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/8 bg-white/4 transition-colors hover:bg-white/8 disabled:opacity-60"
+            >
+              <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+            </button>
+            <button
+              type="button"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/8 bg-white/4 transition-colors hover:bg-white/8"
+            >
+              <MoreVertical className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-5 rounded-3xl bg-white/10 px-4 py-3">
+          <div className="flex items-center gap-3 text-[#aebac1]">
+            <Search className="h-4 w-4" />
+            <input
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Pesquisar ou comecar uma nova conversa"
+              className="w-full bg-transparent text-sm text-white outline-none placeholder:text-[#93a2aa]"
+            />
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          {[
+            { id: "all" as const, label: "Tudo", count: chatStats.all },
+            { id: "incoming" as const, label: "Entradas", count: chatStats.incoming },
+            { id: "groups" as const, label: "Grupos", count: chatStats.groups },
+          ].map((filter) => (
+            <button
+              key={filter.id}
+              type="button"
+              onClick={() => setActiveFilter(filter.id)}
+              className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
+                activeFilter === filter.id
+                  ? "border-[#005c4b] bg-[#103529] text-[#d9fdd3]"
+                  : "border-white/10 bg-transparent text-[#aebac1] hover:bg-white/6"
+              }`}
+            >
+              <span>{filter.label}</span>
+              <span
+                className={`rounded-full px-2 py-0.5 text-xs ${
+                  activeFilter === filter.id
+                    ? "bg-[#00a884] text-[#041a14]"
+                    : "bg-white/8 text-[#d0d7db]"
+                }`}
+              >
+                {filter.count}
+              </span>
+            </button>
+          ))}
+          <button
+            type="button"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-transparent text-[#d0d7db] transition-colors hover:bg-white/6"
+          >
+            <Plus className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="mt-5 flex items-center gap-3 rounded-2xl border border-white/6 bg-white/4 px-4 py-3 text-[#d0d7db]">
+          <Archive className="h-4 w-4 text-[#00a884]" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold">Arquivadas</p>
+            <p className="text-xs text-[#8f9da4]">Chats sincronizados com a Green API</p>
+          </div>
+          <span className="text-xs font-semibold text-[#00a884]">{chatStats.all}</span>
+        </div>
+      </div>
+
+      <div className="custom-scrollbar flex-1 overflow-y-auto px-2 py-2">
+        {loading && chats.length === 0 ? (
+          <div className="flex min-h-[320px] flex-col items-center justify-center gap-3 text-center text-[#aebac1]">
+            <Loader2 className="h-9 w-9 animate-spin text-[#00a884]" />
+            <p className="text-sm font-medium">Carregando as conversas...</p>
+          </div>
+        ) : filteredChats.length > 0 ? (
+          filteredChats.map((chat) => (
+            <button
+              key={chat.chatId}
+              type="button"
+              onClick={() => void loadChatHistory(chat)}
+              className={`mb-1.5 flex w-full items-start gap-3 rounded-2xl px-3 py-3 text-left transition-colors ${
+                selectedChat?.chatId === chat.chatId ? "bg-white/12" : "hover:bg-white/6"
+              }`}
+            >
+              <div
+                className={`flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full text-sm font-bold ${getAvatarClassName(
+                  chat
+                )}`}
+              >
+                {getAvatarLabel(chat.title)}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-[20px] font-semibold leading-tight text-white">
+                      {chat.title}
+                    </p>
+                    <p className="mt-0.5 truncate text-xs uppercase tracking-[0.16em] text-[#7d8b92]">
+                      {chat.isGroup ? "Grupo" : "Contato"}
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-end gap-2">
+                    <span
+                      className={`text-xs font-semibold ${
+                        chat.direction === "incoming" ? "text-[#00a884]" : "text-[#8f9da4]"
+                      }`}
+                    >
+                      {formatTimestamp(chat.timestamp).slice(-5)}
+                    </span>
+                    {chat.direction === "incoming" ? (
+                      <span className="rounded-full bg-[#00a884] px-2 py-0.5 text-[11px] font-bold text-[#06150f]">
+                        novo
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+                <div className="mt-2 flex items-start gap-2">
+                  <MessageCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#8f9da4]" />
+                  <p className="line-clamp-2 text-sm leading-5 text-[#c4ccd0]">{chat.preview}</p>
+                </div>
+                <div className="mt-2 flex items-center justify-between gap-3 text-xs text-[#7d8b92]">
+                  <span className="truncate">{chat.subtitle}</span>
+                  <span className="whitespace-nowrap">{chat.typeMessage}</span>
+                </div>
+              </div>
+            </button>
+          ))
+        ) : (
+          <div className="flex min-h-[320px] flex-col items-center justify-center gap-3 px-6 text-center">
+            <Search className="h-10 w-10 text-[#00a884]" />
+            <p className="text-base font-semibold text-white">Nenhum chat encontrado</p>
+            <p className="text-sm leading-6 text-[#8f9da4]">
+              Ajuste a pesquisa ou os filtros para localizar a conversa desejada.
+            </p>
+          </div>
+        )}
+      </div>
+
+      <div className="border-t border-white/6 px-5 py-3 text-xs text-[#7d8b92]">
+        {lastUpdatedLabel ? `Ultima atualizacao as ${lastUpdatedLabel}` : "Sincronizando chats"}
+      </div>
+    </aside>
+  );
+
+  const renderConversationPane = () => (
+    <section
+      className={`${
+        hasSelectedChat ? "flex" : "hidden xl:flex"
+      } min-h-[720px] flex-col bg-[#0b141a]`}
+    >
+      {selectedChat ? (
+        <>
+          <div className="flex items-center justify-between gap-3 border-b border-white/6 bg-[#202c33] px-4 py-3 sm:px-5">
+            <div className="flex min-w-0 items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setSelectedChat(null)}
+                className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-[#d1d7db] transition-colors hover:bg-white/8 xl:hidden"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+              <div
+                className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full text-sm font-bold ${getAvatarClassName(
+                  selectedChat
+                )}`}
+              >
+                {getAvatarLabel(selectedChat.title)}
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-base font-semibold text-white sm:text-lg">
+                  {selectedChat.title}
+                </p>
+                <p className="truncate text-xs text-[#aebac1]">
+                  {selectedChat.isGroup ? "Grupo em andamento" : connectionLabel}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1 text-[#aebac1]">
+              <button
+                type="button"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-white/8"
+              >
+                <Search className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-white/8"
+              >
+                <MoreVertical className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+
+          <div className="custom-scrollbar flex-1 overflow-y-auto px-3 py-4 sm:px-5" style={conversationWallpaper}>
+            {loadingMessages ? (
+              <div className="flex min-h-[320px] flex-col items-center justify-center gap-3 text-center text-[#d0d7db]">
+                <Loader2 className="h-9 w-9 animate-spin text-[#00a884]" />
+                <p className="text-sm font-medium">Carregando a conversa...</p>
+              </div>
+            ) : chatError ? (
+              <div className="flex min-h-[320px] flex-col items-center justify-center gap-3 px-6 text-center">
+                <MessageCircle className="h-10 w-10 text-[#00a884]" />
+                <p className="max-w-md text-sm leading-6 text-[#d0d7db]">{chatError}</p>
+              </div>
+            ) : messages.length > 0 ? (
+              <div className="flex flex-col gap-2.5 pb-2">
+                {messages.map((message) => {
+                  const isOutgoing = message.direction === "outgoing";
+                  const timeLabel = new Date(message.timestamp * 1000).toLocaleTimeString(
+                    "pt-BR",
+                    {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    }
+                  );
+
+                  return (
+                    <div
+                      key={message.idMessage}
+                      className={`flex ${isOutgoing ? "justify-end" : "justify-start"}`}
+                    >
+                      <div
+                        className={`max-w-[92%] rounded-2xl px-3.5 py-2.5 shadow-[0_2px_8px_rgba(0,0,0,0.18)] sm:max-w-[78%] ${
+                          isOutgoing
+                            ? "bg-[#005c4b] text-white"
+                            : "bg-[#202c33] text-[#e9edef]"
+                        }`}
+                      >
+                        {!isOutgoing && message.senderName && selectedChat.isGroup ? (
+                          <p className="mb-1 text-xs font-semibold text-[#7ae3bf]">
+                            {message.senderName}
+                          </p>
+                        ) : null}
+
+                        <div className="text-sm leading-6">{renderMessageBody(message)}</div>
+
+                        <div
+                          className={`mt-2 flex items-center justify-end gap-1 text-[11px] ${
+                            isOutgoing ? "text-[#d1f4cc]" : "text-[#8696a0]"
+                          }`}
+                        >
+                          <span>{timeLabel}</span>
+                          {isOutgoing ? <CheckCheck className="h-3.5 w-3.5" /> : null}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="flex min-h-[320px] flex-col items-center justify-center gap-3 px-6 text-center">
+                <MessageCircle className="h-10 w-10 text-[#00a884]" />
+                <p className="text-base font-semibold text-white">Ainda nao ha historico disponivel</p>
+                <p className="max-w-md text-sm leading-6 text-[#aebac1]">
+                  Assim que a Green API devolver mensagens desse chat, elas aparecem aqui no mesmo
+                  formato da conversa.
+                </p>
+              </div>
+            )}
+          </div>
+
+          <form
+            onSubmit={handleSendMessage}
+            className="border-t border-white/6 bg-[#202c33] px-3 py-3 sm:px-4"
+          >
+            <div className="flex items-end gap-2">
+              <div className="flex min-h-14 flex-1 items-end rounded-[28px] bg-[#2a3942] px-4 py-2">
+                <textarea
+                  value={messageText}
+                  onChange={(event) => setMessageText(event.target.value)}
+                  placeholder="Digite uma mensagem"
+                  rows={1}
+                  className="max-h-32 min-h-[36px] w-full resize-none bg-transparent py-1 text-sm leading-6 text-white outline-none placeholder:text-[#8696a0]"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={sendingMessage || !messageText.trim()}
+                className="inline-flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full bg-[#00a884] text-[#041a14] transition-colors hover:bg-[#14c38e] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {sendingMessage ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <SendHorizontal className="h-5 w-5" />
+                )}
+              </button>
+            </div>
+          </form>
+        </>
+      ) : (
+        <div className="flex min-h-[720px] flex-1 flex-col justify-between" style={conversationWallpaper}>
+          <div className="border-b border-white/6 bg-[#202c33] px-4 py-4 sm:px-5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#00a884]">
+                  Painel conectado
+                </p>
+                <p className="mt-1 text-sm text-[#d0d7db]">{connectionLabel}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => void loadOverview(true)}
+                  disabled={refreshing}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[#d0d7db] transition-colors hover:bg-white/8 disabled:opacity-60"
+                >
+                  <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[#d0d7db] transition-colors hover:bg-white/8"
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-1 flex-col items-center justify-center px-6 py-10 text-center">
+            <div className="rounded-[30px] border border-white/8 bg-[#111b21]/80 p-8 shadow-[0_24px_64px_rgba(0,0,0,0.35)] backdrop-blur">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#103529] text-[#00d37f]">
+                <MessageCircle className="h-7 w-7" />
+              </div>
+              <h3 className="mt-5 text-2xl font-semibold text-white">Selecione um chat</h3>
+              <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-[#aebac1]">
+                Toque em uma conversa na lateral para abrir o historico, visualizar imagens,
+                stickers e audios e responder sem sair do painel.
+              </p>
+            </div>
+          </div>
+
+          <div className="border-t border-white/6 bg-[#111b21] px-5 py-3 text-xs text-[#7d8b92]">
+            {lastUpdatedLabel ? `Ultima atualizacao as ${lastUpdatedLabel}` : "Sincronizando chats"}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+
   return (
     <div className="flex flex-1 overflow-y-auto bg-[#eef3f7] p-4 sm:p-6 md:p-8">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-4">
@@ -326,233 +757,11 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
         ) : null}
 
         {connected ? (
-          <section className="rounded-[28px] border border-[#d7e2ea] bg-white p-5 shadow-sm sm:p-6 lg:p-8">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-              <div>
-                <span className="inline-flex rounded-full bg-[#25D366]/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#128C7E]">
-                  WhatsApp conectado
-                </span>
-                <h2 className="mt-4 text-2xl font-bold leading-tight text-[#0c1826] sm:text-3xl">
-                  Conversas em andamento
-                </h2>
-                <p className="mt-3 max-w-2xl text-sm leading-6 text-[#516072] sm:text-base">
-                  A conexao foi validada com sucesso. A tela de autenticacao foi substituida pela
-                  lista dos chats mais recentes da instancia.
-                </p>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[#d5e3db] bg-[#f4fbf7] px-4 py-2 text-sm font-semibold text-[#128C7E]">
-                  <ShieldCheck className="h-4 w-4" />
-                  {connectionLabel}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => void loadOverview(true)}
-                  disabled={refreshing}
-                  className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[#d5e3db] bg-[#f4fbf7] px-4 py-2 text-sm font-semibold text-[#128C7E] transition-colors hover:bg-[#e8f8ee] disabled:cursor-not-allowed disabled:opacity-70"
-                >
-                  <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
-                  Atualizar chats
-                </button>
-              </div>
+          <section className="overflow-hidden rounded-[32px] border border-white/6 bg-[#0b141a] shadow-[0_32px_80px_rgba(6,18,23,0.28)]">
+            <div className="grid min-h-[720px] xl:grid-cols-[390px_minmax(0,1fr)]">
+              {renderChatList()}
+              {renderConversationPane()}
             </div>
-
-            <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
-              <div className={`${hasSelectedChat ? "hidden xl:block" : "block"}`}>
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
-                  {loading && chats.length === 0 ? (
-                    <div className="col-span-full flex min-h-[220px] flex-col items-center justify-center gap-3 rounded-[24px] border border-dashed border-[#d7e2ea] bg-[#f8fbfd] text-center text-[#516072]">
-                      <Loader2 className="h-9 w-9 animate-spin text-[#128C7E]" />
-                      <p className="text-sm font-medium">Carregando os chats em andamento...</p>
-                    </div>
-                  ) : chats.length > 0 ? (
-                    chats.map((chat) => (
-                      <button
-                        key={chat.chatId}
-                        type="button"
-                        onClick={() => void loadChatHistory(chat)}
-                        className={`rounded-[24px] border p-4 text-left shadow-sm transition-colors ${
-                          selectedChat?.chatId === chat.chatId
-                            ? "border-[#9fd5b0] bg-[#f4fbf7]"
-                            : "border-[#dce6ed] bg-[#f8fbfd] hover:border-[#c8d9e3] hover:bg-white"
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <p className="truncate text-base font-semibold text-[#0c1826]">
-                              {chat.title}
-                            </p>
-                            <p className="mt-1 text-xs uppercase tracking-[0.14em] text-[#7a8ea3]">
-                              {chat.isGroup ? "Grupo" : "Contato"} - {chat.subtitle}
-                            </p>
-                          </div>
-                          <span className="whitespace-nowrap text-xs font-medium text-[#64748b]">
-                            {formatTimestamp(chat.timestamp)}
-                          </span>
-                        </div>
-
-                        <div className="mt-4 flex items-start gap-3">
-                          <div className="rounded-full bg-white p-2 text-[#128C7E] shadow-sm">
-                            <MessageCircle className="h-4 w-4" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="line-clamp-3 text-sm leading-6 text-[#334155]">
-                              {chat.preview}
-                            </p>
-                            <p className="mt-3 text-xs text-[#7a8ea3]">
-                              {chat.direction === "outgoing" ? "Saida" : "Entrada"} - {chat.typeMessage}
-                              {chat.statusMessage ? ` - ${chat.statusMessage}` : ""}
-                            </p>
-                          </div>
-                        </div>
-                      </button>
-                    ))
-                  ) : (
-                    <div className="col-span-full flex min-h-[220px] flex-col items-center justify-center gap-3 rounded-[24px] border border-dashed border-[#d7e2ea] bg-[#f8fbfd] text-center">
-                      <MessageCircle className="h-9 w-9 text-[#128C7E]" />
-                      <div className="space-y-2">
-                        <p className="text-sm font-semibold text-[#0c1826]">
-                          Nenhum chat recente encontrado
-                        </p>
-                        <p className="text-sm leading-6 text-[#64748b]">
-                          Assim que houver conversas recentes na instancia, elas aparecem aqui
-                          automaticamente.
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className={`${hasSelectedChat ? "block" : "hidden xl:block"}`}>
-                <div className="flex min-h-[520px] flex-col overflow-hidden rounded-[28px] border border-[#dce6ed] bg-[#f8fbfd]">
-                  {selectedChat ? (
-                    <>
-                      <div className="flex items-center justify-between gap-3 border-b border-[#dce6ed] bg-white px-4 py-4 sm:px-5">
-                        <div className="flex items-center gap-3">
-                          <button
-                            type="button"
-                            onClick={() => setSelectedChat(null)}
-                            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#dce6ed] bg-[#f8fbfd] text-[#128C7E] xl:hidden"
-                          >
-                            <ArrowLeft className="h-4 w-4" />
-                          </button>
-                          <div>
-                            <p className="text-base font-semibold text-[#0c1826]">
-                              {selectedChat.title}
-                            </p>
-                            <p className="mt-1 text-xs uppercase tracking-[0.14em] text-[#7a8ea3]">
-                              {selectedChat.isGroup ? "Grupo" : "Contato"} - {selectedChat.subtitle}
-                            </p>
-                          </div>
-                        </div>
-                        <span className="hidden text-xs text-[#7a8ea3] sm:inline">
-                          Toque para responder
-                        </span>
-                      </div>
-
-                      <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-5">
-                        {loadingMessages ? (
-                          <div className="flex min-h-[320px] flex-col items-center justify-center gap-3 text-center text-[#516072]">
-                            <Loader2 className="h-9 w-9 animate-spin text-[#128C7E]" />
-                            <p className="text-sm font-medium">Carregando a conversa...</p>
-                          </div>
-                        ) : chatError ? (
-                          <div className="flex min-h-[320px] flex-col items-center justify-center gap-3 text-center">
-                            <MessageCircle className="h-9 w-9 text-[#128C7E]" />
-                            <p className="max-w-md text-sm leading-6 text-[#64748b]">{chatError}</p>
-                          </div>
-                        ) : messages.length > 0 ? (
-                          <div className="flex flex-col gap-3">
-                            {messages.map((message) => (
-                              <div
-                                key={message.idMessage}
-                                className={`flex ${
-                                  message.direction === "outgoing" ? "justify-end" : "justify-start"
-                                }`}
-                              >
-                                <div
-                                  className={`max-w-[88%] rounded-3xl px-4 py-3 shadow-sm sm:max-w-[76%] ${
-                                    message.direction === "outgoing"
-                                      ? "bg-[#dcf8e7] text-[#0c1826]"
-                                      : "bg-white text-[#0c1826]"
-                                  }`}
-                                >
-                                  {message.direction === "incoming" && message.senderName && selectedChat.isGroup ? (
-                                    <p className="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-[#6b7280]">
-                                      {message.senderName}
-                                    </p>
-                                  ) : null}
-                                  {renderMessageBody(message)}
-                                  <p className="mt-2 text-[11px] text-[#6b7280]">
-                                    {formatTimestamp(message.timestamp)}
-                                    {message.direction === "outgoing" && message.statusMessage
-                                      ? ` - ${message.statusMessage}`
-                                      : ""}
-                                  </p>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="flex min-h-[320px] flex-col items-center justify-center gap-3 text-center">
-                            <MessageCircle className="h-9 w-9 text-[#128C7E]" />
-                            <p className="text-sm leading-6 text-[#64748b]">
-                              Ainda nao ha historico disponivel para este chat.
-                            </p>
-                          </div>
-                        )}
-                      </div>
-
-                      <form
-                        onSubmit={handleSendMessage}
-                        className="border-t border-[#dce6ed] bg-white px-4 py-4 sm:px-5"
-                      >
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-                          <textarea
-                            value={messageText}
-                            onChange={(event) => setMessageText(event.target.value)}
-                            placeholder="Digite sua mensagem"
-                            rows={3}
-                            className="min-h-[108px] w-full rounded-3xl border border-[#dce6ed] bg-[#f8fbfd] px-4 py-3 text-sm text-[#0c1826] outline-none transition-colors placeholder:text-[#94a3b8] focus:border-[#9fd5b0]"
-                          />
-                          <button
-                            type="submit"
-                            disabled={sendingMessage || !messageText.trim()}
-                            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#128C7E] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#0f766a] disabled:cursor-not-allowed disabled:opacity-60"
-                          >
-                            {sendingMessage ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <SendHorizontal className="h-4 w-4" />
-                            )}
-                            Enviar
-                          </button>
-                        </div>
-                      </form>
-                    </>
-                  ) : (
-                    <div className="flex min-h-[520px] flex-col items-center justify-center gap-3 px-6 text-center">
-                      <MessageCircle className="h-10 w-10 text-[#128C7E]" />
-                      <p className="text-base font-semibold text-[#0c1826]">
-                        Selecione um chat para conversar
-                      </p>
-                      <p className="max-w-md text-sm leading-6 text-[#64748b]">
-                        Ao tocar em um balao da lista, abrimos o historico da conversa e liberamos o envio
-                        de novas mensagens por aqui.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {lastUpdatedLabel ? (
-              <p className="mt-4 text-right text-xs text-[#7a8ea3]">
-                Ultima atualizacao as {lastUpdatedLabel}
-              </p>
-            ) : null}
           </section>
         ) : (
           <div className="flex w-full flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,420px)] lg:items-stretch lg:gap-6">
