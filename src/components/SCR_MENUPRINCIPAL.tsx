@@ -327,7 +327,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
           </div>
         </header>
 
-        <div className="flex min-h-0 flex-1">
+        <div className="relative flex min-h-0 flex-1 overflow-hidden">
           <div className="min-w-0 flex-1">
             {showSimulator ? (
               <div className="relative flex-1 overflow-hidden bg-gray-50">
@@ -461,19 +461,43 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
             <>
               <div className="fixed inset-0 z-40 bg-[#0c1826]/35 backdrop-blur-[1px] lg:hidden" />
               <aside
-                className={`fixed bottom-0 right-0 top-0 z-50 flex w-full max-w-[100vw] flex-col border-l border-[#cfd9e2] bg-white shadow-2xl transition-all duration-300 lg:static lg:bottom-auto lg:top-auto lg:z-10 lg:max-w-none lg:shadow-none ${
-                  isWhatsAppPanelCollapsed ? "lg:w-[96px]" : "lg:w-[min(540px,42vw)]"
+                className={`fixed bottom-0 right-0 top-0 z-50 flex w-full max-w-[100vw] flex-col border-l border-[#cfd9e2] bg-white shadow-2xl transition-all duration-300 lg:absolute lg:bottom-0 lg:top-0 lg:z-20 lg:max-w-none ${
+                  isWhatsAppPanelCollapsed ? "lg:w-[46px]" : "lg:left-0 lg:w-auto"
                 }`}
               >
-                <div className="flex min-h-16 items-center justify-between border-b border-[#dbe5ec] bg-white px-3 py-3 lg:px-4">
+                <div
+                  className={`flex items-center justify-between border-b border-[#dbe5ec] bg-white px-3 py-3 lg:px-4 ${
+                    isWhatsAppPanelCollapsed ? "min-h-0 lg:min-h-full lg:flex-col lg:justify-start lg:gap-4 lg:border-b-0 lg:px-1 lg:py-3" : "min-h-16"
+                  }`}
+                >
                   {isWhatsAppPanelCollapsed ? (
-                    <button
-                      type="button"
-                      onClick={() => setIsWhatsAppPanelCollapsed(false)}
-                      className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#d6e4dc] bg-[#f4fbf7] text-[#128C7E] transition-colors hover:bg-[#e8f8ee]"
-                    >
-                      <ChevronLeft className="h-5 w-5" />
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setIsWhatsAppPanelCollapsed(false)}
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#d6e4dc] bg-[#f4fbf7] text-[#128C7E] transition-colors hover:bg-[#e8f8ee]"
+                        aria-label="Expandir painel do WhatsApp"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </button>
+                      <span
+                        className={`hidden h-2.5 w-2.5 rounded-full lg:block ${
+                          whatsAppChecking
+                            ? "bg-amber-400"
+                            : whatsAppConnected
+                              ? "bg-[#25D366]"
+                              : "bg-red-500"
+                        }`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setIsWhatsAppPanelOpen(false)}
+                        className="hidden h-9 w-9 items-center justify-center rounded-full border border-[#dbe5ec] text-[#526170] transition-colors hover:bg-[#f8fbfd] lg:inline-flex"
+                        aria-label="Fechar painel do WhatsApp"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </>
                   ) : (
                     <>
                       <div className="min-w-0">
@@ -493,6 +517,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                           type="button"
                           onClick={() => setIsWhatsAppPanelCollapsed(true)}
                           className="hidden h-11 w-11 items-center justify-center rounded-full border border-[#dbe5ec] text-[#526170] transition-colors hover:bg-[#f8fbfd] lg:inline-flex"
+                          aria-label="Recolher painel do WhatsApp"
                         >
                           <ChevronRight className="h-5 w-5" />
                         </button>
@@ -500,6 +525,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                           type="button"
                           onClick={() => setIsWhatsAppPanelOpen(false)}
                           className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#dbe5ec] text-[#526170] transition-colors hover:bg-[#f8fbfd]"
+                          aria-label="Fechar painel do WhatsApp"
                         >
                           <X className="h-5 w-5" />
                         </button>
@@ -508,29 +534,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                   )}
                 </div>
 
-                {isWhatsAppPanelCollapsed ? (
-                  <div className="flex flex-1 flex-col items-center gap-4 bg-[#eef3f7] px-2 py-4">
-                    <button
-                      type="button"
-                      onClick={() => setIsWhatsAppPanelCollapsed(false)}
-                      className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[#25D366]/10 text-[#128C7E]"
-                    >
-                      <WhatsAppIcon className="h-6 w-6" />
-                    </button>
-                    <span
-                      className={`h-3 w-3 rounded-full ${
-                        whatsAppChecking
-                          ? "bg-amber-400"
-                          : whatsAppConnected
-                            ? "bg-[#25D366]"
-                            : "bg-red-500"
-                      }`}
-                    />
-                    <p className="rotate-180 text-xs font-semibold uppercase tracking-[0.32em] text-[#6b7a88] [writing-mode:vertical-rl]">
-                      WhatsApp
-                    </p>
-                  </div>
-                ) : (
+                {isWhatsAppPanelCollapsed ? null : (
                   <div className="min-h-0 flex-1">
                     <WhatsAppQrPanel embedded onConnectionChange={setWhatsAppConnected} />
                   </div>
