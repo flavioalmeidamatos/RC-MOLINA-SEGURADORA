@@ -69,13 +69,17 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       const data = await response.json();
 
       if (response.ok) {
-        setWhatsAppConnected(Boolean(data.connected));
+        const isConnected = Boolean(data.connected);
+        setWhatsAppConnected(isConnected);
+        return isConnected;
       }
     } catch (_error) {
       setWhatsAppConnected(false);
     } finally {
       setWhatsAppChecking(false);
     }
+
+    return false;
   };
 
   useEffect(() => {
@@ -144,7 +148,8 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   };
 
   const handleOpenWhatsAppAuth = async () => {
-    await syncWhatsAppStatus();
+    const isConnected = await syncWhatsAppStatus();
+    setWhatsAppConnected(isConnected);
     setActiveMenu("WhatsApp");
   };
 

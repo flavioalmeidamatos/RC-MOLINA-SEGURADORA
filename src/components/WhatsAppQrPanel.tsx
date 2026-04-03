@@ -2,11 +2,13 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   Archive,
+  Check,
   CheckCircle2,
   CheckCheck,
   FileText,
   Loader2,
   MessageCircle,
+  Mic,
   MoreVertical,
   Plus,
   RefreshCw,
@@ -526,6 +528,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
       minute: "2-digit",
     });
   const hasSelectedChat = Boolean(selectedChat);
+  const showPanelSkeleton = loading && chats.length === 0 && !qrCode && !error && !fetchedAt;
   const connectedPanelStyle = {
     height: "min(960px, calc(100dvh - 8rem))",
   } as const;
@@ -581,6 +584,26 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
     return chat.direction === "incoming"
       ? "bg-gradient-to-br from-[#0f766e] to-[#14b8a6] text-white"
       : "bg-gradient-to-br from-[#2563eb] to-[#38bdf8] text-white";
+  };
+  const getChatPreviewMeta = (chat: WhatsAppChatItem) => {
+    if (chat.typeMessage === "audioMessage") {
+      return {
+        icon: <Mic className="h-4 w-4 text-[#25d366]" />,
+        textClassName: "text-[#7df0a2]",
+      };
+    }
+
+    if (chat.direction === "outgoing") {
+      return {
+        icon: <CheckCheck className="h-4 w-4 text-[#c7d0d4]" />,
+        textClassName: "text-[#c7d0d4]",
+      };
+    }
+
+    return {
+      icon: <Check className="h-4 w-4 text-[#25d366]" />,
+      textClassName: "text-[#d6e0e4]",
+    };
   };
   const renderChatAvatar = (
     chat: WhatsAppChatItem,
@@ -758,7 +781,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
           </div>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-2">
+        <div className="custom-scrollbar -mx-1 mt-4 flex items-center gap-2 overflow-x-auto px-1 pb-1">
           {[
             { id: "all" as const, label: "Tudo", count: chatStats.all },
             { id: "incoming" as const, label: "Entradas", count: chatStats.incoming },
@@ -768,7 +791,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
               key={filter.id}
               type="button"
               onClick={() => setActiveFilter(filter.id)}
-              className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
+              className={`inline-flex min-h-11 flex-shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold whitespace-nowrap transition-colors ${
                 activeFilter === filter.id
                   ? "border-[#005c4b] bg-[#103529] text-[#d9fdd3]"
                   : "border-white/10 bg-transparent text-[#aebac1] hover:bg-white/6"
@@ -788,7 +811,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
           ))}
           <button
             type="button"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-transparent text-[#d0d7db] transition-colors hover:bg-white/6"
+            className="inline-flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full border border-white/10 bg-transparent text-[#d0d7db] transition-colors hover:bg-white/6"
           >
             <Plus className="h-4 w-4" />
           </button>
@@ -811,52 +834,53 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
             <p className="text-sm font-medium">Carregando as conversas...</p>
           </div>
         ) : filteredChats.length > 0 ? (
-          filteredChats.map((chat) => (
-            <button
-              key={chat.chatId}
-              type="button"
-              onClick={() => void loadChatHistory(chat)}
-              className={`mb-1.5 flex w-full items-start gap-3 rounded-2xl px-3 py-3 text-left transition-colors ${
-                selectedChat?.chatId === chat.chatId ? "bg-white/12" : "hover:bg-white/6"
-              }`}
-            >
-              {renderChatAvatar(chat, "h-14 w-14", "text-sm")}
-              <div className="min-w-0 flex-1">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-[20px] font-semibold leading-tight text-white">
-                      {chat.title}
-                    </p>
-                    <p className="mt-0.5 truncate text-xs uppercase tracking-[0.16em] text-[#7d8b92]">
-                      {chat.isGroup ? "Grupo" : "Contato"}
-                    </p>
-                  </div>
-                  <div className="flex flex-col items-end gap-2">
-                    <span
-                      className={`text-xs font-semibold ${
-                        chat.direction === "incoming" ? "text-[#00a884]" : "text-[#8f9da4]"
-                      }`}
-                    >
-                      {formatTimestamp(chat.timestamp).slice(-5)}
-                    </span>
-                    {chat.direction === "incoming" ? (
-                      <span className="rounded-full bg-[#00a884] px-2 py-0.5 text-[11px] font-bold text-[#06150f]">
-                        novo
+          filteredChats.map((chat) => {
+            const previewMeta = getChatPreviewMeta(chat);
+
+            return (
+              <button
+                key={chat.chatId}
+                type="button"
+                onClick={() => void loadChatHistory(chat)}
+                className={`mb-2 flex w-full items-center gap-3 rounded-[22px] border px-3 py-3 text-left transition-all ${
+                  selectedChat?.chatId === chat.chatId
+                    ? "border-[#4b5257] bg-[#36393c] shadow-[0_10px_28px_rgba(0,0,0,0.18)]"
+                    : "border-[#34383c] bg-[#2f3133] hover:border-[#4a5156] hover:bg-[#35383b]"
+                }`}
+              >
+                {renderChatAvatar(chat, "h-14 w-14", "text-sm")}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-[17px] font-semibold leading-tight text-white">
+                        {chat.title}
+                      </p>
+                      <p className="mt-1 truncate text-xs text-[#97a3a9]">{chat.subtitle}</p>
+                    </div>
+                    <div className="flex flex-col items-end gap-2 pt-0.5">
+                      <span className="whitespace-nowrap text-xs font-medium text-[#d5dcdf]">
+                        {formatTimestamp(chat.timestamp).slice(-5)}
                       </span>
-                    ) : null}
+                      {chat.direction === "incoming" ? (
+                        <span className="rounded-full bg-[#25d366] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#082313]">
+                          novo
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className="flex h-4 w-4 flex-shrink-0 items-center justify-center">
+                      {previewMeta.icon}
+                    </span>
+                    <p className={`truncate text-sm leading-5 ${previewMeta.textClassName}`}>
+                      {chat.preview}
+                    </p>
                   </div>
                 </div>
-                <div className="mt-2 flex items-start gap-2">
-                  <MessageCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#8f9da4]" />
-                  <p className="line-clamp-2 text-sm leading-5 text-[#c4ccd0]">{chat.preview}</p>
-                </div>
-                <div className="mt-2 flex items-center justify-between gap-3 text-xs text-[#7d8b92]">
-                  <span className="truncate">{chat.subtitle}</span>
-                  <span className="whitespace-nowrap">{chat.typeMessage}</span>
-                </div>
-              </div>
-            </button>
-          ))
+              </button>
+            );
+          })
         ) : (
           <div className="flex min-h-[320px] flex-col items-center justify-center gap-3 px-6 text-center">
             <Search className="h-10 w-10 text-[#00a884]" />
@@ -1075,7 +1099,47 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
           </div>
         ) : null}
 
-        {connected ? (
+        {showPanelSkeleton ? (
+          <section
+            className="overflow-hidden rounded-[32px] border border-white/6 bg-[#0b141a] shadow-[0_32px_80px_rgba(6,18,23,0.28)]"
+            style={connectedPanelStyle}
+          >
+            <div className="grid h-full min-h-0 xl:grid-cols-[390px_minmax(0,1fr)]">
+              <aside className="flex h-full min-h-0 flex-col border-r border-white/6 bg-[#111b21]">
+                <div className="flex-shrink-0 border-b border-white/6 px-5 py-5">
+                  <div className="h-5 w-28 rounded-full bg-white/8" />
+                  <div className="mt-3 h-9 w-44 rounded-full bg-white/10" />
+                  <div className="mt-5 h-14 rounded-3xl bg-white/8" />
+                  <div className="mt-4 flex gap-2">
+                    <div className="h-11 w-24 rounded-full bg-white/8" />
+                    <div className="h-11 w-28 rounded-full bg-white/8" />
+                    <div className="h-11 w-24 rounded-full bg-white/8" />
+                  </div>
+                </div>
+                <div className="flex min-h-0 flex-1 flex-col gap-2 px-2 py-2">
+                  {[0, 1, 2, 3, 4].map((item) => (
+                    <div key={item} className="flex items-center gap-3 rounded-[22px] bg-white/6 px-3 py-3">
+                      <div className="h-14 w-14 rounded-full bg-white/10" />
+                      <div className="min-w-0 flex-1">
+                        <div className="h-4 w-2/3 rounded-full bg-white/10" />
+                        <div className="mt-2 h-3 w-full rounded-full bg-white/8" />
+                        <div className="mt-2 h-3 w-1/2 rounded-full bg-white/8" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </aside>
+              <section className="hidden h-full min-h-0 flex-col bg-[#0b141a] xl:flex">
+                <div className="flex flex-1 items-center justify-center">
+                  <div className="flex flex-col items-center gap-4 text-[#d0d7db]">
+                    <Loader2 className="h-10 w-10 animate-spin text-[#00a884]" />
+                    <p className="text-sm font-medium">Validando a instancia e carregando os chats...</p>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </section>
+        ) : connected ? (
           <section
             className="overflow-hidden rounded-[32px] border border-white/6 bg-[#0b141a] shadow-[0_32px_80px_rgba(6,18,23,0.28)]"
             style={connectedPanelStyle}
