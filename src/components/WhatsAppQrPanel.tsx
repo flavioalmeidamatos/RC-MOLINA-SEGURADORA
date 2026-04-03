@@ -19,6 +19,7 @@ import {
 const CONNECTED_OVERVIEW_REFRESH_MS = 3000;
 const DISCONNECTED_OVERVIEW_REFRESH_MS = 5000;
 const SELECTED_CHAT_REFRESH_MS = 2500;
+const QUEUE_RECEIVE_TIMEOUT_SECONDS = 20;
 
 type WhatsAppChatItem = {
   chatId: string;
@@ -78,18 +79,70 @@ type WhatsAppChatApiResponse = {
   error?: string;
 };
 
+type WhatsAppNotificationMessageData = {
+  typeMessage?: string;
+  textMessageData?: {
+    textMessage?: string;
+  };
+  extendedTextMessageData?: {
+    text?: string;
+    textMessage?: string;
+    description?: string;
+    title?: string;
+  };
+  fileMessageData?: {
+    caption?: string;
+    fileName?: string;
+  };
+  quotedMessage?: {
+    typeMessage?: string;
+    textMessage?: string;
+  };
+};
+
+type WhatsAppNotificationBody = {
+  typeWebhook?: string;
+  timestamp?: number;
+  idMessage?: string;
+  senderData?: {
+    chatId?: string;
+    chatName?: string;
+    senderName?: string;
+    senderContactName?: string;
+  };
+  messageData?: WhatsAppNotificationMessageData;
+};
+
+type WhatsAppNotificationApiResponse = {
+  success?: boolean;
+  configured?: boolean;
+  changed?: boolean;
+  deleted?: boolean;
+  notification?: {
+    receiptId?: number;
+    body?: WhatsAppNotificationBody;
+  } | null;
+  error?: string;
+};
+
 interface WhatsAppQrPanelProps {
   onConnectionChange?: (connected: boolean) => void;
+  embedded?: boolean;
 }
 
 export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
   onConnectionChange,
+  embedded = false,
 }) => {
   const requestInFlightRef = useRef(false);
   const historyInFlightRef = useRef(false);
   const avatarInFlightRef = useRef(new Set<string>());
   const avatarCacheRef = useRef<Record<string, string | null>>({});
   const readTimestampsRef = useRef<Record<string, number>>({});
+  const hasShownInitialSyncNoticeRef = useRef(false);
+  const selectedChatRef = useRef<WhatsAppChatItem | null>(null);
+  const notificationLoopIdRef = useRef(0);
+  const realtimeSyncEnabledRef = useRef(false);
   const [qrCode, setQrCode] = useState("");
   const [chats, setChats] = useState<WhatsAppChatItem[]>([]);
   const [avatarUrls, setAvatarUrls] = useState<Record<string, string | null>>({});
@@ -111,7 +164,25 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
   const [activeFilter, setActiveFilter] = useState<"all" | "incoming" | "groups">("all");
 
   const sortChatsByTimestamp = (items: WhatsAppChatItem[]) =>
-    [...items].sort((left, right) => Number(right.timestamp || 0) - Number(left.timestamp || 0));
+    [...items].sort((left, right) => {
+      const leftHasUnread = Number(left.unreadCount || 0) > 0 ? 1 : 0;
+      const rightHasUnread = Number(right.unreadCount || 0) > 0 ? 1 : 0;
+
+      if (leftHasUnread !== rightHasUnread) {
+        return rightHasUnread - leftHasUnread;
+      }
+
+      const leftSortTimestamp = Math.max(
+        Number(left.timestamp || 0),
+        Number(left.latestIncomingTimestamp || 0)
+      );
+      const rightSortTimestamp = Math.max(
+        Number(right.timestamp || 0),
+        Number(right.latestIncomingTimestamp || 0)
+      );
+
+      return rightSortTimestamp - leftSortTimestamp;
+    });
 
   const reconcileOverviewChats = (
     currentChats: WhatsAppChatItem[],
@@ -180,6 +251,139 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
     };
 
     return typeLabels[String(message.typeMessage || "")] || "Mensagem";
+  };
+
+  const formatChatIdFallback = (chatId: string) => chatId.replace(/@.+$/, "");
+
+  const getNotificationDirection = (notification?: WhatsAppNotificationBody) => {
+    const typeWebhook = String(notification?.typeWebhook || "");
+
+    if (typeWebhook === "incomingMessageReceived") {
+      return "incoming";
+    }
+
+    if (
+      typeWebhook === "outgoingMessageReceived" ||
+      typeWebhook === "outgoingAPIMessageReceived"
+    ) {
+      return "outgoing";
+    }
+
+    return "";
+  };
+
+  const getNotificationPreview = (notification?: WhatsAppNotificationBody) => {
+    const messageData = notification?.messageData;
+    const textMessage = String(messageData?.textMessageData?.textMessage || "").trim();
+    const extendedText = String(
+      messageData?.extendedTextMessageData?.text ||
+        messageData?.extendedTextMessageData?.textMessage ||
+        messageData?.extendedTextMessageData?.description ||
+        messageData?.extendedTextMessageData?.title ||
+        ""
+    ).trim();
+    const fileCaption = String(messageData?.fileMessageData?.caption || "").trim();
+    const fileName = String(messageData?.fileMessageData?.fileName || "").trim();
+
+    if (textMessage) {
+      return textMessage;
+    }
+
+    if (extendedText) {
+      return extendedText;
+    }
+
+    if (fileCaption) {
+      return fileCaption;
+    }
+
+    if (fileName) {
+      return fileName;
+    }
+
+    const typeLabels: Record<string, string> = {
+      imageMessage: "Imagem",
+      videoMessage: "Vídeo",
+      audioMessage: "Áudio",
+      documentMessage: "Documento",
+      extendedTextMessage: "Mensagem",
+      textMessage: "Mensagem",
+      stickerMessage: "Sticker",
+    };
+
+    return typeLabels[String(messageData?.typeMessage || "")] || "Mensagem";
+  };
+
+  const applyRealtimeNotification = (notification?: WhatsAppNotificationBody) => {
+    const chatId = String(notification?.senderData?.chatId || "").trim();
+    const direction = getNotificationDirection(notification);
+
+    if (!chatId || !direction) {
+      return;
+    }
+
+    const timestamp = Number(notification?.timestamp || 0);
+    const selectedChatId = selectedChatRef.current?.chatId || "";
+    const preview = getNotificationPreview(notification);
+    const fallbackTitle = String(
+      notification?.senderData?.senderContactName ||
+        notification?.senderData?.senderName ||
+        notification?.senderData?.chatName ||
+        ""
+    ).trim();
+    const isGroup = chatId.endsWith("@g.us");
+
+    setChats((currentChats) => {
+      const existingChat = currentChats.find((chat) => chat.chatId === chatId);
+      const nextChat: WhatsAppChatItem = {
+        chatId,
+        title: existingChat?.title || fallbackTitle || formatChatIdFallback(chatId),
+        subtitle: existingChat?.subtitle || (isGroup ? "Grupo do WhatsApp" : "Contato do WhatsApp"),
+        preview: preview || existingChat?.preview || "Mensagem",
+        timestamp: Math.max(Number(existingChat?.timestamp || 0), timestamp),
+        direction: direction || existingChat?.direction || "incoming",
+        typeMessage:
+          String(notification?.messageData?.typeMessage || "").trim() ||
+          existingChat?.typeMessage ||
+          "",
+        statusMessage: existingChat?.statusMessage || "",
+        isGroup: existingChat?.isGroup ?? isGroup,
+        unreadCount:
+          direction === "incoming" && selectedChatId !== chatId
+            ? Number(existingChat?.unreadCount || 0) + 1
+            : 0,
+        latestIncomingTimestamp:
+          direction === "incoming"
+            ? Math.max(Number(existingChat?.latestIncomingTimestamp || 0), timestamp)
+            : Number(existingChat?.latestIncomingTimestamp || 0),
+      };
+
+      return sortChatsByTimestamp([
+        nextChat,
+        ...currentChats.filter((chat) => chat.chatId !== chatId),
+      ]);
+    });
+
+    setSelectedChat((currentSelectedChat) => {
+      if (!currentSelectedChat || currentSelectedChat.chatId !== chatId) {
+        return currentSelectedChat;
+      }
+
+      return {
+        ...currentSelectedChat,
+        preview: preview || currentSelectedChat.preview,
+        timestamp: Math.max(Number(currentSelectedChat.timestamp || 0), timestamp),
+        direction: direction || currentSelectedChat.direction,
+        typeMessage:
+          String(notification?.messageData?.typeMessage || "").trim() ||
+          currentSelectedChat.typeMessage,
+        unreadCount: 0,
+        latestIncomingTimestamp:
+          direction === "incoming"
+            ? Math.max(Number(currentSelectedChat.latestIncomingTimestamp || 0), timestamp)
+            : Number(currentSelectedChat.latestIncomingTimestamp || 0),
+      };
+    });
   };
 
   const syncChatSnapshot = (
@@ -337,6 +541,9 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
       if (nextConnected && !connected) {
         setStatusNote("WhatsApp conectado com sucesso. Conversas carregadas.");
       }
+      if (!nextConnected) {
+        hasShownInitialSyncNoticeRef.current = false;
+      }
 
       setConnected(nextConnected);
       onConnectionChange?.(nextConnected);
@@ -346,6 +553,11 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
       const nextChats = Array.isArray(data.chats) ? data.chats : [];
       setChats((currentChats) => reconcileOverviewChats(currentChats, nextChats));
       setFetchedAt(data.fetchedAt || "");
+
+      if (!isManualRefresh && nextConnected && nextChats.length > 0 && !hasShownInitialSyncNoticeRef.current) {
+        hasShownInitialSyncNoticeRef.current = true;
+        setStatusNote("Sincronização inicial concluída.");
+      }
     } catch (loadError) {
       const message =
         loadError instanceof Error ? loadError.message : "Erro inesperado ao buscar o WhatsApp.";
@@ -457,9 +669,52 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
     }
   };
 
+  const ensureRealtimeNotifications = async () => {
+    if (realtimeSyncEnabledRef.current) {
+      return true;
+    }
+
+    const response = await fetch("/api/whatsapp-notifications", {
+      method: "POST",
+      cache: "no-store",
+    });
+
+    const data = (await response.json()) as WhatsAppNotificationApiResponse;
+
+    if (!response.ok) {
+      throw new Error(data.error || "Não foi possível ativar as notificações em tempo real.");
+    }
+
+    realtimeSyncEnabledRef.current = true;
+    return true;
+  };
+
+  const consumeNotificationQueue = async (signal?: AbortSignal) => {
+    const response = await fetch(
+      `/api/whatsapp-notifications?receiveTimeout=${QUEUE_RECEIVE_TIMEOUT_SECONDS}`,
+      {
+        method: "GET",
+        cache: "no-store",
+        signal,
+      }
+    );
+
+    const data = (await response.json()) as WhatsAppNotificationApiResponse;
+
+    if (!response.ok) {
+      throw new Error(data.error || "Não foi possível ler a fila de notificações.");
+    }
+
+    return data.notification?.body || null;
+  };
+
   useEffect(() => {
     void loadOverview();
   }, []);
+
+  useEffect(() => {
+    selectedChatRef.current = selectedChat;
+  }, [selectedChat]);
 
   useEffect(() => {
     if (!statusNote) {
@@ -482,6 +737,73 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
     }, refreshInterval);
 
     return () => window.clearInterval(intervalId);
+  }, [connected]);
+
+  useEffect(() => {
+    if (!connected) {
+      realtimeSyncEnabledRef.current = false;
+      return;
+    }
+
+    const currentLoopId = ++notificationLoopIdRef.current;
+    let activeController: AbortController | null = null;
+
+    const startQueueLoop = async () => {
+      try {
+        await ensureRealtimeNotifications();
+      } catch (queueError) {
+        if (notificationLoopIdRef.current !== currentLoopId) {
+          return;
+        }
+
+        const message =
+          queueError instanceof Error
+            ? queueError.message
+            : "Não foi possível ativar a sincronização em tempo real.";
+        setStatusNote(message);
+        return;
+      }
+
+      while (notificationLoopIdRef.current === currentLoopId) {
+        try {
+          activeController = new AbortController();
+          const notification = await consumeNotificationQueue(activeController.signal);
+
+          if (notificationLoopIdRef.current !== currentLoopId) {
+            return;
+          }
+
+          if (!notification) {
+            continue;
+          }
+
+          const notificationChatId = String(notification.senderData?.chatId || "").trim();
+          applyRealtimeNotification(notification);
+          await loadOverview(true);
+
+          if (selectedChatRef.current && selectedChatRef.current.chatId === notificationChatId) {
+            await loadChatHistory(selectedChatRef.current, true);
+          }
+        } catch (queueError) {
+          if (activeController?.signal.aborted || notificationLoopIdRef.current !== currentLoopId) {
+            return;
+          }
+
+          console.warn("Falha ao processar fila em tempo real do WhatsApp:", queueError);
+          await new Promise((resolve) => window.setTimeout(resolve, 1500));
+        }
+      }
+    };
+
+    void startQueueLoop();
+
+    return () => {
+      if (notificationLoopIdRef.current === currentLoopId) {
+        notificationLoopIdRef.current += 1;
+      }
+
+      activeController?.abort();
+    };
   }, [connected]);
 
   useEffect(() => {
@@ -607,7 +929,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
   const hasSelectedChat = Boolean(selectedChat);
   const showPanelSkeleton = loading && chats.length === 0 && !qrCode && !error && !fetchedAt;
   const connectedPanelStyle = {
-    height: "min(960px, calc(100dvh - 8rem))",
+    height: embedded ? "100%" : "min(960px, calc(100dvh - 8rem))",
   } as const;
   const conversationWallpaper = {
     backgroundColor: "#0b141a",
@@ -1173,8 +1495,16 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
   );
 
   return (
-    <div className="flex min-h-0 flex-1 overflow-y-auto bg-[#eef3f7] p-3 sm:p-4 md:p-6">
-      <div className="mx-auto flex w-full max-w-6xl min-h-0 flex-col gap-4">
+    <div
+      className={`flex min-h-0 flex-1 overflow-y-auto bg-[#eef3f7] ${
+        embedded ? "p-0" : "p-3 sm:p-4 md:p-6"
+      }`}
+    >
+      <div
+        className={`flex w-full min-h-0 flex-col gap-4 ${
+          embedded ? "mx-0 max-w-none" : "mx-auto max-w-6xl"
+        }`}
+      >
         {statusNote ? (
           <div className="rounded-2xl border border-[#b7efc5] bg-[#effcf3] px-4 py-3 text-sm font-medium text-[#166534]">
             {statusNote}

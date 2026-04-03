@@ -3,6 +3,8 @@ import {
   Banknote,
   Briefcase,
   Calendar,
+  ChevronLeft,
+  ChevronRight,
   ExternalLink,
   FileText,
   FolderOpen,
@@ -18,6 +20,7 @@ import {
   User,
   Users,
   Wrench,
+  X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ClientRegistrationMultipage } from "./ClientRegistrationMultipage";
@@ -51,6 +54,8 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const [importLoading, setImportLoading] = useState(false);
   const [whatsAppConnected, setWhatsAppConnected] = useState(false);
   const [whatsAppChecking, setWhatsAppChecking] = useState(true);
+  const [isWhatsAppPanelOpen, setIsWhatsAppPanelOpen] = useState(false);
+  const [isWhatsAppPanelCollapsed, setIsWhatsAppPanelCollapsed] = useState(false);
   const [credential, setCredential] = useState({
     login: "Rosilene Rodrigues de Carvalho Molina",
     senha: "123",
@@ -150,7 +155,8 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const handleOpenWhatsAppAuth = async () => {
     const isConnected = await syncWhatsAppStatus();
     setWhatsAppConnected(isConnected);
-    setActiveMenu("WhatsApp");
+    setIsWhatsAppPanelOpen(true);
+    setIsWhatsAppPanelCollapsed(false);
   };
 
   const handleCardClick = (line1: string, line2: string) => {
@@ -211,8 +217,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
   const showSimulator = activeMenu === "Simulador";
   const showClientArea = activeMenu === "Meus clientes";
-  const showWhatsAppAuth = activeMenu === "WhatsApp";
-
   const whatsAppButtonClassName = whatsAppConnected
     ? "border-[#25D366]/25 bg-[#25D366]/10 text-[#128C7E] hover:bg-[#25D366]/18"
     : "border-red-200 bg-red-50 text-red-600 hover:bg-red-100";
@@ -257,7 +261,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
         </div>
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col relative">
         <header className="flex flex-col gap-4 bg-white px-4 py-4 shadow-sm sm:px-6 md:px-8 lg:h-16 lg:flex-row lg:items-center lg:justify-between lg:gap-0 lg:py-0">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
             <div className="flex flex-col items-start bg-white px-2 py-1">
@@ -323,134 +327,218 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
           </div>
         </header>
 
-        {showWhatsAppAuth ? (
-          <WhatsAppQrPanel onConnectionChange={setWhatsAppConnected} />
-        ) : showSimulator ? (
-          <div className="relative flex-1 overflow-hidden bg-gray-50">
-            <iframe
-              src="https://app.simuladoronline.com/login/"
-              title="Simulador Online"
-              className="absolute inset-0 h-full w-full border-none bg-white"
-              allowFullScreen
-            />
-          </div>
-        ) : showClientArea ? (
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
-            <ClientRegistrationMultipage />
-          </div>
-        ) : (
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
-            <div className="flex flex-col gap-6 lg:flex-row">
-              <div className="grid flex-1 grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-                {cards.map((card) => {
-                  const Icon = card.icon;
-
-                  return (
-                    <button
-                      key={`${card.line1}-${card.line2}`}
-                      type="button"
-                      onClick={() => handleCardClick(card.line1, card.line2)}
-                      className="group flex h-auto min-h-[112px] overflow-hidden bg-white text-left shadow-sm transition-shadow hover:shadow-md"
-                    >
-                      <div className="flex w-2/3 flex-col justify-center border-l-4 border-transparent p-5 transition-all group-hover:border-[#b58c2a]">
-                        <span className="text-sm leading-tight text-[#a48641] transition-colors group-hover:text-[#8e733b]">
-                          {card.line1}
-                        </span>
-                        {card.line2 ? (
-                          <span className="text-sm font-bold leading-tight text-[#8e733b]">
-                            {card.line2}
-                          </span>
-                        ) : null}
-                      </div>
-                      <div className="flex w-1/3 items-center justify-center bg-[#a2812a] text-white transition-colors group-hover:bg-[#8f7124]">
-                        <Icon
-                          size={34}
-                          strokeWidth={1.5}
-                          className="transition-transform duration-300 group-hover:scale-110"
-                        />
-                      </div>
-                    </button>
-                  );
-                })}
+        <div className="flex min-h-0 flex-1">
+          <div className="min-w-0 flex-1">
+            {showSimulator ? (
+              <div className="relative flex-1 overflow-hidden bg-gray-50">
+                <iframe
+                  src="https://app.simuladoronline.com/login/"
+                  title="Simulador Online"
+                  className="absolute inset-0 h-full w-full border-none bg-white"
+                  allowFullScreen
+                />
               </div>
+            ) : showClientArea ? (
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
+                <ClientRegistrationMultipage />
+              </div>
+            ) : (
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
+                <div className="flex flex-col gap-6 lg:flex-row">
+                  <div className="grid flex-1 grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                    {cards.map((card) => {
+                      const Icon = card.icon;
 
-              <aside className="h-fit w-full max-h-full flex-shrink-0 overflow-hidden rounded-sm border border-gray-100 bg-white shadow-sm lg:w-80">
-                <div className="bg-[#0c1826] px-4 py-3 text-center text-xs font-bold uppercase tracking-[0.15em] text-white">
-                  Agenda do dia
-                </div>
-
-                <div className="flex flex-col gap-3 border-b border-gray-100 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
-                  <input
-                    type="text"
-                    placeholder="Nova tarefa..."
-                    className="w-full bg-transparent italic text-gray-500 outline-none placeholder-gray-400 sm:w-2/3"
-                  />
-                  <div className="flex items-center gap-1 text-gray-400">
-                    <input
-                      type="text"
-                      placeholder="Hora"
-                      className="w-12 bg-transparent text-center outline-none"
-                    />
-                    <span>:</span>
-                    <input
-                      type="text"
-                      placeholder="Min."
-                      className="w-12 bg-transparent text-center outline-none"
-                    />
+                      return (
+                        <button
+                          key={`${card.line1}-${card.line2}`}
+                          type="button"
+                          onClick={() => handleCardClick(card.line1, card.line2)}
+                          className="group flex h-auto min-h-[112px] overflow-hidden bg-white text-left shadow-sm transition-shadow hover:shadow-md"
+                        >
+                          <div className="flex w-2/3 flex-col justify-center border-l-4 border-transparent p-5 transition-all group-hover:border-[#b58c2a]">
+                            <span className="text-sm leading-tight text-[#a48641] transition-colors group-hover:text-[#8e733b]">
+                              {card.line1}
+                            </span>
+                            {card.line2 ? (
+                              <span className="text-sm font-bold leading-tight text-[#8e733b]">
+                                {card.line2}
+                              </span>
+                            ) : null}
+                          </div>
+                          <div className="flex w-1/3 items-center justify-center bg-[#a2812a] text-white transition-colors group-hover:bg-[#8f7124]">
+                            <Icon
+                              size={34}
+                              strokeWidth={1.5}
+                              className="transition-transform duration-300 group-hover:scale-110"
+                            />
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
-                </div>
 
-                <div className="custom-scrollbar flex-1 overflow-y-auto">
-                  {agendaItems.map((item) => (
-                    <div
-                      key={`${item.name}-${item.time}`}
-                      className={`flex cursor-pointer items-start gap-4 border-b border-gray-100 p-4 transition-colors hover:bg-gray-50 ${
-                        item.highlight ? "text-red-500" : "text-gray-600"
-                      }`}
-                    >
-                      <div className="mt-1 flex flex-col items-center gap-2">
-                        <User
-                          fill="currentColor"
-                          size={14}
-                          className={item.highlight ? "text-red-500" : "text-gray-500"}
+                  <aside className="h-fit w-full max-h-full flex-shrink-0 overflow-hidden rounded-sm border border-gray-100 bg-white shadow-sm lg:w-80">
+                    <div className="bg-[#0c1826] px-4 py-3 text-center text-xs font-bold uppercase tracking-[0.15em] text-white">
+                      Agenda do dia
+                    </div>
+
+                    <div className="flex flex-col gap-3 border-b border-gray-100 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+                      <input
+                        type="text"
+                        placeholder="Nova tarefa..."
+                        className="w-full bg-transparent italic text-gray-500 outline-none placeholder-gray-400 sm:w-2/3"
+                      />
+                      <div className="flex items-center gap-1 text-gray-400">
+                        <input
+                          type="text"
+                          placeholder="Hora"
+                          className="w-12 bg-transparent text-center outline-none"
                         />
-                        <Phone
-                          fill="currentColor"
-                          size={14}
-                          className={item.highlight ? "text-red-500" : "text-gray-500"}
+                        <span>:</span>
+                        <input
+                          type="text"
+                          placeholder="Min."
+                          className="w-12 bg-transparent text-center outline-none"
                         />
-                      </div>
-                      <div className="flex-1 space-y-1">
-                        <div
-                          className={`text-sm font-semibold ${
-                            item.highlight ? "text-red-500" : "text-[#555]"
-                          }`}
-                        >
-                          {item.name}
-                        </div>
-                        <div
-                          className={`text-xs ${
-                            item.highlight ? "text-red-500" : "text-gray-500"
-                          }`}
-                        >
-                          {item.phone}
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                          <span className={item.highlight ? "font-medium text-red-400" : ""}>
-                            {item.time}
-                          </span>
-                          <span className={item.highlight ? "text-red-400" : ""}>
-                            {item.status}
-                          </span>
-                        </div>
                       </div>
                     </div>
-                  ))}
+
+                    <div className="custom-scrollbar flex-1 overflow-y-auto">
+                      {agendaItems.map((item) => (
+                        <div
+                          key={`${item.name}-${item.time}`}
+                          className={`flex cursor-pointer items-start gap-4 border-b border-gray-100 p-4 transition-colors hover:bg-gray-50 ${
+                            item.highlight ? "text-red-500" : "text-gray-600"
+                          }`}
+                        >
+                          <div className="mt-1 flex flex-col items-center gap-2">
+                            <User
+                              fill="currentColor"
+                              size={14}
+                              className={item.highlight ? "text-red-500" : "text-gray-500"}
+                            />
+                            <Phone
+                              fill="currentColor"
+                              size={14}
+                              className={item.highlight ? "text-red-500" : "text-gray-500"}
+                            />
+                          </div>
+                          <div className="flex-1 space-y-1">
+                            <div
+                              className={`text-sm font-semibold ${
+                                item.highlight ? "text-red-500" : "text-[#555]"
+                              }`}
+                            >
+                              {item.name}
+                            </div>
+                            <div
+                              className={`text-xs ${
+                                item.highlight ? "text-red-500" : "text-gray-500"
+                              }`}
+                            >
+                              {item.phone}
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-gray-500">
+                              <span className={item.highlight ? "font-medium text-red-400" : ""}>
+                                {item.time}
+                              </span>
+                              <span className={item.highlight ? "text-red-400" : ""}>
+                                {item.status}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </aside>
                 </div>
-              </aside>
-            </div>
+              </div>
+            )}
           </div>
-        )}
+
+          {isWhatsAppPanelOpen ? (
+            <>
+              <div className="fixed inset-0 z-40 bg-[#0c1826]/35 backdrop-blur-[1px] lg:hidden" />
+              <aside
+                className={`fixed bottom-0 right-0 top-0 z-50 flex w-full max-w-[100vw] flex-col border-l border-[#cfd9e2] bg-white shadow-2xl transition-all duration-300 lg:static lg:bottom-auto lg:top-auto lg:z-10 lg:max-w-none lg:shadow-none ${
+                  isWhatsAppPanelCollapsed ? "lg:w-[96px]" : "lg:w-[min(540px,42vw)]"
+                }`}
+              >
+                <div className="flex min-h-16 items-center justify-between border-b border-[#dbe5ec] bg-white px-3 py-3 lg:px-4">
+                  {isWhatsAppPanelCollapsed ? (
+                    <button
+                      type="button"
+                      onClick={() => setIsWhatsAppPanelCollapsed(false)}
+                      className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#d6e4dc] bg-[#f4fbf7] text-[#128C7E] transition-colors hover:bg-[#e8f8ee]"
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                    </button>
+                  ) : (
+                    <>
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#128C7E]">
+                          Painel lateral
+                        </p>
+                        <p className="mt-1 text-sm font-medium text-[#334155]">
+                          {whatsAppChecking
+                            ? "Sincronizando WhatsApp..."
+                            : whatsAppConnected
+                              ? "Instância conectada"
+                              : "Autenticação pendente"}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setIsWhatsAppPanelCollapsed(true)}
+                          className="hidden h-11 w-11 items-center justify-center rounded-full border border-[#dbe5ec] text-[#526170] transition-colors hover:bg-[#f8fbfd] lg:inline-flex"
+                        >
+                          <ChevronRight className="h-5 w-5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setIsWhatsAppPanelOpen(false)}
+                          className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#dbe5ec] text-[#526170] transition-colors hover:bg-[#f8fbfd]"
+                        >
+                          <X className="h-5 w-5" />
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {isWhatsAppPanelCollapsed ? (
+                  <div className="flex flex-1 flex-col items-center gap-4 bg-[#eef3f7] px-2 py-4">
+                    <button
+                      type="button"
+                      onClick={() => setIsWhatsAppPanelCollapsed(false)}
+                      className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[#25D366]/10 text-[#128C7E]"
+                    >
+                      <WhatsAppIcon className="h-6 w-6" />
+                    </button>
+                    <span
+                      className={`h-3 w-3 rounded-full ${
+                        whatsAppChecking
+                          ? "bg-amber-400"
+                          : whatsAppConnected
+                            ? "bg-[#25D366]"
+                            : "bg-red-500"
+                      }`}
+                    />
+                    <p className="rotate-180 text-xs font-semibold uppercase tracking-[0.32em] text-[#6b7a88] [writing-mode:vertical-rl]">
+                      WhatsApp
+                    </p>
+                  </div>
+                ) : (
+                  <div className="min-h-0 flex-1">
+                    <WhatsAppQrPanel embedded onConnectionChange={setWhatsAppConnected} />
+                  </div>
+                )}
+              </aside>
+            </>
+          ) : null}
+        </div>
       </div>
 
       {showImportModal ? (
