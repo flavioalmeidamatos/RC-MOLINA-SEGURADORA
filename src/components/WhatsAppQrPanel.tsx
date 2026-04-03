@@ -10,11 +10,16 @@ import {
   MessageCircle,
   Mic,
   MoreVertical,
+  Plus,
   RefreshCw,
   Search,
   SendHorizontal,
+  Smile,
   Smartphone,
+  Trash2,
+  X,
 } from "lucide-react";
+import { EMOJI_CATEGORIES, GIF_PRESETS } from "./whatsappComposerData";
 
 const CONNECTED_OVERVIEW_REFRESH_MS = 3000;
 const DISCONNECTED_OVERVIEW_REFRESH_MS = 5000;
@@ -76,8 +81,13 @@ type WhatsAppChatApiResponse = {
   chatId?: string;
   messages?: WhatsAppConversationMessage[];
   idMessage?: string;
+  urlFile?: string;
   error?: string;
 };
+
+type ComposerOverlayType = "contact" | "poll" | "event" | "sticker" | null;
+
+type MediaIntent = "document" | "media" | "camera" | "audio" | "sticker";
 
 type WhatsAppNotificationMessageData = {
   typeMessage?: string;
@@ -162,6 +172,45 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
   const [chatError, setChatError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilter, setActiveFilter] = useState<"all" | "incoming" | "groups">("all");
+  const [isAttachmentMenuOpen, setIsAttachmentMenuOpen] = useState(false);
+  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
+  const [composerTab, setComposerTab] = useState<"emoji" | "gif">("emoji");
+  const [emojiCategory, setEmojiCategory] = useState("smileys");
+  const [emojiSearch, setEmojiSearch] = useState("");
+  const [gifSearch, setGifSearch] = useState("");
+  const [recentEmojis, setRecentEmojis] = useState<string[]>([]);
+  const [composerOverlay, setComposerOverlay] = useState<ComposerOverlayType>(null);
+  const [attachmentLoading, setAttachmentLoading] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const [contactForm, setContactForm] = useState({
+    firstName: "",
+    lastName: "",
+    phoneNumber: "",
+    company: "",
+  });
+  const [pollForm, setPollForm] = useState({
+    question: "",
+    options: ["", ""],
+    multipleAnswers: false,
+  });
+  const [eventForm, setEventForm] = useState({
+    title: "",
+    startDate: "",
+    startTime: "",
+    endDate: "",
+    endTime: "",
+    location: "",
+    description: "",
+  });
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordingChunksRef = useRef<Blob[]>([]);
+  const recordingTimerRef = useRef<number | null>(null);
+  const documentInputRef = useRef<HTMLInputElement | null>(null);
+  const mediaInputRef = useRef<HTMLInputElement | null>(null);
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
+  const audioInputRef = useRef<HTMLInputElement | null>(null);
+  const stickerInputRef = useRef<HTMLInputElement | null>(null);
 
   const sortChatsByTimestamp = (items: WhatsAppChatItem[]) =>
     [...items].sort((left, right) => {
@@ -628,6 +677,436 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
     }
   };
 
+  const syncComposerAfterSend = async () => {
+    if (!selectedChatRef.current) {
+      return;
+    }
+
+    await loadChatHistory(selectedChatRef.current, true);
+    await loadOverview(true);
+  };
+
+  const fileToBase64 = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onerror = () => reject(new Error("Não foi possível ler o arquivo selecionado."));
+      reader.readAsDataURL(file);
+    });
+
+  const registerRecentEmoji = (emoji: string) => {
+    setRecentEmojis((current) => {
+      const nextRecent = [emoji, ...current.filter((item) => item !== emoji)].slice(0, 24);
+      window.localStorage.setItem("rcmolina_whatsapp_recent_emojis", JSON.stringify(nextRecent));
+      return nextRecent;
+    });
+  };
+
+  const handleInsertEmoji = (emoji: string) => {
+    setMessageText((current) => `${current}${emoji}`);
+    registerRecentEmoji(emoji);
+  };
+
+  const sendStructuredPayload = async (
+    payload: Record<string, unknown>,
+    successMessage: string
+  ) => {
+    if (!selectedChatRef.current) {
+      return;
+    }
+
+    setAttachmentLoading(true);
+    setChatError("");
+
+    try {
+      const response = await fetch("/api/whatsapp-chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          chatId: selectedChatRef.current.chatId,
+          ...payload,
+        }),
+      });
+
+      const data = (await response.json()) as WhatsAppChatApiResponse;
+
+      if (!response.ok) {
+        throw new Error(data.error || "Não foi possível enviar o conteúdo.");
+      }
+
+      await syncComposerAfterSend();
+      setStatusNote(successMessage);
+      setIsAttachmentMenuOpen(false);
+      setComposerOverlay(null);
+      setIsEmojiPickerOpen(false);
+    } catch (sendError) {
+      const message =
+        sendError instanceof Error ? sendError.message : "Erro inesperado ao enviar o conteúdo.";
+      setChatError(message);
+    } finally {
+      setAttachmentLoading(false);
+    }
+  };
+
+  const sendFileLikePayload = async (
+    fileName: string,
+    mimeType: string,
+    fileBase64: string,
+    caption: string,
+    successMessage: string,
+    typingType = ""
+  ) =>
+    sendStructuredPayload(
+      {
+        action: "file",
+        fileName,
+        mimeType,
+        fileBase64,
+        caption,
+        typingType,
+        typingTime: typingType === "recording" ? 4000 : 2000,
+      },
+      successMessage
+    );
+
+  const buildEventIcsBase64 = () => {
+    const startDate = String(eventForm.startDate || "").trim();
+    const startTime = String(eventForm.startTime || "").trim();
+    const endDate = String(eventForm.endDate || startDate).trim();
+    const endTime = String(eventForm.endTime || startTime).trim();
+
+    if (!eventForm.title.trim() || !startDate || !startTime || !endDate || !endTime) {
+      throw new Error("Preencha título, data e horário do evento.");
+    }
+
+    const start = new Date(`${startDate}T${startTime}:00`);
+    const end = new Date(`${endDate}T${endTime}:00`);
+
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) {
+      throw new Error("Informe um período válido para o evento.");
+    }
+
+    const toIcsDate = (value: Date) =>
+      value
+        .toISOString()
+        .replace(/[-:]/g, "")
+        .replace(/\.\d{3}Z$/, "Z");
+
+    const content = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//RC MOLINA//WhatsApp//PT-BR",
+      "BEGIN:VEVENT",
+      `UID:${Date.now()}@rcmolina`,
+      `DTSTAMP:${toIcsDate(new Date())}`,
+      `DTSTART:${toIcsDate(start)}`,
+      `DTEND:${toIcsDate(end)}`,
+      `SUMMARY:${eventForm.title.trim()}`,
+      `LOCATION:${eventForm.location.trim()}`,
+      `DESCRIPTION:${eventForm.description.trim()}`,
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ]
+      .filter((line) => !line.endsWith(":"))
+      .join("\r\n");
+
+    return window.btoa(unescape(encodeURIComponent(content)));
+  };
+
+  const convertImageFileToSticker = async (file: File) => {
+    const imageUrl = URL.createObjectURL(file);
+
+    try {
+      const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const nextImage = new Image();
+        nextImage.onload = () => resolve(nextImage);
+        nextImage.onerror = () => reject(new Error("Não foi possível preparar a figurinha."));
+        nextImage.src = imageUrl;
+      });
+
+      const canvas = document.createElement("canvas");
+      const size = 512;
+      canvas.width = size;
+      canvas.height = size;
+      const context = canvas.getContext("2d");
+
+      if (!context) {
+        throw new Error("Seu navegador não conseguiu preparar a figurinha.");
+      }
+
+      context.clearRect(0, 0, size, size);
+      const scale = Math.min(size / image.width, size / image.height);
+      const drawWidth = image.width * scale;
+      const drawHeight = image.height * scale;
+      const offsetX = (size - drawWidth) / 2;
+      const offsetY = (size - drawHeight) / 2;
+      context.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
+
+      const dataUrl = canvas.toDataURL("image/webp", 0.92);
+
+      return {
+        fileName: `${file.name.replace(/\.[^.]+$/, "") || "figurinha"}.webp`,
+        mimeType: "image/webp",
+        fileBase64: dataUrl,
+      };
+    } finally {
+      URL.revokeObjectURL(imageUrl);
+    }
+  };
+
+  const handleSelectedFile = async (intent: MediaIntent, file?: File | null) => {
+    if (!file || !selectedChatRef.current) {
+      return;
+    }
+
+    const defaultCaption =
+      intent === "sticker" ? "" : intent === "audio" ? "Áudio enviado" : messageText.trim();
+
+    try {
+      if (intent === "sticker") {
+        const stickerData = await convertImageFileToSticker(file);
+        await sendFileLikePayload(
+          stickerData.fileName,
+          stickerData.mimeType,
+          stickerData.fileBase64,
+          "",
+          "Figurinha enviada com sucesso."
+        );
+        return;
+      }
+
+      const fileBase64 = await fileToBase64(file);
+      const successMap: Record<MediaIntent, string> = {
+        document: "Documento enviado com sucesso.",
+        media: "Mídia enviada com sucesso.",
+        camera: "Foto ou vídeo enviado com sucesso.",
+        audio: "Áudio enviado com sucesso.",
+        sticker: "Figurinha enviada com sucesso.",
+      };
+
+      await sendFileLikePayload(
+        file.name,
+        file.type || "application/octet-stream",
+        fileBase64,
+        defaultCaption,
+        successMap[intent]
+      );
+    } finally {
+      setMessageText("");
+    }
+  };
+
+  const triggerFilePicker = (intent: MediaIntent) => {
+    setIsAttachmentMenuOpen(false);
+
+    if (intent === "document") {
+      documentInputRef.current?.click();
+      return;
+    }
+
+    if (intent === "media") {
+      mediaInputRef.current?.click();
+      return;
+    }
+
+    if (intent === "camera") {
+      cameraInputRef.current?.click();
+      return;
+    }
+
+    if (intent === "audio") {
+      audioInputRef.current?.click();
+      return;
+    }
+
+    stickerInputRef.current?.click();
+  };
+
+  const handleGifSend = async (fileUrl: string, title: string) => {
+    await sendStructuredPayload(
+      {
+        action: "file",
+        fileUrl,
+        fileName: `${title.toLowerCase().replace(/\s+/g, "-")}.mp4`,
+        mimeType: "video/mp4",
+        caption: title,
+      },
+      "GIF enviado com sucesso."
+    );
+  };
+
+  const handleContactSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    await sendStructuredPayload(
+      {
+        action: "contact",
+        contact: contactForm,
+      },
+      "Contato enviado com sucesso."
+    );
+    setContactForm({
+      firstName: "",
+      lastName: "",
+      phoneNumber: "",
+      company: "",
+    });
+  };
+
+  const handlePollSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    await sendStructuredPayload(
+      {
+        action: "poll",
+        poll: pollForm,
+      },
+      "Enquete enviada com sucesso."
+    );
+    setPollForm({
+      question: "",
+      options: ["", ""],
+      multipleAnswers: false,
+    });
+  };
+
+  const handleEventSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const fileBase64 = buildEventIcsBase64();
+    await sendFileLikePayload(
+      `${eventForm.title.trim().replace(/\s+/g, "-").toLowerCase() || "evento"}.ics`,
+      "text/calendar",
+      `data:text/calendar;base64,${fileBase64}`,
+      `Convite: ${eventForm.title.trim()}`,
+      "Evento enviado com sucesso."
+    );
+    setEventForm({
+      title: "",
+      startDate: "",
+      startTime: "",
+      endDate: "",
+      endTime: "",
+      location: "",
+      description: "",
+    });
+  };
+
+  const stopRecordingTimer = () => {
+    if (recordingTimerRef.current) {
+      window.clearInterval(recordingTimerRef.current);
+      recordingTimerRef.current = null;
+    }
+  };
+
+  const resetRecordingState = () => {
+    stopRecordingTimer();
+    setRecording(false);
+    setRecordingSeconds(0);
+    mediaRecorderRef.current = null;
+    recordingChunksRef.current = [];
+  };
+
+  const cancelVoiceRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      recordingChunksRef.current = [];
+      mediaRecorderRef.current.stop();
+    }
+
+    resetRecordingState();
+  };
+
+  const finishVoiceRecording = async () => {
+    const recorder = mediaRecorderRef.current;
+
+    if (!recorder) {
+      return;
+    }
+
+    await new Promise<void>((resolve) => {
+      recorder.addEventListener(
+        "stop",
+        async () => {
+          try {
+            const recordedBlob = new Blob(recordingChunksRef.current, {
+              type: recorder.mimeType || "audio/ogg",
+            });
+            const file = new File([recordedBlob], `audio-${Date.now()}.ogg`, {
+              type: "audio/ogg",
+            });
+            const fileBase64 = await fileToBase64(file);
+            await sendFileLikePayload(
+              file.name,
+              "audio/ogg",
+              fileBase64,
+              "",
+              "Mensagem de voz enviada com sucesso.",
+              "recording"
+            );
+          } catch (recordingError) {
+            const message =
+              recordingError instanceof Error
+                ? recordingError.message
+                : "Não foi possível enviar a mensagem de voz.";
+            setChatError(message);
+          } finally {
+            resetRecordingState();
+            resolve();
+          }
+        },
+        { once: true }
+      );
+
+      recorder.stop();
+    });
+  };
+
+  const startVoiceRecording = async () => {
+    if (recording || !navigator.mediaDevices?.getUserMedia) {
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const preferredMimeType = MediaRecorder.isTypeSupported("audio/ogg;codecs=opus")
+        ? "audio/ogg;codecs=opus"
+        : "";
+      const recorder = new MediaRecorder(
+        stream,
+        preferredMimeType ? { mimeType: preferredMimeType } : undefined
+      );
+
+      recordingChunksRef.current = [];
+      mediaRecorderRef.current = recorder;
+      recorder.addEventListener("dataavailable", (event) => {
+        if (event.data.size > 0) {
+          recordingChunksRef.current.push(event.data);
+        }
+      });
+      recorder.addEventListener(
+        "stop",
+        () => {
+          stream.getTracks().forEach((track) => track.stop());
+        },
+        { once: true }
+      );
+
+      recorder.start();
+      setRecording(true);
+      setRecordingSeconds(0);
+      recordingTimerRef.current = window.setInterval(() => {
+        setRecordingSeconds((current) => current + 1);
+      }, 1000);
+      setStatusNote("Gravação iniciada. Toque novamente no microfone para enviar.");
+    } catch (recordingError) {
+      const message =
+        recordingError instanceof Error
+          ? recordingError.message
+          : "Não foi possível acessar o microfone.";
+      setChatError(message);
+      resetRecordingState();
+    }
+  };
+
   const handleSendMessage = async (event: React.FormEvent) => {
     event.preventDefault();
 
@@ -713,8 +1192,32 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
   }, []);
 
   useEffect(() => {
+    const savedRecentEmojis = window.localStorage.getItem("rcmolina_whatsapp_recent_emojis");
+
+    if (!savedRecentEmojis) {
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(savedRecentEmojis);
+
+      if (Array.isArray(parsed)) {
+        setRecentEmojis(parsed.filter((item) => typeof item === "string").slice(0, 24));
+      }
+    } catch (_error) {
+      window.localStorage.removeItem("rcmolina_whatsapp_recent_emojis");
+    }
+  }, []);
+
+  useEffect(() => {
     selectedChatRef.current = selectedChat;
   }, [selectedChat]);
+
+  useEffect(() => {
+    return () => {
+      stopRecordingTimer();
+    };
+  }, []);
 
   useEffect(() => {
     if (!statusNote) {
@@ -970,6 +1473,48 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
       })
     );
   }, [activeFilter, chats, searchTerm]);
+  const filteredEmojiCategories = useMemo(() => {
+    const normalizedSearch = emojiSearch.trim().toLowerCase();
+
+    if (!normalizedSearch) {
+      return EMOJI_CATEGORIES;
+    }
+
+    return EMOJI_CATEGORIES.map((category) => ({
+      ...category,
+      emojis: category.emojis.filter((emoji) => {
+        const alias = `${category.label} ${emoji}`.toLowerCase();
+        return alias.includes(normalizedSearch);
+      }),
+    })).filter((category) => category.emojis.length > 0);
+  }, [emojiSearch]);
+  const activeEmojiCategoryData = filteredEmojiCategories.find((category) => category.id === emojiCategory)
+    || filteredEmojiCategories[0]
+    || EMOJI_CATEGORIES[0];
+  const filteredGifs = useMemo(() => {
+    const normalizedSearch = gifSearch.trim().toLowerCase();
+
+    if (!normalizedSearch) {
+      return GIF_PRESETS;
+    }
+
+    return GIF_PRESETS.filter((gif) =>
+      `${gif.title} ${gif.tags.join(" ")}`.toLowerCase().includes(normalizedSearch)
+    );
+  }, [gifSearch]);
+  const recordingTimeLabel = `${String(Math.floor(recordingSeconds / 60)).padStart(2, "0")}:${String(
+    recordingSeconds % 60
+  ).padStart(2, "0")}`;
+  const attachmentMenuItems = [
+    { id: "document" as const, label: "Documento", icon: "📄" },
+    { id: "media" as const, label: "Fotos e vídeos", icon: "🖼️" },
+    { id: "camera" as const, label: "Câmera", icon: "📸" },
+    { id: "audio" as const, label: "Áudio", icon: "🎧" },
+    { id: "contact" as const, label: "Contato", icon: "👤" },
+    { id: "poll" as const, label: "Enquete", icon: "📊" },
+    { id: "event" as const, label: "Evento", icon: "🗓️" },
+    { id: "sticker" as const, label: "Nova figurinha", icon: "✨" },
+  ];
   const getAvatarLabel = (title: string) =>
     title
       .split(" ")
@@ -1038,6 +1583,9 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
     const isSticker = message.typeMessage === "stickerMessage";
     const isAudio = message.typeMessage === "audioMessage";
     const isDocument = message.typeMessage === "documentMessage";
+    const isVideo = message.typeMessage === "videoMessage";
+    const isContact = message.typeMessage === "contactMessage";
+    const isPoll = message.typeMessage === "pollMessage";
     const normalizedMimeType = String(message.mimeType || "").toLowerCase();
     const normalizedFileName = String(message.fileName || message.text || "").trim();
     const isPdf =
@@ -1069,6 +1617,24 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
         <div className="space-y-2">
           <audio controls preload="none" src={message.mediaUrl} className="w-full min-w-[220px]" />
           {message.text && message.text !== "Audio" ? (
+            <p className="whitespace-pre-wrap text-sm leading-6">{message.text}</p>
+          ) : null}
+        </div>
+      );
+    }
+
+    if (isVideo && message.mediaUrl) {
+      return (
+        <div className="space-y-2">
+          <video
+            controls
+            loop
+            playsInline
+            preload="metadata"
+            src={message.mediaUrl}
+            className="max-h-72 w-full rounded-2xl bg-black/30"
+          />
+          {message.text && message.text !== "Vídeo" && message.text !== "Video" ? (
             <p className="whitespace-pre-wrap text-sm leading-6">{message.text}</p>
           ) : null}
         </div>
@@ -1131,6 +1697,24 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
               </a>
             ) : null}
           </div>
+        </div>
+      );
+    }
+
+    if (isContact) {
+      return (
+        <div className="rounded-2xl border border-white/10 bg-black/10 p-3">
+          <p className="text-sm font-semibold">Contato compartilhado</p>
+          <p className="mt-1 text-sm leading-6">{message.text}</p>
+        </div>
+      );
+    }
+
+    if (isPoll) {
+      return (
+        <div className="rounded-2xl border border-white/10 bg-black/10 p-3">
+          <p className="text-sm font-semibold">Enquete</p>
+          <p className="mt-1 text-sm leading-6">{message.text}</p>
         </div>
       );
     }
@@ -1420,30 +2004,574 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
 
           <form
             onSubmit={handleSendMessage}
-            className="border-t border-white/6 bg-[#202c33] px-3 py-3 sm:px-4"
+            className="relative border-t border-white/6 bg-[#202c33] px-3 py-3 sm:px-4"
           >
-            <div className="flex items-end gap-2">
-              <div className="flex min-h-14 flex-1 items-end rounded-[28px] bg-[#2a3942] px-4 py-2">
-                <textarea
-                  value={messageText}
-                  onChange={(event) => setMessageText(event.target.value)}
-                  placeholder="Digite uma mensagem"
-                  rows={1}
-                  className="max-h-32 min-h-[36px] w-full resize-none bg-transparent py-1 text-sm leading-6 text-white outline-none placeholder:text-[#8696a0]"
-                />
+            {isAttachmentMenuOpen ? (
+              <div className="absolute bottom-[calc(100%+0.75rem)] left-3 z-30 w-[220px] overflow-hidden rounded-[24px] border border-white/10 bg-[#111b21] shadow-[0_24px_64px_rgba(0,0,0,0.38)]">
+                <div className="border-b border-white/8 px-4 py-3">
+                  <p className="text-sm font-semibold text-white">Compartilhar</p>
+                  <p className="mt-1 text-xs text-[#8fa3ad]">Escolha o que deseja enviar</p>
+                </div>
+                <div className="p-2">
+                  {attachmentMenuItems.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => {
+                        if (
+                          item.id === "contact" ||
+                          item.id === "poll" ||
+                          item.id === "event" ||
+                          item.id === "sticker"
+                        ) {
+                          setComposerOverlay(item.id);
+                          setIsAttachmentMenuOpen(false);
+                          return;
+                        }
+
+                        triggerFilePicker(item.id);
+                      }}
+                      className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm text-white transition-colors hover:bg-white/6"
+                    >
+                      <span className="text-lg">{item.icon}</span>
+                      <span className="font-medium">{item.label}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
-              <button
-                type="submit"
-                disabled={sendingMessage || !messageText.trim()}
-                className="inline-flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full bg-[#00a884] text-[#041a14] transition-colors hover:bg-[#14c38e] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {sendingMessage ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
+            ) : null}
+
+            {isEmojiPickerOpen ? (
+              <div className="absolute bottom-[calc(100%+0.75rem)] left-3 right-3 z-30 overflow-hidden rounded-[26px] border border-white/10 bg-[#111b21] shadow-[0_24px_64px_rgba(0,0,0,0.42)] sm:right-4">
+                <div className="border-b border-white/8 px-4 py-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setComposerTab("emoji")}
+                        className={`rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] transition-colors ${
+                          composerTab === "emoji"
+                            ? "bg-[#103529] text-[#d9fdd3]"
+                            : "text-[#8fa3ad] hover:bg-white/6"
+                        }`}
+                      >
+                        Emoji
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setComposerTab("gif")}
+                        className={`rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] transition-colors ${
+                          composerTab === "gif"
+                            ? "bg-[#103529] text-[#d9fdd3]"
+                            : "text-[#8fa3ad] hover:bg-white/6"
+                        }`}
+                      >
+                        GIF
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsEmojiPickerOpen(false)}
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[#aebac1] transition-colors hover:bg-white/8"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  <div className="mt-3 rounded-full border border-[#00a884] px-4 py-2.5">
+                    <div className="flex items-center gap-3 text-[#9db0b8]">
+                      <Search className="h-4 w-4" />
+                      <input
+                        value={composerTab === "emoji" ? emojiSearch : gifSearch}
+                        onChange={(event) =>
+                          composerTab === "emoji"
+                            ? setEmojiSearch(event.target.value)
+                            : setGifSearch(event.target.value)
+                        }
+                        placeholder={composerTab === "emoji" ? "Pesquisar emoji" : "Pesquisar GIF"}
+                        className="w-full bg-transparent text-sm text-white outline-none placeholder:text-[#81949c]"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {composerTab === "emoji" ? (
+                  <div className="custom-scrollbar max-h-[360px] overflow-y-auto px-4 py-4">
+                    {recentEmojis.length > 0 ? (
+                      <div className="mb-5">
+                        <p className="text-sm font-semibold text-[#cbd5db]">Recentes</p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {recentEmojis.map((emoji) => (
+                            <button
+                              key={`recent-${emoji}`}
+                              type="button"
+                              onClick={() => handleInsertEmoji(emoji)}
+                              className="inline-flex h-11 w-11 items-center justify-center rounded-2xl text-2xl transition-colors hover:bg-white/8"
+                            >
+                              {emoji}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+
+                    <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
+                      {filteredEmojiCategories.map((category) => (
+                        <button
+                          key={category.id}
+                          type="button"
+                          onClick={() => setEmojiCategory(category.id)}
+                          className={`inline-flex min-h-10 items-center gap-2 rounded-full px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors ${
+                            activeEmojiCategoryData?.id === category.id
+                              ? "bg-[#103529] text-[#d9fdd3]"
+                              : "bg-white/6 text-[#aebac1] hover:bg-white/10"
+                          }`}
+                        >
+                          <span>{category.icon}</span>
+                          <span>{category.label}</span>
+                        </button>
+                      ))}
+                    </div>
+
+                    {activeEmojiCategoryData ? (
+                      <div>
+                        <p className="text-sm font-semibold text-[#cbd5db]">
+                          {activeEmojiCategoryData.label}
+                        </p>
+                        <div className="mt-3 grid grid-cols-6 gap-2 sm:grid-cols-8">
+                          {activeEmojiCategoryData.emojis.map((emoji) => (
+                            <button
+                              key={`${activeEmojiCategoryData.id}-${emoji}`}
+                              type="button"
+                              onClick={() => handleInsertEmoji(emoji)}
+                              className="inline-flex h-11 w-full items-center justify-center rounded-2xl text-2xl transition-colors hover:bg-white/8"
+                            >
+                              {emoji}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="py-10 text-center text-sm text-[#8fa3ad]">
+                        Nenhum emoji encontrado para a busca.
+                      </div>
+                    )}
+                  </div>
                 ) : (
-                  <SendHorizontal className="h-5 w-5" />
+                  <div className="custom-scrollbar max-h-[360px] overflow-y-auto px-4 py-4">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      {filteredGifs.map((gif) => (
+                        <button
+                          key={gif.id}
+                          type="button"
+                          onClick={() => void handleGifSend(gif.fileUrl, gif.title)}
+                          className="overflow-hidden rounded-[22px] border border-white/8 bg-[#1a252c] text-left transition-colors hover:border-[#00a884]/40 hover:bg-[#213039]"
+                        >
+                          <img
+                            src={gif.previewUrl}
+                            alt={gif.title}
+                            className="h-36 w-full object-cover"
+                            loading="lazy"
+                          />
+                          <div className="px-3 py-3">
+                            <p className="text-sm font-semibold text-white">{gif.title}</p>
+                            <p className="mt-1 text-xs text-[#8fa3ad]">{gif.tags.join(" • ")}</p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+
+                    {filteredGifs.length === 0 ? (
+                      <div className="py-10 text-center text-sm text-[#8fa3ad]">
+                        Nenhum GIF encontrado para essa busca.
+                      </div>
+                    ) : null}
+                  </div>
                 )}
-              </button>
+              </div>
+            ) : null}
+
+            {composerOverlay ? (
+              <div className="absolute bottom-[calc(100%+0.75rem)] left-3 right-3 z-30 overflow-hidden rounded-[26px] border border-white/10 bg-[#111b21] shadow-[0_24px_64px_rgba(0,0,0,0.42)] sm:left-auto sm:right-4 sm:w-[420px]">
+                <div className="flex items-center justify-between border-b border-white/8 px-4 py-3">
+                  <div>
+                    <p className="text-sm font-semibold text-white">
+                      {composerOverlay === "contact"
+                        ? "Enviar contato"
+                        : composerOverlay === "poll"
+                          ? "Criar enquete"
+                          : composerOverlay === "event"
+                            ? "Criar evento"
+                            : "Nova figurinha"}
+                    </p>
+                    <p className="mt-1 text-xs text-[#8fa3ad]">
+                      {composerOverlay === "contact"
+                        ? "Compartilhe um contato do jeito que faria no WhatsApp."
+                        : composerOverlay === "poll"
+                          ? "Monte a pergunta e as opções da enquete."
+                          : composerOverlay === "event"
+                            ? "Envie um convite de calendário em formato compatível."
+                            : "Escolha uma imagem para virar figurinha."}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setComposerOverlay(null)}
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[#aebac1] transition-colors hover:bg-white/8"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                {composerOverlay === "contact" ? (
+                  <form onSubmit={handleContactSubmit} className="space-y-3 px-4 py-4">
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <input
+                        value={contactForm.firstName}
+                        onChange={(event) =>
+                          setContactForm((current) => ({ ...current, firstName: event.target.value }))
+                        }
+                        placeholder="Nome"
+                        className="rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-sm text-white outline-none placeholder:text-[#8fa3ad]"
+                      />
+                      <input
+                        value={contactForm.lastName}
+                        onChange={(event) =>
+                          setContactForm((current) => ({ ...current, lastName: event.target.value }))
+                        }
+                        placeholder="Sobrenome"
+                        className="rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-sm text-white outline-none placeholder:text-[#8fa3ad]"
+                      />
+                    </div>
+                    <input
+                      value={contactForm.phoneNumber}
+                      onChange={(event) =>
+                        setContactForm((current) => ({ ...current, phoneNumber: event.target.value }))
+                      }
+                      placeholder="Telefone com DDD"
+                      className="w-full rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-sm text-white outline-none placeholder:text-[#8fa3ad]"
+                    />
+                    <input
+                      value={contactForm.company}
+                      onChange={(event) =>
+                        setContactForm((current) => ({ ...current, company: event.target.value }))
+                      }
+                      placeholder="Empresa ou observação"
+                      className="w-full rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-sm text-white outline-none placeholder:text-[#8fa3ad]"
+                    />
+                    <button
+                      type="submit"
+                      disabled={attachmentLoading}
+                      className="inline-flex min-h-11 items-center rounded-full bg-[#00a884] px-5 py-3 text-sm font-semibold text-[#041a14] transition-colors hover:bg-[#14c38e] disabled:opacity-60"
+                    >
+                      {attachmentLoading ? "Enviando..." : "Enviar contato"}
+                    </button>
+                  </form>
+                ) : null}
+
+                {composerOverlay === "poll" ? (
+                  <form onSubmit={handlePollSubmit} className="space-y-3 px-4 py-4">
+                    <input
+                      value={pollForm.question}
+                      onChange={(event) =>
+                        setPollForm((current) => ({ ...current, question: event.target.value }))
+                      }
+                      placeholder="Pergunta da enquete"
+                      className="w-full rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-sm text-white outline-none placeholder:text-[#8fa3ad]"
+                    />
+                    {pollForm.options.map((option, index) => (
+                      <div key={`option-${index}`} className="flex items-center gap-2">
+                        <input
+                          value={option}
+                          onChange={(event) =>
+                            setPollForm((current) => ({
+                              ...current,
+                              options: current.options.map((currentOption, currentIndex) =>
+                                currentIndex === index ? event.target.value : currentOption
+                              ),
+                            }))
+                          }
+                          placeholder={`Opção ${index + 1}`}
+                          className="w-full rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-sm text-white outline-none placeholder:text-[#8fa3ad]"
+                        />
+                        {pollForm.options.length > 2 ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setPollForm((current) => ({
+                                ...current,
+                                options: current.options.filter((_, currentIndex) => currentIndex !== index),
+                              }))
+                            }
+                            className="inline-flex h-11 w-11 items-center justify-center rounded-full text-[#fca5a5] transition-colors hover:bg-white/8"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        ) : null}
+                      </div>
+                    ))}
+                    <div className="flex flex-wrap items-center gap-3">
+                      {pollForm.options.length < 5 ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setPollForm((current) => ({
+                              ...current,
+                              options: [...current.options, ""],
+                            }))
+                          }
+                          className="inline-flex min-h-10 items-center rounded-full border border-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[#d0d7db] transition-colors hover:bg-white/8"
+                        >
+                          Adicionar opção
+                        </button>
+                      ) : null}
+                      <label className="flex items-center gap-2 text-sm text-[#d0d7db]">
+                        <input
+                          type="checkbox"
+                          checked={pollForm.multipleAnswers}
+                          onChange={(event) =>
+                            setPollForm((current) => ({
+                              ...current,
+                              multipleAnswers: event.target.checked,
+                            }))
+                          }
+                        />
+                        Permitir múltiplas respostas
+                      </label>
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={attachmentLoading}
+                      className="inline-flex min-h-11 items-center rounded-full bg-[#00a884] px-5 py-3 text-sm font-semibold text-[#041a14] transition-colors hover:bg-[#14c38e] disabled:opacity-60"
+                    >
+                      {attachmentLoading ? "Enviando..." : "Enviar enquete"}
+                    </button>
+                  </form>
+                ) : null}
+
+                {composerOverlay === "event" ? (
+                  <form onSubmit={handleEventSubmit} className="space-y-3 px-4 py-4">
+                    <input
+                      value={eventForm.title}
+                      onChange={(event) =>
+                        setEventForm((current) => ({ ...current, title: event.target.value }))
+                      }
+                      placeholder="Título do evento"
+                      className="w-full rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-sm text-white outline-none placeholder:text-[#8fa3ad]"
+                    />
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <input
+                        type="date"
+                        value={eventForm.startDate}
+                        onChange={(event) =>
+                          setEventForm((current) => ({ ...current, startDate: event.target.value }))
+                        }
+                        className="w-full rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-sm text-white outline-none"
+                      />
+                      <input
+                        type="time"
+                        value={eventForm.startTime}
+                        onChange={(event) =>
+                          setEventForm((current) => ({ ...current, startTime: event.target.value }))
+                        }
+                        className="w-full rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-sm text-white outline-none"
+                      />
+                      <input
+                        type="date"
+                        value={eventForm.endDate}
+                        onChange={(event) =>
+                          setEventForm((current) => ({ ...current, endDate: event.target.value }))
+                        }
+                        className="w-full rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-sm text-white outline-none"
+                      />
+                      <input
+                        type="time"
+                        value={eventForm.endTime}
+                        onChange={(event) =>
+                          setEventForm((current) => ({ ...current, endTime: event.target.value }))
+                        }
+                        className="w-full rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-sm text-white outline-none"
+                      />
+                    </div>
+                    <input
+                      value={eventForm.location}
+                      onChange={(event) =>
+                        setEventForm((current) => ({ ...current, location: event.target.value }))
+                      }
+                      placeholder="Local"
+                      className="w-full rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-sm text-white outline-none placeholder:text-[#8fa3ad]"
+                    />
+                    <textarea
+                      value={eventForm.description}
+                      onChange={(event) =>
+                        setEventForm((current) => ({ ...current, description: event.target.value }))
+                      }
+                      placeholder="Descrição"
+                      rows={3}
+                      className="w-full rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-sm text-white outline-none placeholder:text-[#8fa3ad]"
+                    />
+                    <button
+                      type="submit"
+                      disabled={attachmentLoading}
+                      className="inline-flex min-h-11 items-center rounded-full bg-[#00a884] px-5 py-3 text-sm font-semibold text-[#041a14] transition-colors hover:bg-[#14c38e] disabled:opacity-60"
+                    >
+                      {attachmentLoading ? "Enviando..." : "Enviar evento"}
+                    </button>
+                  </form>
+                ) : null}
+
+                {composerOverlay === "sticker" ? (
+                  <div className="px-4 py-4">
+                    <p className="text-sm leading-6 text-[#d0d7db]">
+                      Escolha uma imagem e eu preparo uma figurinha em `webp` para envio.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => triggerFilePicker("sticker")}
+                      className="mt-4 inline-flex min-h-11 items-center rounded-full bg-[#00a884] px-5 py-3 text-sm font-semibold text-[#041a14] transition-colors hover:bg-[#14c38e]"
+                    >
+                      Selecionar imagem
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            <div className="flex items-end gap-2">
+              <div className="flex min-h-14 flex-1 items-center rounded-[30px] bg-[#262827] px-3 py-2.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setComposerOverlay(null);
+                    setIsEmojiPickerOpen(false);
+                    setIsAttachmentMenuOpen((current) => !current);
+                  }}
+                  className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-[#d0d7db] transition-colors hover:bg-white/8"
+                >
+                  <Plus className="h-5 w-5" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAttachmentMenuOpen(false);
+                    setComposerOverlay(null);
+                    setIsEmojiPickerOpen((current) => !current);
+                  }}
+                  className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-[#d0d7db] transition-colors hover:bg-white/8"
+                >
+                  <Smile className="h-5 w-5" />
+                </button>
+
+                {recording ? (
+                  <div className="flex min-h-[36px] flex-1 items-center justify-between gap-3 px-2 text-sm text-white">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
+                      <span>Gravando mensagem de voz</span>
+                    </div>
+                    <span className="font-mono text-[#7ef0a8]">{recordingTimeLabel}</span>
+                  </div>
+                ) : (
+                  <textarea
+                    value={messageText}
+                    onChange={(event) => setMessageText(event.target.value)}
+                    placeholder="Digite uma mensagem"
+                    rows={1}
+                    className="max-h-32 min-h-[36px] w-full resize-none bg-transparent py-1 text-sm leading-6 text-white outline-none placeholder:text-[#8696a0]"
+                  />
+                )}
+              </div>
+
+              {messageText.trim() ? (
+                <button
+                  type="submit"
+                  disabled={sendingMessage || attachmentLoading || !messageText.trim()}
+                  className="inline-flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full bg-[#00a884] text-[#041a14] transition-colors hover:bg-[#14c38e] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {sendingMessage ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <SendHorizontal className="h-5 w-5" />
+                  )}
+                </button>
+              ) : (
+                <div className="flex items-center gap-2">
+                  {recording ? (
+                    <button
+                      type="button"
+                      onClick={cancelVoiceRecording}
+                      className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-red-400/30 bg-red-500/10 text-red-300 transition-colors hover:bg-red-500/20"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => void (recording ? finishVoiceRecording() : startVoiceRecording())}
+                    disabled={attachmentLoading}
+                    className="inline-flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full bg-[#00a884] text-[#041a14] transition-colors hover:bg-[#14c38e] disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {attachmentLoading ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <Mic className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
+
+            <input
+              ref={documentInputRef}
+              type="file"
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,.rar"
+              className="hidden"
+              onChange={(event) => {
+                void handleSelectedFile("document", event.target.files?.[0]);
+                event.target.value = "";
+              }}
+            />
+            <input
+              ref={mediaInputRef}
+              type="file"
+              accept="image/*,video/*"
+              className="hidden"
+              onChange={(event) => {
+                void handleSelectedFile("media", event.target.files?.[0]);
+                event.target.value = "";
+              }}
+            />
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*,video/*"
+              capture="environment"
+              className="hidden"
+              onChange={(event) => {
+                void handleSelectedFile("camera", event.target.files?.[0]);
+                event.target.value = "";
+              }}
+            />
+            <input
+              ref={audioInputRef}
+              type="file"
+              accept="audio/*"
+              className="hidden"
+              onChange={(event) => {
+                void handleSelectedFile("audio", event.target.files?.[0]);
+                event.target.value = "";
+              }}
+            />
+            <input
+              ref={stickerInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className="hidden"
+              onChange={(event) => {
+                void handleSelectedFile("sticker", event.target.files?.[0]);
+                event.target.value = "";
+              }}
+            />
           </form>
         </>
       ) : (

@@ -5,9 +5,29 @@ type VercelRequest = {
     count?: string;
   };
   body?: {
+    action?: "text" | "file" | "contact" | "poll";
     chatId?: string;
     message?: string;
     count?: number;
+    fileName?: string;
+    mimeType?: string;
+    fileBase64?: string;
+    fileUrl?: string;
+    caption?: string;
+    quotedMessageId?: string;
+    typingType?: string;
+    typingTime?: number;
+    contact?: {
+      firstName?: string;
+      lastName?: string;
+      phoneNumber?: string;
+      company?: string;
+    };
+    poll?: {
+      question?: string;
+      options?: string[];
+      multipleAnswers?: boolean;
+    };
   };
 };
 
@@ -41,10 +61,30 @@ type GreenApiChatMessage = {
 
 type GreenApiSendMessageResponse = {
   idMessage?: string;
+  urlFile?: string;
 };
 
 type GreenApiDownloadFileResponse = {
   downloadUrl?: string;
+};
+
+type GreenApiSendContactPayload = {
+  chatId: string;
+  contact: {
+    phoneContact: string;
+    firstName?: string;
+    lastName?: string;
+    company?: string;
+  };
+};
+
+type GreenApiSendPollPayload = {
+  chatId: string;
+  message: string;
+  options: Array<{
+    optionName: string;
+  }>;
+  multipleAnswers?: boolean;
 };
 
 export const config = {
@@ -53,6 +93,8 @@ export const config = {
 
 const GREEN_API_BASE_URL =
   "https://7107.api.greenapi.com/waInstance7107375943";
+const GREEN_API_MEDIA_URL =
+  "https://media.green-api.com/waInstance7107375943";
 const GREEN_API_TOKEN = "0605c7c040e54a888ca58c312612109777c45c734bb049f782";
 const DEFAULT_HISTORY_COUNT = 50;
 
@@ -79,6 +121,22 @@ const fetchGreenApiPost = async <T>(path: string, body: unknown) => {
 
   if (!response.ok) {
     throw new Error(`Falha ao consultar ${path}.`);
+  }
+
+  return payload as T;
+};
+
+const fetchGreenApiUpload = async <T>(formData: FormData) => {
+  const response = await fetch(`${GREEN_API_MEDIA_URL}/sendFileByUpload/${GREEN_API_TOKEN}`, {
+    method: "POST",
+    body: formData,
+  });
+
+  const responseText = await response.text();
+  const payload = responseText ? JSON.parse(responseText) : {};
+
+  if (!response.ok) {
+    throw new Error(`Falha ao enviar arquivo para o WhatsApp.`);
   }
 
   return payload as T;
@@ -113,12 +171,13 @@ const normalizePreview = (message: GreenApiChatMessage) => {
     textMessage: "Mensagem",
     extendedTextMessage: "Mensagem",
     imageMessage: "Imagem",
-    videoMessage: "Video",
+    videoMessage: "Vídeo",
     documentMessage: "Documento",
-    audioMessage: "Audio",
+    audioMessage: "Áudio",
     stickerMessage: "Sticker",
     contactMessage: "Contato",
-    locationMessage: "Localizacao",
+    locationMessage: "Localização",
+    pollMessage: "Enquete",
   };
 
   return typeMap[String(message.typeMessage || "")] || "Mensagem";
@@ -142,7 +201,7 @@ const normalizeHistory = async (messages: GreenApiChatMessage[]) => {
           });
           mediaUrl = String(downloadPayload.downloadUrl || "").trim();
         } catch (error) {
-          console.warn("Nao foi possivel resolver a midia do WhatsApp:", error);
+          console.warn("Não foi possível resolver a mídia do WhatsApp:", error);
         }
       }
 
@@ -166,6 +225,89 @@ const normalizeHistory = async (messages: GreenApiChatMessage[]) => {
   );
 };
 
+const normalizeBase64Payload = (rawBase64: string) => {
+  const normalized = String(rawBase64 || "").trim();
+
+  if (!normalized) {
+    return "";
+  }
+
+  const [, payload = normalized] = normalized.split(",");
+  return payload.replace(/\s/g, "");
+};
+
+const resolveUploadBuffer = async (fileBase64?: string, fileUrl?: string) => {
+  const normalizedBase64 = normalizeBase64Payload(String(fileBase64 || ""));
+
+  if (normalizedBase64) {
+    return Buffer.from(normalizedBase64, "base64");
+  }
+
+  const normalizedFileUrl = String(fileUrl || "").trim();
+
+  if (!normalizedFileUrl) {
+    return null;
+  }
+
+  const remoteResponse = await fetch(normalizedFileUrl);
+
+  if (!remoteResponse.ok) {
+    throw new Error("Não foi possível buscar a mídia selecionada.");
+  }
+
+  const arrayBuffer = await remoteResponse.arrayBuffer();
+  return Buffer.from(arrayBuffer);
+};
+
+const sanitizeFileName = (fileName: string) =>
+  String(fileName || "")
+    .trim()
+    .replace(/[\\/:*?"<>|]+/g, "-")
+    .slice(0, 140);
+
+const buildContactPayload = (chatId: string, requestBody: VercelRequest["body"]): GreenApiSendContactPayload => {
+  const firstName = String(requestBody?.contact?.firstName || "").trim();
+  const lastName = String(requestBody?.contact?.lastName || "").trim();
+  const phoneNumber = String(requestBody?.contact?.phoneNumber || "").replace(/\D/g, "");
+  const company = String(requestBody?.contact?.company || "").trim();
+
+  if (!firstName || !phoneNumber) {
+    throw new Error("Informe nome e telefone do contato.");
+  }
+
+  return {
+    chatId,
+    contact: {
+      phoneContact: phoneNumber,
+      firstName,
+      lastName,
+      company,
+    },
+  };
+};
+
+const buildPollPayload = (chatId: string, requestBody: VercelRequest["body"]): GreenApiSendPollPayload => {
+  const question = String(requestBody?.poll?.question || "").trim();
+  const options = Array.isArray(requestBody?.poll?.options)
+    ? requestBody?.poll?.options
+        .map((option) => String(option || "").trim())
+        .filter(Boolean)
+    : [];
+
+  if (!question || options.length < 2) {
+    throw new Error("Informe a pergunta e pelo menos duas opções para a enquete.");
+  }
+
+  return {
+    chatId,
+    message: question,
+    options: options.map((optionName) => ({
+      optionName,
+    })),
+    multipleAnswers: Boolean(requestBody?.poll?.multipleAnswers),
+  };
+};
+
 export default async function handler(request: VercelRequest, response: VercelResponse) {
   applyHeaders(response);
 
@@ -179,7 +321,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
       const count = Number(request.query?.count || DEFAULT_HISTORY_COUNT);
 
       if (!chatId) {
-        return response.status(400).json({ error: "chatId e obrigatorio." });
+        return response.status(400).json({ error: "chatId é obrigatório." });
       }
 
       const history = await fetchGreenApiPost<GreenApiChatMessage[]>("getChatHistory", {
@@ -195,30 +337,113 @@ export default async function handler(request: VercelRequest, response: VercelRe
     }
 
     if (request.method === "POST") {
+      const action = String(request.body?.action || "text").trim();
       const chatId = String(request.body?.chatId || "").trim();
-      const message = String(request.body?.message || "").trim();
 
-      if (!chatId || !message) {
-        return response.status(400).json({ error: "chatId e message sao obrigatorios." });
+      if (!chatId) {
+        return response.status(400).json({ error: "chatId é obrigatório." });
       }
 
-      const sendResult = await fetchGreenApiPost<GreenApiSendMessageResponse>("sendMessage", {
-        chatId,
-        message,
-      });
+      if (action === "text") {
+        const message = String(request.body?.message || "").trim();
 
-      return response.status(200).json({
-        success: true,
-        chatId,
-        idMessage: String(sendResult.idMessage || ""),
-      });
+        if (!message) {
+          return response.status(400).json({ error: "message é obrigatório." });
+        }
+
+        const sendResult = await fetchGreenApiPost<GreenApiSendMessageResponse>("sendMessage", {
+          chatId,
+          message,
+        });
+
+        return response.status(200).json({
+          success: true,
+          action,
+          chatId,
+          idMessage: String(sendResult.idMessage || ""),
+        });
+      }
+
+      if (action === "file") {
+        const fileName = sanitizeFileName(String(request.body?.fileName || ""));
+        const mimeType = String(request.body?.mimeType || "application/octet-stream").trim();
+        const caption = String(request.body?.caption || "").trim();
+        const quotedMessageId = String(request.body?.quotedMessageId || "").trim();
+        const typingType = String(request.body?.typingType || "").trim();
+        const typingTime = Number(request.body?.typingTime || 0);
+        const fileBuffer = await resolveUploadBuffer(
+          String(request.body?.fileBase64 || ""),
+          String(request.body?.fileUrl || "")
+        );
+
+        if (!fileName || !fileBuffer) {
+          return response.status(400).json({ error: "fileName e mídia são obrigatórios." });
+        }
+
+        const formData = new FormData();
+        formData.append("chatId", chatId);
+        formData.append("fileName", fileName);
+        formData.append("file", new Blob([fileBuffer], { type: mimeType }), fileName);
+
+        if (caption) {
+          formData.append("caption", caption);
+        }
+
+        if (quotedMessageId) {
+          formData.append("quotedMessageId", quotedMessageId);
+        }
+
+        if (typingType) {
+          formData.append("typingType", typingType);
+        }
+
+        if (typingTime >= 1000) {
+          formData.append("typingTime", String(Math.min(20000, typingTime)));
+        }
+
+        const sendResult = await fetchGreenApiUpload<GreenApiSendMessageResponse>(formData);
+
+        return response.status(200).json({
+          success: true,
+          action,
+          chatId,
+          idMessage: String(sendResult.idMessage || ""),
+          urlFile: String(sendResult.urlFile || ""),
+        });
+      }
+
+      if (action === "contact") {
+        const payload = buildContactPayload(chatId, request.body);
+        const sendResult = await fetchGreenApiPost<GreenApiSendMessageResponse>("sendContact", payload);
+
+        return response.status(200).json({
+          success: true,
+          action,
+          chatId,
+          idMessage: String(sendResult.idMessage || ""),
+        });
+      }
+
+      if (action === "poll") {
+        const payload = buildPollPayload(chatId, request.body);
+        const sendResult = await fetchGreenApiPost<GreenApiSendMessageResponse>("sendPoll", payload);
+
+        return response.status(200).json({
+          success: true,
+          action,
+          chatId,
+          idMessage: String(sendResult.idMessage || ""),
+        });
+      }
+
+      return response.status(400).json({ error: "Ação de envio inválida." });
     }
 
-    return response.status(405).json({ error: "Metodo nao permitido." });
+    return response.status(405).json({ error: "Método não permitido." });
   } catch (error) {
     console.error("Erro ao consultar/enviar mensagens do WhatsApp:", error);
     return response.status(500).json({
-      error: "Erro interno ao consultar ou enviar mensagens do WhatsApp.",
+      error: error instanceof Error ? error.message : "Erro interno ao consultar ou enviar mensagens do WhatsApp.",
     });
   }
 }
