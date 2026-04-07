@@ -27,6 +27,11 @@ const SELECTED_CHAT_REFRESH_MS = 2500;
 const QUEUE_RECEIVE_TIMEOUT_SECONDS = 20;
 const RECENT_EMOJIS_STORAGE_KEY = "rcmolina_whatsapp_recent_emojis";
 const SELECTED_CHAT_STORAGE_KEY = "rcmolina_whatsapp_selected_chat_id";
+const DISCONNECT_CONFIRMATION_COUNT = 3;
+const POSITIVE_INSTANCE_STATES = new Set(["authorized"]);
+const POSITIVE_INSTANCE_STATUS = new Set(["online"]);
+const EXPLICIT_DISCONNECTED_STATES = new Set(["notauthorized", "blocked", "sleepmode"]);
+const EXPLICIT_DISCONNECTED_STATUS = new Set(["disconnected", "blocked", "notauthorized"]);
 
 type WhatsAppChatItem = {
   chatId: string;
@@ -145,6 +150,30 @@ interface WhatsAppQrPanelProps {
   embedded?: boolean;
 }
 
+const isPositiveConnectionSignal = (stateInstance: string, statusInstance: string) =>
+  POSITIVE_INSTANCE_STATES.has(stateInstance.toLowerCase()) ||
+  POSITIVE_INSTANCE_STATUS.has(statusInstance.toLowerCase());
+
+const isExplicitDisconnectionSignal = (stateInstance: string, statusInstance: string) =>
+  EXPLICIT_DISCONNECTED_STATES.has(stateInstance.toLowerCase()) ||
+  EXPLICIT_DISCONNECTED_STATUS.has(statusInstance.toLowerCase());
+
+const mergeUniqueChats = (...chatLists: WhatsAppChatItem[][]) => {
+  const chatsById = new Map<string, WhatsAppChatItem>();
+
+  chatLists.flat().forEach((chat) => {
+    const chatId = String(chat.chatId || "").trim();
+
+    if (!chatId || chatsById.has(chatId)) {
+      return;
+    }
+
+    chatsById.set(chatId, chat);
+  });
+
+  return Array.from(chatsById.values());
+};
+
 export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
   onConnectionChange,
   onSyncActivityChange,
@@ -164,6 +193,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
   );
   const notificationLoopIdRef = useRef(0);
   const realtimeSyncEnabledRef = useRef(false);
+  const disconnectStreakRef = useRef(0);
   const [qrCode, setQrCode] = useState("");
   const [chats, setChats] = useState<WhatsAppChatItem[]>([]);
   const [searchContacts, setSearchContacts] = useState<WhatsAppChatItem[]>([]);
@@ -185,7 +215,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
   const [messageText, setMessageText] = useState("");
   const [chatError, setChatError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeFilter, setActiveFilter] = useState<"all" | "incoming" | "groups">("all");
+  const [activeFilter, setActiveFilter] = useState<"all" | "incoming" | "contacts" | "groups">("all");
   const [isAttachmentMenuOpen, setIsAttachmentMenuOpen] = useState(false);
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [composerTab, setComposerTab] = useState<"emoji" | "gif">("emoji");
@@ -599,29 +629,48 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
         throw new Error(data.error || "Não foi possível carregar o painel do WhatsApp.");
       }
 
-      const nextConnected = Boolean(data.connected);
+      const nextStateInstance = String(data.stateInstance || "").trim();
+      const nextStatusInstance = String(data.statusInstance || "").trim();
+      const nextQrCode = String(data.qrCode || "").trim();
+      const nextConnected =
+        Boolean(data.connected) || isPositiveConnectionSignal(nextStateInstance, nextStatusInstance);
       const nextValidated = data.validated !== false;
+      const hasExplicitDisconnection =
+        Boolean(nextQrCode) || isExplicitDisconnectionSignal(nextStateInstance, nextStatusInstance);
+      let resolvedConnected = nextConnected;
 
-      if (nextConnected && !connected) {
+      if (nextConnected) {
+        disconnectStreakRef.current = 0;
+      } else if (connected && hasExplicitDisconnection) {
+        disconnectStreakRef.current += 1;
+        resolvedConnected = disconnectStreakRef.current < DISCONNECT_CONFIRMATION_COUNT;
+      } else if (connected) {
+        resolvedConnected = true;
+        disconnectStreakRef.current = 0;
+      } else {
+        disconnectStreakRef.current = 0;
+      }
+
+      if (resolvedConnected && !connected) {
         setStatusNote("WhatsApp conectado com sucesso. Conversas carregadas.");
       }
-      if (!nextConnected) {
+      if (!resolvedConnected) {
         hasShownInitialSyncNoticeRef.current = false;
       }
 
-      setConnected(nextConnected);
+      setConnected(resolvedConnected);
       setConnectionValidated(nextValidated);
-      onConnectionChange?.(nextConnected);
-      setStateInstance(data.stateInstance || "");
-      setStatusInstance(data.statusInstance || "");
-      setQrCode(data.qrCode || "");
+      onConnectionChange?.(resolvedConnected);
+      setStateInstance(nextStateInstance);
+      setStatusInstance(nextStatusInstance);
+      setQrCode(resolvedConnected ? "" : nextQrCode);
       const nextChats = Array.isArray(data.chats) ? data.chats : [];
       const nextContacts = Array.isArray(data.contacts) ? data.contacts : [];
       setChats((currentChats) => reconcileOverviewChats(currentChats, nextChats));
       setSearchContacts(nextContacts);
       setFetchedAt(data.fetchedAt || "");
 
-      if (!isManualRefresh && nextConnected && nextChats.length > 0 && !hasShownInitialSyncNoticeRef.current) {
+      if (!isManualRefresh && resolvedConnected && nextChats.length > 0 && !hasShownInitialSyncNoticeRef.current) {
         hasShownInitialSyncNoticeRef.current = true;
         setStatusNote("Sincronização inicial concluída.");
       }
@@ -1523,58 +1572,50 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
     backgroundSize: "100px 100px, 120px 120px, 36px 36px, 36px 36px",
     backgroundPosition: "0 0, 30px 30px, 0 0, 0 0",
   } as const;
+  const fullDirectory = useMemo(() => mergeUniqueChats(chats, searchContacts), [chats, searchContacts]);
+  const contactDirectory = useMemo(
+    () => fullDirectory.filter((chat) => !chat.isGroup),
+    [fullDirectory]
+  );
+  const groupDirectory = useMemo(
+    () => fullDirectory.filter((chat) => chat.isGroup),
+    [fullDirectory]
+  );
   const chatStats = useMemo(
     () => ({
-      all: chats.length,
+      all: fullDirectory.length,
       incoming: chats.filter((chat) => Number(chat.unreadCount || 0) > 0).length,
-      groups: [
-        ...chats,
-        ...searchContacts.filter(
-          (contact) => contact.isGroup && !chats.some((chat) => chat.chatId === contact.chatId)
-        ),
-      ].filter((chat) => chat.isGroup).length,
+      contacts: contactDirectory.length,
+      groups: groupDirectory.length,
     }),
-    [chats, searchContacts]
+    [chats, contactDirectory.length, fullDirectory.length, groupDirectory.length]
   );
   const filteredChats = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
     const basePool =
-      activeFilter === "groups"
-        ? [
-            ...chats.filter((chat) => chat.isGroup),
-            ...searchContacts.filter(
-              (contact) =>
-                contact.isGroup && !chats.some((chat) => chat.chatId === contact.chatId)
-            ),
-          ]
-        : normalizedSearch
-          ? [
-              ...chats,
-              ...searchContacts.filter(
-                (contact) => !chats.some((chat) => chat.chatId === contact.chatId)
-              ),
-            ]
-          : chats;
+      activeFilter === "incoming"
+        ? chats.filter((chat) => Number(chat.unreadCount || 0) > 0)
+        : activeFilter === "contacts"
+          ? contactDirectory
+          : activeFilter === "groups"
+            ? groupDirectory
+            : fullDirectory;
 
-    return sortChatsByTimestamp(
-      basePool.filter((chat) => {
-        if (activeFilter === "incoming" && Number(chat.unreadCount || 0) <= 0) {
-          return false;
-        }
+    const filteredPool = basePool.filter((chat) => {
+      if (!normalizedSearch) {
+        return true;
+      }
 
-        if (activeFilter === "groups" && !chat.isGroup) {
-          return false;
-        }
+      const haystack = `${chat.title} ${chat.subtitle} ${chat.preview}`.toLowerCase();
+      return haystack.includes(normalizedSearch);
+    });
 
-        if (!normalizedSearch) {
-          return true;
-        }
+    if (activeFilter === "contacts" && !normalizedSearch) {
+      return [...filteredPool].sort((left, right) => left.title.localeCompare(right.title, "pt-BR"));
+    }
 
-        const haystack = `${chat.title} ${chat.subtitle} ${chat.preview}`.toLowerCase();
-        return haystack.includes(normalizedSearch);
-      })
-    );
-  }, [activeFilter, chats, searchContacts, searchTerm]);
+    return sortChatsByTimestamp(filteredPool);
+  }, [activeFilter, chats, contactDirectory, fullDirectory, groupDirectory, searchTerm]);
   const filteredEmojiCategories = useMemo(() => {
     const normalizedSearch = emojiSearch.trim().toLowerCase();
 
@@ -1889,6 +1930,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
           {[
             { id: "all" as const, label: "Tudo", count: chatStats.all },
             { id: "incoming" as const, label: "Entradas", count: chatStats.incoming },
+            { id: "contacts" as const, label: "Contatos", count: chatStats.contacts },
             { id: "groups" as const, label: "Grupos", count: chatStats.groups },
           ].map((filter) => (
             <button
@@ -1915,13 +1957,11 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
           ))}
         </div>
 
-        <div className="mt-5 flex items-center gap-3 rounded-2xl border border-white/6 bg-white/4 px-4 py-3 text-[#d0d7db]">
-          <Archive className="h-4 w-4 text-[#00a884]" />
-          <div className="flex-1">
-            <p className="text-sm font-semibold">Arquivadas</p>
-            <p className="text-xs text-[#8f9da4]">Chats sincronizados com a Green API</p>
+        <div className="mt-5 flex items-center gap-3 rounded-2xl border border-white/6 bg-[#202c33] px-4 py-3 text-[#d0d7db]">
+          <Archive className="h-4 w-4 text-[#9aa7ae]" />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold text-[#dfe7ea]">Arquivadas</p>
           </div>
-          <span className="text-xs font-semibold text-[#00a884]">{chatStats.all}</span>
         </div>
       </div>
 

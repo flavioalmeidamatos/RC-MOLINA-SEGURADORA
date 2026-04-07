@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Banknote,
   Briefcase,
@@ -34,6 +34,19 @@ interface DashboardProps {
 
 const WHATSAPP_PANEL_OPEN_STORAGE_KEY = "rcmolina_whatsapp_panel_open";
 const WHATSAPP_PANEL_COLLAPSED_STORAGE_KEY = "rcmolina_whatsapp_panel_collapsed";
+const WHATSAPP_DISCONNECT_CONFIRMATION_COUNT = 3;
+const POSITIVE_INSTANCE_STATES = new Set(["authorized"]);
+const POSITIVE_INSTANCE_STATUS = new Set(["online"]);
+const EXPLICIT_DISCONNECTED_STATES = new Set(["notauthorized", "blocked", "sleepmode"]);
+const EXPLICIT_DISCONNECTED_STATUS = new Set(["disconnected", "blocked", "notauthorized"]);
+
+const isPositiveConnectionSignal = (stateInstance: string, statusInstance: string) =>
+  POSITIVE_INSTANCE_STATES.has(stateInstance.toLowerCase()) ||
+  POSITIVE_INSTANCE_STATUS.has(statusInstance.toLowerCase());
+
+const isExplicitDisconnectionSignal = (stateInstance: string, statusInstance: string) =>
+  EXPLICIT_DISCONNECTED_STATES.has(stateInstance.toLowerCase()) ||
+  EXPLICIT_DISCONNECTED_STATUS.has(statusInstance.toLowerCase());
 
 const WhatsAppIcon: React.FC<{ className?: string }> = ({ className }) => (
   <svg viewBox="0 0 448 512" fill="currentColor" aria-hidden="true" className={className}>
@@ -58,6 +71,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const [whatsAppConnected, setWhatsAppConnected] = useState(false);
   const [whatsAppChecking, setWhatsAppChecking] = useState(true);
   const [whatsAppSyncing, setWhatsAppSyncing] = useState(false);
+  const disconnectStreakRef = useRef(0);
   const [isWhatsAppPanelOpen, setIsWhatsAppPanelOpen] = useState(() => {
     if (typeof window === "undefined") {
       return false;
@@ -93,12 +107,37 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       const data = await response.json();
 
       if (response.ok) {
-        const isConnected = Boolean(data.connected);
-        setWhatsAppConnected(isConnected);
-        return isConnected;
+        const stateInstance = String(data.stateInstance || "").trim();
+        const statusInstance = String(data.statusInstance || "").trim();
+        const qrCode = String(data.qrCode || "").trim();
+        const isConnected =
+          Boolean(data.connected) || isPositiveConnectionSignal(stateInstance, statusInstance);
+        const hasExplicitDisconnection =
+          Boolean(qrCode) || isExplicitDisconnectionSignal(stateInstance, statusInstance);
+
+        if (isConnected) {
+          disconnectStreakRef.current = 0;
+          setWhatsAppConnected(true);
+          return true;
+        }
+
+        if (whatsAppConnected && hasExplicitDisconnection) {
+          disconnectStreakRef.current += 1;
+
+          if (disconnectStreakRef.current < WHATSAPP_DISCONNECT_CONFIRMATION_COUNT) {
+            return true;
+          }
+        } else if (whatsAppConnected) {
+          disconnectStreakRef.current = 0;
+          return true;
+        }
+
+        disconnectStreakRef.current = 0;
+        setWhatsAppConnected(false);
+        return false;
       }
     } catch (_error) {
-      setWhatsAppConnected(false);
+      return whatsAppConnected;
     } finally {
       setWhatsAppChecking(false);
     }

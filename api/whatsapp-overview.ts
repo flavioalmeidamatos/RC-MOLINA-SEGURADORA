@@ -64,8 +64,13 @@ export const config = {
 const GREEN_API_BASE_URL =
   "https://7107.api.greenapi.com/waInstance7107375943";
 const GREEN_API_TOKEN = "0605c7c040e54a888ca58c312612109777c45c734bb049f782";
-const CHATS_LOOKBACK_MINUTES = 1440;
+const CHATS_LOOKBACK_MINUTES = 180;
 const INSTANCE_RETRY_COUNT = 2;
+const GREEN_API_REQUEST_TIMEOUT_MS = 8000;
+const POSITIVE_INSTANCE_STATES = new Set(["authorized"]);
+const POSITIVE_INSTANCE_STATUS = new Set(["online"]);
+const EXPLICIT_DISCONNECTED_STATES = new Set(["notauthorized", "blocked", "sleepmode"]);
+const EXPLICIT_DISCONNECTED_STATUS = new Set(["disconnected", "blocked", "notauthorized"]);
 
 const applyHeaders = (response: VercelResponse) => {
   response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
@@ -76,12 +81,15 @@ const applyHeaders = (response: VercelResponse) => {
 };
 
 const fetchGreenApi = async <T>(path: string) => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), GREEN_API_REQUEST_TIMEOUT_MS);
   const response = await fetch(`${GREEN_API_BASE_URL}/${path}/${GREEN_API_TOKEN}`, {
     method: "GET",
     headers: {
       Accept: "application/json",
     },
-  });
+    signal: controller.signal,
+  }).finally(() => clearTimeout(timeoutId));
 
   if (!response.ok) {
     throw new Error(`Falha ao consultar ${path}.`);
@@ -91,6 +99,8 @@ const fetchGreenApi = async <T>(path: string) => {
 };
 
 const fetchGreenApiWithQuery = async <T>(path: string, query: string) => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), GREEN_API_REQUEST_TIMEOUT_MS);
   const response = await fetch(
     `${GREEN_API_BASE_URL}/${path}/${GREEN_API_TOKEN}?${query}`,
     {
@@ -98,8 +108,9 @@ const fetchGreenApiWithQuery = async <T>(path: string, query: string) => {
       headers: {
         Accept: "application/json",
       },
+      signal: controller.signal,
     }
-  );
+  ).finally(() => clearTimeout(timeoutId));
 
   if (!response.ok) {
     throw new Error(`Falha ao consultar ${path}.`);
@@ -355,16 +366,10 @@ const buildChats = (
     });
 };
 
-const buildSearchableContacts = (
-  contacts: GreenApiContact[],
-  activeChats: WhatsAppOverviewChatItem[]
-) => {
-  const activeChatIds = new Set(activeChats.map((chat) => chat.chatId));
-
+const buildSearchableContacts = (contacts: GreenApiContact[]) => {
   return contacts
     .map((contact) => buildContactChatItem(contact))
     .filter((contact): contact is WhatsAppOverviewChatItem => Boolean(contact))
-    .filter((contact) => !activeChatIds.has(contact.chatId))
     .sort((left, right) => left.title.localeCompare(right.title, "pt-BR"));
 };
 
@@ -388,6 +393,14 @@ const mergeContacts = (...contactLists: GreenApiContact[][]) => {
   return Array.from(contactsById.values());
 };
 
+const isPositiveConnectionSignal = (stateInstance: string, statusInstance: string) =>
+  POSITIVE_INSTANCE_STATES.has(stateInstance.toLowerCase()) ||
+  POSITIVE_INSTANCE_STATUS.has(statusInstance.toLowerCase());
+
+const isExplicitDisconnectionSignal = (stateInstance: string, statusInstance: string) =>
+  EXPLICIT_DISCONNECTED_STATES.has(stateInstance.toLowerCase()) ||
+  EXPLICIT_DISCONNECTED_STATUS.has(statusInstance.toLowerCase());
+
 const resolveConnectionSnapshot = async () => {
   const [stateResult, statusResult, qrResult] = await Promise.allSettled([
     fetchGreenApiWithRetry<GreenApiStateResponse>("getStateInstance"),
@@ -402,10 +415,11 @@ const resolveConnectionSnapshot = async () => {
   const qrType = qrResult.status === "fulfilled" ? String(qrResult.value.type || "").trim() : "";
   const qrMessage = qrResult.status === "fulfilled" ? String(qrResult.value.message || "").trim() : "";
   const hasQrCode = qrType === "qrCode" && Boolean(qrMessage);
+  const hasPositiveSignal = isPositiveConnectionSignal(stateInstance, statusInstance);
+  const hasExplicitDisconnection = isExplicitDisconnectionSignal(stateInstance, statusInstance);
   const connected =
-    (stateInstance === "authorized" && statusInstance === "online") ||
-    (stateInstance === "authorized" && !hasQrCode) ||
-    (statusInstance === "online" && !hasQrCode);
+    hasPositiveSignal ||
+    (!hasQrCode && !hasExplicitDisconnection && Boolean(stateInstance || statusInstance));
   const validated =
     stateResult.status === "fulfilled" ||
     statusResult.status === "fulfilled" ||
@@ -447,7 +461,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
       });
     }
 
-    const [incomingMessages, outgoingMessages, contacts, groups] = await Promise.all([
+    const [incomingMessagesResult, outgoingMessagesResult, contactsResult, groupsResult] = await Promise.allSettled([
       fetchGreenApiWithQueryRetry<GreenApiMessage[]>(
         "lastIncomingMessages",
         `minutes=${CHATS_LOOKBACK_MINUTES}`
@@ -460,9 +474,16 @@ export default async function handler(request: VercelRequest, response: VercelRe
       fetchGreenApiWithQueryRetry<GreenApiContact[]>("getContacts", "group=true"),
     ]);
 
+    const incomingMessages =
+      incomingMessagesResult.status === "fulfilled" ? incomingMessagesResult.value : [];
+    const outgoingMessages =
+      outgoingMessagesResult.status === "fulfilled" ? outgoingMessagesResult.value : [];
+    const contacts = contactsResult.status === "fulfilled" ? contactsResult.value : [];
+    const groups = groupsResult.status === "fulfilled" ? groupsResult.value : [];
+
     const mergedContacts = mergeContacts(contacts || [], groups || []);
     const activeChats = buildChats(incomingMessages || [], outgoingMessages || [], mergedContacts);
-    const searchableContacts = buildSearchableContacts(mergedContacts, activeChats);
+    const searchableContacts = buildSearchableContacts(mergedContacts);
 
     return response.status(200).json({
       success: true,

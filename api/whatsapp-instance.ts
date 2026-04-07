@@ -37,6 +37,10 @@ export const config = {
 const GREEN_API_BASE_URL = "https://7107.api.greenapi.com/waInstance7107375943";
 const GREEN_API_TOKEN = "0605c7c040e54a888ca58c312612109777c45c734bb049f782";
 const INSTANCE_RETRY_COUNT = 2;
+const POSITIVE_INSTANCE_STATES = new Set(["authorized"]);
+const POSITIVE_INSTANCE_STATUS = new Set(["online"]);
+const EXPLICIT_DISCONNECTED_STATES = new Set(["notauthorized", "blocked", "sleepmode"]);
+const EXPLICIT_DISCONNECTED_STATUS = new Set(["disconnected", "blocked", "notauthorized"]);
 
 const applyHeaders = (response: VercelResponse) => {
   response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
@@ -81,6 +85,14 @@ const fetchGreenApiGetWithRetry = async <T>(path: string, retries = INSTANCE_RET
   throw lastError instanceof Error ? lastError : new Error(`Falha ao consultar ${path}.`);
 };
 
+const isPositiveConnectionSignal = (stateInstance: string, statusInstance: string) =>
+  POSITIVE_INSTANCE_STATES.has(stateInstance.toLowerCase()) ||
+  POSITIVE_INSTANCE_STATUS.has(statusInstance.toLowerCase());
+
+const isExplicitDisconnectionSignal = (stateInstance: string, statusInstance: string) =>
+  EXPLICIT_DISCONNECTED_STATES.has(stateInstance.toLowerCase()) ||
+  EXPLICIT_DISCONNECTED_STATUS.has(statusInstance.toLowerCase());
+
 const resolveConnectionSnapshot = async () => {
   const [stateResult, statusResult, qrResult] = await Promise.allSettled([
     fetchGreenApiGetWithRetry<GreenApiStateResponse>("getStateInstance"),
@@ -95,10 +107,11 @@ const resolveConnectionSnapshot = async () => {
   const qrType = qrResult.status === "fulfilled" ? String(qrResult.value.type || "").trim() : "";
   const qrMessage = qrResult.status === "fulfilled" ? String(qrResult.value.message || "").trim() : "";
   const hasQrCode = qrType === "qrCode" && Boolean(qrMessage);
+  const hasPositiveSignal = isPositiveConnectionSignal(stateInstance, statusInstance);
+  const hasExplicitDisconnection = isExplicitDisconnectionSignal(stateInstance, statusInstance);
   const connected =
-    (stateInstance === "authorized" && statusInstance === "online") ||
-    (stateInstance === "authorized" && !hasQrCode) ||
-    (statusInstance === "online" && !hasQrCode);
+    hasPositiveSignal ||
+    (!hasQrCode && !hasExplicitDisconnection && Boolean(stateInstance || statusInstance));
   const validated =
     stateResult.status === "fulfilled" ||
     statusResult.status === "fulfilled" ||
