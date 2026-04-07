@@ -5,8 +5,8 @@ import type {
   MessageStatusInput,
   MessageUpsertInput,
   PaginatedResult,
-} from "../../domain/whatsapp";
-import { getSupabaseAdmin } from "../supabase-admin";
+} from "../../domain/whatsapp.js";
+import { getSupabaseAdmin } from "../supabase-admin.js";
 
 export class MessageRepository {
   constructor(private readonly db: SupabaseClient<any> = getSupabaseAdmin()) {}

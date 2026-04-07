@@ -1,12 +1,12 @@
-import type { GreenApiWebhookPayload } from "../../domain/whatsapp";
-import { normalizeWebhookPayload } from "../../domain/whatsapp";
-import { ChatRepository } from "../repositories/chat-repository";
-import { MessageRepository } from "../repositories/message-repository";
-import { getSupabaseAdmin } from "../supabase-admin";
-import { logger } from "../utils/logger";
-import { InstanceRegistryService } from "./instance-registry.service";
-import { MutationPersistenceService } from "./mutation-persistence.service";
-import { OpenConversationService } from "./open-conversation.service";
+import type { GreenApiWebhookPayload } from "../../domain/whatsapp.js";
+import { normalizeWebhookPayload } from "../../domain/whatsapp.js";
+import { ChatRepository } from "../repositories/chat-repository.js";
+import { MessageRepository } from "../repositories/message-repository.js";
+import { getSupabaseAdmin } from "../supabase-admin.js";
+import { logger } from "../utils/logger.js";
+import { InstanceRegistryService } from "./instance-registry.service.js";
+import { MutationPersistenceService } from "./mutation-persistence.service.js";
+import { OpenConversationService } from "./open-conversation.service.js";
 
 type LegacyChatItem = {
   chatId: string;

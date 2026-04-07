@@ -1,6 +1,6 @@
-import type { NormalizedMutation } from "../../domain/whatsapp";
-import { ChatRepository } from "../repositories/chat-repository";
-import { MessageRepository } from "../repositories/message-repository";
+import type { NormalizedMutation } from "../../domain/whatsapp.js";
+import { ChatRepository } from "../repositories/chat-repository.js";
+import { MessageRepository } from "../repositories/message-repository.js";
 
 export class MutationPersistenceService {
   private readonly chats = new ChatRepository();

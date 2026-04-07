@@ -1,4 +1,4 @@
-import { ReconciliationService } from "../../lib/server/services/reconciliation.service";
+import { ReconciliationService } from "../../lib/server/services/reconciliation.service.js";
 
 type VercelRequest = {
   method?: string;

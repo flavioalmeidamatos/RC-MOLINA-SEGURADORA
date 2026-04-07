@@ -1,10 +1,10 @@
-import { normalizeWebhookPayload } from "../../domain/whatsapp";
-import { getSupabaseAdmin } from "../supabase-admin";
-import { logger } from "../utils/logger";
-import { BootstrapInitialService } from "./bootstrap-initial.service";
-import { IncrementalSyncService } from "./incremental-sync.service";
-import { InstanceRegistryService } from "./instance-registry.service";
-import { MutationPersistenceService } from "./mutation-persistence.service";
+import { normalizeWebhookPayload } from "../../domain/whatsapp.js";
+import { getSupabaseAdmin } from "../supabase-admin.js";
+import { logger } from "../utils/logger.js";
+import { BootstrapInitialService } from "./bootstrap-initial.service.js";
+import { IncrementalSyncService } from "./incremental-sync.service.js";
+import { InstanceRegistryService } from "./instance-registry.service.js";
+import { MutationPersistenceService } from "./mutation-persistence.service.js";
 
 export class ReconciliationService {
   private readonly db = getSupabaseAdmin();

@@ -1,8 +1,8 @@
-import { normalizeJournalBatch } from "../../domain/whatsapp";
-import { GreenApiClient } from "../integrations/green-api.client";
-import { getSupabaseAdmin } from "../supabase-admin";
-import { logger } from "../utils/logger";
-import { MutationPersistenceService } from "./mutation-persistence.service";
+import { normalizeJournalBatch } from "../../domain/whatsapp.js";
+import { GreenApiClient } from "../integrations/green-api.client.js";
+import { getSupabaseAdmin } from "../supabase-admin.js";
+import { logger } from "../utils/logger.js";
+import { MutationPersistenceService } from "./mutation-persistence.service.js";
 
 const OVERLAP_MINUTES = 10;
 const MAX_LOOKBACK_MINUTES = 180;

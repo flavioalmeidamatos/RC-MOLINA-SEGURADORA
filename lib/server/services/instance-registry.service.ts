@@ -1,4 +1,4 @@
-import { getSupabaseAdmin } from "../supabase-admin";
+import { getSupabaseAdmin } from "../supabase-admin.js";
 
 const FALLBACK_INSTANCE_ID = "11111111-1111-1111-1111-111111111111";
 const FALLBACK_INSTANCE_LABEL = "WhatsApp Principal";

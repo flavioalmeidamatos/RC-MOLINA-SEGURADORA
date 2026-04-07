@@ -2,8 +2,8 @@ import { randomUUID } from "node:crypto";
 import type {
   GreenApiContact,
   GreenApiJournalMessage,
-} from "../../domain/whatsapp";
-import { logger } from "../utils/logger";
+} from "../../domain/whatsapp.js";
+import { logger } from "../utils/logger.js";
 
 type JsonObject = Record<string, unknown>;
 

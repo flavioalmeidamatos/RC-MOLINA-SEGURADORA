@@ -1,10 +1,10 @@
-import type { MessageCursor } from "../../domain/whatsapp";
-import { normalizeJournalBatch } from "../../domain/whatsapp";
-import { GreenApiClient } from "../integrations/green-api.client";
-import { ChatRepository } from "../repositories/chat-repository";
-import { MessageRepository } from "../repositories/message-repository";
-import { logger } from "../utils/logger";
-import { MutationPersistenceService } from "./mutation-persistence.service";
+import type { MessageCursor } from "../../domain/whatsapp.js";
+import { normalizeJournalBatch } from "../../domain/whatsapp.js";
+import { GreenApiClient } from "../integrations/green-api.client.js";
+import { ChatRepository } from "../repositories/chat-repository.js";
+import { MessageRepository } from "../repositories/message-repository.js";
+import { logger } from "../utils/logger.js";
+import { MutationPersistenceService } from "./mutation-persistence.service.js";
 
 export class OpenConversationService {
   private readonly greenApi = new GreenApiClient();

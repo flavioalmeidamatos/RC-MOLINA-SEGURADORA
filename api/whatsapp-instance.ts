@@ -1,4 +1,4 @@
-import { WhatsAppLegacyBridgeService } from "../lib/server/services/whatsapp-legacy-bridge.service";
+import { WhatsAppLegacyBridgeService } from "../lib/server/services/whatsapp-legacy-bridge.service.js";
 
 type VercelRequest = {
   method?: string;

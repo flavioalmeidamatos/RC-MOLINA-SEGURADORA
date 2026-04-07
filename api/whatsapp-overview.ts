@@ -1,5 +1,5 @@
-import { BootstrapInitialService } from "../lib/server/services/bootstrap-initial.service";
-import { WhatsAppLegacyBridgeService } from "../lib/server/services/whatsapp-legacy-bridge.service";
+import { BootstrapInitialService } from "../lib/server/services/bootstrap-initial.service.js";
+import { WhatsAppLegacyBridgeService } from "../lib/server/services/whatsapp-legacy-bridge.service.js";
 
 type VercelRequest = {
   method?: string;

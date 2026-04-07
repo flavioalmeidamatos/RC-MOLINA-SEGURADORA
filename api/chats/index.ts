@@ -1,6 +1,6 @@
-import { decodeCursor, encodeCursor, type ChatCursor } from "../../lib/domain/whatsapp";
-import { ChatRepository } from "../../lib/server/repositories/chat-repository";
-import { InstanceRegistryService } from "../../lib/server/services/instance-registry.service";
+import { decodeCursor, encodeCursor, type ChatCursor } from "../../lib/domain/whatsapp.js";
+import { ChatRepository } from "../../lib/server/repositories/chat-repository.js";
+import { InstanceRegistryService } from "../../lib/server/services/instance-registry.service.js";
 
 type VercelRequest = {
   method?: string;

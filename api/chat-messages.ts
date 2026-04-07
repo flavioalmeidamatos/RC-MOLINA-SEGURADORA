@@ -1,6 +1,6 @@
-import { decodeCursor, encodeCursor, type MessageCursor } from "../lib/domain/whatsapp";
-import { InstanceRegistryService } from "../lib/server/services/instance-registry.service";
-import { OpenConversationService } from "../lib/server/services/open-conversation.service";
+import { decodeCursor, encodeCursor, type MessageCursor } from "../lib/domain/whatsapp.js";
+import { InstanceRegistryService } from "../lib/server/services/instance-registry.service.js";
+import { OpenConversationService } from "../lib/server/services/open-conversation.service.js";
 
 type VercelRequest = {
   method?: string;

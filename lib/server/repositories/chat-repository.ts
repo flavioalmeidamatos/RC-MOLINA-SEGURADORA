@@ -5,8 +5,8 @@ import type {
   ChatShellInput,
   DirectoryEntryInput,
   PaginatedResult,
-} from "../../domain/whatsapp";
-import { getSupabaseAdmin } from "../supabase-admin";
+} from "../../domain/whatsapp.js";
+import { getSupabaseAdmin } from "../supabase-admin.js";
 
 export class ChatRepository {
   constructor(private readonly db: SupabaseClient<any> = getSupabaseAdmin()) {}

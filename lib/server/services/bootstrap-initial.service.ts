@@ -1,11 +1,11 @@
 import {
   mapGreenContactToDirectoryEntry,
   normalizeJournalBatch,
-} from "../../domain/whatsapp";
-import { GreenApiClient } from "../integrations/green-api.client";
-import { getSupabaseAdmin } from "../supabase-admin";
-import { logger } from "../utils/logger";
-import { MutationPersistenceService } from "./mutation-persistence.service";
+} from "../../domain/whatsapp.js";
+import { GreenApiClient } from "../integrations/green-api.client.js";
+import { getSupabaseAdmin } from "../supabase-admin.js";
+import { logger } from "../utils/logger.js";
+import { MutationPersistenceService } from "./mutation-persistence.service.js";
 
 export class BootstrapInitialService {
   private readonly greenApi = new GreenApiClient();

@@ -1,10 +1,10 @@
-import type { GreenApiWebhookPayload } from "../../lib/domain/whatsapp";
-import { normalizeWebhookPayload } from "../../lib/domain/whatsapp";
-import { getSupabaseAdmin } from "../../lib/server/supabase-admin";
-import { InstanceRegistryService } from "../../lib/server/services/instance-registry.service";
-import { MutationPersistenceService } from "../../lib/server/services/mutation-persistence.service";
-import { buildWebhookDedupeKey, registerWebhookInboxEvent } from "../../lib/server/utils/idempotency";
-import { logger } from "../../lib/server/utils/logger";
+import type { GreenApiWebhookPayload } from "../../lib/domain/whatsapp.js";
+import { normalizeWebhookPayload } from "../../lib/domain/whatsapp.js";
+import { getSupabaseAdmin } from "../../lib/server/supabase-admin.js";
+import { InstanceRegistryService } from "../../lib/server/services/instance-registry.service.js";
+import { MutationPersistenceService } from "../../lib/server/services/mutation-persistence.service.js";
+import { buildWebhookDedupeKey, registerWebhookInboxEvent } from "../../lib/server/utils/idempotency.js";
+import { logger } from "../../lib/server/utils/logger.js";
 
 type VercelRequest = {
   method?: string;
