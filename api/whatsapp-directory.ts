@@ -3,6 +3,10 @@ import { WhatsAppLegacyBridgeService } from "../lib/server/services/whatsapp-leg
 
 type VercelRequest = {
   method?: string;
+  query?: {
+    q?: string;
+    limit?: string;
+  };
 };
 
 type VercelResponse = {
@@ -302,6 +306,9 @@ export default async function handler(request: VercelRequest, response: VercelRe
   try {
     const snapshot = await resolveConnectionSnapshot();
     const bridge = new WhatsAppLegacyBridgeService();
+    const searchQuery = String(request.query?.q || "").trim();
+    const requestedLimit = Number(request.query?.limit || (searchQuery ? 120 : 600));
+    const safeLimit = Math.min(Math.max(Number.isFinite(requestedLimit) ? requestedLimit : 600, 1), 5000);
     void bridge.updateInstanceSnapshot(snapshot).catch((error) => {
       console.warn("Nao foi possivel sincronizar o snapshot da instancia:", error);
     });
@@ -319,7 +326,10 @@ export default async function handler(request: VercelRequest, response: VercelRe
       });
     }
 
-    const storeDirectory = await bridge.getLegacyDirectory();
+    const storeDirectory = await bridge.getLegacyDirectory({
+      query: searchQuery,
+      limit: safeLimit,
+    });
 
     if (storeDirectory?.hasData) {
       return response.status(200).json({
@@ -341,7 +351,10 @@ export default async function handler(request: VercelRequest, response: VercelRe
       if (instanceId) {
         try {
           await new BootstrapInitialService().run(instanceId);
-          const hydratedDirectory = await bridge.getLegacyDirectory();
+          const hydratedDirectory = await bridge.getLegacyDirectory({
+            query: searchQuery,
+            limit: safeLimit,
+          });
 
           if (hydratedDirectory?.hasData) {
             return response.status(200).json({

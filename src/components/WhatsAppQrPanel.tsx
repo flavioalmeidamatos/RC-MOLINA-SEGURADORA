@@ -30,6 +30,8 @@ const SELECTED_CHAT_STORAGE_KEY = "rcmolina_whatsapp_selected_chat_id";
 const OVERVIEW_CACHE_STORAGE_KEY = "rcmolina_whatsapp_overview_cache";
 const CHAT_CACHE_STORAGE_PREFIX = "rcmolina_whatsapp_chat_cache_";
 const DIRECTORY_REFRESH_MS = 60000;
+const DIRECTORY_SEARCH_DEBOUNCE_MS = 280;
+const DIRECTORY_SEARCH_MIN_TERM_LENGTH = 2;
 const DISCONNECT_CONFIRMATION_COUNT = 3;
 const POSITIVE_INSTANCE_STATES = new Set(["authorized"]);
 const POSITIVE_INSTANCE_STATUS = new Set(["online"]);
@@ -217,6 +219,8 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
   const readTimestampsRef = useRef<Record<string, number>>({});
   const hasShownInitialSyncNoticeRef = useRef(false);
   const selectedChatRef = useRef<WhatsAppChatItem | null>(null);
+  const defaultDirectoryRef = useRef<WhatsAppChatItem[]>([]);
+  const directorySearchRequestIdRef = useRef(0);
   const persistedSelectedChatIdRef = useRef(
     typeof window === "undefined"
       ? ""
@@ -674,13 +678,20 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
         disconnectStreakRef.current = 0;
       }
 
+      const nextContacts = Array.isArray(data.contacts) ? data.contacts : [];
+
       setConnected(resolvedConnected);
       setConnectionValidated(nextValidated);
       onConnectionChange?.(resolvedConnected);
       setStateInstance(nextStateInstance);
       setStatusInstance(nextStatusInstance);
       setQrCode(resolvedConnected ? "" : nextQrCode);
-      setSearchContacts(Array.isArray(data.contacts) ? data.contacts : []);
+      defaultDirectoryRef.current = nextContacts;
+
+      if (searchTerm.trim().length < DIRECTORY_SEARCH_MIN_TERM_LENGTH) {
+        setSearchContacts(nextContacts);
+      }
+
       setFetchedAt(data.fetchedAt || "");
       setLoading(false);
     } catch (loadError) {
@@ -763,7 +774,12 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
       const nextChats = Array.isArray(data.chats) ? data.chats : [];
       const nextContacts = Array.isArray(data.contacts) ? data.contacts : [];
       setChats((currentChats) => reconcileOverviewChats(currentChats, nextChats));
-      setSearchContacts(nextContacts);
+      defaultDirectoryRef.current = nextContacts;
+
+      if (searchTerm.trim().length < DIRECTORY_SEARCH_MIN_TERM_LENGTH) {
+        setSearchContacts(nextContacts);
+      }
+
       setFetchedAt(data.fetchedAt || "");
 
       if (!isManualRefresh && resolvedConnected && nextChats.length > 0 && !hasShownInitialSyncNoticeRef.current) {
@@ -868,6 +884,47 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
   const handleManualRefresh = () => {
     void loadDirectory();
     void loadOverview(true);
+  };
+
+  const searchDirectory = async (term: string) => {
+    const normalizedTerm = term.trim();
+
+    if (normalizedTerm.length < DIRECTORY_SEARCH_MIN_TERM_LENGTH) {
+      directorySearchRequestIdRef.current += 1;
+      setSearchContacts(defaultDirectoryRef.current);
+      return;
+    }
+
+    const requestId = directorySearchRequestIdRef.current + 1;
+    directorySearchRequestIdRef.current = requestId;
+
+    try {
+      const response = await fetch(
+        `/api/whatsapp-directory?q=${encodeURIComponent(normalizedTerm)}&limit=120`,
+        {
+          method: "GET",
+          cache: "no-store",
+        }
+      );
+
+      const data = (await response.json()) as WhatsAppOverviewApiResponse;
+
+      if (!response.ok) {
+        throw new Error(data.error || "Não foi possível pesquisar o diretório do WhatsApp.");
+      }
+
+      if (directorySearchRequestIdRef.current !== requestId) {
+        return;
+      }
+
+      setSearchContacts(Array.isArray(data.contacts) ? data.contacts : []);
+    } catch (searchError) {
+      console.warn("Não foi possível pesquisar o diretório do WhatsApp:", searchError);
+
+      if (directorySearchRequestIdRef.current === requestId) {
+        setSearchContacts(defaultDirectoryRef.current);
+      }
+    }
   };
 
   const fileToBase64 = (file: File) =>
@@ -1384,8 +1441,12 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
     }>(OVERVIEW_CACHE_STORAGE_KEY);
 
     if (cachedOverview) {
-      setChats(Array.isArray(cachedOverview.chats) ? cachedOverview.chats : []);
-      setSearchContacts(Array.isArray(cachedOverview.contacts) ? cachedOverview.contacts : []);
+      const cachedChats = Array.isArray(cachedOverview.chats) ? cachedOverview.chats : [];
+      const cachedContacts = Array.isArray(cachedOverview.contacts) ? cachedOverview.contacts : [];
+
+      defaultDirectoryRef.current = cachedContacts;
+      setChats(cachedChats);
+      setSearchContacts(cachedContacts);
       setConnected(Boolean(cachedOverview.connected));
       setConnectionValidated(cachedOverview.validated !== false);
       setStateInstance(String(cachedOverview.stateInstance || ""));
@@ -1420,7 +1481,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
   useEffect(() => {
     writeStorageJson(OVERVIEW_CACHE_STORAGE_KEY, {
       chats,
-      contacts: searchContacts,
+      contacts: defaultDirectoryRef.current,
       connected,
       validated: connectionValidated,
       stateInstance,
@@ -1429,6 +1490,21 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
       fetchedAt,
     });
   }, [chats, searchContacts, connected, connectionValidated, stateInstance, statusInstance, qrCode, fetchedAt]);
+
+  useEffect(() => {
+    const normalizedSearchTerm = searchTerm.trim();
+
+    if (normalizedSearchTerm.length < DIRECTORY_SEARCH_MIN_TERM_LENGTH) {
+      setSearchContacts(defaultDirectoryRef.current);
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      void searchDirectory(normalizedSearchTerm);
+    }, DIRECTORY_SEARCH_DEBOUNCE_MS);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [searchTerm]);
 
   useEffect(() => {
     selectedChatRef.current = selectedChat;

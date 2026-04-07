@@ -39,6 +39,11 @@ type LegacyMessageItem = {
   isAnimated?: boolean;
 };
 
+type LegacyDirectoryParams = {
+  query?: string;
+  limit?: number;
+};
+
 const toUnixSeconds = (value?: string | null) => {
   if (!value) return 0;
   const timestamp = new Date(value).getTime();
@@ -56,6 +61,9 @@ const fallbackSubtitle = (chatType: string, hasTitle: boolean) => {
 
   return "";
 };
+
+const escapeIlike = (value: string) =>
+  value.replace(/[%_,]/g, (character) => `\\${character}`);
 
 export class WhatsAppLegacyBridgeService {
   private readonly db = getSupabaseAdmin();
@@ -162,6 +170,31 @@ export class WhatsAppLegacyBridgeService {
     };
   }
 
+  private mapContactRowToLegacy(row: any): LegacyChatItem {
+    const chatId = String(row.wa_id || row.chat_wa_id || "").trim();
+    const chatType = String(row.type || row.chat_type || "").trim();
+    const title = String(
+      row.resolved_name || row.resolved_title || row.contact_name || row.profile_name || chatId
+    ).trim();
+    const isGroup = chatType === "group" || chatId.endsWith("@g.us");
+
+    return {
+      chatId,
+      title,
+      subtitle: fallbackSubtitle(chatType, Boolean(title)),
+      preview: isGroup
+        ? "Grupo disponível para abrir a conversa"
+        : "Contato disponível para iniciar conversa",
+      timestamp: 0,
+      direction: "incoming",
+      typeMessage: "textMessage",
+      statusMessage: "",
+      isGroup,
+      unreadCount: 0,
+      latestIncomingTimestamp: 0,
+    };
+  }
+
   async getLegacyOverview() {
     if (!(await this.canUseStore())) {
       return null;
@@ -207,16 +240,51 @@ export class WhatsAppLegacyBridgeService {
     };
   }
 
-  async getLegacyDirectory() {
-    const overview = await this.getLegacyOverview();
-    if (!overview) {
+  async getLegacyDirectory(params?: LegacyDirectoryParams) {
+    if (!(await this.canUseStore())) {
       return null;
     }
 
+    const instanceId = await this.ensureInstanceId();
+
+    if (!instanceId) {
+      return null;
+    }
+
+    const normalizedQuery = String(params?.query || "").trim();
+    const limit = Math.min(Math.max(Number(params?.limit || 300), 1), 5000);
+    let query = this.db
+      .from("contacts")
+      .select("wa_id, type, resolved_name, contact_name, profile_name")
+      .eq("instance_id", instanceId)
+      .neq("wa_id", "status@broadcast")
+      .order("resolved_name", { ascending: true })
+      .limit(limit);
+
+    if (normalizedQuery) {
+      const escapedQuery = escapeIlike(normalizedQuery);
+      query = query.or(
+        [
+          `resolved_name.ilike.%${escapedQuery}%`,
+          `contact_name.ilike.%${escapedQuery}%`,
+          `profile_name.ilike.%${escapedQuery}%`,
+          `wa_id.ilike.%${escapedQuery}%`,
+        ].join(",")
+      );
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      throw error;
+    }
+
+    const contacts = ((data || []) as any[]).map((row) => this.mapContactRowToLegacy(row));
+
     return {
-      instanceId: overview.instanceId,
-      contacts: overview.contacts,
-      hasData: overview.contacts.length > 0,
+      instanceId,
+      contacts,
+      hasData: contacts.length > 0,
     };
   }
 
