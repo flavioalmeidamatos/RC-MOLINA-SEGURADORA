@@ -774,9 +774,16 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
       const nextChats = Array.isArray(data.chats) ? data.chats : [];
       const nextContacts = Array.isArray(data.contacts) ? data.contacts : [];
       setChats((currentChats) => reconcileOverviewChats(currentChats, nextChats));
-      defaultDirectoryRef.current = nextContacts;
 
-      if (searchTerm.trim().length < DIRECTORY_SEARCH_MIN_TERM_LENGTH) {
+      if (defaultDirectoryRef.current.length === 0 && nextContacts.length > 0) {
+        defaultDirectoryRef.current = nextContacts;
+      }
+
+      if (
+        searchTerm.trim().length < DIRECTORY_SEARCH_MIN_TERM_LENGTH &&
+        defaultDirectoryRef.current.length === 0 &&
+        nextContacts.length > 0
+      ) {
         setSearchContacts(nextContacts);
       }
 
@@ -1822,12 +1829,12 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
   );
   const chatStats = useMemo(
     () => ({
-      all: fullDirectory.length,
+      all: chats.length,
       incoming: chats.filter((chat) => Number(chat.unreadCount || 0) > 0).length,
       contacts: contactDirectory.length,
       groups: groupDirectory.length,
     }),
-    [chats, contactDirectory.length, fullDirectory.length, groupDirectory.length]
+    [chats, contactDirectory.length, groupDirectory.length]
   );
   const filteredChats = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
@@ -1838,7 +1845,9 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
           ? contactDirectory
           : activeFilter === "groups"
             ? groupDirectory
-            : fullDirectory;
+            : normalizedSearch
+              ? fullDirectory
+              : chats;
 
     const filteredPool = basePool.filter((chat) => {
       if (!normalizedSearch) {
@@ -1849,7 +1858,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
       return haystack.includes(normalizedSearch);
     });
 
-    if (activeFilter === "contacts" && !normalizedSearch) {
+    if ((activeFilter === "contacts" || activeFilter === "groups") && !normalizedSearch) {
       return [...filteredPool].sort((left, right) => left.title.localeCompare(right.title, "pt-BR"));
     }
 
@@ -2165,7 +2174,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
           </div>
         </div>
 
-        <div className="mt-4 flex items-center gap-2 overflow-hidden">
+        <div className="mt-4 flex items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none]">
           {[
             { id: "all" as const, label: "Tudo", count: chatStats.all },
             { id: "incoming" as const, label: "Entradas", count: chatStats.incoming },
@@ -2176,7 +2185,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
               key={filter.id}
               type="button"
               onClick={() => setActiveFilter(filter.id)}
-              className={`inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-full border px-3 py-2 text-[13px] font-semibold whitespace-nowrap transition-colors ${
+              className={`inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-full border px-4 py-2 text-[13px] font-semibold whitespace-nowrap transition-colors ${
                 activeFilter === filter.id
                   ? "border-[#005c4b] bg-[#103529] text-[#d9fdd3]"
                   : "border-white/10 bg-transparent text-[#aebac1] hover:bg-white/6"

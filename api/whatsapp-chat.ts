@@ -385,10 +385,22 @@ export default async function handler(request: VercelRequest, response: VercelRe
       }
 
       const bridge = new WhatsAppLegacyBridgeService();
-      const storeHistory = await bridge.getLegacyChatHistory({
-        chatWaId: chatId,
-        count,
-      });
+      let storeHistory:
+        | {
+            instanceId?: string;
+            chatId?: string;
+            messages?: Array<Record<string, unknown>>;
+          }
+        | null = null;
+
+      try {
+        storeHistory = await bridge.getLegacyChatHistory({
+          chatWaId: chatId,
+          count,
+        });
+      } catch (storeHistoryError) {
+        console.warn("Nao foi possivel abrir o historico pelo Supabase store:", storeHistoryError);
+      }
 
       if (storeHistory?.messages?.length) {
         return response.status(200).json({
@@ -399,23 +411,34 @@ export default async function handler(request: VercelRequest, response: VercelRe
         });
       }
 
-      const history = await fetchGreenApiPost<GreenApiChatMessage[]>("getChatHistory", {
-        chatId,
-        count,
-      });
-      const contacts = await fetchGreenApiGet<GreenApiContact[]>("getContacts");
-      const contactsById = new Map(
-        (Array.isArray(contacts) ? contacts : [])
-          .map((contact) => [normalizeParticipantId(String(contact.id || "").trim()), contact] as const)
-          .filter(([contactId]) => contactId)
-      );
+      try {
+        const history = await fetchGreenApiPost<GreenApiChatMessage[]>("getChatHistory", {
+          chatId,
+          count,
+        });
+        const contacts = await fetchGreenApiGet<GreenApiContact[]>("getContacts");
+        const contactsById = new Map(
+          (Array.isArray(contacts) ? contacts : [])
+            .map((contact) => [normalizeParticipantId(String(contact.id || "").trim()), contact] as const)
+            .filter(([contactId]) => contactId)
+        );
 
-      return response.status(200).json({
-        success: true,
-        chatId,
-        messages: await normalizeHistory(Array.isArray(history) ? history : [], contactsById),
-        source: "green-api",
-      });
+        return response.status(200).json({
+          success: true,
+          chatId,
+          messages: await normalizeHistory(Array.isArray(history) ? history : [], contactsById),
+          source: "green-api",
+        });
+      } catch (historyError) {
+        console.warn("Nao foi possivel consultar getChatHistory:", historyError);
+        return response.status(200).json({
+          success: true,
+          chatId,
+          messages: [],
+          source: storeHistory ? "supabase-store" : "green-api",
+          historyUnavailable: true,
+        });
+      }
     }
 
     if (request.method === "POST") {
