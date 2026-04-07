@@ -1918,7 +1918,6 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
                       <p className="truncate text-[17px] font-semibold leading-tight text-white">
                         {chat.title}
                       </p>
-                      <p className="mt-1 truncate text-xs text-[#97a3a9]">{chat.subtitle}</p>
                     </div>
                     <div className="flex flex-col items-end gap-2 pt-0.5">
                       <span className="whitespace-nowrap text-xs font-medium text-[#d5dcdf]">
@@ -1932,7 +1931,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
                     </div>
                   </div>
 
-                  <div className="mt-2 flex items-center gap-2">
+                  <div className="mt-1.5 flex items-center gap-2">
                     <span className="flex h-4 w-4 flex-shrink-0 items-center justify-center">
                       {previewMeta.icon}
                     </span>
