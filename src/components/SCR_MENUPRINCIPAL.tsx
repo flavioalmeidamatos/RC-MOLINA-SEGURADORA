@@ -32,6 +32,9 @@ interface DashboardProps {
   perfil?: any;
 }
 
+const WHATSAPP_PANEL_OPEN_STORAGE_KEY = "rcmolina_whatsapp_panel_open";
+const WHATSAPP_PANEL_COLLAPSED_STORAGE_KEY = "rcmolina_whatsapp_panel_collapsed";
+
 const WhatsAppIcon: React.FC<{ className?: string }> = ({ className }) => (
   <svg viewBox="0 0 448 512" fill="currentColor" aria-hidden="true" className={className}>
     <path d="M380.9 97.1C339 55.1 283.2 32 223.9 32C100.5 32 .4 132.3 .4 256c0 39.5 10.3 78.1 29.6 112.2L0 480l114.7-30.1c33.5 18.3 71.4 27.9 109.2 27.9h.1c123.3 0 223.9-100.4 223.9-224c0-59.3-25.5-115-67-156.7zm-157 341.5h-.1c-33.4 0-66.1-8.9-94.7-25.7l-6.8-4l-68.1 17.9l18.2-66.3l-4.4-6.9c-18-28.7-27.5-61.9-27.5-96.1c0-98.3 80-178.3 178.4-178.3c47.7 0 92.5 18.5 126.2 52.3c33.7 33.7 52.2 78.5 52.2 126.3c-.1 98.3-80.1 178.3-178.4 178.3zm101.7-138.2c-5.5-2.8-32.8-16.1-37.9-18c-5.1-1.9-8.8-2.8-12.5 2.8c-3.7 5.6-14.3 18-17.6 21.8c-3.2 3.7-6.5 4.2-12 1.4c-32.6-16.3-54-29.1-75.5-66c-5.7-9.8 5.7-9.1 16.3-30.3c1.8-3.7 .9-6.9-.5-9.7c-1.4-2.8-12.5-30.1-17.1-41.3c-4.5-10.8-9.1-9.3-12.5-9.5c-3.2-.2-6.9-.2-10.6-.2c-3.7 0-9.7 1.4-14.8 6.9c-5.1 5.6-19.4 19-19.4 46.3c0 27.3 19.9 53.7 22.6 57.4c2.8 3.7 39.1 59.8 94.8 83.8c35.2 15.2 49 16.5 66.6 13.9c10.7-1.6 32.8-13.4 37.4-26.4c4.6-13 4.6-24.1 3.2-26.4c-1.3-2.4-5-3.8-10.5-6.6z" />
@@ -55,8 +58,23 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const [whatsAppConnected, setWhatsAppConnected] = useState(false);
   const [whatsAppChecking, setWhatsAppChecking] = useState(true);
   const [whatsAppSyncing, setWhatsAppSyncing] = useState(false);
-  const [isWhatsAppPanelOpen, setIsWhatsAppPanelOpen] = useState(false);
-  const [isWhatsAppPanelCollapsed, setIsWhatsAppPanelCollapsed] = useState(false);
+  const [isWhatsAppPanelOpen, setIsWhatsAppPanelOpen] = useState(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+
+    const isCollapsed = window.localStorage.getItem(WHATSAPP_PANEL_COLLAPSED_STORAGE_KEY) === "1";
+    return (
+      isCollapsed || window.localStorage.getItem(WHATSAPP_PANEL_OPEN_STORAGE_KEY) === "1"
+    );
+  });
+  const [isWhatsAppPanelCollapsed, setIsWhatsAppPanelCollapsed] = useState(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+
+    return window.localStorage.getItem(WHATSAPP_PANEL_COLLAPSED_STORAGE_KEY) === "1";
+  });
   const [credential, setCredential] = useState({
     login: "Rosilene Rodrigues de Carvalho Molina",
     senha: "123",
@@ -97,6 +115,20 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
     return () => window.clearInterval(intervalId);
   }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      WHATSAPP_PANEL_OPEN_STORAGE_KEY,
+      isWhatsAppPanelOpen ? "1" : "0"
+    );
+  }, [isWhatsAppPanelOpen]);
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      WHATSAPP_PANEL_COLLAPSED_STORAGE_KEY,
+      isWhatsAppPanelCollapsed ? "1" : "0"
+    );
+  }, [isWhatsAppPanelCollapsed]);
 
   const handleImportLead = async (e: React.FormEvent) => {
     e.preventDefault();

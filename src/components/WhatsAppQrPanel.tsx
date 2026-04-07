@@ -25,6 +25,8 @@ const CONNECTED_OVERVIEW_REFRESH_MS = 3000;
 const DISCONNECTED_OVERVIEW_REFRESH_MS = 5000;
 const SELECTED_CHAT_REFRESH_MS = 2500;
 const QUEUE_RECEIVE_TIMEOUT_SECONDS = 20;
+const RECENT_EMOJIS_STORAGE_KEY = "rcmolina_whatsapp_recent_emojis";
+const SELECTED_CHAT_STORAGE_KEY = "rcmolina_whatsapp_selected_chat_id";
 
 type WhatsAppChatItem = {
   chatId: string;
@@ -155,6 +157,11 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
   const readTimestampsRef = useRef<Record<string, number>>({});
   const hasShownInitialSyncNoticeRef = useRef(false);
   const selectedChatRef = useRef<WhatsAppChatItem | null>(null);
+  const persistedSelectedChatIdRef = useRef(
+    typeof window === "undefined"
+      ? ""
+      : String(window.localStorage.getItem(SELECTED_CHAT_STORAGE_KEY) || "").trim()
+  );
   const notificationLoopIdRef = useRef(0);
   const realtimeSyncEnabledRef = useRef(false);
   const [qrCode, setQrCode] = useState("");
@@ -708,7 +715,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
   const registerRecentEmoji = (emoji: string) => {
     setRecentEmojis((current) => {
       const nextRecent = [emoji, ...current.filter((item) => item !== emoji)].slice(0, 24);
-      window.localStorage.setItem("rcmolina_whatsapp_recent_emojis", JSON.stringify(nextRecent));
+      window.localStorage.setItem(RECENT_EMOJIS_STORAGE_KEY, JSON.stringify(nextRecent));
       return nextRecent;
     });
   };
@@ -1203,7 +1210,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
   }, []);
 
   useEffect(() => {
-    const savedRecentEmojis = window.localStorage.getItem("rcmolina_whatsapp_recent_emojis");
+    const savedRecentEmojis = window.localStorage.getItem(RECENT_EMOJIS_STORAGE_KEY);
 
     if (!savedRecentEmojis) {
       return;
@@ -1216,12 +1223,22 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
         setRecentEmojis(parsed.filter((item) => typeof item === "string").slice(0, 24));
       }
     } catch (_error) {
-      window.localStorage.removeItem("rcmolina_whatsapp_recent_emojis");
+      window.localStorage.removeItem(RECENT_EMOJIS_STORAGE_KEY);
     }
   }, []);
 
   useEffect(() => {
     selectedChatRef.current = selectedChat;
+
+    const nextSelectedChatId = String(selectedChat?.chatId || "").trim();
+    persistedSelectedChatIdRef.current = nextSelectedChatId;
+
+    if (nextSelectedChatId) {
+      window.localStorage.setItem(SELECTED_CHAT_STORAGE_KEY, nextSelectedChatId);
+      return;
+    }
+
+    window.localStorage.removeItem(SELECTED_CHAT_STORAGE_KEY);
   }, [selectedChat]);
 
   useEffect(() => {
@@ -1395,6 +1412,24 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
       setSelectedChat(refreshedChat);
     }
   }, [chats, selectedChat]);
+
+  useEffect(() => {
+    if (!connected || selectedChat || chats.length === 0) {
+      return;
+    }
+
+    const persistedSelectedChatId = persistedSelectedChatIdRef.current;
+
+    if (!persistedSelectedChatId) {
+      return;
+    }
+
+    const restoredChat = chats.find((chat) => chat.chatId === persistedSelectedChatId);
+
+    if (restoredChat) {
+      void loadChatHistory(restoredChat, true);
+    }
+  }, [chats, connected, selectedChat]);
 
   useEffect(() => {
     if (!connected || chats.length === 0) {
@@ -1905,39 +1940,39 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
                 key={chat.chatId}
                 type="button"
                 onClick={() => void loadChatHistory(chat)}
-                className={`mb-2 flex w-full items-center gap-3 rounded-[22px] border px-3 py-3 text-left transition-all ${
+                className={`mb-2 flex w-full items-center gap-2.5 rounded-[22px] border px-3 py-2.5 text-left transition-all ${
                   selectedChat?.chatId === chat.chatId
                     ? "border-[#4b5257] bg-[#36393c] shadow-[0_10px_28px_rgba(0,0,0,0.18)]"
                     : "border-[#34383c] bg-[#2f3133] hover:border-[#4a5156] hover:bg-[#35383b]"
                 }`}
               >
-                {renderChatAvatar(chat, "h-14 w-14", "text-sm")}
+                {renderChatAvatar(chat, "h-12 w-12", "text-xs")}
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="truncate text-[17px] font-semibold leading-tight text-white">
+                      <p className="truncate text-[15px] font-semibold leading-5 text-white">
                         {chat.title}
                       </p>
                     </div>
-                    <div className="flex flex-col items-end gap-2 pt-0.5">
-                      <span className="whitespace-nowrap text-xs font-medium text-[#d5dcdf]">
+                    <div className="flex flex-shrink-0 items-center pt-0.5">
+                      <span className="whitespace-nowrap text-[11px] font-medium text-[#d5dcdf]">
                         {formatTimestamp(chat.timestamp).slice(-5)}
                       </span>
-                      {Number(chat.unreadCount || 0) > 0 ? (
-                        <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-[#25d366] px-2 py-0.5 text-[11px] font-bold text-[#082313]">
-                          {chat.unreadCount}
-                        </span>
-                      ) : null}
                     </div>
                   </div>
 
-                  <div className="mt-1.5 flex items-center gap-2">
+                  <div className="mt-1 flex items-center gap-2">
                     <span className="flex h-4 w-4 flex-shrink-0 items-center justify-center">
                       {previewMeta.icon}
                     </span>
-                    <p className={`truncate text-sm leading-5 ${previewMeta.textClassName}`}>
+                    <p className={`min-w-0 flex-1 truncate text-[12px] leading-4 ${previewMeta.textClassName}`}>
                       {chat.preview}
                     </p>
+                    {Number(chat.unreadCount || 0) > 0 ? (
+                      <span className="inline-flex min-w-6 flex-shrink-0 items-center justify-center rounded-full bg-[#25d366] px-1.5 py-0.5 text-[10px] font-bold text-[#082313]">
+                        {chat.unreadCount}
+                      </span>
+                    ) : null}
                   </div>
                 </div>
               </button>
