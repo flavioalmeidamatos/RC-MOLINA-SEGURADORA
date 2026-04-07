@@ -1,3 +1,6 @@
+import { BootstrapInitialService } from "../lib/server/services/bootstrap-initial.service";
+import { WhatsAppLegacyBridgeService } from "../lib/server/services/whatsapp-legacy-bridge.service";
+
 type VercelRequest = {
   method?: string;
 };
@@ -447,6 +450,10 @@ export default async function handler(request: VercelRequest, response: VercelRe
 
   try {
     const snapshot = await resolveConnectionSnapshot();
+    const bridge = new WhatsAppLegacyBridgeService();
+    void bridge.updateInstanceSnapshot(snapshot).catch((error) => {
+      console.warn("Nao foi possivel atualizar o snapshot da instancia:", error);
+    });
     const isConnected = snapshot.connected;
 
     if (!isConnected) {
@@ -459,6 +466,49 @@ export default async function handler(request: VercelRequest, response: VercelRe
         qrCode: snapshot.qrCode,
         fetchedAt: new Date().toISOString(),
       });
+    }
+
+    const storeOverview = await bridge.getLegacyOverview();
+
+    if (storeOverview?.hasData) {
+      return response.status(200).json({
+        success: true,
+        connected: true,
+        validated: snapshot.validated,
+        stateInstance: snapshot.stateInstance,
+        statusInstance: snapshot.statusInstance,
+        chats: storeOverview.chats,
+        contacts: storeOverview.contacts,
+        fetchedAt: new Date().toISOString(),
+        source: "supabase-store",
+      });
+    }
+
+    if (await bridge.canUseStore()) {
+      const instanceId = await bridge.ensureInstanceId();
+
+      if (instanceId) {
+        try {
+          await new BootstrapInitialService().run(instanceId);
+          const hydratedOverview = await bridge.getLegacyOverview();
+
+          if (hydratedOverview?.hasData) {
+            return response.status(200).json({
+              success: true,
+              connected: true,
+              validated: snapshot.validated,
+              stateInstance: snapshot.stateInstance,
+              statusInstance: snapshot.statusInstance,
+              chats: hydratedOverview.chats,
+              contacts: hydratedOverview.contacts,
+              fetchedAt: new Date().toISOString(),
+              source: "supabase-store",
+            });
+          }
+        } catch (storeError) {
+          console.warn("Nao foi possivel hidratar o overview pelo Supabase store:", storeError);
+        }
+      }
     }
 
     const [incomingMessagesResult, outgoingMessagesResult, contactsResult, groupsResult] = await Promise.allSettled([
@@ -494,6 +544,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
       chats: activeChats,
       contacts: searchableContacts,
       fetchedAt: new Date().toISOString(),
+      source: "green-api",
     });
   } catch (error) {
     console.error("Erro ao montar painel do WhatsApp:", error);

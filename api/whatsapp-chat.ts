@@ -1,3 +1,5 @@
+import { WhatsAppLegacyBridgeService } from "../lib/server/services/whatsapp-legacy-bridge.service";
+
 type VercelRequest = {
   method?: string;
   query?: {
@@ -382,6 +384,21 @@ export default async function handler(request: VercelRequest, response: VercelRe
         return response.status(400).json({ error: "chatId é obrigatório." });
       }
 
+      const bridge = new WhatsAppLegacyBridgeService();
+      const storeHistory = await bridge.getLegacyChatHistory({
+        chatWaId: chatId,
+        count,
+      });
+
+      if (storeHistory?.messages?.length) {
+        return response.status(200).json({
+          success: true,
+          chatId,
+          messages: storeHistory.messages,
+          source: "supabase-store",
+        });
+      }
+
       const history = await fetchGreenApiPost<GreenApiChatMessage[]>("getChatHistory", {
         chatId,
         count,
@@ -397,6 +414,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
         success: true,
         chatId,
         messages: await normalizeHistory(Array.isArray(history) ? history : [], contactsById),
+        source: "green-api",
       });
     }
 

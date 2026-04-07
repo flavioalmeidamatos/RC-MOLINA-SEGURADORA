@@ -1,3 +1,5 @@
+import { WhatsAppLegacyBridgeService } from "../lib/server/services/whatsapp-legacy-bridge.service";
+
 type VercelRequest = {
   method?: string;
   query?: {
@@ -187,6 +189,13 @@ export default async function handler(request: VercelRequest, response: VercelRe
       const deleteResult = await fetchGreenApiDelete<GreenApiDeleteNotificationResponse>(
         `deleteNotification/${notification.receiptId}`
       );
+
+      if (notification.body) {
+        const bridge = new WhatsAppLegacyBridgeService();
+        void bridge.ingestNotification(notification.body as any).catch((error) => {
+          console.warn("Nao foi possivel persistir a notificacao no Supabase store:", error);
+        });
+      }
 
       return response.status(200).json({
         success: true,

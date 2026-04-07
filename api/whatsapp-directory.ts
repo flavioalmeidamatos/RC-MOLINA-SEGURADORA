@@ -1,3 +1,6 @@
+import { BootstrapInitialService } from "../lib/server/services/bootstrap-initial.service";
+import { WhatsAppLegacyBridgeService } from "../lib/server/services/whatsapp-legacy-bridge.service";
+
 type VercelRequest = {
   method?: string;
 };
@@ -298,6 +301,10 @@ export default async function handler(request: VercelRequest, response: VercelRe
 
   try {
     const snapshot = await resolveConnectionSnapshot();
+    const bridge = new WhatsAppLegacyBridgeService();
+    void bridge.updateInstanceSnapshot(snapshot).catch((error) => {
+      console.warn("Nao foi possivel sincronizar o snapshot da instancia:", error);
+    });
 
     if (!snapshot.connected) {
       return response.status(200).json({
@@ -310,6 +317,49 @@ export default async function handler(request: VercelRequest, response: VercelRe
         contacts: [],
         fetchedAt: new Date().toISOString(),
       });
+    }
+
+    const storeDirectory = await bridge.getLegacyDirectory();
+
+    if (storeDirectory?.hasData) {
+      return response.status(200).json({
+        success: true,
+        connected: true,
+        validated: snapshot.validated,
+        stateInstance: snapshot.stateInstance,
+        statusInstance: snapshot.statusInstance,
+        qrCode: snapshot.qrCode,
+        contacts: storeDirectory.contacts,
+        fetchedAt: new Date().toISOString(),
+        source: "supabase-store",
+      });
+    }
+
+    if (await bridge.canUseStore()) {
+      const instanceId = await bridge.ensureInstanceId();
+
+      if (instanceId) {
+        try {
+          await new BootstrapInitialService().run(instanceId);
+          const hydratedDirectory = await bridge.getLegacyDirectory();
+
+          if (hydratedDirectory?.hasData) {
+            return response.status(200).json({
+              success: true,
+              connected: true,
+              validated: snapshot.validated,
+              stateInstance: snapshot.stateInstance,
+              statusInstance: snapshot.statusInstance,
+              qrCode: snapshot.qrCode,
+              contacts: hydratedDirectory.contacts,
+              fetchedAt: new Date().toISOString(),
+              source: "supabase-store",
+            });
+          }
+        } catch (storeError) {
+          console.warn("Nao foi possivel hidratar o diretorio pelo Supabase store:", storeError);
+        }
+      }
     }
 
     const [contactsResult, groupsResult] = await Promise.allSettled([
@@ -334,6 +384,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
       qrCode: snapshot.qrCode,
       contacts: directory,
       fetchedAt: new Date().toISOString(),
+      source: "green-api",
     });
   } catch (error) {
     console.error("Erro ao montar diretorio do WhatsApp:", error);

@@ -1,3 +1,5 @@
+import { WhatsAppLegacyBridgeService } from "../lib/server/services/whatsapp-legacy-bridge.service";
+
 type VercelRequest = {
   method?: string;
   body?: {
@@ -136,6 +138,10 @@ export default async function handler(request: VercelRequest, response: VercelRe
   try {
     if (request.method === "GET") {
       const snapshot = await resolveConnectionSnapshot();
+      const bridge = new WhatsAppLegacyBridgeService();
+      void bridge.updateInstanceSnapshot(snapshot).catch((error) => {
+        console.warn("Nao foi possivel atualizar o snapshot da instancia no store:", error);
+      });
 
       return response.status(200).json({
         success: true,
