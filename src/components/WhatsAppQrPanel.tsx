@@ -595,6 +595,40 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
     });
   };
 
+  const promoteChatToVisibleList = (chat: WhatsAppChatItem) => {
+    setChats((currentChats) => {
+      const existingChat = currentChats.find((currentChat) => currentChat.chatId === chat.chatId);
+      const nextChat: WhatsAppChatItem = {
+        ...chat,
+        unreadCount: 0,
+        latestIncomingTimestamp: Number(chat.latestIncomingTimestamp || 0),
+        timestamp: Number(chat.timestamp || 0),
+        preview: String(chat.preview || "").trim() || "Conversa iniciada",
+        subtitle: String(chat.subtitle || "").trim() || (chat.isGroup ? "Grupo" : "Contato"),
+        direction: String(chat.direction || "incoming"),
+        typeMessage: String(chat.typeMessage || "textMessage"),
+        statusMessage: String(chat.statusMessage || ""),
+      };
+
+      if (existingChat) {
+        return sortChatsByTimestamp(
+          currentChats.map((currentChat) =>
+            currentChat.chatId === chat.chatId
+              ? {
+                  ...currentChat,
+                  ...nextChat,
+                  preview: nextChat.preview || currentChat.preview,
+                  subtitle: nextChat.subtitle || currentChat.subtitle,
+                }
+              : currentChat
+          )
+        );
+      }
+
+      return sortChatsByTimestamp([nextChat, ...currentChats]);
+    });
+  };
+
   const loadChatAvatar = async (chatId: string) => {
     const normalizedChatId = String(chatId || "").trim();
 
@@ -815,6 +849,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
     }
 
     historyInFlightRef.current = true;
+    promoteChatToVisibleList(chat);
     setSelectedChat(chat);
     setChatError("");
 
@@ -1819,6 +1854,15 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
     backgroundPosition: "0 0, 30px 30px, 0 0, 0 0",
   } as const;
   const fullDirectory = useMemo(() => mergeUniqueChats(chats, searchContacts), [chats, searchContacts]);
+  const visibleChats = useMemo(() => {
+    if (!selectedChat) {
+      return chats;
+    }
+
+    return chats.some((chat) => chat.chatId === selectedChat.chatId)
+      ? chats
+      : sortChatsByTimestamp([selectedChat, ...chats]);
+  }, [chats, selectedChat]);
   const contactDirectory = useMemo(
     () => fullDirectory.filter((chat) => !chat.isGroup),
     [fullDirectory]
@@ -1829,25 +1873,25 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
   );
   const chatStats = useMemo(
     () => ({
-      all: chats.length,
-      incoming: chats.filter((chat) => Number(chat.unreadCount || 0) > 0).length,
+      all: visibleChats.length,
+      incoming: visibleChats.filter((chat) => Number(chat.unreadCount || 0) > 0).length,
       contacts: contactDirectory.length,
       groups: groupDirectory.length,
     }),
-    [chats, contactDirectory.length, groupDirectory.length]
+    [visibleChats, contactDirectory.length, groupDirectory.length]
   );
   const filteredChats = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
     const basePool =
       activeFilter === "incoming"
-        ? chats.filter((chat) => Number(chat.unreadCount || 0) > 0)
+        ? visibleChats.filter((chat) => Number(chat.unreadCount || 0) > 0)
         : activeFilter === "contacts"
           ? contactDirectory
           : activeFilter === "groups"
             ? groupDirectory
             : normalizedSearch
               ? fullDirectory
-              : chats;
+              : visibleChats;
 
     const filteredPool = basePool.filter((chat) => {
       if (!normalizedSearch) {
@@ -1863,7 +1907,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
     }
 
     return sortChatsByTimestamp(filteredPool);
-  }, [activeFilter, chats, contactDirectory, fullDirectory, groupDirectory, searchTerm]);
+  }, [activeFilter, contactDirectory, fullDirectory, groupDirectory, searchTerm, visibleChats]);
   const filteredEmojiCategories = useMemo(() => {
     const normalizedSearch = emojiSearch.trim().toLowerCase();
 
