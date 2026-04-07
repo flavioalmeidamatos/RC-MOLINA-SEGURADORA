@@ -27,6 +27,9 @@ const SELECTED_CHAT_REFRESH_MS = 2500;
 const QUEUE_RECEIVE_TIMEOUT_SECONDS = 20;
 const RECENT_EMOJIS_STORAGE_KEY = "rcmolina_whatsapp_recent_emojis";
 const SELECTED_CHAT_STORAGE_KEY = "rcmolina_whatsapp_selected_chat_id";
+const OVERVIEW_CACHE_STORAGE_KEY = "rcmolina_whatsapp_overview_cache";
+const CHAT_CACHE_STORAGE_PREFIX = "rcmolina_whatsapp_chat_cache_";
+const DIRECTORY_REFRESH_MS = 60000;
 const DISCONNECT_CONFIRMATION_COUNT = 3;
 const POSITIVE_INSTANCE_STATES = new Set(["authorized"]);
 const POSITIVE_INSTANCE_STATUS = new Set(["online"]);
@@ -174,12 +177,40 @@ const mergeUniqueChats = (...chatLists: WhatsAppChatItem[][]) => {
   return Array.from(chatsById.values());
 };
 
+const readStorageJson = <T,>(storageKey: string): T | null => {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const rawValue = window.localStorage.getItem(storageKey);
+
+  if (!rawValue) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(rawValue) as T;
+  } catch (_error) {
+    window.localStorage.removeItem(storageKey);
+    return null;
+  }
+};
+
+const writeStorageJson = (storageKey: string, value: unknown) => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.setItem(storageKey, JSON.stringify(value));
+};
+
 export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
   onConnectionChange,
   onSyncActivityChange,
   embedded = false,
 }) => {
   const requestInFlightRef = useRef(false);
+  const directoryRequestInFlightRef = useRef(false);
   const historyInFlightRef = useRef(false);
   const avatarInFlightRef = useRef(new Set<string>());
   const avatarCacheRef = useRef<Record<string, string | null>>({});
@@ -602,6 +633,71 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
     }
   };
 
+  const loadDirectory = async () => {
+    if (directoryRequestInFlightRef.current) {
+      return;
+    }
+
+    directoryRequestInFlightRef.current = true;
+
+    try {
+      const response = await fetch("/api/whatsapp-directory", {
+        method: "GET",
+        cache: "no-store",
+      });
+
+      const data = (await response.json()) as WhatsAppOverviewApiResponse;
+
+      if (!response.ok) {
+        throw new Error(data.error || "NÃ£o foi possÃ­vel carregar o diretÃ³rio do WhatsApp.");
+      }
+
+      const nextStateInstance = String(data.stateInstance || "").trim();
+      const nextStatusInstance = String(data.statusInstance || "").trim();
+      const nextQrCode = String(data.qrCode || "").trim();
+      const nextConnected =
+        Boolean(data.connected) || isPositiveConnectionSignal(nextStateInstance, nextStatusInstance);
+      const nextValidated = data.validated !== false;
+      const hasExplicitDisconnection =
+        Boolean(nextQrCode) || isExplicitDisconnectionSignal(nextStateInstance, nextStatusInstance);
+      let resolvedConnected = nextConnected;
+
+      if (nextConnected) {
+        disconnectStreakRef.current = 0;
+      } else if (connected && hasExplicitDisconnection) {
+        disconnectStreakRef.current += 1;
+        resolvedConnected = disconnectStreakRef.current < DISCONNECT_CONFIRMATION_COUNT;
+      } else if (connected) {
+        resolvedConnected = true;
+        disconnectStreakRef.current = 0;
+      } else {
+        disconnectStreakRef.current = 0;
+      }
+
+      setConnected(resolvedConnected);
+      setConnectionValidated(nextValidated);
+      onConnectionChange?.(resolvedConnected);
+      setStateInstance(nextStateInstance);
+      setStatusInstance(nextStatusInstance);
+      setQrCode(resolvedConnected ? "" : nextQrCode);
+      setSearchContacts(Array.isArray(data.contacts) ? data.contacts : []);
+      setFetchedAt(data.fetchedAt || "");
+      setLoading(false);
+    } catch (loadError) {
+      const hasVisibleData = chats.length > 0 || searchContacts.length > 0;
+
+      if (!hasVisibleData) {
+        const message =
+          loadError instanceof Error
+            ? loadError.message
+            : "Erro inesperado ao buscar o diretÃ³rio do WhatsApp.";
+        setError(message);
+      }
+    } finally {
+      directoryRequestInFlightRef.current = false;
+    }
+  };
+
   const loadOverview = async (isManualRefresh = false) => {
     if (requestInFlightRef.current) {
       return;
@@ -611,7 +707,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
 
     if (isManualRefresh) {
       setRefreshing(true);
-    } else {
+    } else if (chats.length === 0 && searchContacts.length === 0) {
       setLoading(true);
     }
 
@@ -677,7 +773,12 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
     } catch (loadError) {
       const message =
         loadError instanceof Error ? loadError.message : "Erro inesperado ao buscar o WhatsApp.";
-      setError(message);
+
+      if (chats.length === 0 && searchContacts.length === 0) {
+        setError(message);
+      } else {
+        setStatusNote("SincronizaÃ§Ã£o em segundo plano indisponÃ­vel no momento.");
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -693,6 +794,16 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
     historyInFlightRef.current = true;
     setSelectedChat(chat);
     setChatError("");
+
+    const cachedMessages = readStorageJson<WhatsAppConversationMessage[]>(
+      `${CHAT_CACHE_STORAGE_PREFIX}${chat.chatId}`
+    );
+
+    if (Array.isArray(cachedMessages) && cachedMessages.length > 0) {
+      setMessages(cachedMessages);
+    } else if (!silent) {
+      setMessages([]);
+    }
 
     if (!silent) {
       setLoadingMessages(true);
@@ -721,6 +832,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
 
       readTimestampsRef.current[chat.chatId] = latestConversationTimestamp;
       setMessages(nextMessages);
+      writeStorageJson(`${CHAT_CACHE_STORAGE_PREFIX}${chat.chatId}`, nextMessages);
       syncChatSnapshot(chat, nextMessages);
       setChats((currentChats) =>
         sortChatsByTimestamp(
@@ -751,6 +863,11 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
 
     await loadChatHistory(selectedChatRef.current, true);
     await loadOverview(true);
+  };
+
+  const handleManualRefresh = () => {
+    void loadDirectory();
+    void loadOverview(true);
   };
 
   const fileToBase64 = (file: File) =>
@@ -1255,6 +1372,30 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
   };
 
   useEffect(() => {
+    const cachedOverview = readStorageJson<{
+      chats?: WhatsAppChatItem[];
+      contacts?: WhatsAppChatItem[];
+      connected?: boolean;
+      validated?: boolean;
+      stateInstance?: string;
+      statusInstance?: string;
+      qrCode?: string;
+      fetchedAt?: string;
+    }>(OVERVIEW_CACHE_STORAGE_KEY);
+
+    if (cachedOverview) {
+      setChats(Array.isArray(cachedOverview.chats) ? cachedOverview.chats : []);
+      setSearchContacts(Array.isArray(cachedOverview.contacts) ? cachedOverview.contacts : []);
+      setConnected(Boolean(cachedOverview.connected));
+      setConnectionValidated(cachedOverview.validated !== false);
+      setStateInstance(String(cachedOverview.stateInstance || ""));
+      setStatusInstance(String(cachedOverview.statusInstance || ""));
+      setQrCode(String(cachedOverview.qrCode || ""));
+      setFetchedAt(String(cachedOverview.fetchedAt || ""));
+      setLoading(false);
+    }
+
+    void loadDirectory();
     void loadOverview();
   }, []);
 
@@ -1275,6 +1416,19 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
       window.localStorage.removeItem(RECENT_EMOJIS_STORAGE_KEY);
     }
   }, []);
+
+  useEffect(() => {
+    writeStorageJson(OVERVIEW_CACHE_STORAGE_KEY, {
+      chats,
+      contacts: searchContacts,
+      connected,
+      validated: connectionValidated,
+      stateInstance,
+      statusInstance,
+      qrCode,
+      fetchedAt,
+    });
+  }, [chats, searchContacts, connected, connectionValidated, stateInstance, statusInstance, qrCode, fetchedAt]);
 
   useEffect(() => {
     selectedChatRef.current = selectedChat;
@@ -1342,6 +1496,14 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
     const intervalId = window.setInterval(() => {
       void loadOverview(true);
     }, refreshInterval);
+
+    return () => window.clearInterval(intervalId);
+  }, [connected]);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      void loadDirectory();
+    }, DIRECTORY_REFRESH_MS);
 
     return () => window.clearInterval(intervalId);
   }, [connected]);
@@ -1559,7 +1721,8 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
   const getMessageDayKey = (timestamp: number) =>
     new Date(timestamp * 1000).toLocaleDateString("pt-BR");
   const hasSelectedChat = Boolean(selectedChat);
-  const showPanelSkeleton = loading && chats.length === 0 && !qrCode && !error && !fetchedAt;
+  const showPanelSkeleton =
+    loading && chats.length === 0 && searchContacts.length === 0 && !qrCode && !error && !fetchedAt;
   const connectedPanelStyle = embedded
     ? undefined
     : ({
@@ -1899,7 +2062,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
           <div className="flex items-center gap-2 text-[#aebac1]">
             <button
               type="button"
-              onClick={() => void loadOverview(true)}
+              onClick={handleManualRefresh}
               disabled={refreshing}
               className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/8 bg-white/4 transition-colors hover:bg-white/8 disabled:opacity-60"
             >
@@ -2745,7 +2908,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => void loadOverview(true)}
+                  onClick={handleManualRefresh}
                   disabled={refreshing}
                   className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[#d0d7db] transition-colors hover:bg-white/8 disabled:opacity-60"
                 >
@@ -2984,7 +3147,7 @@ export const WhatsAppQrPanel: React.FC<WhatsAppQrPanelProps> = ({
                 </div>
                 <button
                   type="button"
-                  onClick={() => void loadOverview(true)}
+                  onClick={handleManualRefresh}
                   disabled={refreshing}
                   className={`inline-flex items-center gap-2 rounded-full border border-[#d5e3db] bg-[#f4fbf7] font-semibold text-[#128C7E] transition-colors hover:bg-[#e8f8ee] disabled:cursor-not-allowed disabled:opacity-70 ${
                     embedded ? "min-h-9 px-3 py-1.5 text-xs" : "min-h-11 px-4 py-2 text-sm"
