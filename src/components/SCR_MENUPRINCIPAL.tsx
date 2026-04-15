@@ -473,27 +473,25 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     setIsLoggingOut(true);
 
     try {
-      await logoutRemoteSimulator();
-
-      try {
-        await fetch("/api/whatsapp-instance", {
+      // Executa todas as tarefas de limpeza em paralelo para reduzir o tempo total de espera.
+      // A lentidão anterior era causada pela execução sequencial (um após o outro).
+      await Promise.allSettled([
+        logoutRemoteSimulator(),
+        fetch("/api/whatsapp-instance", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ action: "logout" }),
-        });
-      } catch (_error) {
-        console.warn("Nao foi possivel derrubar a instancia do WhatsApp no logout.");
-      }
+        }).catch(() => {}),
+        supabase.auth.signOut()
+      ]);
 
       clearLocalUiState();
-
-      await supabase.auth.signOut();
       navigate("/login", { replace: true });
     } catch (_error) {
       clearLocalUiState();
-      await supabase.auth.signOut();
+      await supabase.auth.signOut().catch(() => {});
       navigate("/login", { replace: true });
     } finally {
       setIsLoggingOut(false);
