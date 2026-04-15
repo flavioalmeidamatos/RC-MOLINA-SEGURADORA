@@ -407,10 +407,10 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
           </div>
         </header>
 
-        <div className="relative flex min-h-0 flex-1 overflow-hidden">
-          <div className="min-w-0 flex-1">
+        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+          <div className="flex min-w-0 flex-1 flex-col">
             {showSimulator ? (
-              <div className="relative flex-1 overflow-hidden bg-gray-50">
+              <div className="relative flex flex-1 flex-col overflow-hidden bg-gray-50">
                 <iframe
                   src="https://app.simuladoronline.com/login/4602"
                   title="Simulador Online"
