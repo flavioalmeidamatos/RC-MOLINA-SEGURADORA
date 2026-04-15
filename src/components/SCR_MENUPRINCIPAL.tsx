@@ -32,9 +32,17 @@ interface DashboardProps {
   perfil?: any;
 }
 
+type SimulatorMode = "idle" | "loading" | "embedded" | "external";
+
 const WHATSAPP_PANEL_OPEN_STORAGE_KEY = "rcmolina_whatsapp_panel_open";
 const WHATSAPP_PANEL_COLLAPSED_STORAGE_KEY = "rcmolina_whatsapp_panel_collapsed";
 const WHATSAPP_DISCONNECT_CONFIRMATION_COUNT = 3;
+
+const SIMULATOR_LOGIN_URL = "https://app.simuladoronline.com/login/4602";
+const SIMULATOR_LOGOUT_URL = "https://app.simuladoronline.com/logout";
+const SIMULATOR_FALLBACK_WINDOW_NAME = "simulador_online_fallback_window";
+const SIMULATOR_EMBED_TIMEOUT_MS = 7000;
+
 const POSITIVE_INSTANCE_STATES = new Set(["authorized"]);
 const POSITIVE_INSTANCE_STATUS = new Set(["online"]);
 const EXPLICIT_DISCONNECTED_STATES = new Set(["notauthorized", "blocked", "sleepmode"]);
@@ -47,6 +55,11 @@ const isPositiveConnectionSignal = (stateInstance: string, statusInstance: strin
 const isExplicitDisconnectionSignal = (stateInstance: string, statusInstance: string) =>
   EXPLICIT_DISCONNECTED_STATES.has(stateInstance.toLowerCase()) ||
   EXPLICIT_DISCONNECTED_STATUS.has(statusInstance.toLowerCase());
+
+const wait = (ms: number) =>
+  new Promise<void>((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
 
 const WhatsAppIcon: React.FC<{ className?: string }> = ({ className }) => (
   <svg viewBox="0 0 448 512" fill="currentColor" aria-hidden="true" className={className}>
@@ -71,15 +84,29 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const [whatsAppConnected, setWhatsAppConnected] = useState(false);
   const [whatsAppChecking, setWhatsAppChecking] = useState(true);
   const [whatsAppSyncing, setWhatsAppSyncing] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const [simulatorMode, setSimulatorMode] = useState<SimulatorMode>("idle");
+  const [simulatorFrameKey, setSimulatorFrameKey] = useState(0);
+  const [simulatorStatusMessage, setSimulatorStatusMessage] = useState("");
+  const [simulatorAutoOpenedExternally, setSimulatorAutoOpenedExternally] = useState(false);
+
   const disconnectStreakRef = useRef(0);
+  const simulatorTimeoutRef = useRef<number | null>(null);
+  const simulatorWindowRef = useRef<Window | null>(null);
+  const simulatorIframeLoadedRef = useRef(false);
+
   const [isWhatsAppPanelOpen, setIsWhatsAppPanelOpen] = useState(() => {
     if (typeof window === "undefined") {
       return false;
     }
 
-    const isCollapsed = window.localStorage.getItem(WHATSAPP_PANEL_COLLAPSED_STORAGE_KEY) === "1";
+    const isCollapsed =
+      window.localStorage.getItem(WHATSAPP_PANEL_COLLAPSED_STORAGE_KEY) === "1";
+
     return (
-      isCollapsed || window.localStorage.getItem(WHATSAPP_PANEL_OPEN_STORAGE_KEY) === "1"
+      isCollapsed ||
+      window.localStorage.getItem(WHATSAPP_PANEL_OPEN_STORAGE_KEY) === "1"
     );
   });
   const [isWhatsAppPanelCollapsed, setIsWhatsAppPanelCollapsed] = useState(() => {
@@ -95,6 +122,223 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     leadUrl: "",
   });
   const [importResult, setImportResult] = useState<any>(null);
+
+  const clearSimulatorTimeout = () => {
+    if (simulatorTimeoutRef.current !== null) {
+      window.clearTimeout(simulatorTimeoutRef.current);
+      simulatorTimeoutRef.current = null;
+    }
+  };
+
+  const writeFallbackWindowLoadingContent = (popup: Window) => {
+    try {
+      popup.document.title = "Abrindo simulador...";
+      popup.document.body.style.margin = "0";
+      popup.document.body.style.fontFamily = "Arial, sans-serif";
+      popup.document.body.style.background = "#f8fafc";
+      popup.document.body.innerHTML = `
+        <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;">
+          <div style="max-width:520px;width:100%;background:#ffffff;border:1px solid #e5e7eb;border-radius:18px;padding:28px;box-shadow:0 10px 30px rgba(0,0,0,0.08);">
+            <div style="font-size:18px;font-weight:700;color:#0c1826;margin-bottom:10px;">Preparando o Simulador Online</div>
+            <div style="font-size:14px;line-height:1.6;color:#475569;">
+              Estamos tentando abrir o simulador dentro da aplicação.
+              Se o navegador bloquear o carregamento incorporado, esta janela será utilizada automaticamente.
+            </div>
+          </div>
+        </div>
+      `;
+    } catch (_error) {
+      // Ignora falha de escrita na janela.
+    }
+  };
+
+  const reserveSimulatorFallbackWindow = () => {
+    try {
+      const popup = window.open(
+        "",
+        SIMULATOR_FALLBACK_WINDOW_NAME,
+        "width=1280,height=900,resizable=yes,scrollbars=yes"
+      );
+
+      if (popup) {
+        writeFallbackWindowLoadingContent(popup);
+        simulatorWindowRef.current = popup;
+      }
+    } catch (_error) {
+      simulatorWindowRef.current = null;
+    }
+  };
+
+  const closeReservedSimulatorWindowIfStillIdle = () => {
+    const popup = simulatorWindowRef.current;
+    if (!popup || popup.closed) {
+      simulatorWindowRef.current = null;
+      return;
+    }
+
+    try {
+      if (popup.location.href === "about:blank") {
+        popup.close();
+      }
+    } catch (_error) {
+      // Se já navegou para domínio externo, não força fechamento aqui.
+    }
+  };
+
+  const openSimulatorExternally = () => {
+    const popup = simulatorWindowRef.current;
+
+    setSimulatorMode("external");
+    setSimulatorAutoOpenedExternally(true);
+    setSimulatorStatusMessage(
+      "O navegador não estabilizou o simulador incorporado a tempo. O sistema foi aberto automaticamente em uma nova janela."
+    );
+
+    try {
+      if (popup && !popup.closed) {
+        popup.location.href = SIMULATOR_LOGIN_URL;
+        popup.focus();
+        return;
+      }
+    } catch (_error) {
+      // Se falhar, abre nova aba/janela normalmente.
+    }
+
+    const newWindow = window.open(
+      SIMULATOR_LOGIN_URL,
+      SIMULATOR_FALLBACK_WINDOW_NAME,
+      "width=1280,height=900,resizable=yes,scrollbars=yes"
+    );
+
+    if (!newWindow) {
+      window.location.href = SIMULATOR_LOGIN_URL;
+    } else {
+      simulatorWindowRef.current = newWindow;
+      newWindow.focus();
+    }
+  };
+
+  const startSimulatorAttempt = () => {
+    simulatorIframeLoadedRef.current = false;
+    setSimulatorAutoOpenedExternally(false);
+    setSimulatorStatusMessage("Tentando carregar o simulador dentro da aplicação...");
+    setSimulatorMode("loading");
+    setActiveMenu("Simulador");
+    setSimulatorFrameKey((prev) => prev + 1);
+
+    clearSimulatorTimeout();
+
+    simulatorTimeoutRef.current = window.setTimeout(() => {
+      if (!simulatorIframeLoadedRef.current) {
+        openSimulatorExternally();
+      }
+    }, SIMULATOR_EMBED_TIMEOUT_MS);
+  };
+
+  const enterSimulator = () => {
+    reserveSimulatorFallbackWindow();
+    startSimulatorAttempt();
+  };
+
+  const retrySimulatorInsideApp = () => {
+    reserveSimulatorFallbackWindow();
+    startSimulatorAttempt();
+  };
+
+  const handleSimulatorIframeLoad = () => {
+    if (simulatorMode === "external") {
+      return;
+    }
+
+    simulatorIframeLoadedRef.current = true;
+    clearSimulatorTimeout();
+    setSimulatorMode("embedded");
+    setSimulatorStatusMessage("Simulador carregado dentro da aplicação.");
+    setSimulatorAutoOpenedExternally(false);
+    closeReservedSimulatorWindowIfStillIdle();
+  };
+
+  const handleSimulatorIframeError = () => {
+    clearSimulatorTimeout();
+    openSimulatorExternally();
+  };
+
+  const cleanupSimulatorUi = () => {
+    clearSimulatorTimeout();
+    simulatorIframeLoadedRef.current = false;
+    setSimulatorMode("idle");
+    setSimulatorStatusMessage("");
+    setSimulatorAutoOpenedExternally(false);
+  };
+
+  const clearLocalUiState = () => {
+    setWhatsAppConnected(false);
+    setWhatsAppChecking(false);
+    setWhatsAppSyncing(false);
+    setIsWhatsAppPanelOpen(false);
+    setIsWhatsAppPanelCollapsed(false);
+
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(WHATSAPP_PANEL_OPEN_STORAGE_KEY);
+      window.localStorage.removeItem(WHATSAPP_PANEL_COLLAPSED_STORAGE_KEY);
+    }
+
+    cleanupSimulatorUi();
+  };
+
+  const logoutRemoteSimulator = async () => {
+    clearSimulatorTimeout();
+
+    const popup = simulatorWindowRef.current;
+
+    if (popup && !popup.closed) {
+      try {
+        popup.location.href = SIMULATOR_LOGOUT_URL;
+        await wait(1600);
+        try {
+          popup.close();
+        } catch (_error) {
+          // sem ação
+        }
+        simulatorWindowRef.current = null;
+        return;
+      } catch (_error) {
+        // segue para fallback
+      }
+    }
+
+    try {
+      const logoutWindow = window.open(
+        SIMULATOR_LOGOUT_URL,
+        "simulador_online_logout_window",
+        "width=600,height=800,resizable=yes,scrollbars=yes"
+      );
+
+      if (logoutWindow) {
+        await wait(1600);
+        try {
+          logoutWindow.close();
+        } catch (_error) {
+          // sem ação
+        }
+        return;
+      }
+    } catch (_error) {
+      // segue para fallback
+    }
+
+    // Último fallback: iframe oculto.
+    try {
+      const logoutIframe = document.createElement("iframe");
+      logoutIframe.style.display = "none";
+      logoutIframe.src = SIMULATOR_LOGOUT_URL;
+      document.body.appendChild(logoutIframe);
+      await wait(1500);
+      document.body.removeChild(logoutIframe);
+    } catch (_error) {
+      console.warn("Nao foi possivel deslogar do simulador automaticamente.");
+    }
+  };
 
   const syncWhatsAppStatus = async () => {
     setWhatsAppChecking(true);
@@ -152,7 +396,11 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       void syncWhatsAppStatus();
     }, 20000);
 
-    return () => window.clearInterval(intervalId);
+    return () => {
+      window.clearInterval(intervalId);
+      clearSimulatorTimeout();
+      closeReservedSimulatorWindowIfStillIdle();
+    };
   }, []);
 
   useEffect(() => {
@@ -205,38 +453,38 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   };
 
   const handleLogout = async () => {
-    // 1. Tentar derrubar a sessão do Simulador Online (URL identificada: /logout)
-    try {
-      const logoutIframe = document.createElement("iframe");
-      logoutIframe.style.display = "none";
-      logoutIframe.src = "https://app.simuladoronline.com/logout";
-      document.body.appendChild(logoutIframe);
-      
-      // Aguarda um breve momento para o browser processar a requisição de logout
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      document.body.removeChild(logoutIframe);
-    } catch (e) {
-      console.warn("Nao foi possivel deslogar do simulador automaticamente.");
+    if (isLoggingOut) {
+      return;
     }
 
+    setIsLoggingOut(true);
+
     try {
-      await fetch("/api/whatsapp-instance", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ action: "logout" }),
-      });
+      await logoutRemoteSimulator();
+
+      try {
+        await fetch("/api/whatsapp-instance", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ action: "logout" }),
+        });
+      } catch (_error) {
+        console.warn("Nao foi possivel derrubar a instancia do WhatsApp no logout.");
+      }
+
+      clearLocalUiState();
+
+      await supabase.auth.signOut();
+      navigate("/login", { replace: true });
     } catch (_error) {
-      console.warn("Nao foi possivel derrubar a instancia do WhatsApp no logout.");
+      clearLocalUiState();
+      await supabase.auth.signOut();
+      navigate("/login", { replace: true });
     } finally {
-      setWhatsAppConnected(false);
-      setWhatsAppChecking(false);
-      setWhatsAppSyncing(false);
+      setIsLoggingOut(false);
     }
-
-    await supabase.auth.signOut();
-    navigate("/login");
   };
 
   const handleOpenWhatsAppAuth = async () => {
@@ -252,13 +500,29 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     setWhatsAppSyncing(false);
   };
 
+  const handleMenuClick = (title: string) => {
+    if (title === "Simulador") {
+      enterSimulator();
+      return;
+    }
+
+    if (activeMenu === "Simulador") {
+      cleanupSimulatorUi();
+    }
+
+    setActiveMenu(title);
+  };
+
   const handleCardClick = (line1: string, line2: string) => {
     if (line1 === "Simulador") {
-      setActiveMenu("Simulador");
+      enterSimulator();
       return;
     }
 
     if (line1 === "Meus" && line2 === "clientes") {
+      if (activeMenu === "Simulador") {
+        cleanupSimulatorUi();
+      }
       setActiveMenu("Meus clientes");
       return;
     }
@@ -344,7 +608,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
               <button
                 key={item.title}
                 type="button"
-                onClick={() => setActiveMenu(item.title)}
+                onClick={() => handleMenuClick(item.title)}
                 className={`flex min-w-max items-center justify-between gap-3 rounded-2xl border-l-4 px-4 py-3 text-left transition-colors lg:w-full lg:rounded-none lg:px-6 ${
                   isActive
                     ? "border-[#b58c2a] bg-[#152a42] text-white"
@@ -412,11 +676,13 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
             </div>
 
             <button
+              type="button"
               onClick={handleLogout}
-              className="flex min-h-11 items-center gap-2 text-gray-500 transition-colors hover:text-red-600"
+              disabled={isLoggingOut}
+              className="flex min-h-11 items-center gap-2 text-gray-500 transition-colors hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <LogOut size={18} />
-              <span className="text-sm">Sair</span>
+              {isLoggingOut ? <Loader2 size={18} className="animate-spin" /> : <LogOut size={18} />}
+              <span className="text-sm">{isLoggingOut ? "Saindo..." : "Sair"}</span>
             </button>
           </div>
         </header>
@@ -424,50 +690,128 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
         <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
           <div className="flex min-w-0 flex-1 flex-col">
             {showSimulator ? (
-              <div className="flex flex-1 flex-col bg-white" style={{ height: "calc(100vh - 120px)" }}>
+              <div
+                className="flex flex-1 flex-col bg-white"
+                style={{ height: "calc(100vh - 120px)" }}
+              >
                 <div className="flex items-center justify-between border-b bg-gray-50 px-4 py-2 text-xs text-gray-500">
                   <span className="flex items-center gap-2">
                     <FolderOpen size={14} />
-                    Simulador Online em execução
+                    {simulatorMode === "embedded"
+                      ? "Simulador Online em execução"
+                      : simulatorMode === "loading"
+                        ? "Tentando carregar o Simulador Online"
+                        : simulatorMode === "external"
+                          ? "Simulador Online aberto externamente"
+                          : "Simulador Online"}
                   </span>
+
                   <div className="flex items-center gap-4">
-                    <button 
-                      onClick={() => setActiveMenu("Home")}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        cleanupSimulatorUi();
+                        setActiveMenu("Home");
+                      }}
                       className="text-gray-400 hover:text-gray-600"
                     >
-                      Recarregar Dashboard
+                      Voltar ao dashboard
                     </button>
-                    <a
-                      href="https://app.simuladoronline.com/login/4602"
-                      target="_blank"
-                      rel="noopener noreferrer"
+
+                    <button
+                      type="button"
+                      onClick={retrySimulatorInsideApp}
+                      className="font-medium text-[#b58c2a] hover:underline"
+                    >
+                      Tentar novamente aqui
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={openSimulatorExternally}
                       className="flex items-center gap-1 font-medium text-[#b58c2a] hover:underline"
                     >
                       Abrir em nova janela <ExternalLink size={12} />
-                    </a>
+                    </button>
                   </div>
                 </div>
-                <div className="relative w-full flex-1 overflow-hidden bg-gray-100">
-                  {/* Overlay de carregamento para feedback visual se estiver demorando */}
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
-                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#b58c2a] border-t-transparent"></div>
+
+                {simulatorMode === "loading" || simulatorMode === "embedded" ? (
+                  <div className="relative w-full flex-1 overflow-hidden bg-gray-100">
+                    {simulatorMode === "loading" ? (
+                      <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 bg-white/70 backdrop-blur-[1px]">
+                        <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#b58c2a] border-t-transparent" />
+                        <div className="max-w-md px-6 text-center text-sm text-gray-600">
+                          {simulatorStatusMessage ||
+                            "Tentando abrir o simulador dentro da aplicação..."}
+                        </div>
+                      </div>
+                    ) : null}
+
+                    <iframe
+                      key={simulatorFrameKey}
+                      src={SIMULATOR_LOGIN_URL}
+                      title="Simulador Online"
+                      className="h-full w-full border-none shadow-inner"
+                      style={{
+                        minHeight: "800px",
+                        height: "100%",
+                        width: "100%",
+                        display: "block",
+                        position: "relative",
+                        zIndex: 10,
+                      }}
+                      allow="geolocation; microphone; camera; midi; vr; accelerometer; gyroscope; payment; ambient-light-sensor; encrypted-media; usb"
+                      allowFullScreen
+                      onLoad={handleSimulatorIframeLoad}
+                      onError={handleSimulatorIframeError}
+                    />
                   </div>
-                  <iframe
-                    src="https://app.simuladoronline.com/login/4602"
-                    title="Simulador Online"
-                    className="h-full w-full border-none shadow-inner"
-                    style={{ 
-                      minHeight: "800px", 
-                      height: "100%", 
-                      width: "100%",
-                      display: "block",
-                      position: "relative",
-                      zIndex: 10
-                    }}
-                    allow="geolocation; microphone; camera; midi; vr; accelerometer; gyroscope; payment; ambient-light-sensor; encrypted-media; usb"
-                    allowFullScreen
-                  />
-                </div>
+                ) : (
+                  <div className="flex flex-1 items-center justify-center bg-[#f8fafc] p-6">
+                    <div className="w-full max-w-2xl rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+                      <div className="mb-5 flex items-start gap-4">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#b58c2a]/10 text-[#b58c2a]">
+                          <ExternalLink size={22} />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-bold text-[#0c1826]">
+                            Simulador aberto fora da aplicação
+                          </h3>
+                          <p className="mt-1 text-sm text-gray-600">
+                            {simulatorStatusMessage ||
+                              "O navegador não manteve o carregamento incorporado com estabilidade."}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="rounded-xl border border-amber-100 bg-amber-50 p-4 text-sm text-amber-900">
+                        {simulatorAutoOpenedExternally
+                          ? "A nova janela foi aberta automaticamente para não interromper o fluxo do usuário."
+                          : "Você pode abrir manualmente em nova janela ou tentar novamente dentro da aplicação."}
+                      </div>
+
+                      <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                        <button
+                          type="button"
+                          onClick={retrySimulatorInsideApp}
+                          className="inline-flex items-center justify-center rounded-xl border border-gray-300 px-5 py-3 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50"
+                        >
+                          Tentar novamente no painel
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={openSimulatorExternally}
+                          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#b58c2a] px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-[#8f7124]"
+                        >
+                          Abrir simulador agora
+                          <ExternalLink size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : showClientArea ? (
               <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
