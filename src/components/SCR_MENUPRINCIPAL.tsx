@@ -205,6 +205,20 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   };
 
   const handleLogout = async () => {
+    // 1. Tentar derrubar a sessão do Simulador Online (URL identificada: /logout)
+    try {
+      const logoutIframe = document.createElement("iframe");
+      logoutIframe.style.display = "none";
+      logoutIframe.src = "https://app.simuladoronline.com/logout";
+      document.body.appendChild(logoutIframe);
+      
+      // Aguarda um breve momento para o browser processar a requisição de logout
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      document.body.removeChild(logoutIframe);
+    } catch (e) {
+      console.warn("Nao foi possivel deslogar do simulador automaticamente.");
+    }
+
     try {
       await fetch("/api/whatsapp-instance", {
         method: "POST",
@@ -410,27 +424,46 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
         <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
           <div className="flex min-w-0 flex-1 flex-col">
             {showSimulator ? (
-              <div className="flex flex-1 flex-col bg-white">
+              <div className="flex flex-1 flex-col bg-white" style={{ height: "calc(100vh - 120px)" }}>
                 <div className="flex items-center justify-between border-b bg-gray-50 px-4 py-2 text-xs text-gray-500">
                   <span className="flex items-center gap-2">
                     <FolderOpen size={14} />
                     Simulador Online em execução
                   </span>
-                  <a
-                    href="https://app.simuladoronline.com/login/4602"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-[#b58c2a] hover:underline"
-                  >
-                    Abrir em nova janela <ExternalLink size={12} />
-                  </a>
+                  <div className="flex items-center gap-4">
+                    <button 
+                      onClick={() => setActiveMenu("Home")}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      Recarregar Dashboard
+                    </button>
+                    <a
+                      href="https://app.simuladoronline.com/login/4602"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 font-medium text-[#b58c2a] hover:underline"
+                    >
+                      Abrir em nova janela <ExternalLink size={12} />
+                    </a>
+                  </div>
                 </div>
-                <div className="flex-1">
+                <div className="relative w-full flex-1 overflow-hidden bg-gray-100">
+                  {/* Overlay de carregamento para feedback visual se estiver demorando */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
+                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#b58c2a] border-t-transparent"></div>
+                  </div>
                   <iframe
                     src="https://app.simuladoronline.com/login/4602"
                     title="Simulador Online"
-                    className="h-full w-full border-none"
-                    style={{ minHeight: "600px" }}
+                    className="h-full w-full border-none shadow-inner"
+                    style={{ 
+                      minHeight: "800px", 
+                      height: "100%", 
+                      width: "100%",
+                      display: "block",
+                      position: "relative",
+                      zIndex: 10
+                    }}
                     allow="geolocation; microphone; camera; midi; vr; accelerometer; gyroscope; payment; ambient-light-sensor; encrypted-media; usb"
                     allowFullScreen
                   />
