@@ -412,7 +412,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
             {showSimulator ? (
               <div className="relative flex-1 overflow-hidden bg-gray-50">
                 <iframe
-                  src="https://app.simuladoronline.com/login/"
+                  src="https://app.simuladoronline.com/login/4602"
                   title="Simulador Online"
                   className="absolute inset-0 h-full w-full border-none bg-white"
                   allowFullScreen
