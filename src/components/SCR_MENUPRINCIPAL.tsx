@@ -132,19 +132,10 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
   const writeFallbackWindowLoadingContent = (popup: Window) => {
     try {
-      popup.document.title = "Abrindo simulador...";
-      popup.document.body.style.margin = "0";
-      popup.document.body.style.fontFamily = "Arial, sans-serif";
-      popup.document.body.style.background = "#f8fafc";
+      popup.document.title = "Simulador";
       popup.document.body.innerHTML = `
-        <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;">
-          <div style="max-width:520px;width:100%;background:#ffffff;border:1px solid #e5e7eb;border-radius:18px;padding:28px;box-shadow:0 10px 30px rgba(0,0,0,0.08);">
-            <div style="font-size:18px;font-weight:700;color:#0c1826;margin-bottom:10px;">Preparando o Simulador Online</div>
-            <div style="font-size:14px;line-height:1.6;color:#475569;">
-              Estamos tentando abrir o simulador dentro da aplicação.
-              Se o navegador bloquear o carregamento incorporado, esta janela será utilizada automaticamente.
-            </div>
-          </div>
+        <div style="font-family:sans-serif;font-size:12px;padding:5px;">
+           Preparando...
         </div>
       `;
     } catch (_error) {
@@ -154,14 +145,22 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
   const reserveSimulatorFallbackWindow = () => {
     try {
+      // Abre a janela de fallback no menor tamanho possível e fora da tela principal (oculta)
       const popup = window.open(
         "",
         SIMULATOR_FALLBACK_WINDOW_NAME,
-        "width=1280,height=900,resizable=yes,scrollbars=yes"
+        "width=100,height=100,left=-9999,top=-9999,resizable=yes,scrollbars=yes"
       );
 
       if (popup) {
         writeFallbackWindowLoadingContent(popup);
+        
+        // Tenta jogar a janela de preparação para o fundo, mantendo o foco na aplicação principal
+        try {
+          popup.blur();
+          window.focus();
+        } catch (_blurError) {}
+
         simulatorWindowRef.current = popup;
       }
     } catch (_error) {
@@ -196,6 +195,15 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
     try {
       if (popup && !popup.closed) {
+        // Restaura as dimensões caso tenha vindo do fallback oculto
+        try {
+          popup.resizeTo(1280, 900);
+          popup.moveTo(
+            Math.max(0, (window.screen.width - 1280) / 2),
+            Math.max(0, (window.screen.height - 900) / 2)
+          );
+        } catch (_resizeError) {}
+
         popup.location.href = SIMULATOR_LOGIN_URL;
         popup.focus();
         return;
