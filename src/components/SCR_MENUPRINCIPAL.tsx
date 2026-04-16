@@ -25,6 +25,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { ClientRegistrationMultipage } from "./ClientRegistrationMultipage";
 import { WhatsAppQrPanel } from "./WhatsAppQrPanel";
+import { Agenda } from "./Agenda/Agenda";
 import { supabase } from "../lib/supabase";
 
 interface DashboardProps {
@@ -538,6 +539,11 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       return;
     }
 
+    if (line1 === "Agenda") {
+      setActiveMenu("Agenda");
+      return;
+    }
+
     if (line1 === "Informações") {
       setCredential((prev) => ({
         ...prev,
@@ -666,7 +672,10 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
               />
             </button>
 
-            <button className="flex min-h-11 items-center gap-2 text-gray-500 transition-colors hover:text-[#b58c2a]">
+            <button 
+              onClick={() => handleMenuClick("Agenda")}
+              className={`flex min-h-11 items-center gap-2 transition-colors hover:text-[#b58c2a] ${activeMenu === "Agenda" ? "text-[#b58c2a]" : "text-gray-500"}`}
+            >
               <Calendar size={18} />
               <span className="text-sm">Agenda</span>
             </button>
@@ -828,6 +837,8 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
               <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
                 <ClientRegistrationMultipage />
               </div>
+            ) : activeMenu === "Agenda" ? (
+              <Agenda />
             ) : (
               <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
                 <div className="flex flex-col gap-6 lg:flex-row">
