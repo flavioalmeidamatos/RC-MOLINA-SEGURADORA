@@ -64,7 +64,7 @@ export const AgendaSidebar: React.FC = () => {
           </button>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-1">
           <input 
             type="text" 
             defaultValue="03/04/2026" 
@@ -73,7 +73,7 @@ export const AgendaSidebar: React.FC = () => {
           <input 
             type="text" 
             defaultValue="00:00" 
-            className="w-[80px] px-3 py-2 border border-black rounded text-sm outline-none focus:border-black"
+            className="w-[68px] px-2 py-2 border border-black rounded text-sm text-center outline-none focus:border-black"
           />
         </div>
 
