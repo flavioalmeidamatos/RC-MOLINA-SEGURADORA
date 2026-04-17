@@ -1,6 +1,6 @@
 import React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { format, addMonths, subMonths, addWeeks, subWeeks, addDays, subDays } from "date-fns";
+import { format, addMonths, subMonths, addWeeks, subWeeks, addDays, subDays, startOfWeek, endOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarView } from "./Agenda";
 
@@ -37,11 +37,13 @@ export const AgendaHeader: React.FC<AgendaHeaderProps> = ({
     if (activeView === "month") {
       return format(currentDate, "MMMM yyyy", { locale: ptBR });
     } else if (activeView === "week") {
-      const start = format(currentDate, "d", { locale: ptBR });
-      const end = format(addDays(currentDate, 6), "d 'de' MMMM 'de' yyyy", { locale: ptBR });
-      return `${start} - ${end}`;
+      const start = startOfWeek(currentDate, { weekStartsOn: 0 });
+      const end = endOfWeek(currentDate, { weekStartsOn: 0 });
+      return `${format(start, "d 'de' MMM", { locale: ptBR })} - ${format(end, "d 'de' MMM yyyy", {
+        locale: ptBR,
+      })}`;
     } else {
-      return format(currentDate, "EEEE, d 'abril de' yyyy", { locale: ptBR });
+      return format(currentDate, "EEEE, d 'de' MMMM 'de' yyyy", { locale: ptBR });
     }
   };
 

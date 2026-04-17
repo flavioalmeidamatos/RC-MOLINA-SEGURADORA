@@ -9,19 +9,22 @@ interface DayViewProps {
 }
 
 export const DayView: React.FC<DayViewProps> = ({ currentDate, holidays }) => {
-  const hours = Array.from({ length: 17 }, (_, i) => {
-    const hour = Math.floor(i / 2) + 8;
-    const minutes = i % 2 === 0 ? "00" : "30";
-    return `${hour}:${minutes}`;
+  const timeSlots = Array.from({ length: 27 }, (_, i) => {
+    const totalMinutes = 8 * 60 + i * 30;
+    const hour = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return {
+      key: `${hour}:${minutes.toString().padStart(2, "0")}`,
+      label: minutes === 0 ? `${hour}` : `${hour}:${minutes.toString().padStart(2, "0")}`,
+    };
   });
 
   const holiday = holidays.find(h => h.date === format(currentDate, "yyyy-MM-dd"));
 
   return (
-    <div className="h-full flex flex-col bg-white">
-      {/* Header */}
-      <div className="border-b bg-gray-50 py-3 text-center flex flex-col items-center gap-1">
-        <div className="text-xs font-bold uppercase tracking-widest text-[#0c1826]">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-white">
+      <div className="border-b border-black bg-gray-50 py-3 text-center flex flex-col items-center gap-1">
+        <div className="text-xs font-bold uppercase tracking-widest text-black">
           FLAVIO ALMEIDA MATOS
         </div>
         {holiday && (
@@ -31,15 +34,16 @@ export const DayView: React.FC<DayViewProps> = ({ currentDate, holidays }) => {
         )}
       </div>
 
-      {/* Grid */}
-      <div className="flex-1 overflow-y-auto">
-        {hours.map((time) => (
-          <div key={time} className="grid grid-cols-[60px_1fr] border-b last:border-b-0 h-[40px]">
-            <div className="flex items-start justify-center text-[10px] text-gray-400 py-1 bg-gray-50 border-r">
-              {time.split(":")[1] === "00" ? time.split(":")[0] : time}
+      <div
+        className="grid flex-1 min-h-0"
+        style={{ gridTemplateRows: `repeat(${timeSlots.length}, minmax(0, 1fr))` }}
+      >
+        {timeSlots.map((slot) => (
+          <div key={slot.key} className="grid grid-cols-[72px_1fr] border-b border-black">
+            <div className="flex items-start justify-center border-r border-black bg-gray-50 py-1 text-[10px] font-medium text-black">
+              {slot.label}
             </div>
-            <div className="hover:bg-gray-50 transition-colors cursor-pointer">
-              {/* Space for appointments */}
+            <div className="cursor-pointer transition-colors hover:bg-gray-50">
             </div>
           </div>
         ))}
