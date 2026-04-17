@@ -9,14 +9,14 @@ interface DayViewProps {
 }
 
 export const DayView: React.FC<DayViewProps> = ({ currentDate, holidays }) => {
-  const timeSlots = Array.from({ length: 16 }, (_, i) => 6 + i);
+  const timeSlots = Array.from({ length: 13 }, (_, i) => 8 + i); // 08:00 to 20:00
   const holiday = holidays.find(h => h.date === format(currentDate, "yyyy-MM-dd"));
   const isWeekend = currentDate.getDay() === 0 || currentDate.getDay() === 6;
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-white">
+    <div className="flex h-full min-h-0 flex-col bg-white overflow-hidden">
       {/* Header */}
-      <div className={`border-b border-black py-4 text-center flex flex-col items-center gap-1 ${isWeekend ? "bg-red-50/20" : "bg-gray-50/30"}`}>
+      <div className={`border-b border-black py-3 text-center flex flex-col items-center gap-1 ${isWeekend ? "bg-red-50/20" : "bg-gray-50/30"}`}>
         <div className={`text-sm font-bold uppercase tracking-widest ${isWeekend ? "text-red-600" : "text-black"}`}>
           {format(currentDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
         </div>
@@ -28,16 +28,16 @@ export const DayView: React.FC<DayViewProps> = ({ currentDate, holidays }) => {
       </div>
 
       {/* Body */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar">
-        <div className="relative flex min-h-full">
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <div className="flex h-full border-r border-black">
           {/* Time column */}
-          <div className="w-[80px] flex flex-col bg-gray-50 border-r border-black">
+          <div className="w-[70px] flex flex-col bg-gray-50 border-r border-black">
             {timeSlots.map((hour) => (
               <div 
                 key={hour} 
-                className="h-[80px] border-b border-black last:border-b-0 p-2 text-right"
+                className="flex-1 border-b border-black last:border-b-0 flex items-center justify-center p-2"
               >
-                <span className="text-xs font-bold text-black">{hour}:00</span>
+                <span className="text-[10px] font-bold text-black">{hour}:00</span>
               </div>
             ))}
           </div>
@@ -47,7 +47,7 @@ export const DayView: React.FC<DayViewProps> = ({ currentDate, holidays }) => {
             {timeSlots.map((hour) => (
               <div 
                 key={hour}
-                className={`h-[80px] border-b border-black last:border-b-0 transition-colors hover:bg-gray-50/50 cursor-pointer ${
+                className={`flex-1 border-b border-black last:border-b-0 transition-colors hover:bg-gray-50/50 cursor-pointer ${
                   isWeekend ? "bg-red-50/10" : ""
                 }`}
               >

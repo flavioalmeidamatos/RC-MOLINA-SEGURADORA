@@ -55,7 +55,7 @@ export const MonthView: React.FC<MonthViewProps> = ({ currentDate, holidays }) =
           return (
             <div 
               key={i} 
-              className={`min-h-[85px] border-b border-r border-black p-1.5 flex flex-col gap-1 transition-colors hover:bg-gray-50 ${
+              className={`min-h-[75px] border-b border-r border-black p-1.5 flex flex-col gap-1 transition-colors hover:bg-gray-50 ${
                 !isCurrentMonth ? "bg-gray-50/50 text-gray-400" : isWeekend ? "text-red-600" : "text-black"
               }`}
             >
