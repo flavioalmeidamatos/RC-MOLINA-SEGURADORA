@@ -21,7 +21,10 @@ export const Agenda: React.FC = () => {
   return (
     <div className="flex h-full flex-1 flex-col overflow-hidden bg-white">
       <div className="flex flex-1 overflow-hidden">
-        <AgendaSidebar />
+        <AgendaSidebar 
+          setCurrentDate={setCurrentDate} 
+          setActiveView={setActiveView} 
+        />
 
         <div className="flex min-w-0 flex-1 flex-col border-l border-black bg-white">
           <AgendaHeader 

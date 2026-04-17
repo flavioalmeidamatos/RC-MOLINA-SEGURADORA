@@ -1,21 +1,38 @@
-import React from "react";
-import { Plus, Search, HelpCircle, RefreshCcw, Settings, User } from "lucide-react";
+import React, { useRef } from "react";
+import { Plus, Search, Calendar, User } from "lucide-react";
+import { CalendarView } from "./Agenda";
 
-export const AgendaSidebar: React.FC = () => {
+interface AgendaSidebarProps {
+  setCurrentDate: (date: Date) => void;
+  setActiveView: (view: CalendarView) => void;
+}
+
+export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({ setCurrentDate, setActiveView }) => {
+  const dateInputRef = useRef<HTMLInputElement>(null);
   return (
     <aside className="w-[300px] flex-shrink-0 bg-white border-r border-black overflow-y-auto p-4 custom-scrollbar">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="flex items-center gap-2 text-lg font-bold text-black uppercase">
-          <Plus className="text-black" size={20} />
+        <h2 className="text-lg font-bold text-black uppercase">
           Agendar
-          <HelpCircle size={14} className="text-black" />
         </h2>
-        <div className="flex gap-1">
-          <button className="p-1.5 bg-[#00B5AD] text-white rounded shadow-sm hover:bg-[#009d96]">
-            <RefreshCcw size={14} />
-          </button>
-          <button className="p-1.5 bg-[#00B5AD] text-white rounded shadow-sm hover:bg-[#009d96]">
-            <Settings size={14} />
+        <div className="flex gap-1 relative">
+          <input 
+            type="date"
+            ref={dateInputRef}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            onChange={(e) => {
+              if (e.target.value) {
+                const [y, m, d] = e.target.value.split('-');
+                setCurrentDate(new Date(Number(y), Number(m) - 1, Number(d)));
+                setActiveView("month");
+              }
+            }}
+          />
+          <button 
+            type="button"
+            className="p-1.5 bg-[#00B5AD] text-white rounded shadow-sm hover:bg-[#009d96] pointer-events-none"
+          >
+            <Calendar size={18} />
           </button>
         </div>
       </div>
