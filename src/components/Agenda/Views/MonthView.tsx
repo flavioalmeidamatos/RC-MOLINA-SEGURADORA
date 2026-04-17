@@ -77,7 +77,7 @@ export const MonthView: React.FC<MonthViewProps> = ({ currentDate, holidays, set
                     setCurrentDate(day);
                     setActiveView("day");
                   }}
-                  className="bg-[#00B5AD] text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm hover:bg-[#009d96] uppercase"
+                  className="bg-[#00B5AD] text-white text-sm font-bold px-4 py-1.5 rounded shadow-sm hover:bg-[#009d96] uppercase ml-auto"
                 >
                   OK
                 </button>
