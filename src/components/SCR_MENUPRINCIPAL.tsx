@@ -959,12 +959,12 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
               <div className="fixed inset-0 z-40 bg-[#0c1826]/35 backdrop-blur-[1px] lg:hidden" />
               <aside
                 className={`fixed bottom-0 right-0 top-0 z-50 flex w-full max-w-[100vw] flex-col border-l border-[#cfd9e2] bg-white shadow-2xl transition-all duration-300 lg:absolute lg:bottom-0 lg:top-0 lg:z-20 lg:max-w-none ${
-                  isWhatsAppPanelCollapsed ? "lg:w-[46px]" : "lg:left-0 lg:w-auto"
+                  isWhatsAppPanelCollapsed ? "lg:w-[40px]" : "lg:left-0 lg:w-auto"
                 }`}
               >
                 <div
                   className={`flex items-center justify-between border-b border-[#dbe5ec] bg-white px-3 py-3 lg:px-4 ${
-                    isWhatsAppPanelCollapsed ? "min-h-0 lg:min-h-full lg:flex-col lg:justify-start lg:gap-4 lg:border-b-0 lg:px-1 lg:py-3" : "min-h-16"
+                    isWhatsAppPanelCollapsed ? "min-h-0 lg:min-h-full lg:flex-col lg:justify-start lg:gap-4 lg:border-b-0 lg:px-1 lg:py-4" : "min-h-16"
                   }`}
                 >
                   {isWhatsAppPanelCollapsed ? (
@@ -972,21 +972,21 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                       <button
                         type="button"
                         onClick={() => setIsWhatsAppPanelCollapsed(false)}
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#d6e4dc] bg-[#f4fbf7] text-[#128C7E] transition-colors hover:bg-[#e8f8ee]"
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#d6e4dc] bg-[#f4fbf7] text-[#128C7E] transition-colors hover:bg-[#e8f8ee]"
                         aria-label="Expandir painel do WhatsApp"
                       >
-                        <ChevronLeft className="h-4 w-4" />
+                        <ChevronLeft className="h-3.5 w-3.5" />
                       </button>
                       <span
-                        className={`hidden h-3 w-3 rounded-full lg:block ${whatsAppIndicatorClassName}`}
+                        className={`hidden h-2.5 w-2.5 rounded-full lg:block ${whatsAppIndicatorClassName}`}
                       />
                       <button
                         type="button"
                         onClick={handleCloseWhatsAppPanel}
-                        className="hidden h-9 w-9 items-center justify-center rounded-full border border-[#dbe5ec] text-[#526170] transition-colors hover:bg-[#f8fbfd] lg:inline-flex"
+                        className="hidden h-7 w-7 items-center justify-center rounded-full border border-[#dbe5ec] text-[#526170] transition-colors hover:bg-[#f8fbfd] lg:inline-flex"
                         aria-label="Fechar painel do WhatsApp"
                       >
-                        <X className="h-4 w-4" />
+                        <X className="h-3.5 w-3.5" />
                       </button>
                     </>
                   ) : (

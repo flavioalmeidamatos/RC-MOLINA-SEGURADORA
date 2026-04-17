@@ -13,56 +13,81 @@ export const WeekView: React.FC<WeekViewProps> = ({ currentDate, holidays }) => 
   const endDate = addDays(startDate, 6);
   const weekDays = eachDayOfInterval({ start: startDate, end: endDate });
 
-  const timeSlots = Array.from({ length: 31 }, (_, i) => {
-    const totalMinutes = 6 * 60 + i * 30;
-    const hour = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    return {
-      key: `${hour}:${minutes.toString().padStart(2, "0")}`,
-      label: minutes === 0 ? `${hour}:00` : `${hour}:${minutes.toString().padStart(2, "0")}`,
-    };
-  });
+  const timeSlots = Array.from({ length: 16 }, (_, i) => 6 + i); // 06:00 to 21:00
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-white">
-      <div className="grid grid-cols-[72px_repeat(7,minmax(0,1fr))] border-b border-black bg-white">
-        <div className="border-r border-black"></div>
-        {weekDays.map((day) => {
-          const holiday = holidays.find(h => h.date === format(day, "yyyy-MM-dd"));
-          return (
-            <div key={day.toString()} className="flex flex-col items-center border-r border-black py-2 text-center last:border-r-0">
-              <div className="text-sm font-bold text-black uppercase">
-                {format(day, "eee d/M", { locale: ptBR }).replace(".", "")}
-              </div>
-              {holiday && (
-                <div className="text-[9px] bg-black text-white px-1 rounded font-bold uppercase mt-1 max-w-[90%] truncate">
-                  {holiday.name}
+    <div className="flex h-full min-h-0 flex-col bg-white">
+      {/* Header */}
+      <div className="flex border-b border-black">
+        <div className="w-[80px] border-r border-black bg-gray-50"></div>
+        <div className="flex flex-1 grid grid-cols-7">
+          {weekDays.map((day) => {
+            const isWeekend = day.getDay() === 0 || day.getDay() === 6;
+            const holiday = holidays.find(h => h.date === format(day, "yyyy-MM-dd"));
+            
+            return (
+              <div 
+                key={day.toString()} 
+                className={`flex flex-col items-center justify-center py-2 border-r border-black last:border-r-0 ${
+                  isWeekend ? "bg-red-50/30" : ""
+                }`}
+              >
+                <div className={`text-xs font-bold uppercase ${isWeekend ? "text-red-600" : "text-black"}`}>
+                  {format(day, "eee", { locale: ptBR })}
                 </div>
-              )}
-            </div>
-          );
-        })}
+                <div className={`text-lg font-black leading-none mt-0.5 ${isWeekend ? "text-red-600" : "text-black"}`}>
+                  {format(day, "d")}
+                </div>
+                {holiday && (
+                  <div className="mt-1 max-w-[90%] truncate rounded bg-black px-1.5 py-0.5 text-[8px] font-bold uppercase text-white">
+                    {holiday.name}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Grid */}
-      <div
-        className="grid flex-1 min-h-0 grid-cols-[72px_repeat(7,minmax(0,1fr))]"
-        style={{ gridTemplateRows: `repeat(${timeSlots.length}, minmax(0, 1fr))` }}
-      >
-        {timeSlots.map((slot) => (
-          <div key={slot.key} className="grid grid-cols-[72px_repeat(7,minmax(0,1fr))] border-b border-black">
-            <div className="flex items-start justify-center border-r border-black bg-white py-1 text-[10px] font-bold text-black">
-              {slot.label}
-            </div>
-            {weekDays.map((day) => (
-              <div
-                key={`${slot.key}-${day.toString()}`}
-                className="cursor-pointer border-r border-black transition-colors hover:bg-gray-50 last:border-r-0"
+      {/* Body */}
+      <div className="flex-1 overflow-y-auto custom-scrollbar">
+        <div className="relative flex min-h-full">
+          {/* Time column */}
+          <div className="w-[80px] flex flex-col bg-gray-50 border-r border-black">
+            {timeSlots.map((hour) => (
+              <div 
+                key={hour} 
+                className="h-[80px] border-b border-black last:border-b-0 p-2 text-right"
               >
+                <span className="text-xs font-bold text-black">{hour}:00</span>
               </div>
             ))}
           </div>
-        ))}
+
+          {/* Days columns */}
+          <div className="flex-1 grid grid-cols-7 relative">
+            {weekDays.map((day) => {
+              const isWeekend = day.getDay() === 0 || day.getDay() === 6;
+              return (
+                <div 
+                  key={day.toString()} 
+                  className={`relative flex flex-col border-r border-black last:border-r-0 ${
+                    isWeekend ? "bg-red-50/10" : ""
+                  }`}
+                >
+                  {timeSlots.map((hour) => (
+                    <div 
+                      key={`${day}-${hour}`}
+                      className="h-[80px] border-b border-black last:border-b-0 transition-colors hover:bg-gray-50/50 cursor-pointer"
+                    >
+                      {/* Interaction areas or events would go here */}
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );

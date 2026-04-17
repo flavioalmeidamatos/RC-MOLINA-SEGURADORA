@@ -55,7 +55,7 @@ export const AgendaHeader: React.FC<AgendaHeaderProps> = ({
   };
 
   return (
-    <div className="flex items-center justify-between border-b border-black bg-white px-4 py-3">
+    <div className="flex items-center gap-4 border-b border-black bg-white px-4 py-3">
       <div className="flex items-center gap-2">
         <div className="flex border border-black rounded overflow-hidden">
           <button 
@@ -78,14 +78,6 @@ export const AgendaHeader: React.FC<AgendaHeaderProps> = ({
         >
           Hoje
         </button>
-        
-        <button className="px-4 py-1.5 text-sm font-bold border border-black rounded hover:bg-gray-100 text-black transition-colors">
-          Ausência
-        </button>
-      </div>
-
-      <div className="text-lg font-bold text-black uppercase tracking-tight">
-        {getTitle()}
       </div>
 
       <div className="flex border border-black rounded overflow-hidden">
@@ -113,6 +105,10 @@ export const AgendaHeader: React.FC<AgendaHeaderProps> = ({
         >
           Dia
         </button>
+      </div>
+
+      <div className="flex-1 text-center text-lg font-bold text-black uppercase tracking-tight pr-12">
+        {getTitle()}
       </div>
     </div>
   );
