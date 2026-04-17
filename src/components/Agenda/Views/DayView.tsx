@@ -9,11 +9,10 @@ interface DayViewProps {
 }
 
 export const DayView: React.FC<DayViewProps> = ({ currentDate, holidays }) => {
-  // 25 slots: 08:00 to 20:00 step 30min
   const timeSlots = Array.from({ length: 25 }, (_, i) => {
     const hour = Math.floor(i / 2) + 8;
-    const isHalf = i % 2 !== 0;
-    return { hour, isHalf, key: `${hour}:${isHalf ? "30" : "00"}` };
+    const minutes = i % 2 === 0 ? "00" : "30";
+    return `${hour}:${minutes}`;
   });
   const holiday = holidays.find(h => h.date === format(currentDate, "yyyy-MM-dd"));
   const isWeekend = currentDate.getDay() === 0 || currentDate.getDay() === 6;
@@ -37,27 +36,23 @@ export const DayView: React.FC<DayViewProps> = ({ currentDate, holidays }) => {
         <div className="flex h-full border-r border-black">
           {/* Time column */}
           <div className="w-[60px] flex flex-col bg-gray-50 border-r border-black">
-            {timeSlots.map((slot, index) => (
+            {timeSlots.map((time, index) => (
               <div 
-                key={slot.key} 
+                key={time} 
                 className={`flex-1 border-black flex items-center justify-center p-0.5 ${
                   index !== timeSlots.length - 1 ? 'border-b' : ''
                 }`}
               >
-                {!slot.isHalf ? (
-                  <span className="text-[10px] font-bold text-black">{slot.hour}:00</span>
-                ) : (
-                  <span className="text-[9px] text-gray-500 font-medium">30</span>
-                )}
+                <span className="text-[10px] font-bold text-black">{time}</span>
               </div>
             ))}
           </div>
 
           {/* Content area */}
           <div className="flex-1 flex flex-col">
-            {timeSlots.map((slot, index) => (
+            {timeSlots.map((time, index) => (
               <div 
-                key={slot.key}
+                key={time}
                 className={`flex-1 border-black transition-colors hover:bg-gray-50/50 cursor-pointer ${
                   index !== timeSlots.length - 1 ? 'border-b' : ''
                 } ${isWeekend ? "bg-red-50/10" : ""}`}
