@@ -33,6 +33,13 @@ export const AgendaHeader: React.FC<AgendaHeaderProps> = ({
     setCurrentDate(new Date());
   };
 
+  const switchView = (view: CalendarView) => {
+    setActiveView(view);
+    if (view === "week" || view === "day") {
+      setCurrentDate(new Date());
+    }
+  };
+
   const getTitle = () => {
     if (activeView === "month") {
       return format(currentDate, "MMMM yyyy", { locale: ptBR });
@@ -48,18 +55,18 @@ export const AgendaHeader: React.FC<AgendaHeaderProps> = ({
   };
 
   return (
-    <div className="flex items-center justify-between border-b border-gray-100 bg-white px-4 py-3">
+    <div className="flex items-center justify-between border-b border-black bg-white px-4 py-3">
       <div className="flex items-center gap-2">
-        <div className="flex border rounded overflow-hidden">
+        <div className="flex border border-black rounded overflow-hidden">
           <button 
             onClick={handlePrevious}
-            className="p-1.5 hover:bg-gray-50 border-r text-gray-600 transition-colors"
+            className="p-1.5 hover:bg-gray-100 border-r border-black text-black transition-colors"
           >
             <ChevronLeft size={16} />
           </button>
           <button 
             onClick={handleNext}
-            className="p-1.5 hover:bg-gray-50 text-gray-600 transition-colors"
+            className="p-1.5 hover:bg-gray-100 text-black transition-colors"
           >
             <ChevronRight size={16} />
           </button>
@@ -67,41 +74,41 @@ export const AgendaHeader: React.FC<AgendaHeaderProps> = ({
         
         <button 
           onClick={handleToday}
-          className="px-4 py-1.5 text-sm font-medium border rounded hover:bg-gray-50 text-gray-700 transition-colors"
+          className="px-4 py-1.5 text-sm font-bold border border-black rounded hover:bg-gray-100 text-black transition-colors"
         >
           Hoje
         </button>
         
-        <button className="px-4 py-1.5 text-sm font-medium border rounded hover:bg-gray-50 text-gray-700 transition-colors">
+        <button className="px-4 py-1.5 text-sm font-bold border border-black rounded hover:bg-gray-100 text-black transition-colors">
           Ausência
         </button>
       </div>
 
-      <div className="text-lg font-medium text-gray-600">
+      <div className="text-lg font-bold text-black uppercase tracking-tight">
         {getTitle()}
       </div>
 
-      <div className="flex border rounded overflow-hidden">
+      <div className="flex border border-black rounded overflow-hidden">
         <button
-          onClick={() => setActiveView("month")}
+          onClick={() => switchView("month")}
           className={`px-4 py-1.5 text-sm font-medium transition-colors ${
-            activeView === "month" ? "bg-[#00B5AD] text-white" : "hover:bg-gray-50 text-gray-600 border-r"
+            activeView === "month" ? "bg-[#00B5AD] text-white" : "hover:bg-gray-50 text-black border-r border-black"
           }`}
         >
           Mês
         </button>
         <button
-          onClick={() => setActiveView("week")}
+          onClick={() => switchView("week")}
           className={`px-4 py-1.5 text-sm font-medium transition-colors ${
-            activeView === "week" ? "bg-[#00B5AD] text-white" : "hover:bg-gray-50 text-gray-600 border-r text-gray-600"
+            activeView === "week" ? "bg-[#00B5AD] text-white" : "hover:bg-gray-50 text-black border-r border-black"
           }`}
         >
           Semana
         </button>
         <button
-          onClick={() => setActiveView("day")}
+          onClick={() => switchView("day")}
           className={`px-4 py-1.5 text-sm font-medium transition-colors ${
-            activeView === "day" ? "bg-[#00B5AD] text-white" : "hover:bg-gray-50 text-gray-600"
+            activeView === "day" ? "bg-[#00B5AD] text-white" : "hover:bg-gray-50 text-black"
           }`}
         >
           Dia

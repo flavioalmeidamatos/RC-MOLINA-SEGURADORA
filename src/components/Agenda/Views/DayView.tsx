@@ -9,13 +9,13 @@ interface DayViewProps {
 }
 
 export const DayView: React.FC<DayViewProps> = ({ currentDate, holidays }) => {
-  const timeSlots = Array.from({ length: 27 }, (_, i) => {
-    const totalMinutes = 8 * 60 + i * 30;
+  const timeSlots = Array.from({ length: 31 }, (_, i) => {
+    const totalMinutes = 6 * 60 + i * 30;
     const hour = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
     return {
       key: `${hour}:${minutes.toString().padStart(2, "0")}`,
-      label: minutes === 0 ? `${hour}` : `${hour}:${minutes.toString().padStart(2, "0")}`,
+      label: minutes === 0 ? `${hour}:00` : `${hour}:${minutes.toString().padStart(2, "0")}`,
     };
   });
 
@@ -23,12 +23,12 @@ export const DayView: React.FC<DayViewProps> = ({ currentDate, holidays }) => {
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-white">
-      <div className="border-b border-black bg-gray-50 py-3 text-center flex flex-col items-center gap-1">
+      <div className="border-b border-black bg-white py-3 text-center flex flex-col items-center gap-1">
         <div className="text-xs font-bold uppercase tracking-widest text-black">
           FLAVIO ALMEIDA MATOS
         </div>
         {holiday && (
-          <div className="text-[10px] bg-red-500 text-white px-2 py-0.5 rounded font-bold uppercase">
+          <div className="text-[10px] bg-black text-white px-2 py-0.5 rounded font-bold uppercase">
             FERIADO: {holiday.name}
           </div>
         )}
@@ -40,7 +40,7 @@ export const DayView: React.FC<DayViewProps> = ({ currentDate, holidays }) => {
       >
         {timeSlots.map((slot) => (
           <div key={slot.key} className="grid grid-cols-[72px_1fr] border-b border-black">
-            <div className="flex items-start justify-center border-r border-black bg-gray-50 py-1 text-[10px] font-medium text-black">
+            <div className="flex items-start justify-center border-r border-black bg-white py-1 text-[10px] font-bold text-black">
               {slot.label}
             </div>
             <div className="cursor-pointer transition-colors hover:bg-gray-50">

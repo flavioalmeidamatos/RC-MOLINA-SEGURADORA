@@ -19,11 +19,11 @@ export const Agenda: React.FC = () => {
   }, [currentDate]);
 
   return (
-    <div className="flex h-full flex-1 flex-col overflow-hidden bg-[#F0F4F8]">
+    <div className="flex h-full flex-1 flex-col overflow-hidden bg-white">
       <div className="flex flex-1 overflow-hidden">
         <AgendaSidebar />
 
-        <div className="flex min-w-0 flex-1 flex-col border-l border-black bg-white shadow-sm">
+        <div className="flex min-w-0 flex-1 flex-col border-l border-black bg-white">
           <AgendaHeader 
             currentDate={currentDate} 
             setCurrentDate={setCurrentDate} 
@@ -31,7 +31,7 @@ export const Agenda: React.FC = () => {
             setActiveView={setActiveView}
           />
           
-          <div className="flex-1 overflow-hidden min-h-0">
+          <div className="flex-1 overflow-hidden min-h-0 border-t border-black">
             {activeView === "month" && (
               <MonthView currentDate={currentDate} holidays={holidays} />
             )}

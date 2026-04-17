@@ -13,13 +13,13 @@ export const WeekView: React.FC<WeekViewProps> = ({ currentDate, holidays }) => 
   const endDate = addDays(startDate, 6);
   const weekDays = eachDayOfInterval({ start: startDate, end: endDate });
 
-  const timeSlots = Array.from({ length: 27 }, (_, i) => {
-    const totalMinutes = 8 * 60 + i * 30;
+  const timeSlots = Array.from({ length: 31 }, (_, i) => {
+    const totalMinutes = 6 * 60 + i * 30;
     const hour = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
     return {
       key: `${hour}:${minutes.toString().padStart(2, "0")}`,
-      label: minutes === 0 ? `${hour}` : `${hour}:${minutes.toString().padStart(2, "0")}`,
+      label: minutes === 0 ? `${hour}:00` : `${hour}:${minutes.toString().padStart(2, "0")}`,
     };
   });
 
@@ -31,11 +31,11 @@ export const WeekView: React.FC<WeekViewProps> = ({ currentDate, holidays }) => 
           const holiday = holidays.find(h => h.date === format(day, "yyyy-MM-dd"));
           return (
             <div key={day.toString()} className="flex flex-col items-center border-r border-black py-2 text-center last:border-r-0">
-              <div className="text-sm font-bold text-black">
+              <div className="text-sm font-bold text-black uppercase">
                 {format(day, "eee d/M", { locale: ptBR }).replace(".", "")}
               </div>
               {holiday && (
-                <div className="text-[9px] bg-red-500 text-white px-1 rounded font-bold uppercase mt-1 max-w-[90%] truncate">
+                <div className="text-[9px] bg-black text-white px-1 rounded font-bold uppercase mt-1 max-w-[90%] truncate">
                   {holiday.name}
                 </div>
               )}
@@ -51,7 +51,7 @@ export const WeekView: React.FC<WeekViewProps> = ({ currentDate, holidays }) => 
       >
         {timeSlots.map((slot) => (
           <div key={slot.key} className="grid grid-cols-[72px_repeat(7,minmax(0,1fr))] border-b border-black">
-            <div className="flex items-start justify-center border-r border-black bg-gray-50 py-1 text-[10px] font-medium text-black">
+            <div className="flex items-start justify-center border-r border-black bg-white py-1 text-[10px] font-bold text-black">
               {slot.label}
             </div>
             {weekDays.map((day) => (

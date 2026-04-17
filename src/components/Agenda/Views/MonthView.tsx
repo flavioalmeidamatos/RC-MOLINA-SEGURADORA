@@ -41,7 +41,7 @@ export const MonthView: React.FC<MonthViewProps> = ({ currentDate, holidays }) =
             <div 
               key={i} 
               className={`min-h-[100px] border-b border-r border-black p-2 flex flex-col gap-1 ${
-                !isCurrentMonth ? "bg-gray-50 text-gray-300" : "text-gray-700"
+                !isCurrentMonth ? "bg-gray-50 text-gray-400" : "text-black"
               }`}
             >
               <div className="flex justify-between items-center">
