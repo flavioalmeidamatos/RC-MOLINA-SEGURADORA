@@ -3,12 +3,16 @@ import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInte
 import { ptBR } from "date-fns/locale";
 import { Holiday } from "../../../lib/holidays";
 
+import { CalendarView } from "../Agenda";
+
 interface MonthViewProps {
   currentDate: Date;
   holidays: Holiday[];
+  setCurrentDate: (date: Date) => void;
+  setActiveView: (view: CalendarView) => void;
 }
 
-export const MonthView: React.FC<MonthViewProps> = ({ currentDate, holidays }) => {
+export const MonthView: React.FC<MonthViewProps> = ({ currentDate, holidays, setCurrentDate, setActiveView }) => {
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(monthStart);
   const startDate = startOfWeek(monthStart, { weekStartsOn: 0 }); // Sunday
@@ -67,6 +71,16 @@ export const MonthView: React.FC<MonthViewProps> = ({ currentDate, holidays }) =
                 }`}>
                   {format(day, "d")}
                 </span>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCurrentDate(day);
+                    setActiveView("day");
+                  }}
+                  className="bg-[#00B5AD] text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm hover:bg-[#009d96] uppercase"
+                >
+                  OK
+                </button>
               </div>
               
               <div className="flex flex-col gap-1 overflow-y-auto no-scrollbar">

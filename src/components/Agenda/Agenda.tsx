@@ -36,7 +36,12 @@ export const Agenda: React.FC = () => {
           
           <div className="flex-1 overflow-hidden min-h-0 border-t border-black">
             {activeView === "month" && (
-              <MonthView currentDate={currentDate} holidays={holidays} />
+              <MonthView 
+                currentDate={currentDate} 
+                holidays={holidays} 
+                setCurrentDate={setCurrentDate} 
+                setActiveView={setActiveView} 
+              />
             )}
             {activeView === "week" && (
               <WeekView currentDate={currentDate} holidays={holidays} />
