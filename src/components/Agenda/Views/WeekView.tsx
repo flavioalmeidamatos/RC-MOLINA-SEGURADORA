@@ -13,13 +13,17 @@ export const WeekView: React.FC<WeekViewProps> = ({ currentDate, holidays }) => 
   const endDate = addDays(startDate, 6);
   const weekDays = eachDayOfInterval({ start: startDate, end: endDate });
 
-  const timeSlots = Array.from({ length: 13 }, (_, i) => 8 + i); // 08:00 to 20:00
+  const timeSlots = Array.from({ length: 25 }, (_, i) => {
+    const hour = Math.floor(i / 2) + 8;
+    const minutes = i % 2 === 0 ? "00" : "30";
+    return `${hour}:${minutes}`;
+  });
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-white overflow-hidden">
       {/* Header */}
       <div className="flex border-b border-black">
-        <div className="w-[70px] border-r border-black bg-gray-50 uppercase text-[10px] flex items-center justify-center font-bold">Hora</div>
+        <div className="w-[60px] border-r border-black bg-gray-50 uppercase text-[10px] flex items-center justify-center font-bold">Hora</div>
         <div className="flex flex-1 grid grid-cols-7 border-r border-black">
           {weekDays.map((day) => {
             const isWeekend = day.getDay() === 0 || day.getDay() === 6;
@@ -28,7 +32,7 @@ export const WeekView: React.FC<WeekViewProps> = ({ currentDate, holidays }) => 
             return (
               <div 
                 key={day.toString()} 
-                className={`flex flex-col items-center justify-center py-1.5 border-r border-black last:border-r-0 ${
+                className={`flex flex-col items-center justify-center py-0.5 border-r border-black ${
                   isWeekend ? "bg-red-50/30" : ""
                 }`}
               >
@@ -53,13 +57,13 @@ export const WeekView: React.FC<WeekViewProps> = ({ currentDate, holidays }) => 
       <div className="flex-1 min-h-0 overflow-hidden">
         <div className="flex h-full">
           {/* Time column */}
-          <div className="w-[70px] flex flex-col bg-gray-50 border-r border-black">
-            {timeSlots.map((hour) => (
+          <div className="w-[60px] flex flex-col bg-gray-50 border-r border-black">
+            {timeSlots.map((time) => (
               <div 
-                key={hour} 
+                key={time} 
                 className="flex-1 border-b border-black last:border-b-0 flex items-center justify-center"
               >
-                <span className="text-[10px] font-bold text-black">{hour}:00</span>
+                <span className="text-[10px] font-bold text-black">{time}</span>
               </div>
             ))}
           </div>
@@ -71,13 +75,13 @@ export const WeekView: React.FC<WeekViewProps> = ({ currentDate, holidays }) => 
               return (
                 <div 
                   key={day.toString()} 
-                  className={`relative flex flex-col border-r border-black last:border-r-0 ${
+                  className={`relative flex flex-col border-r border-black ${
                     isWeekend ? "bg-red-50/10" : ""
                   }`}
                 >
-                  {timeSlots.map((hour) => (
+                  {timeSlots.map((time) => (
                     <div 
-                      key={`${day}-${hour}`}
+                      key={`${day}-${time}`}
                       className="flex-1 border-b border-black last:border-b-0 transition-colors hover:bg-gray-50/50 cursor-pointer"
                     >
                     </div>

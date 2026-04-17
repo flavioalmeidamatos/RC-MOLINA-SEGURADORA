@@ -55,7 +55,7 @@ export const AgendaHeader: React.FC<AgendaHeaderProps> = ({
   };
 
   return (
-    <div className="flex items-center gap-4 border-b border-black bg-white px-4 py-3">
+    <div className="flex items-center gap-4 border-b border-black bg-white px-4 py-2">
       <div className="flex items-center gap-2">
         <div className="flex border border-black rounded overflow-hidden">
           <button 
@@ -107,7 +107,7 @@ export const AgendaHeader: React.FC<AgendaHeaderProps> = ({
         </button>
       </div>
 
-      <div className="flex-1 text-center text-lg font-bold text-black uppercase tracking-tight pr-12">
+      <div className="flex-1 text-center text-lg font-bold text-black uppercase tracking-tight">
         {getTitle()}
       </div>
     </div>
