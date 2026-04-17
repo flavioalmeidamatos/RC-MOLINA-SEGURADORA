@@ -1,6 +1,6 @@
 import React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { format, addMonths, subMonths, addWeeks, subWeeks, addDays, subDays, startOfWeek, endOfWeek } from "date-fns";
+import { format, addMonths, subMonths, addWeeks, subWeeks, addDays, subDays, startOfWeek, endOfWeek, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarView } from "./Agenda";
 
@@ -30,7 +30,7 @@ export const AgendaHeader: React.FC<AgendaHeaderProps> = ({
   };
 
   const handleToday = () => {
-    setCurrentDate(new Date());
+    setCurrentDate(startOfDay(new Date()));
   };
 
   const switchView = (view: CalendarView) => {

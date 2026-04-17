@@ -73,17 +73,6 @@ export const MonthView: React.FC<MonthViewProps> = ({ currentDate, holidays, set
                 }`}>
                   {format(day, "d")}
                 </span>
-                {isSelected && (
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setActiveView("day");
-                    }}
-                    className="bg-[#00B5AD] text-white text-sm font-bold px-4 py-1.5 rounded shadow-sm hover:bg-[#009d96] uppercase ml-auto"
-                  >
-                    OK
-                  </button>
-                )}
               </div>
               
               <div className="flex flex-col gap-1 overflow-y-auto no-scrollbar">

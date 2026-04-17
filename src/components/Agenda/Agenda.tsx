@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { startOfDay } from "date-fns";
 import { fetchHolidays, Holiday } from "../../lib/holidays";
 import { AgendaSidebar } from "./AgendaSidebar";
 import { AgendaHeader } from "./AgendaHeader";
@@ -10,7 +11,11 @@ export type CalendarView = "month" | "week" | "day";
 
 export const Agenda: React.FC = () => {
   const [activeView, setActiveView] = useState<CalendarView>("month");
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [currentDate, setCurrentDateRaw] = useState(() => startOfDay(new Date()));
+
+  const setCurrentDate = useCallback((date: Date) => {
+    setCurrentDateRaw(startOfDay(date));
+  }, []);
   const [holidays, setHolidays] = useState<Holiday[]>([]);
 
   useEffect(() => {
