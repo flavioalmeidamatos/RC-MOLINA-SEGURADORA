@@ -140,10 +140,10 @@ const cidadesPorEstado: Record<string, string[]> = {
 };
 
 const fieldClassName =
-  'h-11 w-full rounded-2xl border border-black bg-white px-3.5 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-black focus:ring-4 focus:ring-black/10 sm:h-10 sm:px-4';
+  'h-11 w-full rounded-2xl border border-black bg-white px-3.5 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-black focus:ring-4 focus:ring-black/10 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400 sm:h-10 sm:px-4';
 
 const textAreaClassName =
-  'w-full rounded-2xl border border-black bg-white px-3.5 py-2.5 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-black focus:ring-4 focus:ring-black/10 sm:px-4';
+  'w-full rounded-2xl border border-black bg-white px-3.5 py-2.5 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-black focus:ring-4 focus:ring-black/10 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400 sm:px-4';
 
 const sectionCardClassName = 'rounded-[28px] border border-slate-200 bg-white p-3 shadow-sm sm:p-4 xl:p-5';
 
@@ -192,6 +192,7 @@ const revogarPreviews = (documentos: UploadedDocument[]) => {
 
 export const ClientRegistrationMultipage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabId>('geral');
+  const [isClientFormEnabled, setIsClientFormEnabled] = useState(false);
   const [formState, setFormState] = useState<ClientFormState>(initialFormState);
   const [contacts, setContacts] = useState<ContactRow[]>(initialContacts);
   const [uploadedDocuments, setUploadedDocuments] = useState<UploadedDocument[]>([]);
@@ -216,6 +217,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
       uploadedDocuments.length > 0,
     [contacts, formState, uploadedDocuments.length],
   );
+  const isClientFormLocked = !isClientFormEnabled;
 
   useEffect(() => {
     uploadedDocumentsRef.current = uploadedDocuments;
@@ -363,6 +365,8 @@ export const ClientRegistrationMultipage: React.FC = () => {
   };
 
   const adicionarArquivos = (arquivos: FileList | File[]) => {
+    if (isClientFormLocked) return;
+
     const listaArquivos = Array.from(arquivos);
 
     if (!listaArquivos.length) return;
@@ -383,6 +387,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
   };
 
   const handleDocumentsSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (isClientFormLocked) return;
     if (!event.target.files?.length) return;
     adicionarArquivos(event.target.files);
     event.target.value = '';
@@ -392,6 +397,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
     event.preventDefault();
     setIsDraggingDocuments(false);
 
+    if (isClientFormLocked) return;
     if (!event.dataTransfer.files?.length) return;
     adicionarArquivos(event.dataTransfer.files);
   };
@@ -423,7 +429,17 @@ export const ClientRegistrationMultipage: React.FC = () => {
     setFeedback('Novo cliente pronto para preenchimento.');
   };
 
+  const startNewClient = () => {
+    resetForm();
+    setIsClientFormEnabled(true);
+  };
+
   const saveClient = () => {
+    if (isClientFormLocked) {
+      setFeedback('Clique em Novo Cliente para liberar o preenchimento.');
+      return;
+    }
+
     validateCPFField();
     validateCNPJField();
     validateBirthDateField();
@@ -456,7 +472,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
             <button
               type="button"
               onClick={saveClient}
-              disabled={!hasFormChanges}
+              disabled={isClientFormLocked || !hasFormChanges}
               className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:bg-emerald-200 disabled:text-emerald-50 disabled:shadow-none sm:min-h-10"
             >
               <Save size={18} />
@@ -464,7 +480,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
             </button>
             <button
               type="button"
-              onClick={resetForm}
+              onClick={startNewClient}
               className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-[#4e9bdd] px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-[#4e9bdd]/20 transition hover:bg-[#377fbf] sm:min-h-10"
             >
               <PlusCircle size={18} />
@@ -477,6 +493,14 @@ export const ClientRegistrationMultipage: React.FC = () => {
           <div className="px-3 pt-3">
             <div className="rounded-2xl border border-[#3d8ed8]/20 bg-[#3d8ed8]/5 px-4 py-2.5 text-sm text-[#225f97]">
               {feedback}
+            </div>
+          </div>
+        ) : null}
+
+        {isClientFormLocked ? (
+          <div className="px-3 pt-3">
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-800">
+              Clique em Novo Cliente para liberar o preenchimento das 4 abas.
             </div>
           </div>
         ) : null}
@@ -505,7 +529,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
         </div>
       </div>
 
-      <div className="space-y-3">
+      <fieldset disabled={isClientFormLocked} className="m-0 space-y-3 border-0 p-0">
         <section className={activeTab === 'geral' ? 'block' : 'hidden'}>
           <div className={sectionCardClassName}>
             <div className="grid gap-3 lg:grid-cols-2">
@@ -583,7 +607,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                 <button
                   type="button"
                   onClick={addContact}
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-[#4e9bdd] px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-[#4e9bdd]/20 transition hover:bg-[#377fbf] sm:min-h-10"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-[#4e9bdd] px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-[#4e9bdd]/20 transition hover:bg-[#377fbf] disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-10"
                 >
                   <PlusCircle size={18} />
                   Adicionar contato
@@ -647,7 +671,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                         type="button"
                         onClick={() => handleContactChange(contact.id, 'favorite', !contact.favorite)}
                         aria-label={contact.favorite ? 'Desmarcar favorito' : 'Marcar favorito'}
-                          className={`inline-flex h-11 items-center justify-center rounded-2xl transition sm:h-10 ${
+                          className={`inline-flex h-11 items-center justify-center rounded-2xl transition disabled:cursor-not-allowed disabled:opacity-50 sm:h-10 ${
                             contact.favorite
                               ? 'bg-rose-50 text-rose-500'
                               : 'bg-transparent text-slate-400 hover:bg-rose-50 hover:text-rose-500'
@@ -659,7 +683,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                         type="button"
                         onClick={() => removeContact(contact.id)}
                         aria-label="Remover contato"
-                          className="inline-flex h-11 items-center justify-center rounded-2xl bg-transparent text-slate-400 transition hover:bg-red-50 hover:text-red-500 sm:h-10"
+                          className="inline-flex h-11 items-center justify-center rounded-2xl bg-transparent text-slate-400 transition hover:bg-red-50 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-50 sm:h-10"
                       >
                         <Trash2 size={18} />
                       </button>
@@ -818,7 +842,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleFieldChange('permiteAgendarOnline', true)}
-                      className={`min-h-11 rounded-2xl border px-4 py-2.5 text-sm font-black transition sm:min-h-10 ${
+                      className={`min-h-11 rounded-2xl border px-4 py-2.5 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-10 ${
                         formState.permiteAgendarOnline
                           ? 'border-teal-500 bg-teal-500 text-white'
                           : 'border-black bg-white text-slate-500'
@@ -829,7 +853,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleFieldChange('permiteAgendarOnline', false)}
-                      className={`min-h-11 rounded-2xl border px-4 py-2.5 text-sm font-black transition sm:min-h-10 ${
+                      className={`min-h-11 rounded-2xl border px-4 py-2.5 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-10 ${
                         !formState.permiteAgendarOnline
                           ? 'border-slate-700 bg-slate-700 text-white'
                           : 'border-black bg-white text-slate-500'
@@ -848,7 +872,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleFieldChange('status', 'ATIVO')}
-                      className={`min-h-11 rounded-2xl border px-4 py-2.5 text-sm font-black transition sm:min-h-10 ${
+                      className={`min-h-11 rounded-2xl border px-4 py-2.5 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-10 ${
                         formState.status === 'ATIVO'
                           ? 'border-teal-500 bg-teal-500 text-white'
                           : 'border-black bg-white text-slate-500'
@@ -859,7 +883,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleFieldChange('status', 'INATIVO')}
-                      className={`min-h-11 rounded-2xl border px-4 py-2.5 text-sm font-black transition sm:min-h-10 ${
+                      className={`min-h-11 rounded-2xl border px-4 py-2.5 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-10 ${
                         formState.status === 'INATIVO'
                           ? 'border-slate-700 bg-slate-700 text-white'
                           : 'border-black bg-white text-slate-500'
@@ -911,12 +935,15 @@ export const ClientRegistrationMultipage: React.FC = () => {
                 <div
                   onDragOver={(event) => {
                     event.preventDefault();
+                    if (isClientFormLocked) return;
                     setIsDraggingDocuments(true);
                   }}
                   onDragLeave={() => setIsDraggingDocuments(false)}
                   onDrop={handleDocumentDrop}
                   className={`rounded-[28px] border-2 border-dashed px-4 py-3.5 text-center transition sm:px-5 xl:h-full ${
-                    isDraggingDocuments
+                    isClientFormLocked
+                      ? 'border-slate-200 bg-slate-100 opacity-70'
+                      : isDraggingDocuments
                       ? 'border-[#3d8ed8] bg-[#3d8ed8]/5'
                       : 'border-slate-300 bg-slate-50/80 hover:border-[#3d8ed8]/50 hover:bg-[#3d8ed8]/[0.03]'
                   }`}
@@ -937,13 +964,15 @@ export const ClientRegistrationMultipage: React.FC = () => {
                     <div className="space-y-1">
                       <h3 className="text-base font-black text-slate-900">Arraste e solte os arquivos aqui</h3>
                       <p className="text-sm leading-5 text-slate-500">
-                        Aceita imagens, PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, TXT e CSV.
+                        {isClientFormLocked
+                          ? 'Clique em Novo Cliente antes de anexar arquivos.'
+                          : 'Aceita imagens, PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, TXT e CSV.'}
                       </p>
                     </div>
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="inline-flex min-h-10 items-center justify-center gap-2 rounded-2xl bg-[#0c1826] px-4 py-2.5 text-sm font-black text-white transition hover:bg-[#16273b]"
+                      className="inline-flex min-h-10 items-center justify-center gap-2 rounded-2xl bg-[#0c1826] px-4 py-2.5 text-sm font-black text-white transition hover:bg-[#16273b] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <PlusCircle size={18} />
                       Selecionar arquivos
@@ -978,14 +1007,14 @@ export const ClientRegistrationMultipage: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => scrollDocumentsCarousel('left')}
-                        className="inline-flex min-h-10 items-center justify-center rounded-2xl border border-slate-200 bg-white px-3 text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
+                        className="inline-flex min-h-10 items-center justify-center rounded-2xl border border-slate-200 bg-white px-3 text-slate-600 transition hover:border-slate-300 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         <ChevronLeft size={18} />
                       </button>
                       <button
                         type="button"
                         onClick={() => scrollDocumentsCarousel('right')}
-                        className="inline-flex min-h-10 items-center justify-center rounded-2xl border border-slate-200 bg-white px-3 text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
+                        className="inline-flex min-h-10 items-center justify-center rounded-2xl border border-slate-200 bg-white px-3 text-slate-600 transition hover:border-slate-300 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         <ChevronRight size={18} />
                       </button>
@@ -1052,7 +1081,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                                 event.stopPropagation();
                                 removeUploadedDocument(documento.id);
                               }}
-                              className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-slate-500 shadow-sm transition hover:text-red-500"
+                              className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-slate-500 shadow-sm transition hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-50"
                               aria-label={`Remover ${documento.name}`}
                             >
                               <X size={14} />
@@ -1080,7 +1109,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
             </div>
           </div>
         </section>
-      </div>
+      </fieldset>
 
       <div className="rounded-[28px] border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
         <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
