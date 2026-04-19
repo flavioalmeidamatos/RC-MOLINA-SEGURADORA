@@ -38,6 +38,19 @@ export const config = {
 };
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const anuncioBaseUrl = 'https://querplanodesaude.com.br/anuncios/';
+
+const extractIndicacaoId = (leadUrl: string): string => {
+  const directMatch = leadUrl.match(/[?&]indicacao_id=(\d+)/);
+  if (directMatch?.[1]) return directMatch[1];
+
+  try {
+    const parsedUrl = new URL(leadUrl);
+    return parsedUrl.searchParams.get('indicacao_id') || '';
+  } catch (_error) {
+    return '';
+  }
+};
 
 const normalizeText = (value: string) =>
   value
@@ -60,6 +73,7 @@ const importLeadFromSistemaQuer = async ({ login, senha, leadUrl }: ImportLeadPa
   const safeLogin = login.trim();
   const safeSenha = senha.trim();
   const originalLeadUrl = leadUrl.trim();
+  const indicacaoId = extractIndicacaoId(originalLeadUrl);
 
   if (!safeLogin || !safeSenha || !originalLeadUrl) {
     throw new ImportLeadHttpError(400, 'Faltam parametros');
@@ -246,6 +260,8 @@ const importLeadFromSistemaQuer = async ({ login, senha, leadUrl }: ImportLeadPa
       },
       origem: 'Sistema Quer',
       url_original: originalLeadUrl,
+      indicacao_id: indicacaoId,
+      anuncio_url: indicacaoId ? `${anuncioBaseUrl}${indicacaoId}.png` : '',
     };
 
     if (!leadData.nome || leadData.nome === 'Nao identificado') {

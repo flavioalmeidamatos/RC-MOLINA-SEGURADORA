@@ -36,17 +36,21 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
 }) => {
   const [importLoading, setImportLoading] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult>(null);
+  const [expandedAdImageUrl, setExpandedAdImageUrl] = useState('');
+  const [adImageUnavailable, setAdImageUnavailable] = useState(false);
   const [credential, setCredential] = useState({
     login: 'Rosilene Rodrigues de Carvalho Molina',
     senha: '123',
     indicationId: extractIndicationId(initialLeadUrl),
   });
   const isIndicationIdReady = indicationIdPattern.test(credential.indicationId);
+  const adImageUrl = importResult?.data?.anuncio_url || '';
 
   useEffect(() => {
     if (!open) return;
 
     setImportResult(null);
+    setAdImageUnavailable(false);
     setCredential((prev) => ({ ...prev, indicationId: extractIndicationId(initialLeadUrl) }));
   }, [initialLeadUrl, open]);
 
@@ -54,6 +58,8 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
 
   const closeModal = () => {
     setImportResult(null);
+    setExpandedAdImageUrl('');
+    setAdImageUnavailable(false);
     onClose();
   };
 
@@ -70,6 +76,7 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
 
     setImportLoading(true);
     setImportResult(null);
+    setAdImageUnavailable(false);
 
     try {
       const leadUrl = `${SISTEMA_QUER_INDICATION_URL}${credential.indicationId}`;
@@ -203,7 +210,7 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
                   <User size={16} className="text-[#b58c2a]" />
                   <span className="text-xs font-bold uppercase text-gray-700">Dados Pessoais</span>
                 </div>
-                <div className="grid gap-4 p-4 md:grid-cols-2">
+                <div className="grid gap-4 p-4 md:grid-cols-[1fr_1fr_168px]">
                   <div>
                     <label className="block text-[10px] font-bold uppercase text-gray-400">Nome</label>
                     <p className="text-sm font-medium text-gray-800">{importResult.data.nome}</p>
@@ -211,6 +218,32 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
                   <div>
                     <label className="block text-[10px] font-bold uppercase text-gray-400">Telefone</label>
                     <p className="text-sm font-medium text-gray-800">{importResult.data.telefone}</p>
+                  </div>
+                  <div className="row-span-3">
+                    <label className="block text-[10px] font-bold uppercase text-gray-400">Anúncio</label>
+                    {adImageUrl && !adImageUnavailable ? (
+                      <button
+                        type="button"
+                        onClick={() => setExpandedAdImageUrl(adImageUrl)}
+                        className="mt-1 flex h-32 w-full items-center justify-center overflow-hidden rounded border border-gray-200 bg-gray-50 transition hover:border-[#b58c2a] hover:shadow-sm"
+                      >
+                        <img
+                          src={adImageUrl}
+                          alt={`Anúncio ${importResult.data.indicacao_id || ''}`}
+                          className="h-full w-full object-cover"
+                          onError={() => setAdImageUnavailable(true)}
+                        />
+                      </button>
+                    ) : (
+                      <div className="mt-1 flex h-32 items-center justify-center rounded border border-dashed border-gray-200 bg-gray-50 px-3 text-center text-xs text-gray-400">
+                        Thumbnail do anúncio não encontrado.
+                      </div>
+                    )}
+                    {adImageUrl && !adImageUnavailable ? (
+                      <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-[#b58c2a]">
+                        Clique para ampliar
+                      </p>
+                    ) : null}
                   </div>
                   <div>
                     <label className="block text-[10px] font-bold uppercase text-gray-400">E-mail</label>
@@ -298,6 +331,22 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
           Sessão temporária • Criptografada
         </div>
       </div>
+
+      {expandedAdImageUrl ? (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
+          onClick={() => setExpandedAdImageUrl('')}
+        >
+          <div className="max-h-[90vh] max-w-5xl overflow-hidden rounded-lg bg-white shadow-2xl">
+            <img
+              src={expandedAdImageUrl}
+              alt="Anúncio ampliado"
+              className="max-h-[90vh] w-full object-contain"
+              onClick={(event) => event.stopPropagation()}
+            />
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };
