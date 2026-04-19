@@ -24,6 +24,7 @@ import {
   validarDataNascimentoBR,
   validarEmailRFC5322,
 } from '../lib/validacoes';
+import { SistemaQuerImportModal } from './SistemaQuerImportModal';
 
 type TabId = 'geral' | 'endereco' | 'extras' | 'documentacao';
 
@@ -197,6 +198,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
   const [contacts, setContacts] = useState<ContactRow[]>(initialContacts);
   const [uploadedDocuments, setUploadedDocuments] = useState<UploadedDocument[]>([]);
   const [selectedDocumentPreview, setSelectedDocumentPreview] = useState<UploadedDocument | null>(null);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [isDraggingDocuments, setIsDraggingDocuments] = useState(false);
   const [feedback, setFeedback] = useState('');
   const [fieldErrors, setFieldErrors] = useState<FieldErrorState>(initialFieldErrors);
@@ -448,7 +450,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
   };
 
   const importClient = () => {
-    setFeedback('Importação de clientes pronta para configuração.');
+    setShowImportModal(true);
   };
 
   const goToPreviousTab = () => {
@@ -1224,6 +1226,11 @@ export const ClientRegistrationMultipage: React.FC = () => {
           ) : null}
         </div>
       </div>
+
+      <SistemaQuerImportModal
+        open={showImportModal}
+        onClose={() => setShowImportModal(false)}
+      />
     </section>
   );
 };

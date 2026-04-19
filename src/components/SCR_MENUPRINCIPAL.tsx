@@ -16,7 +16,6 @@ import {
   Mail,
   MapPin,
   Phone,
-  PhoneCall,
   User,
   Users,
   Wrench,
@@ -123,7 +122,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     leadUrl: "",
   });
   const [importResult, setImportResult] = useState<any>(null);
-
   const clearSimulatorTimeout = () => {
     if (simulatorTimeoutRef.current !== null) {
       window.clearTimeout(simulatorTimeoutRef.current);
@@ -557,12 +555,10 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const menuItems = [
     { title: "Home", icon: Home },
     { title: "Meus clientes", icon: Briefcase },
-    { title: "Indicações", icon: User },
     { title: "Agenda", icon: Calendar },
     { title: "Simulador", icon: FolderOpen },
     { title: "Webmail", icon: Mail },
     { title: "Informações", icon: Info },
-    { title: "Sugestões", icon: Lightbulb },
     { title: "Financeiro", icon: Banknote },
     { title: "Configurações", icon: Wrench },
   ];
@@ -570,8 +566,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const cards = [
     { line1: "Sugestões", line2: "", icon: Lightbulb },
     { line1: "Meus", line2: "clientes", icon: Briefcase },
-    { line1: "Todas", line2: "indicações", icon: User },
-    { line1: "Ligações", line2: "", icon: PhoneCall },
     { line1: "Agenda", line2: "", icon: Calendar },
     { line1: "Simulador", line2: "", icon: FolderOpen },
     { line1: "Informações", line2: "", icon: Info },
