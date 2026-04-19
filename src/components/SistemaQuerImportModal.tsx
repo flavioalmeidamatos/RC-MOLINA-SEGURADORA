@@ -340,7 +340,10 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
                 type="button"
                 onClick={() => {
                   if (importResult.data) {
-                    onUseLeadData?.(importResult.data);
+                    onUseLeadData?.({
+                      ...importResult.data,
+                      indicacao_id: importResult.data.indicacao_id || credential.indicationId,
+                    });
                   }
                   closeModal();
                 }}

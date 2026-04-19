@@ -187,6 +187,22 @@ const obterTipoTelefoneImportado = (valor: string): string => {
   return numeroSemDdd.startsWith('9') ? 'Celular' : 'Residencial';
 };
 
+const obterEmailImportadoValido = (valor?: string): string => {
+  const email = (valor || '').trim();
+  return email.includes('@') ? email : '';
+};
+
+const formatarNascimentoImportado = (valor?: string): string => {
+  const nascimento = (valor || '').trim();
+  const isoMatch = nascimento.match(/^(\d{4})-(\d{2})-(\d{2})/);
+
+  if (isoMatch) {
+    return `${isoMatch[3]}/${isoMatch[2]}/${isoMatch[1]}`;
+  }
+
+  return nascimento ? formatarDataBR(nascimento) : '';
+};
+
 const obterExtensaoArquivo = (nome: string): string => {
   const partes = nome.split('.');
   return partes.length > 1 ? partes[partes.length - 1].toLowerCase() : '';
@@ -460,6 +476,7 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
     (leadData: SistemaQuerLeadData) => {
       const importedPhone = normalizarTelefoneImportado(leadData.telefone || '');
       const importedPhoneType = importedPhone ? obterTipoTelefoneImportado(importedPhone) : 'Celular';
+      const importedEmail = obterEmailImportadoValido(leadData.email);
 
       resetForm();
       setIsClientFormEnabled(true);
@@ -467,6 +484,8 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
       setFormState((prev) => ({
         ...prev,
         nome: somenteLetrasEEspacos(leadData.nome || ''),
+        dataNascimento: formatarNascimentoImportado(leadData.nascimento),
+        codigo: leadData.indicacao_id || prev.codigo,
       }));
       setContacts((prev) =>
         prev.map((contact, index) =>
@@ -477,6 +496,13 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
                 value: formatarTelefoneContato(importedPhone, importedPhoneType),
                 extra: importedPhoneType === 'Celular' ? 'Outro' : 'Complemento',
               }
+            : index === 1 && importedEmail
+              ? {
+                  ...contact,
+                  type: 'E-mail',
+                  value: importedEmail,
+                  extra: '',
+                }
             : contact,
         ),
       );
