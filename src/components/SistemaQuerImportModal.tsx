@@ -20,6 +20,15 @@ type SistemaQuerImportModalProps = {
   onClose: () => void;
 };
 
+const SISTEMA_QUER_INDICATION_URL = 'http://sistemaquer.com.br/alterar-indicacao.php?indicacao_id=';
+const indicationIdPattern = /^\d{6}$/;
+
+const extractIndicationId = (value: string): string => {
+  const queryValue = value.match(/[?&]indicacao_id=(\d{1,6})/)?.[1];
+  const rawValue = queryValue || value;
+  return rawValue.replace(/\D/g, '').slice(0, 6);
+};
+
 export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
   open,
   initialLeadUrl = '',
@@ -30,14 +39,15 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
   const [credential, setCredential] = useState({
     login: 'Rosilene Rodrigues de Carvalho Molina',
     senha: '123',
-    leadUrl: initialLeadUrl,
+    indicationId: extractIndicationId(initialLeadUrl),
   });
+  const isIndicationIdReady = indicationIdPattern.test(credential.indicationId);
 
   useEffect(() => {
     if (!open) return;
 
     setImportResult(null);
-    setCredential((prev) => ({ ...prev, leadUrl: initialLeadUrl }));
+    setCredential((prev) => ({ ...prev, indicationId: extractIndicationId(initialLeadUrl) }));
   }, [initialLeadUrl, open]);
 
   if (!open) return null;
@@ -49,14 +59,28 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
 
   const handleImportLead = async (event: React.FormEvent) => {
     event.preventDefault();
+
+    if (!isIndicationIdReady) {
+      setImportResult({
+        type: 'error',
+        message: 'Informe exatamente 6 números da indicação.',
+      });
+      return;
+    }
+
     setImportLoading(true);
     setImportResult(null);
 
     try {
+      const leadUrl = `${SISTEMA_QUER_INDICATION_URL}${credential.indicationId}`;
       const response = await fetch('/api/import-lead', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(credential),
+        body: JSON.stringify({
+          login: credential.login,
+          senha: credential.senha,
+          leadUrl,
+        }),
       });
       const data = await response.json();
 
@@ -133,13 +157,24 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
                   URL da Indicação (Link)
                 </label>
                 <input
-                  type="url"
+                  type="text"
                   required
-                  placeholder="Cole o link do Sistema Quer aqui"
+                  inputMode="numeric"
+                  maxLength={6}
+                  pattern="\d{6}"
+                  placeholder="Digite os 6 números da indicação"
                   className="w-full rounded border border-gray-300 px-3 py-2 text-sm italic outline-none transition-colors focus:border-[#b58c2a]"
-                  value={credential.leadUrl}
-                  onChange={(event) => setCredential({ ...credential, leadUrl: event.target.value })}
+                  value={credential.indicationId}
+                  onChange={(event) =>
+                    setCredential({
+                      ...credential,
+                      indicationId: event.target.value.replace(/\D/g, '').slice(0, 6),
+                    })
+                  }
                 />
+                <p className="mt-1 text-[11px] text-gray-400">
+                  Aceita somente 6 dígitos. Zeros à esquerda serão preservados.
+                </p>
               </div>
 
               {importResult?.type === 'error' ? (
@@ -150,7 +185,7 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
 
               <button
                 type="submit"
-                disabled={importLoading}
+                disabled={importLoading || !isIndicationIdReady}
                 className="flex w-full items-center justify-center gap-2 rounded bg-[#b58c2a] py-3 font-bold text-white shadow-lg transition-all hover:bg-[#806117] disabled:opacity-50"
               >
                 {importLoading ? <Loader2 className="animate-spin" size={18} /> : 'IMPORTAR AGORA'}
