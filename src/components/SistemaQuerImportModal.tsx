@@ -142,7 +142,8 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
                 <input
                   type="text"
                   required
-                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none transition-colors focus:border-[#b58c2a]"
+                  disabled
+                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none transition-colors focus:border-[#b58c2a] disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500"
                   value={credential.login}
                   onChange={(event) => setCredential({ ...credential, login: event.target.value })}
                 />
@@ -153,7 +154,8 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
                 <input
                   type="password"
                   required
-                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none transition-colors focus:border-[#b58c2a]"
+                  disabled
+                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none transition-colors focus:border-[#b58c2a] disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500"
                   value={credential.senha}
                   onChange={(event) => setCredential({ ...credential, senha: event.target.value })}
                 />
