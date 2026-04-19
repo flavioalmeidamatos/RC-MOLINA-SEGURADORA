@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ExternalLink,
   FileText,
@@ -56,6 +56,7 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
   const [importResult, setImportResult] = useState<ImportResult>(null);
   const [expandedAdImageUrl, setExpandedAdImageUrl] = useState('');
   const [adImageUnavailable, setAdImageUnavailable] = useState(false);
+  const indicationIdInputRef = useRef<HTMLInputElement | null>(null);
   const [credential, setCredential] = useState({
     login: 'Rosilene Rodrigues de Carvalho Molina',
     senha: '123',
@@ -70,6 +71,13 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
     setImportResult(null);
     setAdImageUnavailable(false);
     setCredential((prev) => ({ ...prev, indicationId: extractIndicationId(initialLeadUrl) }));
+
+    const focusTimeout = window.setTimeout(() => {
+      indicationIdInputRef.current?.focus();
+      indicationIdInputRef.current?.select();
+    }, 0);
+
+    return () => window.clearTimeout(focusTimeout);
   }, [initialLeadUrl, open]);
 
   if (!open) return null;
@@ -184,6 +192,7 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
                   URL da Indicação (Link)
                 </label>
                 <input
+                  ref={indicationIdInputRef}
                   type="text"
                   required
                   inputMode="numeric"

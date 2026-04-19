@@ -281,6 +281,7 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
   const [showImportModal, setShowImportModal] = useState(false);
   const [isDraggingDocuments, setIsDraggingDocuments] = useState(false);
   const [isFetchingCep, setIsFetchingCep] = useState(false);
+  const [cepPopupMessage, setCepPopupMessage] = useState('');
   const [feedback, setFeedback] = useState('');
   const [fieldErrors, setFieldErrors] = useState<FieldErrorState>(initialFieldErrors);
   const [contactErrors, setContactErrors] = useState<ContactErrorState>({});
@@ -288,6 +289,7 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
   const carouselRef = useRef<HTMLDivElement | null>(null);
   const uploadedDocumentsRef = useRef<UploadedDocument[]>([]);
   const lastCepLookupRef = useRef('');
+  const enderecoNumeroInputRef = useRef<HTMLInputElement | null>(null);
 
   const activeTabIndex = tabs.findIndex((tab) => tab.id === activeTab);
 
@@ -332,6 +334,16 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
 
     return () => window.clearTimeout(timeout);
   }, [feedback]);
+
+  useEffect(() => {
+    if (!cepPopupMessage) return;
+
+    const timeout = window.setTimeout(() => {
+      setCepPopupMessage('');
+    }, 4000);
+
+    return () => window.clearTimeout(timeout);
+  }, [cepPopupMessage]);
 
   const handleFieldChange = <K extends keyof ClientFormState>(field: K, value: ClientFormState[K]) => {
     const nextValue =
@@ -385,11 +397,12 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
     }
 
     if (cepDigits.length !== 8) {
-      setFeedback('Informe um CEP com 8 nÃºmeros.');
+      setCepPopupMessage('CEP invalido. Informe 8 numeros.');
       return;
     }
 
     if (lastCepLookupRef.current === cepDigits) {
+      enderecoNumeroInputRef.current?.focus();
       return;
     }
 
@@ -407,7 +420,7 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
 
       if (data.erro) {
         lastCepLookupRef.current = '';
-        setFeedback('CEP nÃ£o encontrado.');
+        setCepPopupMessage('CEP invalido.');
         return;
       }
 
@@ -420,9 +433,10 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
         enderecoCidade: normalizarTextoMaiusculo(data.localidade || ''),
       }));
       setFeedback('EndereÃ§o preenchido pelo CEP.');
+      window.setTimeout(() => enderecoNumeroInputRef.current?.focus(), 0);
     } catch (_error) {
       lastCepLookupRef.current = '';
-      setFeedback('NÃ£o foi possÃ­vel consultar o CEP agora.');
+      setCepPopupMessage('CEP invalido.');
     } finally {
       setIsFetchingCep(false);
     }
@@ -599,6 +613,7 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
     setUploadedDocuments([]);
     setIsDraggingDocuments(false);
     setIsFetchingCep(false);
+    setCepPopupMessage('');
     setFieldErrors(initialFieldErrors);
     setContactErrors({});
     lastCepLookupRef.current = '';
@@ -730,6 +745,16 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
             <div className="rounded-2xl border border-[#3d8ed8]/20 bg-[#3d8ed8]/5 px-4 py-2.5 text-sm text-[#225f97]">
               {feedback}
             </div>
+          </div>
+        ) : null}
+
+        {cepPopupMessage ? (
+          <div
+            role="alert"
+            aria-live="assertive"
+            className="fixed right-4 top-4 z-[70] w-[min(360px,calc(100vw-32px))] rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700 shadow-xl"
+          >
+            {cepPopupMessage}
           </div>
         ) : null}
 
@@ -967,6 +992,7 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
               <div>
                 <label className="mb-2 block text-sm font-bold text-slate-700">Número</label>
                 <input
+                  ref={enderecoNumeroInputRef}
                   className={fieldClassName}
                   value={formState.enderecoNumero}
                   onChange={(event) => handleFieldChange('enderecoNumero', event.target.value)}
