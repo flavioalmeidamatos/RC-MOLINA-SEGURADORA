@@ -239,6 +239,24 @@ export async function importLeadFromSistemaQuer({
       return foundValue;
     };
 
+    const findAnuncioUrl = () => {
+      let anuncioUrl = '';
+
+      $('a').each((_, element) => {
+        const href = $(element).attr('href') || '';
+        const text = normalizeText($(element).text().trim());
+
+        if (href.includes('/anuncios/') || text.includes('ver anuncio')) {
+          anuncioUrl = new URL(href, targetLeadUrl).href;
+          return false;
+        }
+
+        return undefined;
+      });
+
+      return anuncioUrl || (indicacaoId ? `${anuncioBaseUrl}${indicacaoId}.png` : '');
+    };
+
     const leadData: ImportLeadResult = {
       nome: findValue(['nome', 'indicacao', 'cliente', 'aluno']),
       email: findValue(['email', 'e-mail', 'correio']),
@@ -265,7 +283,7 @@ export async function importLeadFromSistemaQuer({
       origem: 'Sistema Quer',
       url_original: originalLeadUrl,
       indicacao_id: indicacaoId,
-      anuncio_url: indicacaoId ? `${anuncioBaseUrl}${indicacaoId}.png` : '',
+      anuncio_url: findAnuncioUrl(),
     };
 
     if (!leadData.nome || leadData.nome === 'Nao identificado') {
