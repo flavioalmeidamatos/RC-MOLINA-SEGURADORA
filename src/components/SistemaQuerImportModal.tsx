@@ -8,16 +8,33 @@ import {
   Users,
 } from 'lucide-react';
 
+export type SistemaQuerLeadData = {
+  nome?: string;
+  telefone?: string;
+  email?: string;
+  cpf_cnpj?: string;
+  nascimento?: string;
+  endereco?: string;
+  numero?: string;
+  bairro?: string;
+  cidade?: string;
+  observacao?: string;
+  vidas?: Record<string, string>;
+  indicacao_id?: string;
+  anuncio_url?: string;
+};
+
 type ImportResult = {
   type: 'success' | 'error';
   message: string;
-  data?: any;
+  data?: SistemaQuerLeadData;
 } | null;
 
 type SistemaQuerImportModalProps = {
   open: boolean;
   initialLeadUrl?: string;
   onClose: () => void;
+  onUseLeadData?: (data: SistemaQuerLeadData) => void;
 };
 
 const SISTEMA_QUER_INDICATION_URL = 'http://sistemaquer.com.br/alterar-indicacao.php?indicacao_id=';
@@ -33,6 +50,7 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
   open,
   initialLeadUrl = '',
   onClose,
+  onUseLeadData,
 }) => {
   const [importLoading, setImportLoading] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult>(null);
@@ -320,7 +338,12 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
 
               <button
                 type="button"
-                onClick={closeModal}
+                onClick={() => {
+                  if (importResult.data) {
+                    onUseLeadData?.(importResult.data);
+                  }
+                  closeModal();
+                }}
                 className="flex w-full items-center justify-center gap-2 rounded bg-[#0c1826] py-4 text-sm font-bold text-white shadow-lg transition-all hover:bg-black"
               >
                 CONCLUIR E USAR DADOS

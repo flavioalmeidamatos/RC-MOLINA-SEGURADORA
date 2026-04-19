@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Banknote,
   Briefcase,
@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ClientRegistrationMultipage } from "./ClientRegistrationMultipage";
+import type { SistemaQuerLeadData } from "./SistemaQuerImportModal";
 import { WhatsAppQrPanel } from "./WhatsAppQrPanel";
 import { Agenda } from "./Agenda/Agenda";
 import { supabase } from "../lib/supabase";
@@ -122,6 +123,8 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     leadUrl: "",
   });
   const [importResult, setImportResult] = useState<any>(null);
+  const [pendingImportedLead, setPendingImportedLead] = useState<SistemaQuerLeadData | null>(null);
+  const clearPendingImportedLead = useCallback(() => setPendingImportedLead(null), []);
   const clearSimulatorTimeout = () => {
     if (simulatorTimeoutRef.current !== null) {
       window.clearTimeout(simulatorTimeoutRef.current);
@@ -829,7 +832,10 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
               </div>
             ) : showClientArea ? (
               <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
-                <ClientRegistrationMultipage />
+                <ClientRegistrationMultipage
+                  importedLead={pendingImportedLead}
+                  onImportedLeadUsed={clearPendingImportedLead}
+                />
               </div>
             ) : activeMenu === "Agenda" ? (
               <Agenda />
@@ -1212,7 +1218,13 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                   </div>
 
                   <button
-                    onClick={() => setShowImportModal(false)}
+                    type="button"
+                    onClick={() => {
+                      setPendingImportedLead(importResult.data);
+                      setActiveMenu("Meus clientes");
+                      setShowImportModal(false);
+                      setImportResult(null);
+                    }}
                     className="flex w-full items-center justify-center gap-2 rounded bg-[#0c1826] py-4 text-sm font-bold text-white shadow-lg transition-all hover:bg-black"
                   >
                     CONCLUIR E USAR DADOS

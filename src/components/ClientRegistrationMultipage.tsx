@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
@@ -24,7 +24,7 @@ import {
   validarDataNascimentoBR,
   validarEmailRFC5322,
 } from '../lib/validacoes';
-import { SistemaQuerImportModal } from './SistemaQuerImportModal';
+import { SistemaQuerImportModal, type SistemaQuerLeadData } from './SistemaQuerImportModal';
 
 type TabId = 'geral' | 'endereco' | 'extras' | 'documentacao';
 
@@ -79,6 +79,11 @@ type UploadedDocument = {
   extension: string;
   previewUrl: string;
   previewKind: 'image' | 'pdf' | 'document';
+};
+
+type ClientRegistrationMultipageProps = {
+  importedLead?: SistemaQuerLeadData | null;
+  onImportedLeadUsed?: () => void;
 };
 
 const tabs: Array<{ id: TabId; label: string; icon: React.ComponentType<{ size?: number; className?: string }> }> = [
@@ -170,6 +175,18 @@ const formatarTelefoneContato = (valor: string, tipo: string): string => {
   return `(${digitos.slice(0, 2)}) ${digitos.slice(2, 6)}-${digitos.slice(6)}`;
 };
 
+const normalizarTelefoneImportado = (valor: string): string => {
+  const digitos = somenteDigitos(valor);
+  return digitos.length > 11 && digitos.startsWith('55') ? digitos.slice(2) : digitos;
+};
+
+const obterNumeroSemDdd = (digitos: string): string => (digitos.length > 10 ? digitos.slice(2) : digitos);
+
+const obterTipoTelefoneImportado = (valor: string): string => {
+  const numeroSemDdd = obterNumeroSemDdd(normalizarTelefoneImportado(valor));
+  return numeroSemDdd.startsWith('9') ? 'Celular' : 'Residencial';
+};
+
 const obterExtensaoArquivo = (nome: string): string => {
   const partes = nome.split('.');
   return partes.length > 1 ? partes[partes.length - 1].toLowerCase() : '';
@@ -191,7 +208,10 @@ const revogarPreviews = (documentos: UploadedDocument[]) => {
   documentos.forEach((documento) => URL.revokeObjectURL(documento.previewUrl));
 };
 
-export const ClientRegistrationMultipage: React.FC = () => {
+export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipageProps> = ({
+  importedLead,
+  onImportedLeadUsed,
+}) => {
   const [activeTab, setActiveTab] = useState<TabId>('geral');
   const [isClientFormEnabled, setIsClientFormEnabled] = useState(false);
   const [formState, setFormState] = useState<ClientFormState>(initialFormState);
@@ -419,7 +439,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
     carouselRef.current.scrollBy({ left: offset, behavior: 'smooth' });
   };
 
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     revogarPreviews(uploadedDocumentsRef.current);
     setFormState(initialFormState);
     setContacts(initialContacts);
@@ -429,12 +449,48 @@ export const ClientRegistrationMultipage: React.FC = () => {
     setContactErrors({});
     setActiveTab('geral');
     setFeedback('Novo cliente pronto para preenchimento.');
-  };
+  }, []);
 
   const startNewClient = () => {
     resetForm();
     setIsClientFormEnabled(true);
   };
+
+  const applyImportedLeadToNewClient = useCallback(
+    (leadData: SistemaQuerLeadData) => {
+      const importedPhone = normalizarTelefoneImportado(leadData.telefone || '');
+      const importedPhoneType = importedPhone ? obterTipoTelefoneImportado(importedPhone) : 'Celular';
+
+      resetForm();
+      setIsClientFormEnabled(true);
+      setActiveTab('geral');
+      setFormState((prev) => ({
+        ...prev,
+        nome: somenteLetrasEEspacos(leadData.nome || ''),
+      }));
+      setContacts((prev) =>
+        prev.map((contact, index) =>
+          index === 0
+            ? {
+                ...contact,
+                type: importedPhoneType,
+                value: formatarTelefoneContato(importedPhone, importedPhoneType),
+                extra: importedPhoneType === 'Celular' ? 'Outro' : 'Complemento',
+              }
+            : contact,
+        ),
+      );
+      setFeedback('Dados importados aplicados ao novo cliente.');
+    },
+    [resetForm],
+  );
+
+  useEffect(() => {
+    if (!importedLead) return;
+
+    applyImportedLeadToNewClient(importedLead);
+    onImportedLeadUsed?.();
+  }, [applyImportedLeadToNewClient, importedLead, onImportedLeadUsed]);
 
   const saveClient = () => {
     if (isClientFormLocked) {
@@ -1230,6 +1286,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
       <SistemaQuerImportModal
         open={showImportModal}
         onClose={() => setShowImportModal(false)}
+        onUseLeadData={applyImportedLeadToNewClient}
       />
     </section>
   );
