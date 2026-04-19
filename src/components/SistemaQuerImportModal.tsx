@@ -337,7 +337,18 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
           className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
           onClick={() => setExpandedAdImageUrl('')}
         >
-          <div className="max-h-[90vh] max-w-5xl overflow-hidden rounded-lg bg-white shadow-2xl">
+          <div className="relative max-h-[90vh] max-w-5xl overflow-hidden rounded-lg bg-white shadow-2xl">
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                setExpandedAdImageUrl('');
+              }}
+              className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded bg-white/95 text-lg font-black text-gray-700 shadow-lg transition hover:bg-white hover:text-red-600"
+              aria-label="Fechar anúncio ampliado"
+            >
+              X
+            </button>
             <img
               src={expandedAdImageUrl}
               alt="Anúncio ampliado"
