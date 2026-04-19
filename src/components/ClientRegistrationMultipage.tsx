@@ -86,6 +86,15 @@ type ClientRegistrationMultipageProps = {
   onImportedLeadUsed?: () => void;
 };
 
+type ViaCepResponse = {
+  cep?: string;
+  logradouro?: string;
+  bairro?: string;
+  localidade?: string;
+  uf?: string;
+  erro?: boolean;
+};
+
 const tabs: Array<{ id: TabId; label: string; icon: React.ComponentType<{ size?: number; className?: string }> }> = [
   { id: 'geral', label: 'Geral', icon: UserRound },
   { id: 'endereco', label: 'Endereço', icon: MapPinned },
@@ -132,12 +141,26 @@ const initialFieldErrors: FieldErrorState = {
 };
 
 const initialContacts: ContactRow[] = [
-  { id: 1, type: 'Celular', value: '', extra: 'Outro', notes: '', favorite: false },
+  { id: 1, type: 'Celular', value: '', extra: 'OUTRO', notes: '', favorite: false },
   { id: 2, type: 'E-mail', value: '', extra: '', notes: '', favorite: false },
-  { id: 3, type: 'Residencial', value: '', extra: 'Complemento', notes: '', favorite: false },
+  { id: 3, type: 'Residencial', value: '', extra: 'COMPLEMENTO', notes: '', favorite: false },
 ];
 
 const estados = ['Selecione...', 'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MG', 'MS', 'MT', 'PA', 'PB', 'PE', 'PI', 'PR', 'RJ', 'RN', 'RO', 'RR', 'RS', 'SC', 'SE', 'SP', 'TO'];
+
+const camposTextoMaiusculo = new Set<keyof ClientFormState>([
+  'nome',
+  'rg',
+  'enderecoRua',
+  'enderecoNumero',
+  'enderecoComplemento',
+  'enderecoReferencia',
+  'enderecoBairro',
+  'enderecoCidade',
+  'observacoes',
+  'documentacao',
+  'marcacoes',
+]);
 
 const cidadesPorEstado: Record<string, string[]> = {
   RJ: ['Rio de Janeiro', 'Niterói', 'Petrópolis', 'Volta Redonda'],
@@ -160,6 +183,18 @@ const maxVisibleDocumentsBeforeCarouselControls = 6;
 
 const somenteDigitos = (valor: string): string => valor.replace(/\D/g, '');
 const somenteLetrasEEspacos = (valor: string): string => valor.replace(/[^A-Za-zÀ-ÿ\s]/g, '');
+
+const normalizarTextoMaiusculo = (valor: string): string => valor.toLocaleUpperCase('pt-BR');
+
+const formatarCep = (valor: string): string => {
+  const digitos = somenteDigitos(valor).slice(0, 8);
+
+  if (digitos.length <= 5) {
+    return digitos;
+  }
+
+  return `${digitos.slice(0, 5)}-${digitos.slice(5)}`;
+};
 
 const formatarTelefoneContato = (valor: string, tipo: string): string => {
   const digitos = somenteDigitos(valor).slice(0, tipo === 'Celular' ? 11 : 10);
@@ -203,6 +238,15 @@ const formatarNascimentoImportado = (valor?: string): string => {
   return nascimento ? formatarDataBR(nascimento) : '';
 };
 
+const formatarDataAtualBR = (): string => {
+  const hoje = new Date();
+  const dia = String(hoje.getDate()).padStart(2, '0');
+  const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+  const ano = hoje.getFullYear();
+
+  return `${dia}/${mes}/${ano}`;
+};
+
 const obterExtensaoArquivo = (nome: string): string => {
   const partes = nome.split('.');
   return partes.length > 1 ? partes[partes.length - 1].toLowerCase() : '';
@@ -236,16 +280,17 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
   const [selectedDocumentPreview, setSelectedDocumentPreview] = useState<UploadedDocument | null>(null);
   const [showImportModal, setShowImportModal] = useState(false);
   const [isDraggingDocuments, setIsDraggingDocuments] = useState(false);
+  const [isFetchingCep, setIsFetchingCep] = useState(false);
   const [feedback, setFeedback] = useState('');
   const [fieldErrors, setFieldErrors] = useState<FieldErrorState>(initialFieldErrors);
   const [contactErrors, setContactErrors] = useState<ContactErrorState>({});
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const carouselRef = useRef<HTMLDivElement | null>(null);
   const uploadedDocumentsRef = useRef<UploadedDocument[]>([]);
+  const lastCepLookupRef = useRef('');
 
   const activeTabIndex = tabs.findIndex((tab) => tab.id === activeTab);
 
-  const cidadeOptions = useMemo(() => cidadesPorEstado[formState.enderecoEstado] || [], [formState.enderecoEstado]);
   const shouldShowDocumentCarouselControls =
     uploadedDocuments.length > maxVisibleDocumentsBeforeCarouselControls;
   const hasFormChanges = useMemo(
@@ -289,7 +334,12 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
   }, [feedback]);
 
   const handleFieldChange = <K extends keyof ClientFormState>(field: K, value: ClientFormState[K]) => {
-    setFormState((prev) => ({ ...prev, [field]: value }));
+    const nextValue =
+      typeof value === 'string' && camposTextoMaiusculo.has(field)
+        ? normalizarTextoMaiusculo(value)
+        : value;
+
+    setFormState((prev) => ({ ...prev, [field]: nextValue }));
   };
 
   const updateFieldError = (field: keyof FieldErrorState, message: string) => {
@@ -309,6 +359,85 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
   const handleDataNascimentoChange = (value: string) => {
     handleFieldChange('dataNascimento', formatarDataBR(value));
     updateFieldError('dataNascimento', '');
+  };
+
+  const handleDataCadastroChange = (value: string) => {
+    handleFieldChange('dataCadastro', formatarDataBR(value));
+  };
+
+  const handleCepChange = (value: string) => {
+    lastCepLookupRef.current = '';
+    setFormState((prev) => ({
+      ...prev,
+      enderecoCep: formatarCep(value),
+      enderecoRua: '',
+      enderecoBairro: '',
+      enderecoEstado: '',
+      enderecoCidade: '',
+    }));
+  };
+
+  const fetchAddressByCep = useCallback(async () => {
+    const cepDigits = somenteDigitos(formState.enderecoCep);
+
+    if (!cepDigits) {
+      return;
+    }
+
+    if (cepDigits.length !== 8) {
+      setFeedback('Informe um CEP com 8 nÃºmeros.');
+      return;
+    }
+
+    if (lastCepLookupRef.current === cepDigits) {
+      return;
+    }
+
+    lastCepLookupRef.current = cepDigits;
+    setIsFetchingCep(true);
+
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cepDigits}/json/`);
+
+      if (!response.ok) {
+        throw new Error('Falha na consulta do CEP.');
+      }
+
+      const data = (await response.json()) as ViaCepResponse;
+
+      if (data.erro) {
+        lastCepLookupRef.current = '';
+        setFeedback('CEP nÃ£o encontrado.');
+        return;
+      }
+
+      setFormState((prev) => ({
+        ...prev,
+        enderecoCep: formatarCep(data.cep || cepDigits),
+        enderecoRua: normalizarTextoMaiusculo(data.logradouro || ''),
+        enderecoBairro: normalizarTextoMaiusculo(data.bairro || ''),
+        enderecoEstado: normalizarTextoMaiusculo(data.uf || ''),
+        enderecoCidade: normalizarTextoMaiusculo(data.localidade || ''),
+      }));
+      setFeedback('EndereÃ§o preenchido pelo CEP.');
+    } catch (_error) {
+      lastCepLookupRef.current = '';
+      setFeedback('NÃ£o foi possÃ­vel consultar o CEP agora.');
+    } finally {
+      setIsFetchingCep(false);
+    }
+  }, [formState.enderecoCep]);
+
+  const handleCepKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      void fetchAddressByCep();
+      return;
+    }
+
+    if (event.key === 'Tab') {
+      void fetchAddressByCep();
+    }
   };
 
   const validateCPFField = () => {
@@ -339,8 +468,13 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
   };
 
   const handleContactChange = (id: number, field: keyof ContactRow, value: string | boolean) => {
+    const nextValue =
+      typeof value === 'string' && (field === 'extra' || field === 'notes')
+        ? normalizarTextoMaiusculo(value)
+        : value;
+
     setContacts((prev) =>
-      prev.map((contact) => (contact.id === id ? { ...contact, [field]: value } : contact)),
+      prev.map((contact) => (contact.id === id ? { ...contact, [field]: nextValue } : contact)),
     );
   };
 
@@ -363,7 +497,10 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
   };
 
   const handleContactValueChange = (id: number, type: string, value: string) => {
-    const nextValue = type === 'E-mail' ? value.trimStart() : formatarTelefoneContato(value, type);
+    const nextValue =
+      type === 'E-mail'
+        ? normalizarTextoMaiusculo(value.trimStart())
+        : formatarTelefoneContato(value, type);
     handleContactChange(id, 'value', nextValue);
     setContactErrors((prev) => ({ ...prev, [id]: '' }));
   };
@@ -394,7 +531,7 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
   const addContact = () => {
     setContacts((prev) => [
       ...prev,
-      { id: Date.now(), type: 'Celular', value: '', extra: 'Outro', notes: '', favorite: false },
+      { id: Date.now(), type: 'Celular', value: '', extra: 'OUTRO', notes: '', favorite: false },
     ]);
   };
 
@@ -461,8 +598,10 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
     setContacts(initialContacts);
     setUploadedDocuments([]);
     setIsDraggingDocuments(false);
+    setIsFetchingCep(false);
     setFieldErrors(initialFieldErrors);
     setContactErrors({});
+    lastCepLookupRef.current = '';
     setActiveTab('geral');
     setFeedback('Novo cliente pronto para preenchimento.');
   }, []);
@@ -483,9 +622,10 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
       setActiveTab('geral');
       setFormState((prev) => ({
         ...prev,
-        nome: somenteLetrasEEspacos(leadData.nome || ''),
+        nome: normalizarTextoMaiusculo(somenteLetrasEEspacos(leadData.nome || '')),
         dataNascimento: formatarNascimentoImportado(leadData.nascimento),
         codigo: leadData.indicacao_id || prev.codigo,
+        dataCadastro: formatarDataAtualBR(),
       }));
       setContacts((prev) =>
         prev.map((contact, index) =>
@@ -494,13 +634,13 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
                 ...contact,
                 type: importedPhoneType,
                 value: formatarTelefoneContato(importedPhone, importedPhoneType),
-                extra: importedPhoneType === 'Celular' ? 'Outro' : 'Complemento',
+                extra: importedPhoneType === 'Celular' ? 'OUTRO' : 'COMPLEMENTO',
               }
             : index === 1 && importedEmail
               ? {
                   ...contact,
                   type: 'E-mail',
-                  value: importedEmail,
+                  value: normalizarTextoMaiusculo(importedEmail),
                   extra: '',
                 }
             : contact,
@@ -801,9 +941,16 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
                 <input
                   className={fieldClassName}
                   value={formState.enderecoCep}
-                  onChange={(event) => handleFieldChange('enderecoCep', event.target.value)}
-                  placeholder="Pesquisar"
+                  onChange={(event) => handleCepChange(event.target.value)}
+                  onBlur={() => void fetchAddressByCep()}
+                  onKeyDown={handleCepKeyDown}
+                  inputMode="numeric"
+                  maxLength={9}
+                  placeholder="00000-000"
                 />
+                <p className="mt-1.5 text-xs font-semibold text-slate-400">
+                  {isFetchingCep ? 'Buscando CEP...' : 'Digite 8 nÃºmeros e pressione Enter ou Tab.'}
+                </p>
               </div>
 
               <div>
@@ -812,6 +959,7 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
                   className={fieldClassName}
                   value={formState.enderecoRua}
                   onChange={(event) => handleFieldChange('enderecoRua', event.target.value)}
+                  disabled
                   placeholder="Rua, avenida ou logradouro"
                 />
               </div>
@@ -852,7 +1000,19 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
                   className={fieldClassName}
                   value={formState.enderecoBairro}
                   onChange={(event) => handleFieldChange('enderecoBairro', event.target.value)}
+                  disabled
                   placeholder="Bairro"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-bold text-slate-700">Cidade</label>
+                <input
+                  className={fieldClassName}
+                  value={formState.enderecoCidade}
+                  onChange={(event) => handleFieldChange('enderecoCidade', event.target.value)}
+                  disabled
+                  placeholder="Cidade"
                 />
               </div>
 
@@ -861,6 +1021,7 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
                 <select
                   className={fieldClassName}
                   value={formState.enderecoEstado}
+                  disabled
                   onChange={(event) => {
                     handleFieldChange('enderecoEstado', event.target.value);
                     handleFieldChange('enderecoCidade', '');
@@ -869,22 +1030,6 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
                   {estados.map((state) => (
                     <option key={state} value={state === 'Selecione...' ? '' : state}>
                       {state}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-bold text-slate-700">Cidade</label>
-                <select
-                  className={fieldClassName}
-                  value={formState.enderecoCidade}
-                  onChange={(event) => handleFieldChange('enderecoCidade', event.target.value)}
-                >
-                  <option value="">Selecione uma cidade...</option>
-                  {cidadeOptions.map((city) => (
-                    <option key={city} value={city}>
-                      {city}
                     </option>
                   ))}
                 </select>
@@ -1005,7 +1150,9 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
                   <input
                     className={fieldClassName}
                     value={formState.dataCadastro}
-                    onChange={(event) => handleFieldChange('dataCadastro', event.target.value)}
+                    onChange={(event) => handleDataCadastroChange(event.target.value)}
+                    inputMode="numeric"
+                    maxLength={10}
                     placeholder="dd/mm/aaaa"
                   />
                 </div>
