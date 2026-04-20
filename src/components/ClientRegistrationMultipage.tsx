@@ -147,9 +147,9 @@ const initialFieldErrors: FieldErrorState = {
 };
 
 const initialContacts: ContactRow[] = [
-  { id: 1, type: 'Celular', value: '', extra: 'OUTRO', notes: '', favorite: false },
+  { id: 1, type: 'Celular', value: '', extra: '', notes: '', favorite: false },
   { id: 2, type: 'E-mail', value: '', extra: '', notes: '', favorite: false },
-  { id: 3, type: 'Residencial', value: '', extra: 'COMPLEMENTO', notes: '', favorite: false },
+  { id: 3, type: 'Residencial', value: '', extra: '', notes: '', favorite: false },
 ];
 
 const estados = ['Selecione...', 'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MG', 'MS', 'MT', 'PA', 'PB', 'PE', 'PI', 'PR', 'RJ', 'RN', 'RO', 'RR', 'RS', 'SC', 'SE', 'SP', 'TO'];
@@ -233,6 +233,9 @@ const obterTipoTelefoneImportado = (valor: string): string => {
   const numeroSemDdd = obterNumeroSemDdd(normalizarTelefoneImportado(valor));
   return numeroSemDdd.startsWith('9') ? 'Celular' : 'Residencial';
 };
+
+const obterPlaceholderComplementoContato = (tipo: string): string =>
+  tipo === 'Celular' ? 'OUTRO' : tipo === 'E-mail' ? 'Outro / complemento' : 'COMPLEMENTO';
 
 const obterEmailImportadoValido = (valor?: string): string => {
   const email = (valor || '').trim();
@@ -712,7 +715,7 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
                 ...contact,
                 type: importedPhoneType,
                 value: formatarTelefoneContato(importedPhone, importedPhoneType),
-                extra: importedPhoneType === 'Celular' ? 'OUTRO' : 'COMPLEMENTO',
+                extra: '',
               }
             : index === 1 && importedEmail
               ? {
@@ -1018,7 +1021,7 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
                         className={compactFieldClassName}
                         value={contact.extra}
                         onChange={(event) => handleContactChange(contact.id, 'extra', event.target.value)}
-                        placeholder="Outro / complemento"
+                        placeholder={obterPlaceholderComplementoContato(contact.type)}
                       />
 
                       <input
