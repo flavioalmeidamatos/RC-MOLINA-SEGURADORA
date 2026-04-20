@@ -95,7 +95,33 @@ const cleanObservationLine = (line: string): string =>
     .replace(/\s+/g, ' ')
     .trim();
 
-const shouldDiscardObservationLine = (line: string): boolean => {
+const normalizeObservationValue = (value: string): string =>
+  normalizeText(cleanObservationLine(value))
+    .replace(/[^a-z0-9@._+-]+/g, ' ')
+    .trim();
+
+const normalizeComparableDigits = (value: string): string => {
+  const digits = value.replace(/\D/g, '');
+  return digits.length > 11 && digits.startsWith('55') ? digits.slice(2) : digits;
+};
+
+const matchesMappedObservationValue = (line: string, mappedValues: string[]): boolean => {
+  const normalizedLine = normalizeObservationValue(line);
+  const lineDigits = normalizeComparableDigits(line);
+
+  return mappedValues.some((value) => {
+    const normalizedValue = normalizeObservationValue(value);
+
+    if (normalizedLine && normalizedValue && normalizedLine === normalizedValue) {
+      return true;
+    }
+
+    const valueDigits = normalizeComparableDigits(value);
+    return lineDigits.length >= 8 && valueDigits.length >= 8 && lineDigits === valueDigits;
+  });
+};
+
+const shouldDiscardObservationLine = (line: string, mappedValues: string[]): boolean => {
   if (!line || /^[-_=]{5,}$/.test(line)) return true;
 
   const normalizedLine = normalizeText(line);
@@ -108,6 +134,10 @@ const shouldDiscardObservationLine = (line: string): boolean => {
     return true;
   }
 
+  if (matchesMappedObservationValue(line, mappedValues)) {
+    return true;
+  }
+
   const labelMatch = line.match(/^([^:：]{1,60})[:：]\s*(.*)$/);
   if (!labelMatch) return false;
 
@@ -115,11 +145,11 @@ const shouldDiscardObservationLine = (line: string): boolean => {
   return mappedObservationLabels.has(normalizedLabel);
 };
 
-const sanitizeObservation = (value: string): string =>
+const sanitizeObservation = (value: string, mappedValues: string[]): string =>
   value
     .split(/\r?\n/)
     .map(cleanObservationLine)
-    .filter((line) => !shouldDiscardObservationLine(line))
+    .filter((line) => !shouldDiscardObservationLine(line, mappedValues))
     .join('\n')
     .trim();
 
@@ -318,8 +348,6 @@ const importLeadFromSistemaQuer = async ({ login, senha, leadUrl }: ImportLeadPa
       return anuncioUrl || (indicacaoId ? `${anuncioBaseUrl}${indicacaoId}.png` : '');
     };
 
-    const rawObservation = findValue(['observacao', 'dados do calculo']);
-
     const leadData = {
       nome: findValue(['nome', 'indicacao', 'cliente', 'aluno']),
       email: findValue(['email', 'e-mail', 'correio']),
@@ -330,7 +358,7 @@ const importLeadFromSistemaQuer = async ({ login, senha, leadUrl }: ImportLeadPa
       cidade: findValue(['cidade']),
       nascimento: findValue(['nascimento']),
       cpf_cnpj: findValue(['cpf_cnpj', 'cpf', 'cnpj', 'documento']),
-      observacao: sanitizeObservation(rawObservation),
+      observacao: '',
       vidas: {
         '00-18': $('#idade_00_18').val()?.toString() || '0',
         '19-23': $('#idade_19_23').val()?.toString() || '0',
@@ -360,6 +388,19 @@ const importLeadFromSistemaQuer = async ({ login, senha, leadUrl }: ImportLeadPa
           ? `(${digits.substring(0, 2)}) ${digits.substring(2, 7)}-${digits.substring(7)}`
           : `(${digits.substring(0, 2)}) ${digits.substring(2, 6)}-${digits.substring(6)}`;
     }
+
+    leadData.observacao = sanitizeObservation(findValue(['observacao', 'dados do calculo']), [
+      leadData.nome,
+      leadData.email,
+      leadData.telefone,
+      leadData.endereco,
+      leadData.numero,
+      leadData.bairro,
+      leadData.cidade,
+      leadData.nascimento,
+      leadData.cpf_cnpj,
+      leadData.indicacao_id,
+    ]);
 
     return leadData;
   } catch (error) {
