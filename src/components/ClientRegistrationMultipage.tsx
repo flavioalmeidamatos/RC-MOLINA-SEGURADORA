@@ -71,6 +71,8 @@ type FieldErrorState = {
   dataNascimento: string;
 };
 
+type DocumentFieldId = keyof FieldErrorState;
+
 type ContactErrorState = Record<number, string>;
 
 type UploadedDocument = {
@@ -300,6 +302,12 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
   const uploadedDocumentsRef = useRef<UploadedDocument[]>([]);
   const lastCepLookupRef = useRef('');
   const enderecoNumeroInputRef = useRef<HTMLInputElement | null>(null);
+  const documentFieldRefs = useRef<Record<DocumentFieldId, HTMLInputElement | null>>({
+    cpf: null,
+    rg: null,
+    cnpj: null,
+    dataNascimento: null,
+  });
 
   const activeTabIndex = tabs.findIndex((tab) => tab.id === activeTab);
 
@@ -509,6 +517,33 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
     return isValid;
   };
 
+  const focusDocumentField = (field: DocumentFieldId) => {
+    setActiveTab('geral');
+    window.setTimeout(() => documentFieldRefs.current[field]?.focus(), 0);
+  };
+
+  const keepFocusWhenInvalid = (field: DocumentFieldId, isValid: boolean) => {
+    if (!isValid) {
+      focusDocumentField(field);
+    }
+  };
+
+  const handleCPFBlur = () => {
+    keepFocusWhenInvalid('cpf', validateCPFField());
+  };
+
+  const handleRGBlur = () => {
+    keepFocusWhenInvalid('rg', validateRGField());
+  };
+
+  const handleCNPJBlur = () => {
+    keepFocusWhenInvalid('cnpj', validateCNPJField());
+  };
+
+  const handleBirthDateBlur = () => {
+    keepFocusWhenInvalid('dataNascimento', validateBirthDateField());
+  };
+
   const handleContactChange = (id: number, field: keyof ContactRow, value: string | boolean) => {
     const nextValue =
       typeof value === 'string' && (field === 'extra' || field === 'notes')
@@ -707,12 +742,14 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
       return;
     }
 
-    const areDocumentsValid = [
-      validateCPFField(),
-      validateRGField(),
-      validateCNPJField(),
-      validateBirthDateField(),
-    ].every(Boolean);
+    const documentValidations: Array<[DocumentFieldId, boolean]> = [
+      ['cpf', validateCPFField()],
+      ['rg', validateRGField()],
+      ['cnpj', validateCNPJField()],
+      ['dataNascimento', validateBirthDateField()],
+    ];
+    const firstInvalidDocument = documentValidations.find(([, isValid]) => !isValid)?.[0];
+    const areDocumentsValid = !firstInvalidDocument;
     contacts.forEach((contact) => validateContactValue(contact.id));
 
     const areContactsValid = contacts.every((contact) => {
@@ -726,6 +763,9 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
 
     if (!areDocumentsValid || !areContactsValid) {
       setFeedback('Corrija os campos destacados antes de salvar.');
+      if (firstInvalidDocument) {
+        focusDocumentField(firstInvalidDocument);
+      }
       return;
     }
 
@@ -853,10 +893,13 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
               <div>
                 <label className="mb-1 block text-sm font-bold text-slate-700">CPF</label>
                 <input
+                  ref={(node) => {
+                    documentFieldRefs.current.cpf = node;
+                  }}
                   className={compactFieldClassName}
                   value={formState.cpf}
                   onChange={(event) => handleCPFChange(event.target.value)}
-                  onBlur={validateCPFField}
+                  onBlur={handleCPFBlur}
                   inputMode="numeric"
                   maxLength={14}
                   placeholder="000.000.000-00"
@@ -867,10 +910,13 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
               <div>
                 <label className="mb-1 block text-sm font-bold text-slate-700">RG</label>
                 <input
+                  ref={(node) => {
+                    documentFieldRefs.current.rg = node;
+                  }}
                   className={compactFieldClassName}
                   value={formState.rg}
                   onChange={(event) => handleRGChange(event.target.value)}
-                  onBlur={validateRGField}
+                  onBlur={handleRGBlur}
                   maxLength={10}
                   placeholder="00000000-0"
                 />
@@ -880,10 +926,13 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
               <div>
                 <label className="mb-1 block text-sm font-bold text-slate-700">CNPJ</label>
                 <input
+                  ref={(node) => {
+                    documentFieldRefs.current.cnpj = node;
+                  }}
                   className={compactFieldClassName}
                   value={formState.cnpj}
                   onChange={(event) => handleCNPJChange(event.target.value)}
-                  onBlur={validateCNPJField}
+                  onBlur={handleCNPJBlur}
                   inputMode="numeric"
                   maxLength={18}
                   placeholder="00.000.000/0000-00"
@@ -894,10 +943,13 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
               <div>
                 <label className="mb-1 block text-sm font-bold text-slate-700">Data de nascimento</label>
                 <input
+                  ref={(node) => {
+                    documentFieldRefs.current.dataNascimento = node;
+                  }}
                   className={compactFieldClassName}
                   value={formState.dataNascimento}
                   onChange={(event) => handleDataNascimentoChange(event.target.value)}
-                  onBlur={validateBirthDateField}
+                  onBlur={handleBirthDateBlur}
                   inputMode="numeric"
                   maxLength={10}
                   placeholder="dd/mm/aaaa"
