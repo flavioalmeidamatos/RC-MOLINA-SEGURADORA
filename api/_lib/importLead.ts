@@ -54,6 +54,71 @@ const normalizeText = (value: string) =>
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase();
 
+const mappedObservationLabels = new Set([
+  'nome',
+  'indicacao',
+  'cliente',
+  'aluno',
+  'telefone',
+  'celular',
+  'whatsapp',
+  'fone celular',
+  'email',
+  'e-mail',
+  'correio',
+  'cpf_cnpj',
+  'cpf',
+  'cnpj',
+  'documento',
+  'nascimento',
+  'data nascimento',
+  'data de nascimento',
+  'endereco',
+  'rua',
+  'logradouro',
+  'numero',
+  'bairro',
+  'cidade',
+  'indicacao id',
+  'indicacao_id',
+  'codigo',
+]);
+
+const cleanObservationLine = (line: string): string =>
+  line
+    .replace(/\*/g, '')
+    .replace(/^[\s>•▶✅]+/, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const shouldDiscardObservationLine = (line: string): boolean => {
+  if (!line || /^[-_=]{5,}$/.test(line)) return true;
+
+  const normalizedLine = normalizeText(line);
+
+  if (
+    normalizedLine.includes('chegou um novo lead de planos de saude - form instant') ||
+    normalizedLine.includes('clique no numero de telefone e entre em contato agora mesmo') ||
+    normalizedLine === 'informacoes'
+  ) {
+    return true;
+  }
+
+  const labelMatch = line.match(/^([^:：]{1,60})[:：]\s*(.*)$/);
+  if (!labelMatch) return false;
+
+  const normalizedLabel = normalizeText(labelMatch[1]).replace(/[^a-z0-9_ -]/g, '').trim();
+  return mappedObservationLabels.has(normalizedLabel);
+};
+
+const sanitizeObservation = (value: string): string =>
+  value
+    .split(/\r?\n/)
+    .map(cleanObservationLine)
+    .filter((line) => !shouldDiscardObservationLine(line))
+    .join('\n')
+    .trim();
+
 const getSetCookieLines = (response: Response) => {
   const responseHeaders = response.headers as Headers & { getSetCookie?: () => string[] };
 
@@ -257,6 +322,8 @@ export async function importLeadFromSistemaQuer({
       return anuncioUrl || (indicacaoId ? `${anuncioBaseUrl}${indicacaoId}.png` : '');
     };
 
+    const rawObservation = findValue(['observacao', 'dados do calculo']);
+
     const leadData: ImportLeadResult = {
       nome: findValue(['nome', 'indicacao', 'cliente', 'aluno']),
       email: findValue(['email', 'e-mail', 'correio']),
@@ -267,7 +334,7 @@ export async function importLeadFromSistemaQuer({
       cidade: findValue(['cidade']),
       nascimento: findValue(['nascimento']),
       cpf_cnpj: findValue(['cpf_cnpj', 'cpf', 'cnpj', 'documento']),
-      observacao: findValue(['observacao', 'dados do calculo']),
+      observacao: sanitizeObservation(rawObservation),
       vidas: {
         '00-18': $('#idade_00_18').val()?.toString() || '0',
         '19-23': $('#idade_19_23').val()?.toString() || '0',

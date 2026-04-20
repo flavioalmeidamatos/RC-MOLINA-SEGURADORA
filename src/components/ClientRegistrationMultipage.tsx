@@ -705,6 +705,7 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
       const importedPhone = normalizarTelefoneImportado(leadData.telefone || '');
       const importedPhoneType = importedPhone ? obterTipoTelefoneImportado(importedPhone) : 'Celular';
       const importedEmail = obterEmailImportadoValido(leadData.email);
+      const importedDocumentDigits = somenteDigitos(leadData.cpf_cnpj || '');
 
       resetForm();
       setIsClientFormEnabled(true);
@@ -712,7 +713,14 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
       setFormState((prev) => ({
         ...prev,
         nome: normalizarTextoMaiusculo(somenteLetrasEEspacos(leadData.nome || '')),
+        cpf: importedDocumentDigits.length === 11 ? formatarCPF(importedDocumentDigits) : '',
+        cnpj: importedDocumentDigits.length === 14 ? formatarCNPJ(importedDocumentDigits) : '',
         dataNascimento: formatarNascimentoImportado(leadData.nascimento),
+        enderecoRua: normalizarTextoMaiusculo(leadData.endereco || ''),
+        enderecoNumero: normalizarTextoMaiusculo(leadData.numero || ''),
+        enderecoBairro: normalizarTextoMaiusculo(leadData.bairro || ''),
+        enderecoCidade: normalizarTextoMaiusculo(leadData.cidade || ''),
+        observacoes: normalizarTextoMaiusculo(leadData.observacao || ''),
         codigo: somenteDigitos(leadData.indicacao_id || '').slice(0, 6) || prev.codigo,
         dataCadastro: formatarDataAtualBR(),
       }));
