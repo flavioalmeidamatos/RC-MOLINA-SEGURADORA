@@ -171,8 +171,14 @@ const cidadesPorEstado: Record<string, string[]> = {
 const fieldClassName =
   'h-11 w-full rounded-2xl border border-black bg-white px-3.5 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-black focus:ring-4 focus:ring-black/10 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400 sm:h-10 sm:px-4';
 
+const compactFieldClassName =
+  'h-10 w-full rounded-lg border border-black bg-white px-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-black focus:ring-4 focus:ring-black/10 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400 sm:h-9';
+
 const textAreaClassName =
   'w-full rounded-2xl border border-black bg-white px-3.5 py-2.5 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-black focus:ring-4 focus:ring-black/10 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400 sm:px-4';
+
+const compactTextAreaClassName =
+  'w-full rounded-lg border border-black bg-white px-3 py-2 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-black focus:ring-4 focus:ring-black/10 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400';
 
 const sectionCardClassName = 'rounded-[28px] border border-slate-200 bg-white p-3 shadow-sm sm:p-4 xl:p-5';
 
@@ -793,9 +799,9 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
       <fieldset disabled={isClientFormLocked} className="m-0 space-y-3 border-0 p-0">
         <section className={activeTab === 'geral' ? 'block' : 'hidden'}>
           <div className={sectionCardClassName}>
-            <div className="grid gap-3 lg:grid-cols-2">
-              <div className="lg:col-span-2">
-                <label className="mb-1.5 block text-sm font-bold text-slate-700">Nome*</label>
+            <div className="grid gap-2.5 lg:grid-cols-[0.72fr_0.58fr_0.86fr_0.64fr]">
+              <div className="lg:col-span-4">
+                <label className="mb-1 block text-sm font-bold text-slate-700">Nome*</label>
                 <input
                   className={fieldClassName}
                   value={formState.nome}
@@ -805,9 +811,9 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-bold text-slate-700">CPF</label>
+                <label className="mb-1 block text-sm font-bold text-slate-700">CPF</label>
                 <input
-                  className={fieldClassName}
+                  className={compactFieldClassName}
                   value={formState.cpf}
                   onChange={(event) => handleCPFChange(event.target.value)}
                   onBlur={validateCPFField}
@@ -819,19 +825,20 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-bold text-slate-700">RG</label>
+                <label className="mb-1 block text-sm font-bold text-slate-700">RG</label>
                 <input
-                  className={fieldClassName}
+                  className={compactFieldClassName}
                   value={formState.rg}
                   onChange={(event) => handleFieldChange('rg', event.target.value)}
-                  placeholder="RG"
+                  maxLength={12}
+                  placeholder="09259123-9"
                 />
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-bold text-slate-700">CNPJ</label>
+                <label className="mb-1 block text-sm font-bold text-slate-700">CNPJ</label>
                 <input
-                  className={fieldClassName}
+                  className={compactFieldClassName}
                   value={formState.cnpj}
                   onChange={(event) => handleCNPJChange(event.target.value)}
                   onBlur={validateCNPJField}
@@ -843,9 +850,9 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-bold text-slate-700">Data de nascimento</label>
+                <label className="mb-1 block text-sm font-bold text-slate-700">Data de nascimento</label>
                 <input
-                  className={fieldClassName}
+                  className={compactFieldClassName}
                   value={formState.dataNascimento}
                   onChange={(event) => handleDataNascimentoChange(event.target.value)}
                   onBlur={validateBirthDateField}
@@ -859,24 +866,24 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
               </div>
             </div>
 
-            <div className="mt-4 space-y-3">
-              <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mt-3 space-y-2.5">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h3 className="text-base font-black text-slate-900 sm:text-lg">Contatos*</h3>
-                  <p className="text-sm text-slate-500">Mantenha os canais principais sempre visíveis e tocáveis.</p>
+                  <p className="text-xs font-semibold text-slate-500 sm:text-sm">Mantenha os canais principais sempre visíveis e tocáveis.</p>
                 </div>
                 <button
                   type="button"
                   onClick={addContact}
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-[#4e9bdd] px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-[#4e9bdd]/20 transition hover:bg-[#377fbf] disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-10"
+                  className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-[#4e9bdd] px-4 py-2 text-sm font-black text-white shadow-lg shadow-[#4e9bdd]/20 transition hover:bg-[#377fbf] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <PlusCircle size={18} />
                   Adicionar contato
                 </button>
               </div>
 
-              <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50/70">
-                <div className="hidden xl:grid xl:grid-cols-[0.9fr_1.15fr_1fr_1fr_auto] xl:gap-2.5 xl:border-b xl:border-slate-200 xl:bg-white xl:px-4 xl:py-2.5">
+              <div className="overflow-hidden rounded-lg border border-slate-200 bg-slate-50/70">
+                <div className="hidden xl:grid xl:grid-cols-[0.9fr_1.15fr_1fr_1fr_auto] xl:gap-2 xl:border-b xl:border-slate-200 xl:bg-white xl:px-3 xl:py-2">
                   <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Tipo</span>
                   <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Contato</span>
                   <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Complemento</span>
@@ -887,75 +894,111 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
                 {contacts.map((contact, index) => (
                   <div
                     key={contact.id}
-                    className={`bg-white px-3 py-2.5 sm:px-4 sm:py-3 ${
+                    className={`bg-white px-3 py-2 ${
                       index !== contacts.length - 1 ? 'border-b border-slate-200' : ''
                     }`}
                   >
-                    <div className="grid gap-2.5 xl:grid-cols-[0.9fr_1.15fr_1fr_1fr_auto]">
-                    <select
-                      className={fieldClassName}
-                      value={contact.type}
-                      onChange={(event) => handleContactTypeChange(contact.id, event.target.value)}
-                    >
-                      <option>Celular</option>
-                      <option>E-mail</option>
-                      <option>Residencial</option>
-                      <option>Comercial</option>
-                    </select>
+                    <div className="grid gap-2 xl:grid-cols-[0.9fr_1.15fr_1fr_1fr_auto]">
+                      <select
+                        className={compactFieldClassName}
+                        value={contact.type}
+                        onChange={(event) => handleContactTypeChange(contact.id, event.target.value)}
+                      >
+                        <option>Celular</option>
+                        <option>E-mail</option>
+                        <option>Residencial</option>
+                        <option>Comercial</option>
+                      </select>
 
-                    <input
-                      className={fieldClassName}
-                      value={contact.value}
-                      onChange={(event) => handleContactValueChange(contact.id, contact.type, event.target.value)}
-                      onBlur={() => validateContactValue(contact.id)}
-                      inputMode={contact.type === 'E-mail' ? 'email' : 'numeric'}
-                      maxLength={contact.type === 'Celular' ? 15 : contact.type === 'E-mail' ? 120 : 14}
-                      placeholder={contact.type === 'E-mail' ? 'E-mail' : 'Número'}
-                    />
+                      <input
+                        className={compactFieldClassName}
+                        value={contact.value}
+                        onChange={(event) => handleContactValueChange(contact.id, contact.type, event.target.value)}
+                        onBlur={() => validateContactValue(contact.id)}
+                        inputMode={contact.type === 'E-mail' ? 'email' : 'numeric'}
+                        maxLength={contact.type === 'Celular' ? 15 : contact.type === 'E-mail' ? 120 : 14}
+                        placeholder={contact.type === 'E-mail' ? 'E-mail' : 'Número'}
+                      />
 
-                    <input
-                      className={fieldClassName}
-                      value={contact.extra}
-                      onChange={(event) => handleContactChange(contact.id, 'extra', event.target.value)}
-                      placeholder="Outro / complemento"
-                    />
+                      <input
+                        className={compactFieldClassName}
+                        value={contact.extra}
+                        onChange={(event) => handleContactChange(contact.id, 'extra', event.target.value)}
+                        placeholder="Outro / complemento"
+                      />
 
-                    <input
-                      className={fieldClassName}
-                      value={contact.notes}
-                      onChange={(event) => handleContactChange(contact.id, 'notes', event.target.value)}
-                      placeholder="Observações"
-                    />
+                      <input
+                        className={compactFieldClassName}
+                        value={contact.notes}
+                        onChange={(event) => handleContactChange(contact.id, 'notes', event.target.value)}
+                        placeholder="Observações"
+                      />
 
                       <div className="grid grid-cols-2 gap-2 sm:max-w-36 xl:max-w-none">
-                      <button
-                        type="button"
-                        onClick={() => handleContactChange(contact.id, 'favorite', !contact.favorite)}
-                        aria-label={contact.favorite ? 'Desmarcar favorito' : 'Marcar favorito'}
-                          className={`inline-flex h-11 items-center justify-center rounded-2xl transition disabled:cursor-not-allowed disabled:opacity-50 sm:h-10 ${
+                        <button
+                          type="button"
+                          onClick={() => handleContactChange(contact.id, 'favorite', !contact.favorite)}
+                          aria-label={contact.favorite ? 'Desmarcar favorito' : 'Marcar favorito'}
+                          className={`inline-flex h-10 items-center justify-center rounded-lg transition disabled:cursor-not-allowed disabled:opacity-50 sm:h-9 ${
                             contact.favorite
                               ? 'bg-rose-50 text-rose-500'
                               : 'bg-transparent text-slate-400 hover:bg-rose-50 hover:text-rose-500'
                           }`}
-                      >
-                        <Heart size={18} fill={contact.favorite ? 'currentColor' : 'none'} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => removeContact(contact.id)}
-                        aria-label="Remover contato"
-                          className="inline-flex h-11 items-center justify-center rounded-2xl bg-transparent text-slate-400 transition hover:bg-red-50 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-50 sm:h-10"
-                      >
-                        <Trash2 size={18} />
-                      </button>
+                        >
+                          <Heart size={18} fill={contact.favorite ? 'currentColor' : 'none'} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeContact(contact.id)}
+                          aria-label="Remover contato"
+                          className="inline-flex h-10 items-center justify-center rounded-lg bg-transparent text-slate-400 transition hover:bg-red-50 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-50 sm:h-9"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
                     </div>
+                    {contactErrors[contact.id] ? (
+                      <p className={errorMessageClassName}>{contactErrors[contact.id]}</p>
+                    ) : null}
                   </div>
-                  {contactErrors[contact.id] ? <p className={errorMessageClassName}>{contactErrors[contact.id]}</p> : null}
+                ))}
+              </div>
+
+              <div className="grid gap-2.5 border-t border-slate-100 pt-3 xl:grid-cols-[1.6fr_0.55fr_0.7fr]">
+                <div>
+                  <label className="mb-1 block text-sm font-bold text-slate-700">Observações</label>
+                  <textarea
+                    className={`${compactTextAreaClassName} min-h-20 resize-y`}
+                    value={formState.observacoes}
+                    onChange={(event) => handleFieldChange('observacoes', event.target.value)}
+                    placeholder="Registre detalhes importantes sobre este cliente"
+                  />
                 </div>
-              ))}
+
+                <div>
+                  <label className="mb-1 block text-sm font-bold text-slate-700">Código</label>
+                  <input
+                    className={`${compactFieldClassName} bg-slate-100`}
+                    value={formState.codigo}
+                    onChange={(event) => handleFieldChange('codigo', event.target.value)}
+                    placeholder="Novo"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-bold text-slate-700">Data de cadastro</label>
+                  <input
+                    className={compactFieldClassName}
+                    value={formState.dataCadastro}
+                    onChange={(event) => handleDataCadastroChange(event.target.value)}
+                    inputMode="numeric"
+                    maxLength={10}
+                    placeholder="dd/mm/aaaa"
+                  />
+                </div>
+              </div>
             </div>
           </div>
-        </div>
         </section>
 
         <section className={activeTab === 'endereco' ? 'block' : 'hidden'}>
@@ -1067,16 +1110,6 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
         <section className={activeTab === 'extras' ? 'block' : 'hidden'}>
           <div className={sectionCardClassName}>
             <div className="grid gap-3">
-              <div>
-                <label className="mb-2 block text-sm font-bold text-slate-700">Observações</label>
-                <textarea
-                  className={`${textAreaClassName} min-h-32 resize-y`}
-                  value={formState.observacoes}
-                  onChange={(event) => handleFieldChange('observacoes', event.target.value)}
-                  placeholder="Registre detalhes importantes sobre este cliente"
-                />
-              </div>
-
               <div className="grid gap-3 xl:grid-cols-[1.2fr_1fr_0.8fr]">
                 <div>
                   <label className="mb-2 block text-sm font-bold text-slate-700">Marcações</label>
@@ -1132,7 +1165,7 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
                 </div>
               </div>
 
-              <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-4">
+              <div className="grid gap-3 lg:grid-cols-2">
                 <div>
                   <label className="mb-2 block text-sm font-bold text-slate-700">Status</label>
                   <div className="grid grid-cols-2 gap-2">
@@ -1159,28 +1192,6 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
                       INATIVO
                     </button>
                   </div>
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-bold text-slate-700">Código</label>
-                  <input
-                    className={`${fieldClassName} bg-slate-100`}
-                    value={formState.codigo}
-                    onChange={(event) => handleFieldChange('codigo', event.target.value)}
-                    placeholder="Novo"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-bold text-slate-700">Data de cadastro</label>
-                  <input
-                    className={fieldClassName}
-                    value={formState.dataCadastro}
-                    onChange={(event) => handleDataCadastroChange(event.target.value)}
-                    inputMode="numeric"
-                    maxLength={10}
-                    placeholder="dd/mm/aaaa"
-                  />
                 </div>
 
                 <div>
