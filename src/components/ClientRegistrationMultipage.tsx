@@ -129,7 +129,7 @@ const initialFormState: ClientFormState = {
   comoConheceu: '0 - Não informado',
   permiteAgendarOnline: true,
   status: 'ATIVO',
-  codigo: 'Novo',
+  codigo: '',
   dataCadastro: '',
   dataAtualizacao: '',
 };
@@ -645,7 +645,7 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
         ...prev,
         nome: normalizarTextoMaiusculo(somenteLetrasEEspacos(leadData.nome || '')),
         dataNascimento: formatarNascimentoImportado(leadData.nascimento),
-        codigo: leadData.indicacao_id || prev.codigo,
+        codigo: somenteDigitos(leadData.indicacao_id || '').slice(0, 6) || prev.codigo,
         dataCadastro: formatarDataAtualBR(),
       }));
       setContacts((prev) =>
@@ -830,8 +830,8 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
                   className={compactFieldClassName}
                   value={formState.rg}
                   onChange={(event) => handleFieldChange('rg', event.target.value)}
-                  maxLength={12}
-                  placeholder="09259123-9"
+                  maxLength={10}
+                  placeholder="00000000-0"
                 />
               </div>
 
@@ -964,37 +964,41 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
                 ))}
               </div>
 
-              <div className="grid gap-2.5 border-t border-slate-100 pt-3 xl:grid-cols-[1.6fr_0.55fr_0.7fr]">
+              <div className="grid gap-2.5 border-t border-slate-100 pt-3 xl:grid-cols-[minmax(0,1fr)_11.5rem]">
                 <div>
                   <label className="mb-1 block text-sm font-bold text-slate-700">Observações</label>
                   <textarea
-                    className={`${compactTextAreaClassName} min-h-20 resize-y`}
+                    className={`${compactTextAreaClassName} min-h-24 resize-y`}
                     value={formState.observacoes}
                     onChange={(event) => handleFieldChange('observacoes', event.target.value)}
                     placeholder="Registre detalhes importantes sobre este cliente"
                   />
                 </div>
 
-                <div>
-                  <label className="mb-1 block text-sm font-bold text-slate-700">Código</label>
-                  <input
-                    className={`${compactFieldClassName} bg-slate-100`}
-                    value={formState.codigo}
-                    onChange={(event) => handleFieldChange('codigo', event.target.value)}
-                    placeholder="Novo"
-                  />
-                </div>
+                <div className="grid content-start gap-2.5">
+                  <div>
+                    <label className="mb-1 block text-sm font-bold text-slate-700">Código</label>
+                    <input
+                      className={`${compactFieldClassName} bg-slate-100`}
+                      value={formState.codigo}
+                      onChange={(event) => handleFieldChange('codigo', somenteDigitos(event.target.value).slice(0, 6))}
+                      inputMode="numeric"
+                      maxLength={6}
+                      placeholder="000000"
+                    />
+                  </div>
 
-                <div>
-                  <label className="mb-1 block text-sm font-bold text-slate-700">Data de cadastro</label>
-                  <input
-                    className={compactFieldClassName}
-                    value={formState.dataCadastro}
-                    onChange={(event) => handleDataCadastroChange(event.target.value)}
-                    inputMode="numeric"
-                    maxLength={10}
-                    placeholder="dd/mm/aaaa"
-                  />
+                  <div>
+                    <label className="mb-1 block text-sm font-bold text-slate-700">Data de cadastro</label>
+                    <input
+                      className={compactFieldClassName}
+                      value={formState.dataCadastro}
+                      onChange={(event) => handleDataCadastroChange(event.target.value)}
+                      inputMode="numeric"
+                      maxLength={10}
+                      placeholder="dd/mm/aaaa"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
