@@ -5,7 +5,6 @@ import {
   File,
   FileImage,
   FileText,
-  Heart,
   Info,
   MapPinned,
   PlusCircle,
@@ -148,9 +147,9 @@ const initialFieldErrors: FieldErrorState = {
 
 const initialContacts: ContactRow[] = [
   { id: 1, type: 'Celular', value: '', extra: '', notes: '', favorite: false },
-  { id: 2, type: 'E-mail', value: '', extra: '', notes: '', favorite: false },
-  { id: 3, type: 'Residencial', value: '', extra: '', notes: '', favorite: false },
 ];
+
+const maxContactRows = 3;
 
 const estados = ['Selecione...', 'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MG', 'MS', 'MT', 'PA', 'PB', 'PE', 'PI', 'PR', 'RJ', 'RN', 'RO', 'RR', 'RS', 'SC', 'SE', 'SP', 'TO'];
 
@@ -236,6 +235,9 @@ const obterTipoTelefoneImportado = (valor: string): string => {
 
 const obterPlaceholderComplementoContato = (tipo: string): string =>
   tipo === 'Celular' ? 'OUTRO' : tipo === 'E-mail' ? 'Outro / complemento' : 'COMPLEMENTO';
+
+const obterTipoNovoContato = (totalAtual: number): string =>
+  totalAtual === 0 ? 'Celular' : totalAtual === 1 ? 'E-mail' : 'Residencial';
 
 const obterEmailImportadoValido = (valor?: string): string => {
   const email = (valor || '').trim();
@@ -609,10 +611,16 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
   };
 
   const addContact = () => {
-    setContacts((prev) => [
-      ...prev,
-      { id: Date.now(), type: 'Celular', value: '', extra: 'OUTRO', notes: '', favorite: false },
-    ]);
+    setContacts((prev) => {
+      if (prev.length >= maxContactRows) {
+        return prev;
+      }
+
+      return [
+        ...prev,
+        { id: Date.now(), type: obterTipoNovoContato(prev.length), value: '', extra: '', notes: '', favorite: false },
+      ];
+    });
   };
 
   const removeContact = (id: number) => {
@@ -708,25 +716,29 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
         codigo: somenteDigitos(leadData.indicacao_id || '').slice(0, 6) || prev.codigo,
         dataCadastro: formatarDataAtualBR(),
       }));
-      setContacts((prev) =>
-        prev.map((contact, index) =>
-          index === 0
-            ? {
-                ...contact,
-                type: importedPhoneType,
-                value: formatarTelefoneContato(importedPhone, importedPhoneType),
-                extra: '',
-              }
-            : index === 1 && importedEmail
-              ? {
-                  ...contact,
-                  type: 'E-mail',
-                  value: normalizarTextoMaiusculo(importedEmail),
-                  extra: '',
-                }
-            : contact,
-        ),
-      );
+      setContacts((prev) => {
+        const nextContacts: ContactRow[] = [
+          {
+            ...prev[0],
+            type: importedPhoneType,
+            value: formatarTelefoneContato(importedPhone, importedPhoneType),
+            extra: '',
+          },
+        ];
+
+        if (importedEmail && nextContacts.length < maxContactRows) {
+          nextContacts.push({
+            id: Date.now(),
+            type: 'E-mail',
+            value: normalizarTextoMaiusculo(importedEmail),
+            extra: '',
+            notes: '',
+            favorite: false,
+          });
+        }
+
+        return nextContacts;
+      });
       setFeedback('Dados importados aplicados ao novo cliente.');
     },
     [resetForm],
@@ -972,6 +984,7 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
                 <button
                   type="button"
                   onClick={addContact}
+                  disabled={contacts.length >= maxContactRows}
                   className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-[#4e9bdd] px-4 py-2 text-sm font-black text-white shadow-lg shadow-[#4e9bdd]/20 transition hover:bg-[#377fbf] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <PlusCircle size={18} />
@@ -1034,15 +1047,12 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
                       <div className="grid grid-cols-2 gap-2 sm:max-w-36 xl:max-w-none">
                         <button
                           type="button"
-                          onClick={() => handleContactChange(contact.id, 'favorite', !contact.favorite)}
-                          aria-label={contact.favorite ? 'Desmarcar favorito' : 'Marcar favorito'}
-                          className={`inline-flex h-10 items-center justify-center rounded-lg transition disabled:cursor-not-allowed disabled:opacity-50 sm:h-9 ${
-                            contact.favorite
-                              ? 'bg-rose-50 text-rose-500'
-                              : 'bg-transparent text-slate-400 hover:bg-rose-50 hover:text-rose-500'
-                          }`}
+                          onClick={addContact}
+                          disabled={contacts.length >= maxContactRows}
+                          aria-label="Adicionar contato"
+                          className="inline-flex h-10 items-center justify-center rounded-lg bg-transparent text-slate-400 transition hover:bg-[#4e9bdd]/10 hover:text-[#2e6ea8] disabled:cursor-not-allowed disabled:opacity-35 sm:h-9"
                         >
-                          <Heart size={18} fill={contact.favorite ? 'currentColor' : 'none'} />
+                          <PlusCircle size={18} />
                         </button>
                         <button
                           type="button"
