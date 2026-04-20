@@ -19,10 +19,12 @@ import {
   formatarCNPJ,
   formatarCPF,
   formatarDataBR,
+  formatarRG,
   validarCNPJ,
   validarCPF,
   validarDataNascimentoBR,
   validarEmailRFC5322,
+  validarRG,
 } from '../lib/validacoes';
 import { SistemaQuerImportModal, type SistemaQuerLeadData } from './SistemaQuerImportModal';
 
@@ -64,6 +66,7 @@ type ClientFormState = {
 
 type FieldErrorState = {
   cpf: string;
+  rg: string;
   cnpj: string;
   dataNascimento: string;
 };
@@ -136,6 +139,7 @@ const initialFormState: ClientFormState = {
 
 const initialFieldErrors: FieldErrorState = {
   cpf: '',
+  rg: '',
   cnpj: '',
   dataNascimento: '',
 };
@@ -369,6 +373,11 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
     updateFieldError('cpf', '');
   };
 
+  const handleRGChange = (value: string) => {
+    handleFieldChange('rg', formatarRG(value));
+    updateFieldError('rg', '');
+  };
+
   const handleCNPJChange = (value: string) => {
     handleFieldChange('cnpj', formatarCNPJ(value));
     updateFieldError('cnpj', '');
@@ -463,28 +472,41 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
   const validateCPFField = () => {
     if (!formState.cpf) {
       updateFieldError('cpf', '');
-      return;
+      return true;
     }
-    updateFieldError('cpf', validarCPF(formState.cpf) ? '' : 'Informe um CPF válido.');
+    const isValid = validarCPF(formState.cpf);
+    updateFieldError('cpf', isValid ? '' : 'Informe um CPF válido.');
+    return isValid;
+  };
+
+  const validateRGField = () => {
+    if (!formState.rg) {
+      updateFieldError('rg', '');
+      return true;
+    }
+    const isValid = validarRG(formState.rg);
+    updateFieldError('rg', isValid ? '' : 'Informe um RG válido.');
+    return isValid;
   };
 
   const validateCNPJField = () => {
     if (!formState.cnpj) {
       updateFieldError('cnpj', '');
-      return;
+      return true;
     }
-    updateFieldError('cnpj', validarCNPJ(formState.cnpj) ? '' : 'Informe um CNPJ válido.');
+    const isValid = validarCNPJ(formState.cnpj);
+    updateFieldError('cnpj', isValid ? '' : 'Informe um CNPJ válido.');
+    return isValid;
   };
 
   const validateBirthDateField = () => {
     if (!formState.dataNascimento) {
       updateFieldError('dataNascimento', '');
-      return;
+      return true;
     }
-    updateFieldError(
-      'dataNascimento',
-      validarDataNascimentoBR(formState.dataNascimento) ? '' : 'Informe uma data de nascimento válida.',
-    );
+    const isValid = validarDataNascimentoBR(formState.dataNascimento);
+    updateFieldError('dataNascimento', isValid ? '' : 'Informe uma data de nascimento válida.');
+    return isValid;
   };
 
   const handleContactChange = (id: number, field: keyof ContactRow, value: string | boolean) => {
@@ -685,10 +707,28 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
       return;
     }
 
-    validateCPFField();
-    validateCNPJField();
-    validateBirthDateField();
+    const areDocumentsValid = [
+      validateCPFField(),
+      validateRGField(),
+      validateCNPJField(),
+      validateBirthDateField(),
+    ].every(Boolean);
     contacts.forEach((contact) => validateContactValue(contact.id));
+
+    const areContactsValid = contacts.every((contact) => {
+      if (!contact.value) return true;
+      if (contact.type === 'E-mail') return validarEmailRFC5322(contact.value);
+
+      const totalDigitos = somenteDigitos(contact.value).length;
+      const minimo = contact.type === 'Celular' ? 11 : 10;
+      return totalDigitos === minimo;
+    });
+
+    if (!areDocumentsValid || !areContactsValid) {
+      setFeedback('Corrija os campos destacados antes de salvar.');
+      return;
+    }
+
     setFeedback('Layout multipage de clientes pronto. O próximo passo pode ser conectar ao Supabase.');
   };
 
@@ -829,10 +869,12 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
                 <input
                   className={compactFieldClassName}
                   value={formState.rg}
-                  onChange={(event) => handleFieldChange('rg', event.target.value)}
+                  onChange={(event) => handleRGChange(event.target.value)}
+                  onBlur={validateRGField}
                   maxLength={10}
                   placeholder="00000000-0"
                 />
+                {fieldErrors.rg ? <p className={errorMessageClassName}>{fieldErrors.rg}</p> : null}
               </div>
 
               <div>

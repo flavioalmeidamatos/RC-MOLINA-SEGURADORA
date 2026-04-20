@@ -55,6 +55,45 @@ export const validarCPF = (valor: string): boolean => {
   return resto === Number(cpf.charAt(10));
 };
 
+export const formatarRG = (valor: string): string => {
+  const caracteres = valor.toUpperCase().replace(/[^0-9X]/g, '').split('');
+  const base: string[] = [];
+  let verificador = '';
+
+  for (const caractere of caracteres) {
+    if (base.length < 8 && /\d/.test(caractere)) {
+      base.push(caractere);
+      continue;
+    }
+
+    if (base.length === 8 && /[\dX]/.test(caractere)) {
+      verificador = caractere;
+      break;
+    }
+  }
+
+  const numero = base.join('');
+  return verificador ? `${numero}-${verificador}` : numero;
+};
+
+export const validarRG = (valor: string): boolean => {
+  const rg = valor.toUpperCase().replace(/[^0-9X]/g, '');
+  const base = rg.slice(0, 8);
+  const digitoInformado = rg.slice(8);
+
+  if (!/^\d{8}$/.test(base) || !/^[0-9X]$/.test(digitoInformado) || /^(\d)\1+$/.test(base)) {
+    return false;
+  }
+
+  const soma = base
+    .split('')
+    .reduce((acc, numero, index) => acc + Number(numero) * (9 - index), 0);
+  const resto = soma % 11;
+  const digitoCalculado = resto === 10 ? 'X' : String(resto);
+
+  return digitoInformado === digitoCalculado;
+};
+
 export const formatarCNPJ = (valor: string): string => {
   const digitos = somenteDigitos(valor).slice(0, 14);
   return digitos
