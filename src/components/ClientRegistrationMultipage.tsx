@@ -720,6 +720,7 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
         enderecoNumero: normalizarTextoMaiusculo(leadData.numero || ''),
         enderecoBairro: normalizarTextoMaiusculo(leadData.bairro || ''),
         enderecoCidade: normalizarTextoMaiusculo(leadData.cidade || ''),
+        enderecoEstado: normalizarTextoMaiusculo(leadData.estado || ''),
         observacoes: normalizarTextoMaiusculo(leadData.observacao || ''),
         codigo: somenteDigitos(leadData.indicacao_id || '').slice(0, 6) || prev.codigo,
         dataCadastro: formatarDataAtualBR(),

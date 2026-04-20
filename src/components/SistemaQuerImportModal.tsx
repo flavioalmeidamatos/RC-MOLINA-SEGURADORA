@@ -18,6 +18,7 @@ export type SistemaQuerLeadData = {
   numero?: string;
   bairro?: string;
   cidade?: string;
+  estado?: string;
   observacao?: string;
   vidas?: Record<string, string>;
   indicacao_id?: string;
@@ -294,8 +295,8 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
                   <MapPin size={16} className="text-[#b58c2a]" />
                   <span className="text-xs font-bold uppercase text-gray-700">Localização</span>
                 </div>
-                <div className="grid gap-4 p-4 md:grid-cols-2">
-                  <div className="md:col-span-2">
+                <div className="grid gap-4 p-4 md:grid-cols-3">
+                  <div className="md:col-span-3">
                     <label className="block text-[10px] font-bold uppercase text-gray-400">Endereço</label>
                     <p className="text-sm font-medium text-gray-800">
                       {importResult.data.endereco} {importResult.data.numero ? `, ${importResult.data.numero}` : ''}
@@ -308,6 +309,10 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
                   <div>
                     <label className="block text-[10px] font-bold uppercase text-gray-400">Cidade</label>
                     <p className="text-sm font-medium text-gray-800">{importResult.data.cidade || '---'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase text-gray-400">UF</label>
+                    <p className="text-sm font-medium text-gray-800">{importResult.data.estado || '---'}</p>
                   </div>
                 </div>
               </div>

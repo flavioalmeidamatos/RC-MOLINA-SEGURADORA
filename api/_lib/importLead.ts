@@ -14,6 +14,7 @@ export interface ImportLeadResult {
   numero: string;
   bairro: string;
   cidade: string;
+  estado: string;
   nascimento: string;
   cpf_cnpj: string;
   observacao: string;
@@ -79,9 +80,81 @@ const mappedObservationLabels = new Set([
   'numero',
   'bairro',
   'cidade',
+  'estado',
+  'uf',
   'indicacao id',
   'indicacao_id',
   'codigo',
+]);
+
+const stateByNormalizedNameOrUf = new Map([
+  ['ac', 'AC'],
+  ['acre', 'AC'],
+  ['al', 'AL'],
+  ['alagoas', 'AL'],
+  ['ap', 'AP'],
+  ['amapa', 'AP'],
+  ['am', 'AM'],
+  ['amazonas', 'AM'],
+  ['ba', 'BA'],
+  ['bahia', 'BA'],
+  ['ce', 'CE'],
+  ['ceara', 'CE'],
+  ['df', 'DF'],
+  ['distrito federal', 'DF'],
+  ['es', 'ES'],
+  ['espirito santo', 'ES'],
+  ['go', 'GO'],
+  ['goias', 'GO'],
+  ['mg', 'MG'],
+  ['minas gerais', 'MG'],
+  ['ms', 'MS'],
+  ['mato grosso do sul', 'MS'],
+  ['mt', 'MT'],
+  ['mato grosso', 'MT'],
+  ['pa', 'PA'],
+  ['para', 'PA'],
+  ['pb', 'PB'],
+  ['paraiba', 'PB'],
+  ['pe', 'PE'],
+  ['pernambuco', 'PE'],
+  ['pi', 'PI'],
+  ['piaui', 'PI'],
+  ['pr', 'PR'],
+  ['parana', 'PR'],
+  ['rj', 'RJ'],
+  ['rio de janeiro', 'RJ'],
+  ['rn', 'RN'],
+  ['rio grande do norte', 'RN'],
+  ['ro', 'RO'],
+  ['rondonia', 'RO'],
+  ['rr', 'RR'],
+  ['roraima', 'RR'],
+  ['rs', 'RS'],
+  ['rio grande do sul', 'RS'],
+  ['sc', 'SC'],
+  ['santa catarina', 'SC'],
+  ['se', 'SE'],
+  ['sergipe', 'SE'],
+  ['sp', 'SP'],
+  ['sao paulo', 'SP'],
+  ['to', 'TO'],
+  ['tocantins', 'TO'],
+]);
+
+const knownCityByNormalizedName = new Map([
+  ['rio de janeiro', 'Rio de Janeiro'],
+  ['niteroi', 'Niterói'],
+  ['petropolis', 'Petrópolis'],
+  ['volta redonda', 'Volta Redonda'],
+  ['sao paulo', 'São Paulo'],
+  ['campinas', 'Campinas'],
+  ['santos', 'Santos'],
+  ['ribeirao preto', 'Ribeirão Preto'],
+  ['belo horizonte', 'Belo Horizonte'],
+  ['juiz de fora', 'Juiz de Fora'],
+  ['uberlandia', 'Uberlândia'],
+  ['contagem', 'Contagem'],
 ]);
 
 const cleanObservationLine = (line: string): string =>
@@ -90,6 +163,21 @@ const cleanObservationLine = (line: string): string =>
     .replace(/^[\s>•▶✅]+/, '')
     .replace(/\s+/g, ' ')
     .trim();
+
+const splitObservationSegments = (value: string): string[] =>
+  value
+    .split(/\r?\n/)
+    .flatMap((line) => cleanObservationLine(line).split(/\s+-\s+/).map(cleanObservationLine))
+    .filter(Boolean);
+
+const normalizeObservationLabel = (value: string): string =>
+  normalizeText(value).replace(/[^a-z0-9_ -]/g, '').trim();
+
+const formatObservationLabel = (value: string): string =>
+  cleanObservationLine(value)
+    .replace(/[?]+$/g, '')
+    .trim()
+    .toLocaleUpperCase('pt-BR');
 
 const normalizeObservationValue = (value: string): string =>
   normalizeText(cleanObservationLine(value))
@@ -123,7 +211,8 @@ const shouldDiscardObservationLine = (line: string, mappedValues: string[]): boo
   const normalizedLine = normalizeText(line);
 
   if (
-    normalizedLine.includes('chegou um novo lead de planos de saude - form instant') ||
+    normalizedLine.includes('chegou um novo lead de planos de saude') ||
+    normalizedLine.includes('form instant') ||
     normalizedLine.includes('clique no numero de telefone e entre em contato agora mesmo') ||
     normalizedLine === 'informacoes'
   ) {
@@ -137,17 +226,65 @@ const shouldDiscardObservationLine = (line: string, mappedValues: string[]): boo
   const labelMatch = line.match(/^([^:：]{1,60})[:：]\s*(.*)$/);
   if (!labelMatch) return false;
 
-  const normalizedLabel = normalizeText(labelMatch[1]).replace(/[^a-z0-9_ -]/g, '').trim();
+  const normalizedLabel = normalizeObservationLabel(labelMatch[1]);
   return mappedObservationLabels.has(normalizedLabel);
 };
 
+const formatObservationLine = (line: string): string => {
+  const labelMatch = line.match(/^([^:：]{1,80})[:：]\s*(.*)$/);
+
+  if (!labelMatch) {
+    return line.toLocaleUpperCase('pt-BR');
+  }
+
+  const label = formatObservationLabel(labelMatch[1]);
+  const value = cleanObservationLine(labelMatch[2]).toLocaleUpperCase('pt-BR');
+  return value ? `${label}: ${value}` : label;
+};
+
 const sanitizeObservation = (value: string, mappedValues: string[]): string =>
-  value
-    .split(/\r?\n/)
-    .map(cleanObservationLine)
+  splitObservationSegments(value)
     .filter((line) => !shouldDiscardObservationLine(line, mappedValues))
-    .join('\n')
+    .map(formatObservationLine)
+    .join(' - ')
     .trim();
+
+const extractStateFromObservation = (value: string): string => {
+  for (const line of splitObservationSegments(value)) {
+    const labelMatch = line.match(/^([^:：]{1,60})[:：]\s*(.*)$/);
+    const candidate =
+      labelMatch && ['estado', 'uf'].includes(normalizeObservationLabel(labelMatch[1]))
+        ? labelMatch[2]
+        : line;
+    const state = stateByNormalizedNameOrUf.get(normalizeObservationValue(candidate));
+
+    if (state) {
+      return state;
+    }
+  }
+
+  return '';
+};
+
+const extractCityFromObservation = (value: string): string => {
+  for (const line of splitObservationSegments(value)) {
+    const labelMatch = line.match(/^([^:：]{1,60})[:：]\s*(.*)$/);
+    const isCityLabel = labelMatch && normalizeObservationLabel(labelMatch[1]) === 'cidade';
+    const candidate = isCityLabel ? labelMatch[2] : line;
+
+    if (isCityLabel && cleanObservationLine(candidate)) {
+      return cleanObservationLine(candidate);
+    }
+
+    const city = knownCityByNormalizedName.get(normalizeObservationValue(candidate));
+
+    if (city) {
+      return city;
+    }
+  }
+
+  return '';
+};
 
 const getSetCookieLines = (response: Response) => {
   const responseHeaders = response.headers as Headers & { getSetCookie?: () => string[] };
@@ -352,6 +489,8 @@ export async function importLeadFromSistemaQuer({
       return anuncioUrl || (indicacaoId ? `${anuncioBaseUrl}${indicacaoId}.png` : '');
     };
 
+    const rawObservation = findValue(['observacao', 'dados do calculo']);
+
     const leadData: ImportLeadResult = {
       nome: findValue(['nome', 'indicacao', 'cliente', 'aluno']),
       email: findValue(['email', 'e-mail', 'correio']),
@@ -360,6 +499,7 @@ export async function importLeadFromSistemaQuer({
       numero: findValue(['numero']),
       bairro: findValue(['bairro']),
       cidade: findValue(['cidade']),
+      estado: findValue(['estado', 'uf']),
       nascimento: findValue(['nascimento']),
       cpf_cnpj: findValue(['cpf_cnpj', 'cpf', 'cnpj', 'documento']),
       observacao: '',
@@ -385,6 +525,14 @@ export async function importLeadFromSistemaQuer({
       leadData.nome = $('.card-header h4').first().text().trim() || $('.card-title').first().text().trim() || 'Nao identificado';
     }
 
+    if (!leadData.cidade) {
+      leadData.cidade = extractCityFromObservation(rawObservation);
+    }
+
+    if (!leadData.estado) {
+      leadData.estado = extractStateFromObservation(rawObservation);
+    }
+
     if (leadData.telefone && leadData.telefone.length >= 10) {
       const digits = leadData.telefone;
       leadData.telefone =
@@ -393,7 +541,7 @@ export async function importLeadFromSistemaQuer({
           : `(${digits.substring(0, 2)}) ${digits.substring(2, 6)}-${digits.substring(6)}`;
     }
 
-    leadData.observacao = sanitizeObservation(findValue(['observacao', 'dados do calculo']), [
+    leadData.observacao = sanitizeObservation(rawObservation, [
       leadData.nome,
       leadData.email,
       leadData.telefone,
@@ -401,6 +549,7 @@ export async function importLeadFromSistemaQuer({
       leadData.numero,
       leadData.bairro,
       leadData.cidade,
+      leadData.estado,
       leadData.nascimento,
       leadData.cpf_cnpj,
       leadData.indicacao_id,
