@@ -85,7 +85,7 @@ export const RecuperarSenha: React.FC = () => {
 
     try {
       const { data: perfilData, error: perfilError } = await supabase
-        .from('perfis')
+        .from('USUARIOS')
         .select('id')
         .eq('email', email)
         .single();

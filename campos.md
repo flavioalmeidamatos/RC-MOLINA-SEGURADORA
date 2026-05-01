@@ -5,7 +5,7 @@ Leitura realizada em 2026-05-01 a partir dos componentes em `src/components`, ro
 ## Observacoes gerais
 
 - O frontend principal usa React/Vite.
-- Autenticacao, perfis, auditoria e avatars usam Supabase.
+- Autenticacao, usuarios, auditoria e avatars usam Supabase.
 - O cabecalho mantem apenas um botao visual com icone do WhatsApp, sem integracao ativa.
 - O cadastro multipagina de cliente ainda nao persiste em banco no codigo atual: o botao Salvar valida campos e exibe feedback dizendo que o proximo passo e conectar ao Supabase.
 - Alguns inputs estao desabilitados ou ocultos, mas foram incluidos porque fazem parte do fluxo de entrada de dados.
@@ -15,11 +15,11 @@ Leitura realizada em 2026-05-01 a partir dos componentes em `src/components`, ro
 | Rota/area | Componente | Finalidade |
 |---|---|---|
 | `/login` | `Login.tsx` | Login por senha ou codigo seguro por e-mail |
-| `/cadastro` | `Cadastro.tsx` | Criacao de usuario/perfil |
+| `/cadastro` | `Cadastro.tsx` | Criacao de usuario |
 | `/recuperar-senha` | `RecuperarSenha.tsx` | Solicitar link de redefinicao de senha |
 | `/atualizar-senha` | `AtualizarSenha.tsx` | Definir nova senha apos reset |
 | `/dashboard` | `SCR_MENUPRINCIPAL.tsx` | Menu principal, agenda, cadastro cliente e importacao |
-| Global/rodape | `FooterAdmin.tsx` | Acesso administrativo oculto e edicao de perfis |
+| Global/rodape | `FooterAdmin.tsx` | Acesso administrativo oculto e edicao de usuarios |
 
 ## Login
 
@@ -27,9 +27,9 @@ Fonte: `src/components/Login.tsx`
 
 | Campo | Estado/chave | Tipo | Obrigatorio | Validacao/mascara | Destino/uso |
 |---|---|---|---|---|---|
-| E-mail | `email` | `email` | Sim | RFC 5322 via `validarEmailRFC5322`; normaliza com `trim().toLowerCase()` | `supabase.auth.signInWithPassword`, `supabase.auth.signInWithOtp`, consulta `perfis.email` |
+| E-mail | `email` | `email` | Sim | RFC 5322 via `validarEmailRFC5322`; normaliza com `trim().toLowerCase()` | `supabase.auth.signInWithPassword`, `supabase.auth.signInWithOtp`, consulta `USUARIOS.email` |
 | Senha | `password` | `password` ou `text` | Sim no login por senha | Minimo 8 caracteres no blur | `supabase.auth.signInWithPassword` |
-| E-mail cadastrado | `email` | `email` | Sim no fluxo OTP | RFC 5322; verifica existencia em `perfis` | `supabase.auth.signInWithOtp` |
+| E-mail cadastrado | `email` | `email` | Sim no fluxo OTP | RFC 5322; verifica existencia em `USUARIOS` | `supabase.auth.signInWithOtp` |
 | Codigo de acesso | `otpCode` | `text` | Sim no fluxo OTP | Apenas digitos; `maxLength=8`; exige 6 a 8 digitos | `supabase.auth.verifyOtp` |
 
 ## Cadastro de usuario
@@ -38,12 +38,12 @@ Fonte: `src/components/Cadastro.tsx`
 
 | Campo | Estado/chave | Tipo | Obrigatorio | Validacao/mascara | Destino/uso |
 |---|---|---|---|---|---|
-| Foto/avatar | `avatarFile`, `avatarUrl` | `file` | Nao | `accept="image/*"` | Upload em Supabase Storage bucket `avatars`; URL salva em `perfis.avatar_url` |
-| Nome completo | `formData.nome` | `text` | Sim | Letras e espacos; convertido para maiusculas; minimo 2 palavras | `auth.signUp.options.data.full_name`, `perfis.nome_completo` |
-| E-mail | `formData.email` | `email` | Sim | RFC 5322; normaliza com `trim().toLowerCase()`; verifica duplicidade em `perfis.email` | `auth.signUp.email`, `perfis.email` |
+| Foto/avatar | `avatarFile`, `avatarUrl` | `file` | Nao | `accept="image/*"` | Upload em Supabase Storage bucket `avatars`; URL salva em `USUARIOS.avatar_url` |
+| Nome completo | `formData.nome` | `text` | Sim | Letras e espacos; convertido para maiusculas; minimo 2 palavras | `auth.signUp.options.data.full_name`, `USUARIOS.nome_completo` |
+| E-mail | `formData.email` | `email` | Sim | RFC 5322; normaliza com `trim().toLowerCase()`; verifica duplicidade em `USUARIOS.email` | `auth.signUp.email`, `USUARIOS.email` |
 | Senha | `formData.senha` | `password` ou `text` | Sim | Minimo 8; exige maiuscula, minuscula, numero e caractere especial | `auth.signUp.password` |
 | Redigite sua senha | `formData.confirmarSenha` | `password` ou `text` | Sim | Deve ser igual a senha | Validacao local |
-| Nome da organizacao | `formData.organizacao` | `text` | Nao | Letras e espacos; convertido para maiusculas | `auth.signUp.options.data.organization`, `perfis.organizacao` |
+| Nome da organizacao | `formData.organizacao` | `text` | Nao | Letras e espacos; convertido para maiusculas | `auth.signUp.options.data.organization`, `USUARIOS.organizacao` |
 
 ## Recuperar senha
 
@@ -51,7 +51,7 @@ Fonte: `src/components/RecuperarSenha.tsx`
 
 | Campo | Estado/chave | Tipo | Obrigatorio | Validacao/mascara | Destino/uso |
 |---|---|---|---|---|---|
-| E-mail cadastrado | `email` | `email` | Sim | RFC 5322; cooldown de 60s | Consulta `perfis.id`; `supabase.auth.resetPasswordForEmail`; registra `auditoria.detalhes.email` |
+| E-mail cadastrado | `email` | `email` | Sim | RFC 5322; cooldown de 60s | Consulta `USUARIOS.id`; `supabase.auth.resetPasswordForEmail`; registra `auditoria.detalhes.email` |
 
 ## Atualizar senha
 
@@ -69,7 +69,7 @@ Fonte: `src/components/FooterAdmin.tsx`
 | Campo | Estado/chave | Tipo | Obrigatorio | Validacao/mascara | Destino/uso |
 |---|---|---|---|---|---|
 | Senha administrativa | `adminPassword` | `password` | Sim | SHA-256 comparado com hash fixo | Libera painel administrativo |
-| Selecionar usuario | `selectedUserId` | `select` | Sim para editar/excluir | Opcoes vindas de `perfis` | Define usuario alvo |
+| Selecionar usuario | `selectedUserId` | `select` | Sim para editar/excluir | Opcoes vindas de `USUARIOS` | Define usuario alvo |
 | Foto do usuario | `avatarFile`, `avatarUrl` | `file` | Nao | `accept="image/*"` | Upload em Storage `avatars`; enviado para RPC |
 | Nome completo | `formData.nome` | `text` | Sim | Letras e espacos; convertido para maiusculas | RPC `admin_update_user.p_nome` |
 | E-mail | `formData.email` | `email` | Sim | RFC 5322; normalizado | RPC `admin_update_user.p_email` |
@@ -213,16 +213,16 @@ Fonte: `src/components/Agenda/AgendaSidebar.tsx` e atalho em `SCR_MENUPRINCIPAL.
 | `server.ts` `/api/import-lead` | POST | `login`, `senha`, `leadUrl` | Endpoint Express usado no dev server |
 | `api/import-lead.ts` | POST | `login`, `senha`, `leadUrl` | Function Vercel equivalente |
 | Supabase Auth signup | SDK | `email`, `password`, `data.full_name`, `data.organization` | Criacao de conta |
-| Supabase tabela `perfis` insert | SDK | `id`, `email`, `nome_completo`, `organizacao`, `avatar_url` | Criacao de perfil |
+| Supabase tabela `USUARIOS` insert | SDK | `id`, `email`, `nome_completo`, `organizacao`, `avatar_url` | Criacao de usuario |
 | Supabase Auth login | SDK | `email`, `password` | Login por senha |
 | Supabase Auth OTP | SDK | `email`, `token` | Login por codigo |
 | Supabase Auth reset | SDK | `email`, `redirectTo` | Recuperacao de senha |
 | Supabase RPC `admin_update_user` | SDK/RPC | `p_id`, `p_nome`, `p_email`, `p_org`, `p_avatar_url`, `p_admin_hash` | Edicao administrativa |
-| Supabase RPC `admin_delete_user` | SDK/RPC | `p_id`, `p_admin_hash` | Exclusao administrativa de perfil |
+| Supabase RPC `admin_delete_user` | SDK/RPC | `p_id`, `p_admin_hash` | Exclusao administrativa de usuario |
 
 ## Campos tecnicos/importantes por armazenamento
 
-### Supabase `perfis`
+### Supabase `USUARIOS`
 
 | Campo | Origem |
 |---|---|
@@ -236,7 +236,7 @@ Fonte: `src/components/Agenda/AgendaSidebar.tsx` e atalho em `SCR_MENUPRINCIPAL.
 
 | Campo | Origem |
 |---|---|
-| `perfil_id` | Perfil encontrado por e-mail em recuperar senha |
+| `perfil_id` | Usuario encontrado por e-mail em recuperar senha |
 | `acao` | Valor fixo `SOLICITAR_RESET_SENHA` |
 | `detalhes.email` | E-mail informado no reset |
 

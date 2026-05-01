@@ -117,9 +117,9 @@ export const Cadastro: React.FC = () => {
     setLoading(true);
 
     try {
-      // Verifica se o e-mail já existe na tabela de perfis
+      // Verifica se o e-mail ja existe na tabela de usuarios
       const { data: existingUser } = await supabase
-        .from('perfis')
+        .from('USUARIOS')
         .select('email')
         .eq('email', normalizedEmail)
         .maybeSingle();
@@ -130,7 +130,7 @@ export const Cadastro: React.FC = () => {
         return;
       }
     } catch (err) {
-      console.warn('Aviso: Não foi possível verificar usuário existente via tabela perfis.');
+      console.warn('Aviso: Nao foi possivel verificar usuario existente via tabela USUARIOS.');
     }
 
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
@@ -172,9 +172,9 @@ export const Cadastro: React.FC = () => {
         }
       }
 
-      // Tenta criar o perfil na tabela 'perfis' com nomes em português
+      // Tenta criar o usuario na tabela USUARIOS com nomes em portugues
       const { error: profileError } = await supabase
-        .from('perfis')
+        .from('USUARIOS')
         .insert([
           {
             id: signUpData.user?.id,
@@ -186,7 +186,7 @@ export const Cadastro: React.FC = () => {
         ]);
 
       if (profileError) {
-        console.error('Erro ao criar perfil:', profileError);
+        console.error('Erro ao criar usuario:', profileError);
       }
 
       setSuccess('Usuário cadastrado com sucesso! Redirecionando para login...');

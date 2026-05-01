@@ -98,12 +98,12 @@ export const Login: React.FC<LoginProps> = ({
 
   const verifyProfileExists = async (emailToCheck: string) => {
     const { data: profile, error: profileError } = await supabase
-      .from('perfis')
+      .from('USUARIOS')
       .select('email')
       .eq('email', emailToCheck)
       .maybeSingle();
 
-    if (profileError) console.warn('Erro ao consultar perfis:', profileError.message);
+    if (profileError) console.warn('Erro ao consultar USUARIOS:', profileError.message);
     return profile;
   };
 

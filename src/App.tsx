@@ -54,7 +54,7 @@ export default function App() {
     try {
       const result = await withTimeout(
         supabase
-          .from('perfis')
+          .from('USUARIOS')
           .select('*')
           .eq('id', userId)
           .single(),

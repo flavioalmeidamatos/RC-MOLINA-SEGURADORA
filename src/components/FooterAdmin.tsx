@@ -27,7 +27,7 @@ export const FooterAdmin: React.FC = () => {
 
     const fetchUsers = async () => {
         setLoading(true);
-        const { data, error } = await supabase.from('perfis').select('*').order('nome_completo', { ascending: true });
+        const { data, error } = await supabase.from('USUARIOS').select('*').order('nome_completo', { ascending: true });
         if (error) {
             console.error('Error fetching users', error);
             setMessage({ text: 'Erro ao carregar usuários', type: 'error' });
@@ -151,7 +151,7 @@ export const FooterAdmin: React.FC = () => {
 
     const handleDeleteUser = async () => {
         if (!selectedUserId) return;
-        if (!window.confirm('Tem certeza que deseja excluir este usuário? (Esta ação no momento exclui apenas o perfil)')) return;
+        if (!window.confirm('Tem certeza que deseja excluir este usuário?')) return;
 
         setLoading(true);
         setMessage({ text: '', type: '' });
@@ -164,7 +164,7 @@ export const FooterAdmin: React.FC = () => {
 
             if (error) throw error;
 
-            setMessage({ text: 'Perfil excluído com sucesso!', type: 'success' });
+            setMessage({ text: 'Usuário excluído com sucesso!', type: 'success' });
             setSelectedUserId('');
             setFormData({ nome: '', email: '', organizacao: '' });
             setAvatarUrl(null);
@@ -243,7 +243,7 @@ export const FooterAdmin: React.FC = () => {
 
                         <div className="flex flex-col items-center mb-6">
                             <h1 className="text-2xl font-bold mb-2">Gerenciar Usuários</h1>
-                            <p className="text-gray-400 text-sm">Selecione, edite ou exclua os dados dos perfis.</p>
+                            <p className="text-gray-400 text-sm">Selecione, edite ou exclua os dados dos usuários.</p>
                         </div>
 
                         <div className="mb-6">
