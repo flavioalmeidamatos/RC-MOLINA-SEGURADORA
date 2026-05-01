@@ -5,12 +5,6 @@
       "maxDuration": 60
     }
   },
-  "crons": [
-    {
-      "path": "/api/internal/reconcile",
-      "schedule": "0 5 * * *"
-    }
-  ],
   "rewrites": [
     {
       "source": "/((?!api/|assets/).*)",

@@ -62,7 +62,6 @@ const mappedObservationLabels = new Set([
   'aluno',
   'telefone',
   'celular',
-  'whatsapp',
   'fone celular',
   'email',
   'e-mail',
@@ -494,7 +493,7 @@ export async function importLeadFromSistemaQuer({
     const leadData: ImportLeadResult = {
       nome: findValue(['nome', 'indicacao', 'cliente', 'aluno']),
       email: findValue(['email', 'e-mail', 'correio']),
-      telefone: findValue(['telefone', 'celular', 'whatsapp', 'fone celular']),
+      telefone: findValue(['telefone', 'celular', 'fone celular']),
       endereco: findValue(['endereco', 'rua', 'logradouro']),
       numero: findValue(['numero']),
       bairro: findValue(['bairro']),

@@ -7,12 +7,10 @@ import { FooterAdmin } from './FooterAdmin';
 
 interface LoginProps {
   embedded?: boolean;
-  context?: 'default' | 'whatsapp';
 }
 
 export const Login: React.FC<LoginProps> = ({
   embedded = false,
-  context = 'default',
 }) => {
   const navigate = useNavigate();
   const passwordInputRef = useRef<HTMLInputElement>(null);
@@ -29,11 +27,8 @@ export const Login: React.FC<LoginProps> = ({
   const [otpStage, setOtpStage] = useState<'request' | 'verify'>('request');
   const [otpCode, setOtpCode] = useState('');
   const [cooldown, setCooldown] = useState(0);
-  const isWhatsAppContext = embedded && context === 'whatsapp';
-  const heading = isWhatsAppContext ? 'Autentique o WhatsApp' : 'Bem vindo de volta';
-  const subtitle = isWhatsAppContext
-    ? 'Entre com seu acesso para continuar o atendimento pelo WhatsApp sem sair do painel.'
-    : loginMethod === 'password'
+  const heading = 'Bem vindo de volta';
+  const subtitle = loginMethod === 'password'
       ? 'Inicie sessao na sua conta para continuar.'
       : 'Acesso rapido e seguro sem senhas.';
   const wrapperClassName = embedded
@@ -252,11 +247,6 @@ export const Login: React.FC<LoginProps> = ({
             <div className="text-[#d4af37] font-serif text-xl tracking-widest font-bold">RC MOLINA</div>
             <div className="text-white text-[10px] tracking-[0.3em] text-center">CORRETORA</div>
           </div>
-          {isWhatsAppContext ? (
-            <span className="mb-4 rounded-full border border-[#25D366]/30 bg-[#25D366]/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#7ef0a8]">
-              Conexao interna
-            </span>
-          ) : null}
           <h1 className="mb-2 text-center text-3xl font-bold">{heading}</h1>
           <p className="text-center text-sm text-gray-400">
             {subtitle}

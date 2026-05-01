@@ -3,8 +3,6 @@ import {
   Banknote,
   Briefcase,
   Calendar,
-  ChevronLeft,
-  ChevronRight,
   ExternalLink,
   FileText,
   FolderOpen,
@@ -24,7 +22,6 @@ import {
 import { useNavigate } from "react-router-dom";
 import { ClientRegistrationMultipage } from "./ClientRegistrationMultipage";
 import type { SistemaQuerLeadData } from "./SistemaQuerImportModal";
-import { WhatsAppQrPanel } from "./WhatsAppQrPanel";
 import { Agenda } from "./Agenda/Agenda";
 import { supabase } from "../lib/supabase";
 
@@ -35,27 +32,10 @@ interface DashboardProps {
 
 type SimulatorMode = "idle" | "loading" | "embedded" | "external";
 
-const WHATSAPP_PANEL_OPEN_STORAGE_KEY = "rcmolina_whatsapp_panel_open";
-const WHATSAPP_PANEL_COLLAPSED_STORAGE_KEY = "rcmolina_whatsapp_panel_collapsed";
-const WHATSAPP_DISCONNECT_CONFIRMATION_COUNT = 3;
-
 const SIMULATOR_LOGIN_URL = "https://app.simuladoronline.com/login/4602";
 const SIMULATOR_LOGOUT_URL = "https://app.simuladoronline.com/logout";
 const SIMULATOR_FALLBACK_WINDOW_NAME = "simulador_online_fallback_window";
 const SIMULATOR_EMBED_TIMEOUT_MS = 7000;
-
-const POSITIVE_INSTANCE_STATES = new Set(["authorized"]);
-const POSITIVE_INSTANCE_STATUS = new Set(["online"]);
-const EXPLICIT_DISCONNECTED_STATES = new Set(["notauthorized", "blocked", "sleepmode"]);
-const EXPLICIT_DISCONNECTED_STATUS = new Set(["disconnected", "blocked", "notauthorized"]);
-
-const isPositiveConnectionSignal = (stateInstance: string, statusInstance: string) =>
-  POSITIVE_INSTANCE_STATES.has(stateInstance.toLowerCase()) ||
-  POSITIVE_INSTANCE_STATUS.has(statusInstance.toLowerCase());
-
-const isExplicitDisconnectionSignal = (stateInstance: string, statusInstance: string) =>
-  EXPLICIT_DISCONNECTED_STATES.has(stateInstance.toLowerCase()) ||
-  EXPLICIT_DISCONNECTED_STATUS.has(statusInstance.toLowerCase());
 
 const wait = (ms: number) =>
   new Promise<void>((resolve) => {
@@ -82,9 +62,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const [activeMenu, setActiveMenu] = useState("Home");
   const [showImportModal, setShowImportModal] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
-  const [whatsAppConnected, setWhatsAppConnected] = useState(false);
-  const [whatsAppChecking, setWhatsAppChecking] = useState(true);
-  const [whatsAppSyncing, setWhatsAppSyncing] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const [simulatorMode, setSimulatorMode] = useState<SimulatorMode>("idle");
@@ -92,31 +69,10 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const [simulatorStatusMessage, setSimulatorStatusMessage] = useState("");
   const [simulatorAutoOpenedExternally, setSimulatorAutoOpenedExternally] = useState(false);
 
-  const disconnectStreakRef = useRef(0);
   const simulatorTimeoutRef = useRef<number | null>(null);
   const simulatorWindowRef = useRef<Window | null>(null);
   const simulatorIframeLoadedRef = useRef(false);
 
-  const [isWhatsAppPanelOpen, setIsWhatsAppPanelOpen] = useState(() => {
-    if (typeof window === "undefined") {
-      return false;
-    }
-
-    const isCollapsed =
-      window.localStorage.getItem(WHATSAPP_PANEL_COLLAPSED_STORAGE_KEY) === "1";
-
-    return (
-      isCollapsed ||
-      window.localStorage.getItem(WHATSAPP_PANEL_OPEN_STORAGE_KEY) === "1"
-    );
-  });
-  const [isWhatsAppPanelCollapsed, setIsWhatsAppPanelCollapsed] = useState(() => {
-    if (typeof window === "undefined") {
-      return false;
-    }
-
-    return window.localStorage.getItem(WHATSAPP_PANEL_COLLAPSED_STORAGE_KEY) === "1";
-  });
   const [credential, setCredential] = useState({
     login: "Rosilene Rodrigues de Carvalho Molina",
     senha: "123",
@@ -282,17 +238,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   };
 
   const clearLocalUiState = () => {
-    setWhatsAppConnected(false);
-    setWhatsAppChecking(false);
-    setWhatsAppSyncing(false);
-    setIsWhatsAppPanelOpen(false);
-    setIsWhatsAppPanelCollapsed(false);
-
-    if (typeof window !== "undefined") {
-      window.localStorage.removeItem(WHATSAPP_PANEL_OPEN_STORAGE_KEY);
-      window.localStorage.removeItem(WHATSAPP_PANEL_COLLAPSED_STORAGE_KEY);
-    }
-
     cleanupSimulatorUi();
   };
 
@@ -355,82 +300,12 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     }
   };
 
-  const syncWhatsAppStatus = async () => {
-    setWhatsAppChecking(true);
-
-    try {
-      const response = await fetch("/api/whatsapp-instance", {
-        method: "GET",
-        cache: "no-store",
-      });
-      const data = await response.json();
-
-      if (response.ok) {
-        const stateInstance = String(data.stateInstance || "").trim();
-        const statusInstance = String(data.statusInstance || "").trim();
-        const qrCode = String(data.qrCode || "").trim();
-        const isConnected =
-          Boolean(data.connected) || isPositiveConnectionSignal(stateInstance, statusInstance);
-        const hasExplicitDisconnection =
-          Boolean(qrCode) || isExplicitDisconnectionSignal(stateInstance, statusInstance);
-
-        if (isConnected) {
-          disconnectStreakRef.current = 0;
-          setWhatsAppConnected(true);
-          return true;
-        }
-
-        if (whatsAppConnected && hasExplicitDisconnection) {
-          disconnectStreakRef.current += 1;
-
-          if (disconnectStreakRef.current < WHATSAPP_DISCONNECT_CONFIRMATION_COUNT) {
-            return true;
-          }
-        } else if (whatsAppConnected) {
-          disconnectStreakRef.current = 0;
-          return true;
-        }
-
-        disconnectStreakRef.current = 0;
-        setWhatsAppConnected(false);
-        return false;
-      }
-    } catch (_error) {
-      return whatsAppConnected;
-    } finally {
-      setWhatsAppChecking(false);
-    }
-
-    return false;
-  };
-
   useEffect(() => {
-    void syncWhatsAppStatus();
-
-    const intervalId = window.setInterval(() => {
-      void syncWhatsAppStatus();
-    }, 20000);
-
     return () => {
-      window.clearInterval(intervalId);
       clearSimulatorTimeout();
       closeReservedSimulatorWindowIfStillIdle();
     };
   }, []);
-
-  useEffect(() => {
-    window.localStorage.setItem(
-      WHATSAPP_PANEL_OPEN_STORAGE_KEY,
-      isWhatsAppPanelOpen ? "1" : "0"
-    );
-  }, [isWhatsAppPanelOpen]);
-
-  useEffect(() => {
-    window.localStorage.setItem(
-      WHATSAPP_PANEL_COLLAPSED_STORAGE_KEY,
-      isWhatsAppPanelCollapsed ? "1" : "0"
-    );
-  }, [isWhatsAppPanelCollapsed]);
 
   const handleImportLead = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -479,13 +354,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       // A lentidão anterior era causada pela execução sequencial (um após o outro).
       await Promise.allSettled([
         logoutRemoteSimulator(),
-        fetch("/api/whatsapp-instance", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ action: "logout" }),
-        }).catch(() => {}),
         supabase.auth.signOut()
       ]);
 
@@ -498,19 +366,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     } finally {
       setIsLoggingOut(false);
     }
-  };
-
-  const handleOpenWhatsAppAuth = async () => {
-    const isConnected = await syncWhatsAppStatus();
-    setWhatsAppConnected(isConnected);
-    setIsWhatsAppPanelOpen(true);
-    setIsWhatsAppPanelCollapsed(false);
-  };
-
-  const handleCloseWhatsAppPanel = () => {
-    setIsWhatsAppPanelOpen(false);
-    setIsWhatsAppPanelCollapsed(false);
-    setWhatsAppSyncing(false);
   };
 
   const handleMenuClick = (title: string) => {
@@ -588,16 +443,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
   const showSimulator = activeMenu === "Simulador";
   const showClientArea = activeMenu === "Meus clientes";
-  const whatsAppIndicatorClassName = whatsAppChecking
-    ? "bg-amber-400"
-    : whatsAppConnected
-      ? whatsAppSyncing
-        ? "whatsapp-sync-indicator bg-[#25D366]"
-        : "bg-[#25D366]"
-      : "bg-red-500";
-  const whatsAppButtonClassName = whatsAppConnected
-    ? "border-[#25D366]/25 bg-[#25D366]/10 text-[#128C7E] hover:bg-[#25D366]/18"
-    : "border-red-200 bg-red-50 text-red-600 hover:bg-red-100";
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-[#F0F4F8] font-sans lg:h-screen lg:flex-row lg:overflow-hidden">
@@ -659,14 +504,11 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
           <div className="flex flex-wrap items-center gap-3 sm:gap-4">
             <button
               type="button"
-              onClick={handleOpenWhatsAppAuth}
-              className={`flex min-h-11 items-center gap-2 rounded-full border px-4 py-2 transition-colors ${whatsAppButtonClassName}`}
+              aria-label="WhatsApp"
+              className="flex min-h-11 items-center gap-2 rounded-full border border-[#25D366]/25 bg-[#25D366]/10 px-4 py-2 text-[#128C7E]"
             >
               <WhatsAppIcon className="h-5 w-5" />
               <span className="text-sm font-semibold">WhatsApp</span>
-              <span
-                className={`h-2.5 w-2.5 rounded-full ${whatsAppIndicatorClassName}`}
-              />
             </button>
 
             <button 
@@ -704,7 +546,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
           </div>
         </header>
 
-        <div className={`relative flex min-h-0 flex-1 flex-col overflow-hidden transition-all duration-300 ${isWhatsAppPanelOpen && isWhatsAppPanelCollapsed ? "lg:pr-[40px]" : ""}`}>
+        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden transition-all duration-300">
           <div className="flex min-w-0 flex-1 flex-col">
             {showSimulator ? (
               <div
@@ -954,94 +796,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
             )}
           </div>
 
-          {isWhatsAppPanelOpen ? (
-            <>
-              <div className="fixed inset-0 z-40 bg-[#0c1826]/35 backdrop-blur-[1px] lg:hidden" />
-              <aside
-                className={`fixed bottom-0 right-0 top-0 z-50 flex w-full max-w-[100vw] flex-col border-l border-[#cfd9e2] bg-white shadow-2xl transition-all duration-300 lg:absolute lg:bottom-0 lg:top-0 lg:z-20 lg:max-w-none ${
-                  isWhatsAppPanelCollapsed ? "lg:w-[40px]" : "lg:left-0 lg:w-auto"
-                }`}
-              >
-                <div
-                  className={`flex items-center justify-between border-b border-[#dbe5ec] bg-white px-3 py-3 lg:px-4 ${
-                    isWhatsAppPanelCollapsed ? "min-h-0 lg:min-h-full lg:flex-col lg:justify-start lg:gap-4 lg:border-b-0 lg:px-1 lg:py-4" : "min-h-16"
-                  }`}
-                >
-                  {isWhatsAppPanelCollapsed ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => setIsWhatsAppPanelCollapsed(false)}
-                        className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#d6e4dc] bg-[#f4fbf7] text-[#128C7E] transition-colors hover:bg-[#e8f8ee]"
-                        aria-label="Expandir painel do WhatsApp"
-                      >
-                        <ChevronLeft className="h-3.5 w-3.5" />
-                      </button>
-                      <span
-                        className={`hidden h-2.5 w-2.5 rounded-full lg:block ${whatsAppIndicatorClassName}`}
-                      />
-                      <button
-                        type="button"
-                        onClick={handleCloseWhatsAppPanel}
-                        className="hidden h-7 w-7 items-center justify-center rounded-full border border-[#dbe5ec] text-[#526170] transition-colors hover:bg-[#f8fbfd] lg:inline-flex"
-                        aria-label="Fechar painel do WhatsApp"
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <div className="min-w-0">
-                        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#128C7E]">
-                          Painel lateral
-                        </p>
-                        <p className="mt-1 text-sm font-medium text-[#334155]">
-                          {whatsAppChecking
-                            ? "Sincronizando WhatsApp..."
-                            : whatsAppConnected
-                              ? "Instância conectada"
-                              : "Autenticação pendente"}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setIsWhatsAppPanelCollapsed(true)}
-                          className="hidden h-11 w-11 items-center justify-center rounded-full border border-[#dbe5ec] text-[#526170] transition-colors hover:bg-[#f8fbfd] lg:inline-flex"
-                          aria-label="Recolher painel do WhatsApp"
-                        >
-                          <ChevronRight className="h-5 w-5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleCloseWhatsAppPanel}
-                          className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#dbe5ec] text-[#526170] transition-colors hover:bg-[#f8fbfd]"
-                          aria-label="Fechar painel do WhatsApp"
-                        >
-                          <X className="h-5 w-5" />
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                <div
-                  className={`${
-                    isWhatsAppPanelCollapsed
-                      ? "pointer-events-none absolute inset-0 h-0 w-0 overflow-hidden opacity-0"
-                      : "min-h-0 flex-1 overflow-hidden"
-                  }`}
-                  aria-hidden={isWhatsAppPanelCollapsed}
-                >
-                  <WhatsAppQrPanel
-                    embedded
-                    onConnectionChange={setWhatsAppConnected}
-                    onSyncActivityChange={setWhatsAppSyncing}
-                  />
-                </div>
-              </aside>
-            </>
-          ) : null}
         </div>
       </div>
 
@@ -1254,22 +1008,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
         }
         .custom-scrollbar:hover::-webkit-scrollbar-thumb {
           background-color: rgba(156, 163, 175, 0.5);
-        }
-        .whatsapp-sync-indicator {
-          animation: whatsappSyncPulse 1.6s ease-in-out infinite;
-          box-shadow: 0 0 0 rgba(37, 211, 102, 0.35);
-        }
-        @keyframes whatsappSyncPulse {
-          0%, 100% {
-            opacity: 0.35;
-            box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.12);
-            transform: scale(0.92);
-          }
-          50% {
-            opacity: 1;
-            box-shadow: 0 0 14px 3px rgba(37, 211, 102, 0.45);
-            transform: scale(1.12);
-          }
         }
       `}</style>
     </div>
