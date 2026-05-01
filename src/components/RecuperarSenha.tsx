@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { validarEmailRFC5322, traduzirErroSupabase } from '../lib/validacoes';
+import { validarEmailRFC5322 } from '../lib/validacoes';
 import { FooterAdmin } from './FooterAdmin';
 
 export const RecuperarSenha: React.FC = () => {
@@ -11,7 +11,7 @@ export const RecuperarSenha: React.FC = () => {
   const [carregando, setCarregando] = useState(false);
   const [cooldown, setCooldown] = useState(0);
 
-  // Inicializa o cooldown a partir do LocalStorage (persiste se o usuário atualizar a página)
+  // Inicializa o cooldown a partir do LocalStorage (persiste se o usuÃ¡rio atualizar a pÃ¡gina)
   useEffect(() => {
     const savedTime = localStorage.getItem('rcmolina_reset_cooldown');
     if (savedTime) {
@@ -73,48 +73,32 @@ export const RecuperarSenha: React.FC = () => {
     setMensagem({ texto: '', tipo: '' });
 
     if (cooldown > 0) {
-      return; // Bloqueio de segurança
+      return; // Bloqueio de seguranÃ§a
     }
 
     if (!validarEmailRFC5322(email)) {
-      setMensagem({ texto: 'Por favor, insira um e-mail válido.', tipo: 'erro' });
+      setMensagem({ texto: 'Por favor, insira um e-mail vÃ¡lido.', tipo: 'erro' });
       return;
     }
 
     setCarregando(true);
 
     try {
-      const { data: perfilData, error: perfilError } = await supabase
-        .from('USUARIOS')
-        .select('id')
-        .eq('email', email)
-        .single();
+      const { data, error: perfilError } = await supabase.rpc('usuarios_perfil_por_email', {
+        p_email: email,
+      });
+      const perfilData = Array.isArray(data) ? data[0] : null;
 
       if (perfilError || !perfilData) {
-        setMensagem({ texto: 'Este e-mail não foi encontrado em nossa base de dados.', tipo: 'erro' });
+        setMensagem({ texto: 'Este e-mail nÃ£o foi encontrado em nossa base de dados.', tipo: 'erro' });
         setCarregando(false);
         return;
       }
 
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/atualizar-senha`,
-      });
-
-      if (error) {
-        setMensagem({
-          tipo: 'erro',
-          texto: 'Erro ao enviar o e-mail: ' + traduzirErroSupabase(error.message)
-        });
-
-        // Se for erro de muitas tentativas, engatilha o cooldown também para forçar a pausa
-        if (error.message.toLowerCase().includes('rate limit')) {
-          handleSetCooldown();
-        }
-      } else {
-        setMensagem({ texto: 'Um e-mail será enviado para redefinição de senha.', tipo: 'sucesso' });
-        await supabase.from('auditoria').insert([{ perfil_id: perfilData.id, acao: 'SOLICITAR_RESET_SENHA', detalhes: { email } }]);
-        handleSetCooldown(); // Trava envios repetidos por 60 segundos
-      }
+      setMensagem({ texto: 'E-mail localizado. Redirecionando para criar uma nova senha.', tipo: 'sucesso' });
+      await supabase.from('auditoria').insert([{ perfil_id: perfilData.id, acao: 'SOLICITAR_RESET_SENHA', detalhes: { email } }]);
+      handleSetCooldown();
+      setTimeout(() => navigate('/atualizar-senha', { state: { email } }), 800);
     } catch (err) {
       console.error(err);
       setMensagem({ texto: 'Ocorreu um erro inesperado.', tipo: 'erro' });
@@ -132,7 +116,7 @@ export const RecuperarSenha: React.FC = () => {
             <div className="text-white text-[10px] tracking-[0.3em] text-center">CORRETORA</div>
           </div>
           <h1 className="text-3xl font-bold mb-2">Recuperar Senha</h1>
-          <p className="text-gray-400 text-sm">Informe seu e-mail para receber as instruções.</p>
+          <p className="text-gray-400 text-sm">Informe seu e-mail para receber as instruÃ§Ãµes.</p>
         </div>
 
         {mensagem.texto && (
@@ -150,7 +134,7 @@ export const RecuperarSenha: React.FC = () => {
               onChange={(e) => setEmail(e.target.value)}
               onKeyDown={handleKeyDown}
               disabled={cooldown > 0}
-              placeholder="você@exemplo.com"
+              placeholder="vocÃª@exemplo.com"
               className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 focus:outline-none focus:border-[#ccff00] transition disabled:opacity-50 disabled:cursor-not-allowed"
               required
             />
@@ -165,7 +149,7 @@ export const RecuperarSenha: React.FC = () => {
               ? 'Aguarde...'
               : cooldown > 0
                 ? `Aguarde ${cooldown}s para reenviar`
-                : 'Enviar link de recuperação ->'
+                : 'Enviar link de recuperaÃ§Ã£o ->'
             }
           </button>
         </form>

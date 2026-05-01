@@ -23,11 +23,11 @@ import { useNavigate } from "react-router-dom";
 import { ClientRegistrationMultipage } from "./ClientRegistrationMultipage";
 import type { SistemaQuerLeadData } from "./SistemaQuerImportModal";
 import { Agenda } from "./Agenda/Agenda";
-import { supabase } from "../lib/supabase";
 
 interface DashboardProps {
   session?: any;
   perfil?: any;
+  onLogout?: () => void;
 }
 
 type SimulatorMode = "idle" | "loading" | "embedded" | "external";
@@ -51,6 +51,7 @@ const WhatsAppIcon: React.FC<{ className?: string }> = ({ className }) => (
 export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   session,
   perfil,
+  onLogout,
 }) => {
   const navigate = useNavigate();
   const userName =
@@ -352,16 +353,14 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     try {
       // Executa todas as tarefas de limpeza em paralelo para reduzir o tempo total de espera.
       // A lentidão anterior era causada pela execução sequencial (um após o outro).
-      await Promise.allSettled([
-        logoutRemoteSimulator(),
-        supabase.auth.signOut()
-      ]);
+      await logoutRemoteSimulator();
 
       clearLocalUiState();
+      onLogout?.();
       navigate("/login", { replace: true });
     } catch (_error) {
       clearLocalUiState();
-      await supabase.auth.signOut().catch(() => {});
+      onLogout?.();
       navigate("/login", { replace: true });
     } finally {
       setIsLoggingOut(false);

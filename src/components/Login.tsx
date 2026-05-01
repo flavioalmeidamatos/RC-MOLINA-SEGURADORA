@@ -1,17 +1,17 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Mail, KeyRound } from 'lucide-react';
+import { Eye, EyeOff, KeyRound, Mail } from 'lucide-react';
+import type { UsuarioPerfil } from '../lib/localAuth';
 import { supabase } from '../lib/supabase';
-import { validarEmailRFC5322, traduzirErroSupabase } from '../lib/validacoes';
+import { validarEmailRFC5322 } from '../lib/validacoes';
 import { FooterAdmin } from './FooterAdmin';
 
 interface LoginProps {
   embedded?: boolean;
+  onLogin?: (perfil: UsuarioPerfil) => void;
 }
 
-export const Login: React.FC<LoginProps> = ({
-  embedded = false,
-}) => {
+export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
   const navigate = useNavigate();
   const passwordInputRef = useRef<HTMLInputElement>(null);
   const [email, setEmail] = useState('');
@@ -21,16 +21,12 @@ export const Login: React.FC<LoginProps> = ({
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showPopup, setShowPopup] = useState(false);
-
-  // Controles do Fluxo de Login
   const [loginMethod, setLoginMethod] = useState<'password' | 'otp'>('password');
-  const [otpStage, setOtpStage] = useState<'request' | 'verify'>('request');
-  const [otpCode, setOtpCode] = useState('');
   const [cooldown, setCooldown] = useState(0);
   const heading = 'Bem vindo de volta';
   const subtitle = loginMethod === 'password'
-      ? 'Inicie sessao na sua conta para continuar.'
-      : 'Acesso rapido e seguro sem senhas.';
+    ? 'Inicie sessao na sua conta para continuar.'
+    : 'Acesso rapido por codigo foi desativado.';
   const wrapperClassName = embedded
     ? 'flex min-h-full flex-col items-center justify-center p-4 text-white sm:p-6 lg:p-8'
     : 'flex min-h-screen flex-col items-center justify-center bg-[#121212] p-4 text-white';
@@ -38,9 +34,6 @@ export const Login: React.FC<LoginProps> = ({
     ? 'w-full max-w-md rounded-2xl border border-[#243447] bg-[#121212] p-6 shadow-2xl sm:p-8'
     : 'w-full max-w-md rounded-2xl border border-gray-800 bg-[#1a1a1a] p-8 shadow-2xl';
 
-  // ==============================
-  // CONTROLE DE COOLDOWN (OTP)
-  // ==============================
   useEffect(() => {
     const savedTime = localStorage.getItem('rcmolina_otp_cooldown');
     if (savedTime) {
@@ -76,40 +69,32 @@ export const Login: React.FC<LoginProps> = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      const form = e.currentTarget.form;
-      if (form) {
-        const elements = Array.from(form.elements).filter(
-          (el) => {
-            const element = el as HTMLElement;
-            return element.tagName === 'INPUT' && (element as HTMLInputElement).type !== 'file';
-          }
-        ) as HTMLElement[];
+    if (e.key !== 'Enter') return;
 
-        const index = elements.indexOf(e.currentTarget);
-        if (index > -1 && index < elements.length - 1) {
-          e.preventDefault();
-          const nextElement = elements[index + 1];
-          nextElement.focus();
-        }
-      }
+    const form = e.currentTarget.form;
+    if (!form) return;
+
+    const elements = Array.from(form.elements).filter((el) => {
+      const element = el as HTMLElement;
+      return element.tagName === 'INPUT' && (element as HTMLInputElement).type !== 'file';
+    }) as HTMLElement[];
+
+    const index = elements.indexOf(e.currentTarget);
+    if (index > -1 && index < elements.length - 1) {
+      e.preventDefault();
+      elements[index + 1].focus();
     }
   };
 
   const verifyProfileExists = async (emailToCheck: string) => {
-    const { data: profile, error: profileError } = await supabase
-      .from('USUARIOS')
-      .select('email')
-      .eq('email', emailToCheck)
-      .maybeSingle();
+    const { data: profile, error: profileError } = await supabase.rpc('usuarios_email_existe', {
+      p_email: emailToCheck,
+    });
 
     if (profileError) console.warn('Erro ao consultar USUARIOS:', profileError.message);
     return profile;
   };
 
-  // ==============================
-  // FLUXO 1: LOGIN POR SENHA
-  // ==============================
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -118,161 +103,75 @@ export const Login: React.FC<LoginProps> = ({
     const normalizedEmail = email.trim().toLowerCase();
 
     if (!validarEmailRFC5322(normalizedEmail)) {
-      setError('Por favor, insira um e-mail em formato válido.');
+      setError('Por favor, insira um e-mail em formato valido.');
       return;
     }
 
     setLoading(true);
 
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email: normalizedEmail,
-      password,
-    });
+    try {
+      const { data, error: authError } = await supabase.rpc('usuarios_login', {
+        p_email: normalizedEmail,
+        p_senha: password,
+      });
 
-    if (authError) {
-      console.error('Erro de login:', authError.message);
+      const perfil = Array.isArray(data) ? data[0] : null;
 
-      if (authError.message.includes('Email not confirmed')) {
-        setError('Por favor, confirme seu e-mail antes de acessar.');
+      if (authError || !perfil) {
+        const profile = await verifyProfileExists(normalizedEmail);
+        setError(profile ? 'Senha incorreta.' : 'E-mail nao cadastrado ou senha incorreta.');
         setLoading(false);
+        setTimeout(() => {
+          passwordInputRef.current?.focus();
+          passwordInputRef.current?.select();
+        }, 50);
         return;
       }
 
-      const profile = await verifyProfileExists(normalizedEmail);
-
-      if (profile) {
-        setError(traduzirErroSupabase(authError.message)); // Senha incorreta
-      } else {
-        setError('E-mail não cadastrado ou senha incorreta.');
-      }
-
-      setLoading(false);
-      setTimeout(() => {
-        if (passwordInputRef.current) {
-          passwordInputRef.current.focus();
-          passwordInputRef.current.select();
-        }
-      }, 50);
-    } else {
-      setSuccess('');
+      onLogin?.(perfil);
       setShowPopup(true);
-      setTimeout(() => navigate('/dashboard'), 2500);
+      setTimeout(() => navigate('/dashboard'), 600);
+    } catch (loginError) {
+      console.error('Erro de login:', loginError);
+      setError('Nao foi possivel concluir o login agora.');
+      setLoading(false);
     }
   };
 
-  // ==============================
-  // FLUXO 2: LOGIN POR OTP (6 DIGITOS)
-  // ==============================
-  const handleSendOtp = async (e: React.FormEvent) => {
+  const handleDisabledOtp = (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
-
-    if (cooldown > 0) {
-      return; // Bloqueio de segurança
-    }
-
-    const normalizedEmail = email.trim().toLowerCase();
-    if (!validarEmailRFC5322(normalizedEmail)) {
-      setError('Por favor, insira um e-mail em formato válido.');
-      return;
-    }
-
-    setLoading(true);
-
-    // Antes de mandar o e-mail, verifica se de fato a conta existe
-    const profile = await verifyProfileExists(normalizedEmail);
-    if (!profile) {
-      setError('Este e-mail ainda não está cadastrado em nosso sistema.');
-      setLoading(false);
-      return;
-    }
-
-    const { error: otpError } = await supabase.auth.signInWithOtp({
-      email: normalizedEmail,
-      options: {
-        shouldCreateUser: false // Impede criação de contas fantasmas em caso de erro de digitação
-      }
-    });
-
-    if (otpError) {
-      setError(traduzirErroSupabase(otpError.message));
-
-      // Se for erro de muitas tentativas, engatilha o cooldown também para forçar a pausa
-      if (otpError.message.toLowerCase().includes('rate limit') || otpError.message.toLowerCase().includes('muitas tentativas')) {
-        handleSetCooldown();
-      }
-    } else {
-      setSuccess('Código seguro enviado para o seu e-mail!');
-      setOtpStage('verify');
-      handleSetCooldown(); // Trava envios repetidos por 60 segundos
-    }
-    setLoading(false);
-  };
-
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-
-    if (otpCode.length < 6 || otpCode.length > 8) {
-      setError('O código deve conter entre 6 a 8 dígitos.');
-      return;
-    }
-
-    setLoading(true);
-
-    // Supabase checa o código de 6 dígitos
-    const { error: verifyError } = await supabase.auth.verifyOtp({
-      email: email.trim().toLowerCase(),
-      token: otpCode,
-      type: 'email'
-    });
-
-    if (verifyError) {
-      setError('Código inválido ou expirado. Verifique novamente.');
-      setLoading(false);
-    } else {
-      setSuccess('');
-      setShowPopup(true);
-      setTimeout(() => navigate('/dashboard'), 2500);
-    }
+    setError('Login por codigo foi desativado junto com o Supabase Auth. Use e-mail e senha.');
+    handleSetCooldown();
   };
 
   return (
     <div id="SCR-002" data-name="telalogin" className={wrapperClassName}>
       <div className={cardClassName}>
-        <div className="flex flex-col items-center mb-8">
-          <div className="bg-black px-6 py-3 rounded mb-6">
-            <div className="text-[#d4af37] font-serif text-xl tracking-widest font-bold">RC MOLINA</div>
-            <div className="text-white text-[10px] tracking-[0.3em] text-center">CORRETORA</div>
+        <div className="mb-8 flex flex-col items-center">
+          <div className="mb-6 rounded bg-black px-6 py-3">
+            <div className="font-serif text-xl font-bold tracking-widest text-[#d4af37]">RC MOLINA</div>
+            <div className="text-center text-[10px] tracking-[0.3em] text-white">CORRETORA</div>
           </div>
           <h1 className="mb-2 text-center text-3xl font-bold">{heading}</h1>
-          <p className="text-center text-sm text-gray-400">
-            {subtitle}
-          </p>
+          <p className="text-center text-sm text-gray-400">{subtitle}</p>
         </div>
 
-
         {error && (
-          <div className="bg-red-900/10 border border-red-500 text-red-200 p-4 rounded-xl mb-6 text-sm text-center">
+          <div className="mb-6 rounded-xl border border-red-500 bg-red-900/10 p-4 text-center text-sm text-red-200">
             {error}
           </div>
         )}
 
         {success && (
-          <div className="bg-green-900/10 border border-green-500 text-green-200 p-4 rounded-xl mb-6 text-sm text-center">
+          <div className="mb-6 rounded-xl border border-green-500 bg-green-900/10 p-4 text-center text-sm text-green-200">
             {success}
           </div>
         )}
 
-        {/* ============================== */}
-        {/* RENDERIZADOR: FLUXO DE SENHA   */}
-        {/* ============================== */}
         {loginMethod === 'password' && (
           <form onSubmit={handlePasswordLogin} className="space-y-6" autoComplete="off">
             <div>
-              <label className="block text-sm font-bold mb-2">E-mail</label>
+              <label className="mb-2 block text-sm font-bold">E-mail</label>
               <input
                 type="email"
                 value={email}
@@ -280,21 +179,21 @@ export const Login: React.FC<LoginProps> = ({
                 onKeyDown={handleKeyDown}
                 onBlur={(e) => {
                   if (!email || !validarEmailRFC5322(email.trim().toLowerCase())) {
-                    setError('Obrigatório preencher um e-mail válido.');
+                    setError('Obrigatorio preencher um e-mail valido.');
                     e.target.focus();
                   } else {
                     setError('');
                   }
                 }}
-                placeholder="você@exemplo.com"
+                placeholder="voce@exemplo.com"
                 autoComplete="off"
-                className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 focus:outline-none focus:border-[#ccff00] transition"
+                className="w-full rounded-xl border border-gray-700 bg-[#121212] p-4 transition focus:border-[#ccff00] focus:outline-none"
                 required
               />
             </div>
 
             <div>
-              <div className="flex justify-between mb-2">
+              <div className="mb-2 flex justify-between">
                 <label className="text-sm font-bold">Senha</label>
                 {!embedded ? (
                   <button
@@ -315,7 +214,7 @@ export const Login: React.FC<LoginProps> = ({
                   onKeyDown={handleKeyDown}
                   onBlur={(e) => {
                     if (!password || password.length < 8) {
-                      setError('Obrigatório informar senha com no mínimo 8 caracteres.');
+                      setError('Obrigatorio informar senha com no minimo 8 caracteres.');
                       e.target.focus();
                     } else {
                       setError('');
@@ -323,7 +222,7 @@ export const Login: React.FC<LoginProps> = ({
                   }}
                   placeholder="Digite sua senha"
                   autoComplete="new-password"
-                  className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 pr-12 focus:outline-none focus:border-[#ccff00] transition"
+                  className="w-full rounded-xl border border-gray-700 bg-[#121212] p-4 pr-12 transition focus:border-[#ccff00] focus:outline-none"
                   required
                 />
                 <button
@@ -339,94 +238,43 @@ export const Login: React.FC<LoginProps> = ({
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#ccff00] text-black font-black text-lg rounded-xl p-4 hover:bg-[#b3e600] transition flex justify-center items-center gap-2"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#ccff00] p-4 text-lg font-black text-black transition hover:bg-[#b3e600]"
             >
               {loading ? 'Aguarde...' : 'Entrar ->'}
             </button>
           </form>
         )}
 
-
-        {/* ============================== */}
-        {/* RENDERIZADOR: FLUXO DE OTP     */}
-        {/* ============================== */}
-        {loginMethod === 'otp' && otpStage === 'request' && (
-          <form onSubmit={handleSendOtp} className="space-y-6" autoComplete="off">
+        {loginMethod === 'otp' && (
+          <form onSubmit={handleDisabledOtp} className="space-y-6" autoComplete="off">
             <div>
-              <label className="block text-sm font-bold mb-2">E-mail Cadastrado</label>
+              <label className="mb-2 block text-sm font-bold">E-mail Cadastrado</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="você@exemplo.com"
+                placeholder="voce@exemplo.com"
                 autoComplete="off"
                 disabled={cooldown > 0}
-                className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 focus:outline-none focus:border-[#ccff00] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full rounded-xl border border-gray-700 bg-[#121212] p-4 transition focus:border-[#ccff00] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                 required
               />
             </div>
 
             <button
               type="submit"
-              disabled={loading || cooldown > 0}
-              className="w-full bg-[#ccff00] text-black font-black text-lg rounded-xl p-4 hover:bg-[#b3e600] transition flex justify-center items-center gap-2 disabled:bg-gray-700 disabled:text-gray-400 disabled:cursor-not-allowed"
+              disabled={cooldown > 0}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-gray-700 p-4 text-lg font-black text-gray-300 transition disabled:cursor-not-allowed disabled:text-gray-400"
             >
-              {loading
-                ? 'Aguarde...'
-                : cooldown > 0
-                  ? `Aguarde ${cooldown}s para reenviar`
-                  : 'Enviar Código de Acesso ->'
-              }
+              {cooldown > 0 ? `Aguarde ${cooldown}s para tentar novamente` : 'Codigo desativado'}
             </button>
           </form>
         )}
 
-        {loginMethod === 'otp' && otpStage === 'verify' && (
-          <form onSubmit={handleVerifyOtp} className="space-y-6" autoComplete="off">
-            <div className="bg-green-900/10 border border-green-500 text-green-200 p-4 rounded-xl text-sm mb-4">
-              Enviamos um código de acesso para <strong>{email}</strong>
-            </div>
-
-            <div>
-              <label className="block text-sm font-bold mb-2">Código de Acesso</label>
-              <input
-                type="text"
-                maxLength={8}
-                value={otpCode}
-                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))} // Apenas Numeros
-                placeholder="00000000"
-                className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 text-center tracking-[0.5em] text-2xl focus:outline-none focus:border-[#ccff00] transition"
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading || otpCode.length < 6}
-              className="w-full bg-[#ccff00] text-black font-black text-lg rounded-xl p-4 hover:bg-[#b3e600] transition flex justify-center items-center gap-2 disabled:opacity-50"
-            >
-              {loading ? 'Verificando...' : 'Confirmar e Entrar ->'}
-            </button>
-            <div className="text-center mt-2">
-              <button
-                type="button"
-                onClick={() => setOtpStage('request')}
-                className="text-gray-500 text-sm hover:text-white"
-              >
-                Corrigir E-mail
-              </button>
-            </div>
-          </form>
-        )}
-
-
-        {/* ============================== */}
-        {/* ALTERNADOR DE MÉTODOS DE LOGIN */}
-        {/* ============================== */}
         <div className="mt-8 border-t border-gray-800 pt-6">
-          <div className="relative flex items-center justify-center mb-6">
-            <span className="relative px-4 bg-[#1a1a1a] text-xs text-gray-500 uppercase tracking-widest font-bold -mt-10">ou</span>
+          <div className="relative mb-6 flex items-center justify-center">
+            <span className="relative -mt-10 bg-[#1a1a1a] px-4 text-xs font-bold uppercase tracking-widest text-gray-500">ou</span>
           </div>
 
           <button
@@ -434,19 +282,18 @@ export const Login: React.FC<LoginProps> = ({
               setError('');
               setSuccess('');
               setLoginMethod(loginMethod === 'password' ? 'otp' : 'password');
-              setOtpStage('request');
             }}
-            className="w-full flex items-center justify-center gap-3 bg-[#121212] border border-gray-700 rounded-xl p-3 hover:bg-gray-800 transition"
+            className="flex w-full items-center justify-center gap-3 rounded-xl border border-gray-700 bg-[#121212] p-3 transition hover:bg-gray-800"
           >
             {loginMethod === 'password' ? (
               <>
                 <Mail size={18} className="text-[#ccff00]" />
-                <span className="font-semibold text-gray-300">Entrar com Código Seguro (E-mail)</span>
+                <span className="font-semibold text-gray-300">Entrar com Codigo Seguro (desativado)</span>
               </>
             ) : (
               <>
                 <KeyRound size={18} className="text-[#ccff00]" />
-                <span className="font-semibold text-gray-300">Entrar com Senha Clássica</span>
+                <span className="font-semibold text-gray-300">Entrar com Senha</span>
               </>
             )}
           </button>
@@ -455,7 +302,10 @@ export const Login: React.FC<LoginProps> = ({
         {!embedded ? (
           <>
             <p className="mt-8 text-center text-sm text-gray-400">
-              Ainda não tem conta? <button onClick={() => navigate('/cadastro')} className="font-bold text-[#ccff00] hover:underline">Cadastre-se</button>
+              Ainda nao tem conta?{' '}
+              <button onClick={() => navigate('/cadastro')} className="font-bold text-[#ccff00] hover:underline">
+                Cadastre-se
+              </button>
             </p>
 
             <FooterAdmin />
@@ -463,23 +313,18 @@ export const Login: React.FC<LoginProps> = ({
         ) : null}
       </div>
 
-      {/* POPUP DE BOAS-VINDAS */}
       {showPopup && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-[#1a1a1a] shadow-2xl border border-[#ccff00]/50 rounded-2xl p-8 max-w-sm w-full flex flex-col items-center animate-in fade-in zoom-in duration-300">
-            <div className="w-20 h-20 bg-[#ccff00]/10 text-[#ccff00] rounded-full flex items-center justify-center mb-6">
-              <svg className="w-10 h-10 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+          <div className="flex w-full max-w-sm animate-in flex-col items-center rounded-2xl border border-[#ccff00]/50 bg-[#1a1a1a] p-8 shadow-2xl duration-300 fade-in zoom-in">
+            <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[#ccff00]/10 text-[#ccff00]">
+              <svg className="h-10 w-10 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-white mb-2">Bem-vindo(a)!</h2>
-            <p className="text-gray-400 text-center mb-8">
-              Login realizado com sucesso. Redirecionando para sua conta...
-            </p>
-            <div className="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-[#ccff00] animate-progress-bar"
-              ></div>
+            <h2 className="mb-2 text-2xl font-bold text-white">Bem-vindo(a)!</h2>
+            <p className="mb-8 text-center text-gray-400">Login realizado com sucesso. Redirecionando para sua conta...</p>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-800">
+              <div className="h-full animate-progress-bar bg-[#ccff00]"></div>
             </div>
           </div>
         </div>

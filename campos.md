@@ -27,10 +27,10 @@ Fonte: `src/components/Login.tsx`
 
 | Campo | Estado/chave | Tipo | Obrigatorio | Validacao/mascara | Destino/uso |
 |---|---|---|---|---|---|
-| E-mail | `email` | `email` | Sim | RFC 5322 via `validarEmailRFC5322`; normaliza com `trim().toLowerCase()` | `supabase.auth.signInWithPassword`, `supabase.auth.signInWithOtp`, consulta `USUARIOS.email` |
-| Senha | `password` | `password` ou `text` | Sim no login por senha | Minimo 8 caracteres no blur | `supabase.auth.signInWithPassword` |
-| E-mail cadastrado | `email` | `email` | Sim no fluxo OTP | RFC 5322; verifica existencia em `USUARIOS` | `supabase.auth.signInWithOtp` |
-| Codigo de acesso | `otpCode` | `text` | Sim no fluxo OTP | Apenas digitos; `maxLength=8`; exige 6 a 8 digitos | `supabase.auth.verifyOtp` |
+| E-mail | `email` | `email` | Sim | RFC 5322 via `validarEmailRFC5322`; normaliza com `trim().toLowerCase()` | RPC `usuarios_login`, consulta `USUARIOS.email` |
+| Senha | `password` | `password` ou `text` | Sim no login por senha | Minimo 8 caracteres no blur | RPC `usuarios_login` |
+| E-mail cadastrado | `email` | `email` | Sim no fluxo OTP desativado | RFC 5322 | Exibe aviso de codigo desativado |
+| Codigo de acesso | `otpCode` | `text` | Nao usado | Fluxo desativado sem Supabase Auth | Sem persistencia |
 
 ## Cadastro de usuario
 
@@ -39,11 +39,11 @@ Fonte: `src/components/Cadastro.tsx`
 | Campo | Estado/chave | Tipo | Obrigatorio | Validacao/mascara | Destino/uso |
 |---|---|---|---|---|---|
 | Foto/avatar | `avatarFile`, `avatarUrl` | `file` | Nao | `accept="image/*"` | Upload em Supabase Storage bucket `avatars`; URL salva em `USUARIOS.avatar_url` |
-| Nome completo | `formData.nome` | `text` | Sim | Letras e espacos; convertido para maiusculas; minimo 2 palavras | `auth.signUp.options.data.full_name`, `USUARIOS.nome_completo` |
-| E-mail | `formData.email` | `email` | Sim | RFC 5322; normaliza com `trim().toLowerCase()`; verifica duplicidade em `USUARIOS.email` | `auth.signUp.email`, `USUARIOS.email` |
-| Senha | `formData.senha` | `password` ou `text` | Sim | Minimo 8; exige maiuscula, minuscula, numero e caractere especial | `auth.signUp.password` |
+| Nome completo | `formData.nome` | `text` | Sim | Letras e espacos; convertido para maiusculas; minimo 2 palavras | RPC `usuarios_cadastrar`, `USUARIOS.nome_completo` |
+| E-mail | `formData.email` | `email` | Sim | RFC 5322; normaliza com `trim().toLowerCase()`; verifica duplicidade em `USUARIOS.email` | RPC `usuarios_cadastrar`, `USUARIOS.email` |
+| Senha | `formData.senha` | `password` ou `text` | Sim | Minimo 8; exige maiuscula, minuscula, numero e caractere especial | RPC `usuarios_cadastrar`, hash em `USUARIOS.senha_hash` |
 | Redigite sua senha | `formData.confirmarSenha` | `password` ou `text` | Sim | Deve ser igual a senha | Validacao local |
-| Nome da organizacao | `formData.organizacao` | `text` | Nao | Letras e espacos; convertido para maiusculas | `auth.signUp.options.data.organization`, `USUARIOS.organizacao` |
+| Nome da organizacao | `formData.organizacao` | `text` | Nao | Letras e espacos; convertido para maiusculas | RPC `usuarios_cadastrar`, `USUARIOS.organizacao` |
 
 ## Recuperar senha
 
@@ -51,7 +51,7 @@ Fonte: `src/components/RecuperarSenha.tsx`
 
 | Campo | Estado/chave | Tipo | Obrigatorio | Validacao/mascara | Destino/uso |
 |---|---|---|---|---|---|
-| E-mail cadastrado | `email` | `email` | Sim | RFC 5322; cooldown de 60s | Consulta `USUARIOS.id`; `supabase.auth.resetPasswordForEmail`; registra `auditoria.detalhes.email` |
+| E-mail cadastrado | `email` | `email` | Sim | RFC 5322; cooldown de 60s | Consulta `USUARIOS.id`; redireciona para atualizar senha; registra `auditoria.detalhes.email` |
 
 ## Atualizar senha
 
@@ -59,7 +59,8 @@ Fonte: `src/components/AtualizarSenha.tsx`
 
 | Campo | Estado/chave | Tipo | Obrigatorio | Validacao/mascara | Destino/uso |
 |---|---|---|---|---|---|
-| Nova senha | `password` | `password` ou `text` | Sim | Minimo 8; exige maiuscula, minuscula, numero e caractere especial | `supabase.auth.updateUser({ password })` |
+| E-mail | `email` | `email` | Sim | RFC 5322 | RPC `usuarios_atualizar_senha` |
+| Nova senha | `password` | `password` ou `text` | Sim | Minimo 8; exige maiuscula, minuscula, numero e caractere especial | RPC `usuarios_atualizar_senha`, hash em `USUARIOS.senha_hash` |
 | Confirme a nova senha | `confirmPassword` | `password` ou `text` | Sim | Deve ser igual a nova senha | Validacao local |
 
 ## Rodape administrativo
@@ -212,11 +213,10 @@ Fonte: `src/components/Agenda/AgendaSidebar.tsx` e atalho em `SCR_MENUPRINCIPAL.
 |---|---|---|---|
 | `server.ts` `/api/import-lead` | POST | `login`, `senha`, `leadUrl` | Endpoint Express usado no dev server |
 | `api/import-lead.ts` | POST | `login`, `senha`, `leadUrl` | Function Vercel equivalente |
-| Supabase Auth signup | SDK | `email`, `password`, `data.full_name`, `data.organization` | Criacao de conta |
+| RPC `usuarios_cadastrar` | SDK/RPC | `p_email`, `p_senha`, `p_nome_completo`, `p_organizacao`, `p_avatar_url` | Criacao de conta sem Supabase Auth |
 | Supabase tabela `USUARIOS` insert | SDK | `id`, `email`, `nome_completo`, `organizacao`, `avatar_url` | Criacao de usuario |
-| Supabase Auth login | SDK | `email`, `password` | Login por senha |
-| Supabase Auth OTP | SDK | `email`, `token` | Login por codigo |
-| Supabase Auth reset | SDK | `email`, `redirectTo` | Recuperacao de senha |
+| RPC `usuarios_login` | SDK/RPC | `p_email`, `p_senha` | Login por senha sem Supabase Auth |
+| RPC `usuarios_atualizar_senha` | SDK/RPC | `p_email`, `p_senha` | Atualizacao de senha sem Supabase Auth |
 | Supabase RPC `admin_update_user` | SDK/RPC | `p_id`, `p_nome`, `p_email`, `p_org`, `p_avatar_url`, `p_admin_hash` | Edicao administrativa |
 | Supabase RPC `admin_delete_user` | SDK/RPC | `p_id`, `p_admin_hash` | Exclusao administrativa de usuario |
 
@@ -226,11 +226,12 @@ Fonte: `src/components/Agenda/AgendaSidebar.tsx` e atalho em `SCR_MENUPRINCIPAL.
 
 | Campo | Origem |
 |---|---|
-| `id` | `signUpData.user.id` ou usuario selecionado |
+| `id` | Gerado no banco por `gen_random_uuid()` ou usuario selecionado |
 | `email` | Cadastro/edicao administrativa |
 | `nome_completo` | Cadastro/edicao administrativa |
 | `organizacao` | Cadastro/edicao administrativa |
 | `avatar_url` | Upload de avatar |
+| `senha_hash` | Hash da senha gerado no banco por `pgcrypto` |
 
 ### Supabase `auditoria`
 

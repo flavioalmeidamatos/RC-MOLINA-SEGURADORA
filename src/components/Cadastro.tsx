@@ -1,8 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+﻿import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, Camera, User } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { validarEmailRFC5322, traduzirErroSupabase } from '../lib/validacoes';
+import { validarEmailRFC5322 } from '../lib/validacoes';
 import { FooterAdmin } from './FooterAdmin';
 
 export const Cadastro: React.FC = () => {
@@ -83,7 +83,7 @@ export const Cadastro: React.FC = () => {
     setError('');
     setSuccess('');
 
-    // Validação de Nome (Mínimo 2 palavras)
+    // ValidaÃ§Ã£o de Nome (MÃ­nimo 2 palavras)
     if (formData.nome.trim().split(' ').length < 2) {
       setError('Por favor, insira seu nome completo.');
       return;
@@ -91,26 +91,26 @@ export const Cadastro: React.FC = () => {
 
     const normalizedEmail = formData.email.trim().toLowerCase();
 
-    // Validação de E-mail RFC 5322
+    // ValidaÃ§Ã£o de E-mail RFC 5322
     if (!validarEmailRFC5322(normalizedEmail)) {
-      setError('Por favor, insira um e-mail em formato válido.');
+      setError('Por favor, insira um e-mail em formato vÃ¡lido.');
       return;
     }
 
     if (formData.senha !== formData.confirmarSenha) {
-      setError('As senhas não coincidem.');
+      setError('As senhas nÃ£o coincidem.');
       return;
     }
 
     if (formData.senha.length < 8) {
-      setError('A senha deve ser forte: mínimo de 8 caracteres.');
+      setError('A senha deve ser forte: mÃ­nimo de 8 caracteres.');
       return;
     }
 
-    // Validação de complexidade de senha (opcional, mas recomendado para "senhas fortes")
+    // ValidaÃ§Ã£o de complexidade de senha (opcional, mas recomendado para "senhas fortes")
     const regexSenhaForte = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
     if (!regexSenhaForte.test(formData.senha)) {
-      setError('A senha deve conter pelo menos 8 caracteres, incluindo letras maiúsculas, minúsculas, números e caracteres especiais.');
+      setError('A senha deve conter pelo menos 8 caracteres, incluindo letras maiÃºsculas, minÃºsculas, nÃºmeros e caracteres especiais.');
       return;
     }
 
@@ -118,14 +118,12 @@ export const Cadastro: React.FC = () => {
 
     try {
       // Verifica se o e-mail ja existe na tabela de usuarios
-      const { data: existingUser } = await supabase
-        .from('USUARIOS')
-        .select('email')
-        .eq('email', normalizedEmail)
-        .maybeSingle();
+      const { data: existingUser } = await supabase.rpc('usuarios_email_existe', {
+        p_email: normalizedEmail,
+      });
 
       if (existingUser) {
-        setError('Este e-mail já está cadastrado. Por favor, faça login.');
+        setError('Este e-mail jÃ¡ estÃ¡ cadastrado. Por favor, faÃ§a login.');
         setLoading(false);
         return;
       }
@@ -133,30 +131,13 @@ export const Cadastro: React.FC = () => {
       console.warn('Aviso: Nao foi possivel verificar usuario existente via tabela USUARIOS.');
     }
 
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-      email: normalizedEmail,
-      password: formData.senha,
-      options: {
-        emailRedirectTo: window.location.origin,
-        data: {
-          full_name: formData.nome.toUpperCase(),
-          organization: formData.organizacao,
-        }
-      }
-    });
-
-    if (signUpError) {
-      setError(traduzirErroSupabase(signUpError.message));
-      setLoading(false);
-    } else if (signUpData.user && signUpData.user.identities && signUpData.user.identities.length === 0) {
-      setError('Este e-mail já está em uso. Por favor, faça login ou recupere sua senha.');
-      setLoading(false);
-    } else {
+    try {
       let finalAvatarUrl = null;
+      const userId = crypto.randomUUID();
 
-      if (avatarFile && signUpData.user) {
+      if (avatarFile) {
         const fileExt = avatarFile.name.split('.').pop();
-        const filePath = `${signUpData.user.id}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `${userId}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
         const { error: uploadError } = await supabase.storage
           .from('avatars')
@@ -172,25 +153,23 @@ export const Cadastro: React.FC = () => {
         }
       }
 
-      // Tenta criar o usuario na tabela USUARIOS com nomes em portugues
-      const { error: profileError } = await supabase
-        .from('USUARIOS')
-        .insert([
-          {
-            id: signUpData.user?.id,
-            email: normalizedEmail,
-            nome_completo: formData.nome.toUpperCase(),
-            organizacao: formData.organizacao,
-            avatar_url: finalAvatarUrl
-          }
-        ]);
+      const { error: profileError } = await supabase.rpc('usuarios_cadastrar', {
+        p_email: normalizedEmail,
+        p_senha: formData.senha,
+        p_nome_completo: formData.nome.toUpperCase(),
+        p_organizacao: formData.organizacao,
+        p_avatar_url: finalAvatarUrl,
+      });
 
       if (profileError) {
-        console.error('Erro ao criar usuario:', profileError);
+        throw profileError;
       }
 
-      setSuccess('Usuário cadastrado com sucesso! Redirecionando para login...');
+      setSuccess('Usuario cadastrado com sucesso! Redirecionando para login...');
       setTimeout(() => navigate('/login'), 2500);
+    } catch (error: any) {
+      setError(error?.message || 'Nao foi possivel cadastrar o usuario.');
+      setLoading(false);
     }
   };
 
@@ -199,7 +178,7 @@ export const Cadastro: React.FC = () => {
       <div className="w-full max-w-md bg-[#1a1a1a] p-8 rounded-2xl shadow-2xl border border-gray-800">
         <div className="flex flex-col items-center mb-8">
           <h1 className="text-3xl font-bold mb-2">Crie sua conta</h1>
-          <p className="text-gray-400 text-sm">Preencha os dados abaixo para começar.</p>
+          <p className="text-gray-400 text-sm">Preencha os dados abaixo para comecar.</p>
         </div>
 
         <div className="flex flex-col items-center mb-8">
@@ -256,13 +235,13 @@ export const Cadastro: React.FC = () => {
               onKeyDown={handleKeyDown}
               onBlur={(e) => {
                 if (formData.nome.trim().split(' ').length < 2) {
-                  setError('Obrigatório informar o nome completo válido (mín. 2 nomes).');
+                  setError('ObrigatÃ³rio informar o nome completo vÃ¡lido (mÃ­n. 2 nomes).');
                   e.target.focus();
                 } else {
                   setError('');
                 }
               }}
-              placeholder="SOMENTE LETRAS MAIÚSCULAS"
+              placeholder="SOMENTE LETRAS MAIÃšSCULAS"
               className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 focus:outline-none focus:border-[#ccff00] transition uppercase"
               required
             />
@@ -277,13 +256,13 @@ export const Cadastro: React.FC = () => {
               onKeyDown={handleKeyDown}
               onBlur={(e) => {
                 if (!formData.email || !validarEmailRFC5322(formData.email.trim().toLowerCase())) {
-                  setError('Obrigatório preencher um e-mail válido.');
+                  setError('ObrigatÃ³rio preencher um e-mail vÃ¡lido.');
                   e.target.focus();
                 } else {
                   setError('');
                 }
               }}
-              placeholder="você@exemplo.com"
+              placeholder="vocÃª@exemplo.com"
               className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 focus:outline-none focus:border-[#ccff00] transition"
               required
             />
@@ -300,10 +279,10 @@ export const Cadastro: React.FC = () => {
                 onBlur={(e) => {
                   const regexSenhaForte = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
                   if (!formData.senha || formData.senha.length < 8) {
-                    setError('Obrigatório preencher a senha com no mínimo 8 caracteres.');
+                    setError('ObrigatÃ³rio preencher a senha com no mÃ­nimo 8 caracteres.');
                     e.target.focus();
                   } else if (!regexSenhaForte.test(formData.senha)) {
-                    setError('A senha deve ser forte: ter letras maiúsculas, minúsculas, números e caracteres especiais.');
+                    setError('A senha deve ser forte: ter letras maiÃºsculas, minÃºsculas, nÃºmeros e caracteres especiais.');
                     e.target.focus();
                   } else {
                     setError('');
@@ -333,7 +312,7 @@ export const Cadastro: React.FC = () => {
                 onKeyDown={handleKeyDown}
                 onBlur={(e) => {
                   if (!formData.confirmarSenha || formData.confirmarSenha !== formData.senha) {
-                    setError('A confirmação deve ser preenchida e idêntica à senha.');
+                    setError('A confirmaÃ§Ã£o deve ser preenchida e idÃªntica Ã  senha.');
                     e.target.focus();
                   } else {
                     setError('');
@@ -354,7 +333,7 @@ export const Cadastro: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-bold mb-2">Nome da organização <span className="text-gray-500 font-normal">(Opcional)</span></label>
+            <label className="block text-sm font-bold mb-2">Nome da organizaÃ§Ã£o <span className="text-gray-500 font-normal">(Opcional)</span></label>
             <input
               type="text"
               value={formData.organizacao}
@@ -363,7 +342,7 @@ export const Cadastro: React.FC = () => {
                 setFormData({ ...formData, organizacao: alphaOnly });
               }}
               onKeyDown={handleKeyDown}
-              placeholder="NOME DA SUA ORGANIZAÇÃO (OPCIONAL)"
+              placeholder="NOME DA SUA ORGANIZAÃ‡ÃƒO (OPCIONAL)"
               className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 focus:outline-none focus:border-[#ccff00] transition uppercase"
             />
           </div>
@@ -378,7 +357,7 @@ export const Cadastro: React.FC = () => {
         </form>
 
         <p className="text-center text-sm text-gray-400 mt-8">
-          Já tem uma conta? <button onClick={() => navigate('/login')} className="text-[#ccff00] font-bold hover:underline">Iniciar sessão</button>
+          JÃ¡ tem uma conta? <button onClick={() => navigate('/login')} className="text-[#ccff00] font-bold hover:underline">Iniciar sessÃ£o</button>
         </p>
 
         <FooterAdmin />

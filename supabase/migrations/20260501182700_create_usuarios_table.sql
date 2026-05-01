@@ -1,11 +1,12 @@
 create extension if not exists pgcrypto;
 
 create table if not exists public."USUARIOS" (
-  id uuid primary key references auth.users(id) on delete cascade,
+  id uuid primary key default gen_random_uuid(),
   email text not null unique,
   nome_completo text not null,
   organizacao text,
   avatar_url text,
+  senha_hash text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -37,28 +38,6 @@ on public."USUARIOS"
 for select
 to anon, authenticated
 using (true);
-
-drop policy if exists "usuarios_insert_own_profile" on public."USUARIOS";
-create policy "usuarios_insert_own_profile"
-on public."USUARIOS"
-for insert
-to authenticated
-with check (auth.uid() = id);
-
-drop policy if exists "usuarios_update_own_profile" on public."USUARIOS";
-create policy "usuarios_update_own_profile"
-on public."USUARIOS"
-for update
-to authenticated
-using (auth.uid() = id)
-with check (auth.uid() = id);
-
-drop policy if exists "usuarios_delete_own_profile" on public."USUARIOS";
-create policy "usuarios_delete_own_profile"
-on public."USUARIOS"
-for delete
-to authenticated
-using (auth.uid() = id);
 
 insert into storage.buckets (id, name, public)
 values ('avatars', 'avatars', true)

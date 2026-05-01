@@ -6,9 +6,9 @@ import { Login } from './components/Login';
 import { Preloader } from './components/Preloader';
 import { RecuperarSenha } from './components/RecuperarSenha';
 import { SCR_MENUPRINCIPAL } from './components/SCR_MENUPRINCIPAL';
+import { clearStoredSession, getStoredSession, storeSession, type LocalAuthSession, type UsuarioPerfil } from './lib/localAuth';
 import { isSupabaseConfigured, supabase, supabaseConfigError } from './lib/supabase';
 
-const AUTH_BOOT_TIMEOUT_MS = 3500;
 const PROFILE_BOOT_TIMEOUT_MS = 3500;
 
 const withTimeout = async <T,>(promise: PromiseLike<T>, timeoutMs: number): Promise<T | null> => {
@@ -46,18 +46,16 @@ function ConfigErrorScreen() {
 
 export default function App() {
   const [loading, setLoading] = useState(true);
-  const [session, setSession] = useState<any>(null);
-  const [perfil, setPerfil] = useState<any>(null);
+  const [session, setSession] = useState<LocalAuthSession | null>(null);
+  const [perfil, setPerfil] = useState<UsuarioPerfil | null>(null);
   const [showPreloader, setShowPreloader] = useState(true);
 
   const fetchPerfil = async (userId: string) => {
     try {
       const result = await withTimeout(
-        supabase
-          .from('USUARIOS')
-          .select('*')
-          .eq('id', userId)
-          .single(),
+        supabase.rpc('usuarios_perfil', {
+          p_id: userId,
+        }),
         PROFILE_BOOT_TIMEOUT_MS,
       );
 
@@ -67,9 +65,14 @@ export default function App() {
       }
 
       const { data, error } = result;
+      const perfilData = Array.isArray(data) ? data[0] : null;
 
-      if (!error && data) {
-        setPerfil(data);
+      if (!error && perfilData) {
+        setPerfil(perfilData);
+      } else {
+        clearStoredSession();
+        setSession(null);
+        setPerfil(null);
       }
     } catch (error) {
       console.error('Erro ao buscar perfil:', error);
@@ -84,62 +87,34 @@ export default function App() {
       return;
     }
 
-    let isMounted = true;
-
     const syncSession = async () => {
-      try {
-        const result = await withTimeout(supabase.auth.getSession(), AUTH_BOOT_TIMEOUT_MS);
+      const storedSession = getStoredSession();
 
-        if (!isMounted) {
-          return;
-        }
-
-        if (!result) {
-          setSession(null);
-          setPerfil(null);
-          setLoading(false);
-          return;
-        }
-
-        const { data } = result;
-
-        setSession(data.session);
-
-        if (data.session?.user?.id) {
-          await fetchPerfil(data.session.user.id);
-        } else {
-          setPerfil(null);
-          setLoading(false);
-        }
-      } catch (error) {
-        console.error('Erro ao inicializar sessao:', error);
-        if (isMounted) {
-          setLoading(false);
-        }
+      if (!storedSession) {
+        setSession(null);
+        setPerfil(null);
+        setLoading(false);
+        return;
       }
+
+      setSession(storedSession);
+      await fetchPerfil(storedSession.user.id);
     };
 
     syncSession();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession);
-
-      if (nextSession?.user?.id) {
-        setLoading(true);
-        fetchPerfil(nextSession.user.id);
-      } else {
-        setPerfil(null);
-        setLoading(false);
-      }
-    });
-
-    return () => {
-      isMounted = false;
-      subscription.unsubscribe();
-    };
   }, []);
+
+  const handleLogin = (nextPerfil: UsuarioPerfil) => {
+    const nextSession = storeSession(nextPerfil);
+    setSession(nextSession);
+    setPerfil(nextPerfil);
+  };
+
+  const handleLogout = () => {
+    clearStoredSession();
+    setSession(null);
+    setPerfil(null);
+  };
 
   if (showPreloader) {
     return <Preloader onComplete={() => setShowPreloader(false)} />;
@@ -156,14 +131,18 @@ export default function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={session ? <Navigate to="/dashboard" replace /> : <Login />} />
+        <Route path="/login" element={session ? <Navigate to="/dashboard" replace /> : <Login onLogin={handleLogin} />} />
         <Route path="/cadastro" element={session ? <Navigate to="/dashboard" replace /> : <Cadastro />} />
         <Route path="/recuperar-senha" element={<RecuperarSenha />} />
         <Route path="/atualizar-senha" element={<AtualizarSenha />} />
         <Route
           path="/dashboard"
           element={
-            session ? <SCR_MENUPRINCIPAL session={session} perfil={perfil} /> : <Navigate to="/login" replace />
+            session ? (
+              <SCR_MENUPRINCIPAL session={session} perfil={perfil} onLogout={handleLogout} />
+            ) : (
+              <Navigate to="/login" replace />
+            )
           }
         />
         <Route path="/" element={<Navigate to={session ? '/dashboard' : '/login'} replace />} />

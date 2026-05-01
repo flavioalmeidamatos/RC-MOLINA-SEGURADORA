@@ -25,9 +25,11 @@ export const FooterAdmin: React.FC = () => {
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
-    const fetchUsers = async () => {
+    const fetchUsers = async (adminHashOverride = adminHash) => {
         setLoading(true);
-        const { data, error } = await supabase.from('USUARIOS').select('*').order('nome_completo', { ascending: true });
+        const { data, error } = await supabase.rpc('admin_list_users', {
+            p_admin_hash: adminHashOverride
+        });
         if (error) {
             console.error('Error fetching users', error);
             setMessage({ text: 'Erro ao carregar usuários', type: 'error' });
@@ -55,7 +57,7 @@ export const FooterAdmin: React.FC = () => {
             setShowPasswordModal(false);
             setAdminPassword('');
             setShowAdminPanel(true);
-            fetchUsers();
+            fetchUsers(hash);
         } else {
             setPasswordError('Senha incorreta.');
         }

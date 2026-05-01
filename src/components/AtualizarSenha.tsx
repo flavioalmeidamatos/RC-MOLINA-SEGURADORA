@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { traduzirErroSupabase } from '../lib/validacoes';
+import { validarEmailRFC5322 } from '../lib/validacoes';
 import { FooterAdmin } from './FooterAdmin';
 
 export const AtualizarSenha: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const initialEmail = ((location.state as any)?.email || '').toString();
+  const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -59,12 +62,21 @@ export const AtualizarSenha: React.FC = () => {
 
     setLoading(true);
 
-    const { error } = await supabase.auth.updateUser({
-      password: password
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!validarEmailRFC5322(normalizedEmail)) {
+      setError('Informe um e-mail valido para atualizar a senha.');
+      setLoading(false);
+      return;
+    }
+
+    const { error } = await supabase.rpc('usuarios_atualizar_senha', {
+      p_email: normalizedEmail,
+      p_senha: password,
     });
 
     if (error) {
-      setError(traduzirErroSupabase(error.message));
+      setError(error.message);
       setLoading(false);
     } else {
       setSuccess(true);
@@ -97,6 +109,19 @@ export const AtualizarSenha: React.FC = () => {
         )}
 
         <form onSubmit={handleUpdatePassword} className="space-y-6">
+          <div>
+            <label className="block text-sm font-bold mb-2">E-mail</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="voce@exemplo.com"
+              className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 focus:outline-none focus:border-[#ccff00] transition"
+              required
+            />
+          </div>
+
           <div>
             <label className="block text-sm font-bold mb-2">Nova Senha</label>
             <div className="relative">
