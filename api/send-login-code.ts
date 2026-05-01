@@ -6,7 +6,8 @@ const resendApiKey = process.env.RESEND_API_KEY;
 const resendFromEmail = process.env.RESEND_FROM_EMAIL || 'RC Molina Seguradora <onboarding@resend.dev>';
 
 const respond = (res: Response, status: number, body: Record<string, unknown>) => {
-  res.status(status).json(body);
+  res.setHeader('content-type', 'application/json; charset=utf-8');
+  res.status(status).send(JSON.stringify(body));
 };
 
 export default async function handler(req: Request, res: Response) {
@@ -33,6 +34,28 @@ export default async function handler(req: Request, res: Response) {
     return;
   }
 
+  const existsResponse = await fetch(`${supabaseUrl}/rest/v1/rpc/usuarios_email_existe`, {
+    method: 'POST',
+    headers: {
+      apikey: serviceRoleKey,
+      authorization: `Bearer ${serviceRoleKey}`,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({ p_email: email }),
+  });
+
+  if (!existsResponse.ok) {
+    respond(res, 502, { error: 'Nao foi possivel consultar o cadastro do e-mail.' });
+    return;
+  }
+
+  const emailExists = await existsResponse.json();
+
+  if (!emailExists) {
+    respond(res, 404, { error: 'E-mail nao cadastrado. Crie sua conta antes de pedir o codigo seguro.' });
+    return;
+  }
+
   const codeResponse = await fetch(`${supabaseUrl}/rest/v1/rpc/usuarios_gerar_codigo_login`, {
     method: 'POST',
     headers: {
@@ -44,7 +67,7 @@ export default async function handler(req: Request, res: Response) {
   });
 
   if (!codeResponse.ok) {
-    respond(res, codeResponse.status, { error: 'Nao foi possivel gerar o codigo seguro.' });
+    respond(res, 502, { error: 'Nao foi possivel gerar o codigo seguro.' });
     return;
   }
 
