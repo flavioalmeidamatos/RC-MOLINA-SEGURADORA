@@ -8,36 +8,37 @@ interface PreloaderProps {
 
 export const Preloader: React.FC<PreloaderProps> = ({ onComplete }) => {
   const [progress, setProgress] = useState(0);
-  const [imageLoaded, setImageLoaded] = useState(false);
 
   useEffect(() => {
-    // Incremento mais lento: 1% a cada 100ms (total ~10 segundos)
-    const timer = setInterval(() => {
+    let completed = false;
+
+    const finish = () => {
+      if (completed) return;
+      completed = true;
+      setProgress(100);
+      window.setTimeout(onComplete, 350);
+    };
+
+    const timer = window.setInterval(() => {
       setProgress((prev) => {
-        // Se já bateu 100, para
-        if (prev >= 100) {
-          clearInterval(timer);
-          return 100;
+        const nextProgress = Math.min(prev + 5, 100);
+
+        if (nextProgress >= 100) {
+          window.clearInterval(timer);
+          window.setTimeout(finish, 120);
         }
 
-        // Se a imagem ainda NÃO carregou, a barra trava nos 90%
-        if (!imageLoaded && prev >= 90) {
-          return 90;
-        }
-
-        return prev + 1;
+        return nextProgress;
       });
-    }, 100);
+    }, 70);
 
-    return () => clearInterval(timer);
-  }, [imageLoaded]);
+    const maxWait = window.setTimeout(finish, 2500);
 
-  // Efeito isolado para disparar o onComplete quando tudo estiver pronto
-  useEffect(() => {
-    if (progress === 100 && imageLoaded) {
-      setTimeout(onComplete, 1200);
-    }
-  }, [progress, imageLoaded, onComplete]);
+    return () => {
+      window.clearInterval(timer);
+      window.clearTimeout(maxWait);
+    };
+  }, [onComplete]);
 
   return (
     <div id="SCR-001" data-name="preloader" className="fixed inset-0 bg-black flex flex-col items-center justify-center z-50">
@@ -51,8 +52,6 @@ export const Preloader: React.FC<PreloaderProps> = ({ onComplete }) => {
           src={preloaderImage}
           alt="Logo"
           className="w-64 mb-8"
-          onLoad={() => setImageLoaded(true)}
-          onError={() => setImageLoaded(true)}
         />
 
         <div className="w-64 h-1 bg-[#1a1a1a] rounded-full overflow-hidden">
@@ -60,7 +59,7 @@ export const Preloader: React.FC<PreloaderProps> = ({ onComplete }) => {
             className="h-full bg-[#FFD700]"
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
-            transition={{ ease: "linear" }}
+            transition={{ ease: 'linear' }}
           />
         </div>
       </motion.div>
