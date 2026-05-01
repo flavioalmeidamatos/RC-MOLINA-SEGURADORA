@@ -6,8 +6,9 @@ const resendApiKey = process.env.RESEND_API_KEY;
 const resendFromEmail = process.env.RESEND_FROM_EMAIL || 'RC Molina Seguradora <onboarding@resend.dev>';
 
 const respond = (res: Response, status: number, body: Record<string, unknown>) => {
+  res.statusCode = status;
   res.setHeader('content-type', 'application/json; charset=utf-8');
-  res.status(status).send(JSON.stringify(body));
+  res.end(JSON.stringify(body));
 };
 
 export default async function handler(req: Request, res: Response) {
