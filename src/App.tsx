@@ -8,6 +8,25 @@ import { RecuperarSenha } from './components/RecuperarSenha';
 import { SCR_MENUPRINCIPAL } from './components/SCR_MENUPRINCIPAL';
 import { isSupabaseConfigured, supabase, supabaseConfigError } from './lib/supabase';
 
+const AUTH_BOOT_TIMEOUT_MS = 3500;
+const PROFILE_BOOT_TIMEOUT_MS = 3500;
+
+const withTimeout = async <T,>(promise: PromiseLike<T>, timeoutMs: number): Promise<T | null> => {
+  let timeoutId: number | undefined;
+
+  const timeout = new Promise<null>((resolve) => {
+    timeoutId = window.setTimeout(() => resolve(null), timeoutMs);
+  });
+
+  const result = await Promise.race([promise, timeout]);
+
+  if (timeoutId) {
+    window.clearTimeout(timeoutId);
+  }
+
+  return result;
+};
+
 function ConfigErrorScreen() {
   return (
     <main className="min-h-screen bg-[#121212] px-4 py-8 text-white">
@@ -33,11 +52,21 @@ export default function App() {
 
   const fetchPerfil = async (userId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('perfis')
-        .select('*')
-        .eq('id', userId)
-        .single();
+      const result = await withTimeout(
+        supabase
+          .from('perfis')
+          .select('*')
+          .eq('id', userId)
+          .single(),
+        PROFILE_BOOT_TIMEOUT_MS,
+      );
+
+      if (!result) {
+        setPerfil(null);
+        return;
+      }
+
+      const { data, error } = result;
 
       if (!error && data) {
         setPerfil(data);
@@ -59,11 +88,20 @@ export default function App() {
 
     const syncSession = async () => {
       try {
-        const { data } = await supabase.auth.getSession();
+        const result = await withTimeout(supabase.auth.getSession(), AUTH_BOOT_TIMEOUT_MS);
 
         if (!isMounted) {
           return;
         }
+
+        if (!result) {
+          setSession(null);
+          setPerfil(null);
+          setLoading(false);
+          return;
+        }
+
+        const { data } = result;
 
         setSession(data.session);
 
