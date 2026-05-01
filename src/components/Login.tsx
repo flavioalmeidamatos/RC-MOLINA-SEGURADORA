@@ -22,11 +22,13 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
   const [success, setSuccess] = useState('');
   const [showPopup, setShowPopup] = useState(false);
   const [loginMethod, setLoginMethod] = useState<'password' | 'otp'>('password');
+  const [otpStage, setOtpStage] = useState<'request' | 'verify'>('request');
+  const [otpCode, setOtpCode] = useState('');
   const [cooldown, setCooldown] = useState(0);
   const heading = 'Bem vindo de volta';
   const subtitle = loginMethod === 'password'
     ? 'Inicie sessao na sua conta para continuar.'
-    : 'Acesso rapido por codigo foi desativado.';
+    : 'Acesso rapido e seguro sem senhas.';
   const wrapperClassName = embedded
     ? 'flex min-h-full flex-col items-center justify-center p-4 text-white sm:p-6 lg:p-8'
     : 'flex min-h-screen flex-col items-center justify-center bg-[#121212] p-4 text-white';
@@ -138,10 +140,81 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
     }
   };
 
-  const handleDisabledOtp = (e: React.FormEvent) => {
+  const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('Login por codigo foi desativado junto com o Supabase Auth. Use e-mail e senha.');
-    handleSetCooldown();
+    setError('');
+    setSuccess('');
+
+    if (cooldown > 0) {
+      return;
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!validarEmailRFC5322(normalizedEmail)) {
+      setError('Por favor, insira um e-mail em formato valido.');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch('/api/send-login-code', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email: normalizedEmail }),
+      });
+
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        setError(payload.error || 'Nao foi possivel enviar o codigo seguro.');
+      } else {
+        setSuccess('Codigo seguro enviado para o seu e-mail.');
+        setOtpStage('verify');
+        handleSetCooldown();
+      }
+    } catch (sendError) {
+      console.error('Erro ao enviar codigo seguro:', sendError);
+      setError('Nao foi possivel enviar o codigo seguro agora.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+
+    if (otpCode.length !== 6) {
+      setError('O codigo deve conter 6 digitos.');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { data, error: verifyError } = await supabase.rpc('usuarios_verificar_codigo_login', {
+        p_email: email.trim().toLowerCase(),
+        p_codigo: otpCode,
+      });
+
+      const perfil = Array.isArray(data) ? data[0] : null;
+
+      if (verifyError || !perfil) {
+        setError('Codigo invalido ou expirado. Verifique novamente.');
+        setLoading(false);
+        return;
+      }
+
+      onLogin?.(perfil);
+      setShowPopup(true);
+      setTimeout(() => navigate('/dashboard'), 600);
+    } catch (verifyError) {
+      console.error('Erro ao verificar codigo seguro:', verifyError);
+      setError('Nao foi possivel verificar o codigo agora.');
+      setLoading(false);
+    }
   };
 
   return (
@@ -245,8 +318,8 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
           </form>
         )}
 
-        {loginMethod === 'otp' && (
-          <form onSubmit={handleDisabledOtp} className="space-y-6" autoComplete="off">
+        {loginMethod === 'otp' && otpStage === 'request' && (
+          <form onSubmit={handleSendOtp} className="space-y-6" autoComplete="off">
             <div>
               <label className="mb-2 block text-sm font-bold">E-mail Cadastrado</label>
               <input
@@ -264,11 +337,58 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
 
             <button
               type="submit"
-              disabled={cooldown > 0}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-gray-700 p-4 text-lg font-black text-gray-300 transition disabled:cursor-not-allowed disabled:text-gray-400"
+              disabled={loading || cooldown > 0}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#ccff00] p-4 text-lg font-black text-black transition hover:bg-[#b3e600] disabled:cursor-not-allowed disabled:bg-gray-700 disabled:text-gray-400"
             >
-              {cooldown > 0 ? `Aguarde ${cooldown}s para tentar novamente` : 'Codigo desativado'}
+              {loading
+                ? 'Aguarde...'
+                : cooldown > 0
+                  ? `Aguarde ${cooldown}s para reenviar`
+                  : 'Enviar Codigo de Acesso ->'
+              }
             </button>
+          </form>
+        )}
+
+        {loginMethod === 'otp' && otpStage === 'verify' && (
+          <form onSubmit={handleVerifyOtp} className="space-y-6" autoComplete="off">
+            <div className="mb-4 rounded-xl border border-green-500 bg-green-900/10 p-4 text-sm text-green-200">
+              Enviamos um codigo de acesso para <strong>{email}</strong>
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-bold">Codigo de Acesso</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                value={otpCode}
+                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                placeholder="000000"
+                className="w-full rounded-xl border border-gray-700 bg-[#121212] p-4 text-center text-2xl tracking-[0.5em] transition focus:border-[#ccff00] focus:outline-none"
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading || otpCode.length < 6}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#ccff00] p-4 text-lg font-black text-black transition hover:bg-[#b3e600] disabled:opacity-50"
+            >
+              {loading ? 'Verificando...' : 'Confirmar e Entrar ->'}
+            </button>
+            <div className="mt-2 text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setOtpCode('');
+                  setOtpStage('request');
+                }}
+                className="text-sm text-gray-500 hover:text-white"
+              >
+                Corrigir E-mail
+              </button>
+            </div>
           </form>
         )}
 
@@ -282,13 +402,15 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
               setError('');
               setSuccess('');
               setLoginMethod(loginMethod === 'password' ? 'otp' : 'password');
+              setOtpStage('request');
+              setOtpCode('');
             }}
             className="flex w-full items-center justify-center gap-3 rounded-xl border border-gray-700 bg-[#121212] p-3 transition hover:bg-gray-800"
           >
             {loginMethod === 'password' ? (
               <>
                 <Mail size={18} className="text-[#ccff00]" />
-                <span className="font-semibold text-gray-300">Entrar com Codigo Seguro (desativado)</span>
+                <span className="font-semibold text-gray-300">Entrar com Codigo Seguro (E-mail)</span>
               </>
             ) : (
               <>

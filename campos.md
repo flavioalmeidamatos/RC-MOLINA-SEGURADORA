@@ -29,8 +29,8 @@ Fonte: `src/components/Login.tsx`
 |---|---|---|---|---|---|
 | E-mail | `email` | `email` | Sim | RFC 5322 via `validarEmailRFC5322`; normaliza com `trim().toLowerCase()` | RPC `usuarios_login`, consulta `USUARIOS.email` |
 | Senha | `password` | `password` ou `text` | Sim no login por senha | Minimo 8 caracteres no blur | RPC `usuarios_login` |
-| E-mail cadastrado | `email` | `email` | Sim no fluxo OTP desativado | RFC 5322 | Exibe aviso de codigo desativado |
-| Codigo de acesso | `otpCode` | `text` | Nao usado | Fluxo desativado sem Supabase Auth | Sem persistencia |
+| E-mail cadastrado | `email` | `email` | Sim no fluxo OTP | RFC 5322; verifica existencia em `USUARIOS`; cooldown de 60s | Endpoint `/api/send-login-code`, RPC `usuarios_gerar_codigo_login` |
+| Codigo de acesso | `otpCode` | `text` | Sim no fluxo OTP | Apenas digitos; `maxLength=6`; expira em 10 min; maximo 5 tentativas | RPC `usuarios_verificar_codigo_login` |
 
 ## Cadastro de usuario
 
@@ -216,6 +216,9 @@ Fonte: `src/components/Agenda/AgendaSidebar.tsx` e atalho em `SCR_MENUPRINCIPAL.
 | RPC `usuarios_cadastrar` | SDK/RPC | `p_email`, `p_senha`, `p_nome_completo`, `p_organizacao`, `p_avatar_url` | Criacao de conta sem Supabase Auth |
 | Supabase tabela `USUARIOS` insert | SDK | `id`, `email`, `nome_completo`, `organizacao`, `avatar_url` | Criacao de usuario |
 | RPC `usuarios_login` | SDK/RPC | `p_email`, `p_senha` | Login por senha sem Supabase Auth |
+| Endpoint `/api/send-login-code` | POST | `email` | Envio do codigo seguro por e-mail |
+| RPC `usuarios_gerar_codigo_login` | SDK/RPC server-side | `p_email` | Gera codigo seguro de 6 digitos |
+| RPC `usuarios_verificar_codigo_login` | SDK/RPC | `p_email`, `p_codigo` | Login por codigo seguro sem Supabase Auth |
 | RPC `usuarios_atualizar_senha` | SDK/RPC | `p_email`, `p_senha` | Atualizacao de senha sem Supabase Auth |
 | Supabase RPC `admin_update_user` | SDK/RPC | `p_id`, `p_nome`, `p_email`, `p_org`, `p_avatar_url`, `p_admin_hash` | Edicao administrativa |
 | Supabase RPC `admin_delete_user` | SDK/RPC | `p_id`, `p_admin_hash` | Exclusao administrativa de usuario |
