@@ -3,7 +3,7 @@ import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInte
 import { ptBR } from "date-fns/locale";
 import { Holiday } from "../../../lib/holidays";
 
-import { CalendarView } from "../Agenda";
+import { CalendarView } from "../agenda";
 
 interface MonthViewProps {
   currentDate: Date;

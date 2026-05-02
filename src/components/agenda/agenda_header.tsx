@@ -2,7 +2,7 @@ import React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { format, addMonths, subMonths, addWeeks, subWeeks, addDays, subDays, startOfWeek, endOfWeek, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarView } from "./Agenda";
+import { CalendarView } from "./agenda";
 
 interface AgendaHeaderProps {
   currentDate: Date;

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { validarEmailRFC5322 } from '../../lib/validacoes';
-import { FooterAdmin } from '../shared/FooterAdmin';
+import { FooterAdmin } from '../shared/footer_admin';
 
 type Stage = 'email' | 'otp' | 'password';
 

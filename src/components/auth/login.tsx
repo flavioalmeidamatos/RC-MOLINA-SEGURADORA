@@ -1,10 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, KeyRound, Mail } from 'lucide-react';
-import type { UsuarioPerfil } from '../../lib/localAuth';
+import type { UsuarioPerfil } from '../../lib/local_auth';
 import { supabase } from '../../lib/supabase';
 import { validarEmailRFC5322 } from '../../lib/validacoes';
-import { FooterAdmin } from '../shared/FooterAdmin';
+import { FooterAdmin } from '../shared/footer_admin';
 
 interface LoginProps {
   embedded?: boolean;

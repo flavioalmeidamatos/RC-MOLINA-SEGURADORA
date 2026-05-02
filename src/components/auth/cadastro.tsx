@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, Camera, User } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { validarEmailRFC5322 } from '../../lib/validacoes';
-import { FooterAdmin } from '../shared/FooterAdmin';
+import { FooterAdmin } from '../shared/footer_admin';
 
 export const Cadastro: React.FC = () => {
   const navigate = useNavigate();

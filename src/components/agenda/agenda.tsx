@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { startOfDay } from "date-fns";
 import { fetchHolidays, Holiday } from "../../lib/holidays";
-import { AgendaSidebar } from "./AgendaSidebar";
-import { AgendaHeader } from "./AgendaHeader";
-import { MonthView } from "./views/MonthView";
-import { WeekView } from "./views/WeekView";
-import { DayView } from "./views/DayView";
+import { AgendaSidebar } from "./agenda_sidebar";
+import { AgendaHeader } from "./agenda_header";
+import { MonthView } from "./views/month_view";
+import { WeekView } from "./views/week_view";
+import { DayView } from "./views/day_view";
 
 export type CalendarView = "month" | "week" | "day";
 

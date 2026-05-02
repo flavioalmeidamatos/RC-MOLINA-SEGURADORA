@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Navigate, Route, Routes } from 'react-router-dom';
-import { AtualizarSenha } from './components/auth/AtualizarSenha';
-import { Cadastro } from './components/auth/Cadastro';
-import { Login } from './components/auth/Login';
-import { Preloader } from './components/shared/Preloader';
-import { RecuperarSenha } from './components/auth/RecuperarSenha';
-import { SCR_MENUPRINCIPAL } from './components/dashboard/SCR_MENUPRINCIPAL';
-import { clearStoredSession, getStoredSession, storeSession, type LocalAuthSession, type UsuarioPerfil } from './lib/localAuth';
+import { AtualizarSenha } from './components/auth/atualizar_senha';
+import { Cadastro } from './components/auth/cadastro';
+import { Login } from './components/auth/login';
+import { Preloader } from './components/shared/preloader';
+import { RecuperarSenha } from './components/auth/recuperar_senha';
+import { SCR_MENUPRINCIPAL } from './components/dashboard/rc_menu_principal';
+import { clearStoredSession, getStoredSession, storeSession, type LocalAuthSession, type UsuarioPerfil } from './lib/local_auth';
 import { isSupabaseConfigured, supabase, supabaseConfigError } from './lib/supabase';
 
 const PROFILE_BOOT_TIMEOUT_MS = 3500;

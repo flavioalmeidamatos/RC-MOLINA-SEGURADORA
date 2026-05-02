@@ -25,7 +25,7 @@ import {
   validarEmailRFC5322,
   validarRG,
 } from '../../lib/validacoes';
-import { SistemaQuerImportModal, type SistemaQuerLeadData } from '../dashboard/SistemaQuerImportModal';
+import { SistemaQuerImportModal, type SistemaQuerLeadData } from '../dashboard/sistema_quer_import_modal';
 
 type TabId = 'geral' | 'endereco' | 'extras' | 'documentacao';
 

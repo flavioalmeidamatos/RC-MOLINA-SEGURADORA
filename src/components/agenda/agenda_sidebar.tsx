@@ -1,6 +1,6 @@
 import React, { useRef } from "react";
 import { Plus, Search, Calendar, User } from "lucide-react";
-import { CalendarView } from "./Agenda";
+import { CalendarView } from "./agenda";
 
 interface AgendaSidebarProps {
   setCurrentDate: (date: Date) => void;

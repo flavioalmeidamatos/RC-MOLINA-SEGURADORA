@@ -2,7 +2,7 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
-import { ImportLeadHttpError, importLeadFromSistemaQuer } from './api/_lib/importLead';
+import { ImportLeadHttpError, importLeadFromSistemaQuer } from './api/_lib/import_lead';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
