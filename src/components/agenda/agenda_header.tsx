@@ -87,7 +87,7 @@ export const AgendaHeader: React.FC<AgendaHeaderProps> = ({
             activeView === "month" ? "bg-[#00B5AD] text-white" : "hover:bg-gray-50 text-black border-r border-black"
           }`}
         >
-          M├¬s
+          Mês
         </button>
         <button
           onClick={() => switchView("week")}
