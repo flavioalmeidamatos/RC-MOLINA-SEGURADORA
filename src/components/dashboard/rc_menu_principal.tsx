@@ -31,14 +31,90 @@ interface DashboardProps {
 }
 
 type SimulatorMode = "idle" | "loading" | "embedded" | "external";
+type SimulatorBrowser = "chrome" | "edge" | "firefox" | "safari" | "other";
+type SimulatorExternalReason = "manual" | "iframe-error" | "timeout";
 
 const SIMULATOR_LOGIN_URL = "https://app.simuladoronline.com/login/4602";
 const SIMULATOR_LOGOUT_URL = "https://app.simuladoronline.com/logout";
 const SIMULATOR_FALLBACK_WINDOW_NAME = "simulador_online_fallback_window";
+const CHROME_SIMULATOR_LOAD_TIMEOUT_MS = 18000;
+const BASE_SIMULATOR_IFRAME_ALLOW =
+  "geolocation; microphone; camera; midi; vr; accelerometer; gyroscope; payment; ambient-light-sensor; encrypted-media; usb";
 const wait = (ms: number) =>
   new Promise<void>((resolve) => {
     window.setTimeout(resolve, ms);
   });
+
+const detectSimulatorBrowser = (): SimulatorBrowser => {
+  const userAgent = window.navigator.userAgent;
+
+  if (/Firefox\//i.test(userAgent)) {
+    return "firefox";
+  }
+
+  if (/Edg\//i.test(userAgent)) {
+    return "edge";
+  }
+
+  if (/Chrome\//i.test(userAgent) && !/OPR\/|Opera|SamsungBrowser/i.test(userAgent)) {
+    return "chrome";
+  }
+
+  if (/Safari\//i.test(userAgent) && !/Chrome\//i.test(userAgent)) {
+    return "safari";
+  }
+
+  return "other";
+};
+
+const isChromiumSimulatorBrowser = (browser: SimulatorBrowser) =>
+  browser === "chrome" || browser === "edge";
+
+const getSimulatorBrowserLabel = (browser: SimulatorBrowser) => {
+  const labels: Record<SimulatorBrowser, string> = {
+    chrome: "Chrome",
+    edge: "Edge",
+    firefox: "Firefox",
+    safari: "Safari",
+    other: "este navegador",
+  };
+
+  return labels[browser];
+};
+
+const getSimulatorIframeAllow = (browser: SimulatorBrowser) =>
+  isChromiumSimulatorBrowser(browser)
+    ? `${BASE_SIMULATOR_IFRAME_ALLOW}; storage-access`
+    : BASE_SIMULATOR_IFRAME_ALLOW;
+
+const getSimulatorLoadingMessage = (browser: SimulatorBrowser) =>
+  isChromiumSimulatorBrowser(browser)
+    ? `Tentando carregar o simulador dentro da aplicação com o fluxo específico para ${getSimulatorBrowserLabel(browser)}...`
+    : "Tentando carregar o simulador dentro da aplicação...";
+
+const getSimulatorExternalMessage = (
+  reason: SimulatorExternalReason,
+  browser: SimulatorBrowser
+) => {
+  if (reason === "manual") {
+    return "O simulador foi aberto em uma nova janela.";
+  }
+
+  if (isChromiumSimulatorBrowser(browser)) {
+    return `${getSimulatorBrowserLabel(browser)} não manteve o simulador incorporado de forma estável. Use o botão abaixo para abrir o simulador em uma janela própria.`;
+  }
+
+  if (reason === "timeout") {
+    return `${getSimulatorBrowserLabel(browser)} não confirmou o carregamento estável do simulador incorporado. O sistema foi aberto automaticamente em uma nova janela.`;
+  }
+
+  return `Não foi possível manter o simulador incorporado no ${getSimulatorBrowserLabel(browser)}. O sistema foi aberto automaticamente em uma nova janela.`;
+};
+
+const getSimulatorExternalExplanation = (browser: SimulatorBrowser) =>
+  isChromiumSimulatorBrowser(browser)
+    ? `O ${getSimulatorBrowserLabel(browser)} pode tratar cookies e armazenamento de sites externos dentro de iframes de forma mais restritiva. Quando o simulador roda em janela própria, ele volta a funcionar como site principal e preserva melhor login e sessão.`
+    : "Esse fallback é acionado quando o navegador ou o próprio simulador restringe algum recurso necessário para manter o site externo incorporado.";
 
 const WhatsAppIcon: React.FC<{ className?: string }> = ({ className }) => (
   <svg viewBox="0 0 448 512" fill="currentColor" aria-hidden="true" className={className}>
@@ -66,6 +142,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const [simulatorFrameKey, setSimulatorFrameKey] = useState(0);
   const [simulatorStatusMessage, setSimulatorStatusMessage] = useState("");
   const [simulatorAutoOpenedExternally, setSimulatorAutoOpenedExternally] = useState(false);
+  const [simulatorBrowser, setSimulatorBrowser] = useState<SimulatorBrowser>("other");
 
   const simulatorTimeoutRef = useRef<number | null>(null);
   const simulatorWindowRef = useRef<Window | null>(null);
@@ -139,14 +216,22 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     }
   };
 
-  const openSimulatorExternally = () => {
+  const openSimulatorExternally = (
+    reason: SimulatorExternalReason = "manual",
+    browser: SimulatorBrowser = detectSimulatorBrowser()
+  ) => {
     const popup = simulatorWindowRef.current;
 
+    clearSimulatorTimeout();
+    setSimulatorBrowser(browser);
     setSimulatorMode("external");
-    setSimulatorAutoOpenedExternally(true);
-    setSimulatorStatusMessage(
-      "O navegador não estabilizou o simulador incorporado a tempo. O sistema foi aberto automaticamente em uma nova janela."
-    );
+    const shouldOpenWindowNow = reason === "manual" || !isChromiumSimulatorBrowser(browser);
+    setSimulatorAutoOpenedExternally(shouldOpenWindowNow);
+    setSimulatorStatusMessage(getSimulatorExternalMessage(reason, browser));
+
+    if (!shouldOpenWindowNow) {
+      return;
+    }
 
     try {
       if (popup && !popup.closed) {
@@ -181,25 +266,44 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     }
   };
 
-  const startSimulatorAttempt = () => {
+  const startSimulatorAttempt = (browser: SimulatorBrowser) => {
     simulatorIframeLoadedRef.current = false;
+    setSimulatorBrowser(browser);
     setSimulatorAutoOpenedExternally(false);
-    setSimulatorStatusMessage("Tentando carregar o simulador dentro da aplicação...");
+    setSimulatorStatusMessage(getSimulatorLoadingMessage(browser));
     setSimulatorMode("loading");
     setActiveMenu("Simulador");
     setSimulatorFrameKey((prev) => prev + 1);
 
     clearSimulatorTimeout();
+
+    if (isChromiumSimulatorBrowser(browser)) {
+      simulatorTimeoutRef.current = window.setTimeout(() => {
+        if (!simulatorIframeLoadedRef.current) {
+          openSimulatorExternally("timeout", browser);
+        }
+      }, CHROME_SIMULATOR_LOAD_TIMEOUT_MS);
+    }
   };
 
   const enterSimulator = () => {
-    reserveSimulatorFallbackWindow();
-    startSimulatorAttempt();
+    const browser = detectSimulatorBrowser();
+
+    if (!isChromiumSimulatorBrowser(browser)) {
+      reserveSimulatorFallbackWindow();
+    }
+
+    startSimulatorAttempt(browser);
   };
 
   const retrySimulatorInsideApp = () => {
-    reserveSimulatorFallbackWindow();
-    startSimulatorAttempt();
+    const browser = detectSimulatorBrowser();
+
+    if (!isChromiumSimulatorBrowser(browser)) {
+      reserveSimulatorFallbackWindow();
+    }
+
+    startSimulatorAttempt(browser);
   };
 
   const handleSimulatorIframeLoad = () => {
@@ -216,8 +320,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   };
 
   const handleSimulatorIframeError = () => {
-    clearSimulatorTimeout();
-    openSimulatorExternally();
+    openSimulatorExternally("iframe-error", simulatorBrowser);
   };
 
   const cleanupSimulatorUi = () => {
@@ -226,6 +329,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     setSimulatorMode("idle");
     setSimulatorStatusMessage("");
     setSimulatorAutoOpenedExternally(false);
+    setSimulatorBrowser("other");
   };
 
   const clearLocalUiState = () => {
@@ -531,7 +635,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
                     <button
                       type="button"
-                      onClick={openSimulatorExternally}
+                      onClick={() => openSimulatorExternally("manual", simulatorBrowser)}
                       className="flex items-center gap-1 font-medium text-[#b58c2a] hover:underline"
                     >
                       Abrir em nova janela <ExternalLink size={12} />
@@ -564,7 +668,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                         position: "relative",
                         zIndex: 10,
                       }}
-                      allow="geolocation; microphone; camera; midi; vr; accelerometer; gyroscope; payment; ambient-light-sensor; encrypted-media; usb"
+                      allow={getSimulatorIframeAllow(simulatorBrowser)}
                       allowFullScreen
                       onLoad={handleSimulatorIframeLoad}
                       onError={handleSimulatorIframeError}
@@ -586,7 +690,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                         
                         <p className="mx-auto mb-8 max-w-lg text-base leading-relaxed text-gray-600">
                           {simulatorStatusMessage ||
-                            "O Simulador Online implementou novas políticas de segurança que impedem sua visualização dentro de iframes."}
+                            "Não foi possível manter o simulador incorporado neste navegador."}
                         </p>
 
                         <div className="mb-10 rounded-2xl border border-amber-100 bg-amber-50/50 p-6 text-left">
@@ -595,9 +699,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                             <div className="space-y-2 text-sm text-amber-900">
                               <p className="font-semibold">Por que isso aconteceu?</p>
                               <p className="opacity-80">
-                                Navegadores modernos como Firefox e Chrome bloqueiam sites que possuem a política 
-                                <code className="mx-1 rounded bg-amber-100 px-1 font-mono text-xs">X-Frame-Options: DENY</code>. 
-                                Isso garante que seus dados de login no simulador fiquem protegidos contra ataques de sequestro de clique.
+                                {getSimulatorExternalExplanation(simulatorBrowser)}
                               </p>
                             </div>
                           </div>
@@ -606,7 +708,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                         <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
                           <button
                             type="button"
-                            onClick={openSimulatorExternally}
+                            onClick={() => openSimulatorExternally("manual", simulatorBrowser)}
                             className="group flex items-center gap-3 rounded-xl bg-[#0c1826] px-8 py-4 font-bold text-white shadow-lg transition-all hover:scale-105 hover:bg-[#152a42] active:scale-95"
                           >
                             <span>Abrir Simulador Agora</span>
