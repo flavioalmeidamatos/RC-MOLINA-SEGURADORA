@@ -5,9 +5,9 @@ import { validarEmailRFC5322 } from '../../lib/validacoes';
 
 export const FooterAdmin: React.FC = () => {
     const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const [adminEmail, setAdminEmail] = useState('');
     const [adminPassword, setAdminPassword] = useState('');
     const [passwordError, setPasswordError] = useState('');
-    const [adminHash, setAdminHash] = useState('');
 
     const [showAdminPanel, setShowAdminPanel] = useState(false);
     const [users, setUsers] = useState<any[]>([]);
@@ -25,11 +25,10 @@ export const FooterAdmin: React.FC = () => {
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
-    const fetchUsers = async (adminHashOverride = adminHash) => {
+    const fetchUsers = async () => {
         setLoading(true);
-        const { data, error } = await supabase.rpc('admin_list_users', {
-            p_admin_hash: adminHashOverride
-        });
+        // Não precisamos mais passar o Hash. O próprio token do usuário logado é enviado pelos Headers nativamente.
+        const { data, error } = await supabase.rpc('admin_list_users');
         if (error) {
             console.error('Error fetching users', error);
             setMessage({ text: 'Erro ao carregar usuários', type: 'error' });
@@ -39,27 +38,33 @@ export const FooterAdmin: React.FC = () => {
         setLoading(false);
     };
 
-    const hashPassword = async (password: string) => {
-        const msgBuffer = new TextEncoder().encode(password);
-        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    };
-
     const handlePasswordSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const hash = await hashPassword(adminPassword);
-        // Hash de P@ssw0rd21071998
-        const correctHash = '92bdea102b044dfc646c30841c2dd350c777b0d9431753def74336af64964fd5';
+        setPasswordError('');
+        
+        const { error } = await supabase.auth.signInWithPassword({
+            email: adminEmail,
+            password: adminPassword,
+        });
 
-        if (hash === correctHash) {
-            setAdminHash(hash);
+        if (error) {
+            setPasswordError('Credenciais inválidas. Acesso negado.');
+        } else {
             setShowPasswordModal(false);
             setAdminPassword('');
             setShowAdminPanel(true);
-            fetchUsers(hash);
+            fetchUsers();
+        }
+    };
+
+    const handleAdminClick = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+            // Se já tiver uma sessão válida de administrador (vamos verificar via chamada RPC ou simplesmente pular a senha)
+            setShowAdminPanel(true);
+            fetchUsers();
         } else {
-            setPasswordError('Senha incorreta.');
+            setShowPasswordModal(true);
         }
     };
 
@@ -137,8 +142,7 @@ export const FooterAdmin: React.FC = () => {
                 p_nome: formData.nome.toUpperCase(),
                 p_email: formData.email.trim().toLowerCase(),
                 p_org: formData.organizacao.toUpperCase(),
-                p_avatar_url: finalAvatarUrl,
-                p_admin_hash: adminHash
+                p_avatar_url: finalAvatarUrl
             });
 
             if (error) throw error;
@@ -160,8 +164,7 @@ export const FooterAdmin: React.FC = () => {
 
         try {
             const { error } = await supabase.rpc('admin_delete_user', {
-                p_id: selectedUserId,
-                p_admin_hash: adminHash
+                p_id: selectedUserId
             });
 
             if (error) throw error;
@@ -180,7 +183,7 @@ export const FooterAdmin: React.FC = () => {
     return (
         <>
             <div className="mt-8 text-center text-sm text-gray-500 font-black">
-                CKDEV Soluções em TI <span className="cursor-pointer" onClick={() => setShowPasswordModal(true)}>–</span> (21) 98868-1799
+                CKDEV Soluções em TI <span className="cursor-pointer" onClick={handleAdminClick}>–</span> (21) 98868-1799
             </div>
 
             {/* PASSWORD MODAL */}
@@ -209,15 +212,25 @@ export const FooterAdmin: React.FC = () => {
 
                         <form onSubmit={handlePasswordSubmit} className="w-full space-y-4" autoComplete="off">
                             <input
+                                id="admin_email"
+                                name="admin_email"
+                                type="email"
+                                value={adminEmail}
+                                onChange={(e) => setAdminEmail(e.target.value)}
+                                placeholder="E-mail Administrativo"
+                                autoComplete="username"
+                                className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 focus:outline-none focus:border-[#ccff00] transition"
+                                autoFocus
+                            />
+                            <input
                                 id="admin_secret_key"
                                 name="admin_secret_key"
                                 type="password"
                                 value={adminPassword}
                                 onChange={(e) => setAdminPassword(e.target.value)}
                                 placeholder="Senha"
-                                autoComplete="new-password"
+                                autoComplete="current-password"
                                 className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 focus:outline-none focus:border-[#ccff00] transition"
-                                autoFocus
                             />
                             <button
                                 type="submit"
@@ -235,6 +248,18 @@ export const FooterAdmin: React.FC = () => {
                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
                     <div className="bg-[#1a1a1a] shadow-2xl border border-gray-800 rounded-2xl p-6 md:p-8 max-w-lg w-full relative my-8">
                         <button
+                            onClick={async () => {
+                                await supabase.auth.signOut();
+                                setShowAdminPanel(false);
+                            }}
+                            className="absolute top-4 left-4 text-red-500 hover:text-red-400 bg-black/50 rounded-lg px-3 py-1 text-xs font-bold uppercase tracking-wider"
+                            title="Sair"
+                            aria-label="Sair"
+                        >
+                            Logout
+                        </button>
+
+                        <button
                             onClick={() => setShowAdminPanel(false)}
                             className="absolute top-4 right-4 text-gray-500 hover:text-white bg-black/50 rounded-full p-2"
                             title="Fechar painel"
@@ -243,7 +268,7 @@ export const FooterAdmin: React.FC = () => {
                             <X size={20} />
                         </button>
 
-                        <div className="flex flex-col items-center mb-6">
+                        <div className="flex flex-col items-center mb-6 mt-4">
                             <h1 className="text-2xl font-bold mb-2">Gerenciar Usuários</h1>
                             <p className="text-gray-400 text-sm">Selecione, edite ou exclua os dados dos usuários.</p>
                         </div>
