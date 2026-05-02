@@ -36,9 +36,6 @@ const SIMULATOR_LOGIN_URL = "https://app.simuladoronline.com/login/4602";
 const SIMULATOR_LOGOUT_URL = "https://app.simuladoronline.com/logout";
 const SIMULATOR_FALLBACK_WINDOW_NAME = "simulador_online_fallback_window";
 const SIMULATOR_EMBED_TIMEOUT_MS = 7000;
-const FIREFOX_EMBED_BLOCK_MESSAGE =
-  "O Firefox bloqueia o simulador incorporado neste parceiro. O sistema foi aberto automaticamente em uma nova janela.";
-
 const wait = (ms: number) =>
   new Promise<void>((resolve) => {
     window.setTimeout(resolve, ms);
@@ -88,13 +85,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       simulatorTimeoutRef.current = null;
     }
   };
-
-  const isFirefoxBrowser = useCallback(() => {
-    if (typeof window === "undefined") return false;
-
-    const userAgent = window.navigator.userAgent.toLowerCase();
-    return userAgent.includes("firefox") && !userAgent.includes("seamonkey");
-  }, []);
 
   const writeFallbackWindowLoadingContent = (popup: Window) => {
     try {
@@ -150,7 +140,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     }
   };
 
-  const openSimulatorExternally = (statusMessage?: string) => {
+  const openSimulatorExternally = () => {
     const popup = simulatorWindowRef.current;
 
     setSimulatorMode("external");
@@ -199,13 +189,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     setSimulatorMode("loading");
     setActiveMenu("Simulador");
     setSimulatorFrameKey((prev) => prev + 1);
-
-    if (isFirefoxBrowser()) {
-      clearSimulatorTimeout();
-      setSimulatorStatusMessage(FIREFOX_EMBED_BLOCK_MESSAGE);
-      openSimulatorExternally(FIREFOX_EMBED_BLOCK_MESSAGE);
-      return;
-    }
 
     clearSimulatorTimeout();
 

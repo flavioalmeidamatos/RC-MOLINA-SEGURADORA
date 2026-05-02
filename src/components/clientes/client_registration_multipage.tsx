@@ -292,6 +292,17 @@ const criarDocumentoAnexado = (arquivo: File): UploadedDocument => ({
   previewKind: obterTipoPreview(arquivo),
 });
 
+const criarDocumentoImportadoPorUrl = (url: string, fileName: string, mimeType = 'image/png'): UploadedDocument => ({
+  id: Date.now() + Math.floor(Math.random() * 100000),
+  file: new File([], fileName, { type: mimeType }),
+  name: fileName,
+  size: 0,
+  mimeType,
+  extension: obterExtensaoArquivo(fileName),
+  previewUrl: url,
+  previewKind: 'image',
+});
+
 const revogarPreviews = (documentos: UploadedDocument[]) => {
   documentos.forEach((documento) => URL.revokeObjectURL(documento.previewUrl));
 };
@@ -757,49 +768,19 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
       setFeedback('Dados importados aplicados ao novo cliente.');
 
       if (leadData.anuncio_url) {
-        setFeedback((prev) => `${prev} Baixando anuncio para documentacao...`);
+        try {
+          const anuncioUrl = new URL(leadData.anuncio_url as string, window.location.origin);
+          const rawFileName = anuncioUrl.pathname.split('/').filter(Boolean).pop() || `anuncio-${importedCode || 'lead'}.png`;
+          const fileName = rawFileName.includes('.') ? rawFileName : `${rawFileName}.png`;
+          const novoDocumento = criarDocumentoImportadoPorUrl(anuncioUrl.toString(), fileName);
 
-        void (async () => {
-          try {
-            const anuncioUrl = new URL(leadData.anuncio_url as string, window.location.origin);
-            const response = await fetch(
-              `/api/import-lead-asset?url=${encodeURIComponent(anuncioUrl.toString())}`,
-            );
-            if (!response.ok) throw new Error('Falha ao baixar anuncio');
-
-            const blob = await response.blob();
-            let fileName =
-              response.headers.get('x-imported-file-name') ||
-              `anuncio-${importedCode || 'lead'}`;
-
-            try {
-              const urlParts = anuncioUrl.pathname.split('/');
-              const lastPart = urlParts[urlParts.length - 1];
-              if (lastPart && lastPart.includes('.')) {
-                fileName = lastPart;
-              }
-            } catch (_error) {
-              // Ignore URL parsing errors
-            }
-
-            if (!fileName.includes('.')) {
-              if (blob.type.includes('png')) fileName += '.png';
-              else if (blob.type.includes('webp')) fileName += '.webp';
-              else if (blob.type.includes('gif')) fileName += '.gif';
-              else fileName += '.jpg';
-            }
-
-            const file = new File([blob], fileName, { type: blob.type });
-            const novoDocumento = criarDocumentoAnexado(file);
-
-            setUploadedDocuments((prev) => [...prev, novoDocumento]);
-            setActiveTab('documentacao');
-            setFeedback('Dados importados e anuncio anexado com sucesso.');
-          } catch (error) {
-            console.error('Erro ao processar imagem do anuncio:', error);
-            setFeedback('Dados importados, mas falha ao anexar o anuncio.');
-          }
-        })();
+          setUploadedDocuments((prev) => [...prev, novoDocumento]);
+          setActiveTab('documentacao');
+          setFeedback('Dados importados e anuncio anexado com sucesso.');
+        } catch (error) {
+          console.error('Erro ao preparar miniatura do anuncio:', error);
+          setFeedback('Dados importados, mas falha ao anexar o anuncio.');
+        }
       }
     },
     [resetForm],
