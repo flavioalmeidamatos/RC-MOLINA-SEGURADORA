@@ -27,8 +27,8 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
   const [cooldown, setCooldown] = useState(0);
   const heading = 'Bem vindo de volta';
   const subtitle = loginMethod === 'password'
-    ? 'Inicie sessao na sua conta para continuar.'
-    : 'Acesso rapido e seguro sem senhas.';
+    ? 'Inicie sessão na sua conta para continuar.'
+    : 'Acesso rápido e seguro sem senhas.';
   const wrapperClassName = embedded
     ? 'flex min-h-full flex-col items-center justify-center p-4 text-white sm:p-6 lg:p-8'
     : 'flex min-h-screen flex-col items-center justify-center bg-[#121212] p-4 text-white';
@@ -105,7 +105,7 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
     const normalizedEmail = email.trim().toLowerCase();
 
     if (!validarEmailRFC5322(normalizedEmail)) {
-      setError('Por favor, insira um e-mail em formato valido.');
+      setError('Por favor, insira um e-mail em formato válido.');
       return;
     }
 
@@ -121,7 +121,7 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
 
       if (authError || !perfil) {
         const profile = await verifyProfileExists(normalizedEmail);
-        setError(profile ? 'Senha incorreta.' : 'E-mail nao cadastrado ou senha incorreta.');
+        setError(profile ? 'Senha incorreta.' : 'E-mail não cadastrado ou senha incorreta.');
         setLoading(false);
         setTimeout(() => {
           passwordInputRef.current?.focus();
@@ -135,7 +135,7 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
       setTimeout(() => navigate('/dashboard'), 600);
     } catch (loginError) {
       console.error('Erro de login:', loginError);
-      setError('Nao foi possivel concluir o login agora.');
+      setError('Não foi possível concluir o login agora.');
       setLoading(false);
     }
   };
@@ -151,7 +151,7 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
 
     const normalizedEmail = email.trim().toLowerCase();
     if (!validarEmailRFC5322(normalizedEmail)) {
-      setError('Por favor, insira um e-mail em formato valido.');
+      setError('Por favor, insira um e-mail em formato válido.');
       return;
     }
 
@@ -167,17 +167,17 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
       const payload = await response.json().catch(() => ({}));
 
       if (response.status === 429) {
-        setError(payload.error || 'Aguarde 60 segundos entre solicitacoes de codigo.');
+        setError(payload.error || 'Aguarde 60 segundos entre solicitações de código.');
       } else if (!response.ok && response.status !== 200) {
-        setError(payload.error || 'Nao foi possivel enviar o codigo seguro.');
+        setError(payload.error || 'Não foi possível enviar o código seguro.');
       } else {
-        setSuccess('Se este e-mail estiver cadastrado, voce recebera o codigo seguro.');
+        setSuccess('Se este e-mail estiver cadastrado, você receberá o código seguro.');
         setOtpStage('verify');
         handleSetCooldown();
       }
     } catch (sendError) {
-      console.error('Erro ao enviar codigo seguro:', sendError);
-      setError('Nao foi possivel enviar o codigo seguro agora.');
+      console.error('Erro ao enviar código seguro:', sendError);
+      setError('Não foi possível enviar o código seguro agora.');
     } finally {
       setLoading(false);
     }
@@ -189,7 +189,7 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
     setSuccess('');
 
     if (otpCode.length !== 6) {
-      setError('O codigo deve conter 6 digitos.');
+      setError('O código deve conter 6 dígitos.');
       return;
     }
 
@@ -206,16 +206,16 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
       if (verifyError) {
         const msg = verifyError.message?.toLowerCase() || '';
         if (msg.includes('rate_limit')) {
-          setError('Aguarde 60 segundos entre solicitacoes.');
+          setError('Aguarde 60 segundos entre solicitações.');
         } else {
-          setError('Nao foi possivel verificar o codigo agora.');
+          setError('Não foi possível verificar o código agora.');
         }
         setLoading(false);
         return;
       }
 
       if (!perfil) {
-        setError('Codigo invalido, expirado ou bloqueado. Verifique ou solicite um novo codigo.');
+        setError('Código inválido, expirado ou bloqueado. Verifique ou solicite um novo código.');
         setLoading(false);
         return;
       }
@@ -224,8 +224,8 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
       setShowPopup(true);
       setTimeout(() => navigate('/dashboard'), 600);
     } catch (verifyError) {
-      console.error('Erro ao verificar codigo seguro:', verifyError);
-      setError('Nao foi possivel verificar o codigo agora.');
+      console.error('Erro ao verificar código seguro:', verifyError);
+      setError('Não foi possível verificar o código agora.');
       setLoading(false);
     }
   };
@@ -265,13 +265,13 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
                 onKeyDown={handleKeyDown}
                 onBlur={(e) => {
                   if (!email || !validarEmailRFC5322(email.trim().toLowerCase())) {
-                    setError('Obrigatorio preencher um e-mail valido.');
+                    setError('Obrigatório preencher um e-mail válido.');
                     e.target.focus();
                   } else {
                     setError('');
                   }
                 }}
-                placeholder="voce@exemplo.com"
+                placeholder="você@exemplo.com"
                 autoComplete="off"
                 className="w-full rounded-xl border border-gray-700 bg-[#121212] p-4 transition focus:border-[#ccff00] focus:outline-none"
                 required
@@ -300,7 +300,7 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
                   onKeyDown={handleKeyDown}
                   onBlur={(e) => {
                     if (!password || password.length < 8) {
-                      setError('Obrigatorio informar senha com no minimo 8 caracteres.');
+                      setError('Obrigatório informar senha com no mínimo 8 caracteres.');
                       e.target.focus();
                     } else {
                       setError('');
@@ -340,7 +340,7 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="voce@exemplo.com"
+                placeholder="você@exemplo.com"
                 autoComplete="off"
                 disabled={cooldown > 0}
                 className="w-full rounded-xl border border-gray-700 bg-[#121212] p-4 transition focus:border-[#ccff00] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
@@ -357,7 +357,7 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
                 ? 'Aguarde...'
                 : cooldown > 0
                   ? `Aguarde ${cooldown}s para reenviar`
-                  : 'Enviar Codigo de Acesso ->'
+                  : 'Enviar Código de Acesso ->'
               }
             </button>
           </form>
@@ -366,11 +366,11 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
         {loginMethod === 'otp' && otpStage === 'verify' && (
           <form onSubmit={handleVerifyOtp} className="space-y-6" autoComplete="off">
             <div className="mb-4 rounded-xl border border-green-500 bg-green-900/10 p-4 text-sm text-green-200">
-              Enviamos um codigo de acesso para <strong>{email}</strong>
+              Enviamos um código de acesso para <strong>{email}</strong>
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-bold">Codigo de Acesso</label>
+              <label className="mb-2 block text-sm font-bold">Código de Acesso</label>
               <input
                 type="text"
                 inputMode="numeric"
@@ -423,7 +423,7 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
             {loginMethod === 'password' ? (
               <>
                 <Mail size={18} className="text-[#ccff00]" />
-                <span className="font-semibold text-gray-300">Entrar com Codigo Seguro (E-mail)</span>
+                <span className="font-semibold text-gray-300">Entrar com Código Seguro (E-mail)</span>
               </>
             ) : (
               <>
@@ -437,7 +437,7 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
         {!embedded ? (
           <>
             <p className="mt-8 text-center text-sm text-gray-400">
-              Ainda nao tem conta?{' '}
+              Ainda não tem conta?{' '}
               <button onClick={() => navigate('/cadastro')} className="font-bold text-[#ccff00] hover:underline">
                 Cadastre-se
               </button>

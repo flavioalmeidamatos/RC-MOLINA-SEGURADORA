@@ -84,7 +84,7 @@ export const RecuperarSenha: React.FC = () => {
     if (cooldown > 0) return;
 
     if (!validarEmailRFC5322(email)) {
-      setMensagem({ texto: 'Por favor, insira um e-mail valido.', tipo: 'erro' });
+      setMensagem({ texto: 'Por favor, insira um e-mail válido.', tipo: 'erro' });
       return;
     }
 
@@ -102,10 +102,10 @@ export const RecuperarSenha: React.FC = () => {
       if (response.status === 429) {
         setMensagem({ texto: payload.error || 'Aguarde 60 segundos entre solicitacoes.', tipo: 'erro' });
       } else if (!response.ok && response.status !== 200) {
-        setMensagem({ texto: payload.error || 'Nao foi possivel enviar o codigo seguro.', tipo: 'erro' });
+        setMensagem({ texto: payload.error || 'Não foi possível enviar o código seguro.', tipo: 'erro' });
       } else {
         setMensagem({
-          texto: 'Se este e-mail estiver cadastrado, voce recebera o codigo de verificacao.',
+          texto: 'Se este e-mail estiver cadastrado, você receberá o código de verificação.',
           tipo: 'sucesso',
         });
         setStage('otp');
@@ -130,7 +130,7 @@ export const RecuperarSenha: React.FC = () => {
     setMensagem({ texto: '', tipo: '' });
 
     if (otpCode.length !== 6) {
-      setMensagem({ texto: 'O codigo deve conter 6 digitos.', tipo: 'erro' });
+      setMensagem({ texto: 'O código deve conter 6 dígitos.', tipo: 'erro' });
       return;
     }
 
@@ -156,7 +156,7 @@ export const RecuperarSenha: React.FC = () => {
     }
 
     if (password !== confirmPassword) {
-      setMensagem({ texto: 'As senhas nao coincidem.', tipo: 'erro' });
+      setMensagem({ texto: 'As senhas não coincidem.', tipo: 'erro' });
       return;
     }
 
@@ -179,16 +179,16 @@ export const RecuperarSenha: React.FC = () => {
 
       if (!result || result.status !== 'SUCCESS') {
         // Melhoria #3: Feedback diferenciado por tipo de erro
-        let textoErro = 'Codigo invalido ou expirado.';
+        let textoErro = 'Código inválido ou expirado.';
         if (result?.status === 'BLOCKED') {
-          textoErro = 'Codigo bloqueado por excesso de tentativas. Solicite um novo codigo.';
+          textoErro = 'Código bloqueado por excesso de tentativas. Solicite um novo código.';
         } else if (result?.status === 'EXPIRED') {
-          textoErro = 'Codigo expirado. Solicite um novo codigo.';
+          textoErro = 'Código expirado. Solicite um novo código.';
         } else if (result?.status === 'INVALID') {
           const restantes = result?.remaining ?? 0;
           textoErro = restantes > 0
             ? `Codigo incorreto. Voce tem mais ${restantes} tentativa${restantes > 1 ? 's' : ''}.`
-            : 'Codigo incorreto. Esta e a ultima tentativa.';
+            : 'Código incorreto. Esta é a última tentativa.';
         }
 
         setMensagem({ texto: textoErro, tipo: 'erro' });
@@ -217,8 +217,8 @@ export const RecuperarSenha: React.FC = () => {
 
   /* ── Subtítulos por etapa ───────────────────────────────────────── */
   const subtitles: Record<Stage, string> = {
-    email: 'Informe seu e-mail para receber o codigo de verificacao.',
-    otp: 'Digite o codigo de 6 digitos enviado para o seu e-mail.',
+    email: 'Informe seu e-mail para receber o código de verificação.',
+    otp: 'Digite o código de 6 dígitos enviado para o seu e-mail.',
     password: 'Crie uma nova senha segura para sua conta.',
   };
 
@@ -282,7 +282,7 @@ export const RecuperarSenha: React.FC = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 onKeyDown={handleKeyDown}
                 disabled={cooldown > 0}
-                placeholder="voce@exemplo.com"
+                placeholder="você@exemplo.com"
                 className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 focus:outline-none focus:border-[#ccff00] transition disabled:opacity-50 disabled:cursor-not-allowed"
                 required
               />
@@ -297,7 +297,7 @@ export const RecuperarSenha: React.FC = () => {
                 ? 'Aguarde...'
                 : cooldown > 0
                   ? `Aguarde ${cooldown}s para reenviar`
-                  : 'Enviar Codigo de Verificacao ->'}
+                  : 'Enviar Código de Verificação ->'}
             </button>
           </form>
         )}
@@ -310,7 +310,7 @@ export const RecuperarSenha: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-bold mb-2">Codigo de Verificacao</label>
+              <label className="block text-sm font-bold mb-2">Código de Verificação</label>
               <input
                 type="text"
                 inputMode="numeric"
@@ -328,7 +328,7 @@ export const RecuperarSenha: React.FC = () => {
               disabled={carregando || otpCode.length < 6}
               className="w-full bg-[#ccff00] text-black font-black text-lg rounded-xl p-4 hover:bg-[#b3e600] transition flex justify-center items-center gap-2 mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {carregando ? 'Verificando...' : 'Verificar Codigo ->'}
+              {carregando ? 'Verificando...' : 'Verificar Código ->'}
             </button>
 
             <div className="flex justify-between items-center mt-2">
@@ -353,7 +353,7 @@ export const RecuperarSenha: React.FC = () => {
                 }}
                 className="text-sm text-gray-500 hover:text-[#ccff00] disabled:opacity-30 disabled:cursor-not-allowed"
               >
-                {cooldown > 0 ? `Reenviar (${cooldown}s)` : 'Reenviar codigo'}
+                {cooldown > 0 ? `Reenviar (${cooldown}s)` : 'Reenviar código'}
               </button>
             </div>
           </form>

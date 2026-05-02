@@ -297,7 +297,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       await wait(1500);
       document.body.removeChild(logoutIframe);
     } catch (_error) {
-      console.warn("Nao foi possivel deslogar do simulador automaticamente.");
+      console.warn("Não foi possível deslogar do simulador automaticamente.");
     }
   };
 

@@ -94,7 +94,7 @@ export default async function handler(req: Request, res: Response) {
   }
 
   if (!supabaseUrl || !serviceRoleKey) {
-    respond(res, 500, { error: 'Servico de codigo seguro sem configuracao do Supabase.' });
+    respond(res, 500, { error: 'Servico de código seguro sem configuracao do Supabase.' });
     return;
   }
 

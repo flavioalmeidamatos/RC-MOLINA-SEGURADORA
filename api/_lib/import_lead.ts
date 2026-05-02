@@ -411,7 +411,7 @@ export async function importLeadFromSistemaQuer({
     const $ = cheerio.load(finalHtml);
 
     if (finalHtml.includes('login100-form') || $('title').text().includes('Login')) {
-      throw new ImportLeadHttpError(401, 'Sessao expirada. Tente importar novamente.');
+      throw new ImportLeadHttpError(401, 'Sessão expirada. Tente importar novamente.');
     }
 
     const findValue = (keywords: string[]) => {

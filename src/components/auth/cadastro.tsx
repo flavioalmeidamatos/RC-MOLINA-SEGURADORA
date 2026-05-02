@@ -128,7 +128,7 @@ export const Cadastro: React.FC = () => {
         return;
       }
     } catch (err) {
-      console.warn('Aviso: Nao foi possivel verificar usuario existente via tabela RCMOLINASEGUROS.USUARIOS.');
+      console.warn('Aviso: Não foi possível verificar usuário existente via tabela RCMOLINASEGUROS.USUARIOS.');
     }
 
     try {
@@ -168,7 +168,7 @@ export const Cadastro: React.FC = () => {
       setSuccess('Usuario cadastrado com sucesso! Redirecionando para login...');
       setTimeout(() => navigate('/login'), 2500);
     } catch (error: any) {
-      setError(error?.message || 'Nao foi possivel cadastrar o usuario.');
+      setError(error?.message || 'Não foi possível cadastrar o usuário.');
       setLoading(false);
     }
   };
@@ -178,7 +178,7 @@ export const Cadastro: React.FC = () => {
       <div className="w-full max-w-md bg-[#1a1a1a] p-8 rounded-2xl shadow-2xl border border-gray-800">
         <div className="flex flex-col items-center mb-8">
           <h1 className="text-3xl font-bold mb-2">Crie sua conta</h1>
-          <p className="text-gray-400 text-sm">Preencha os dados abaixo para comecar.</p>
+          <p className="text-gray-400 text-sm">Preencha os dados abaixo para começar.</p>
         </div>
 
         <div className="flex flex-col items-center mb-8">
