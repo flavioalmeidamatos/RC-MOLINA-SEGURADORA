@@ -30,7 +30,7 @@ export const MonthView: React.FC<MonthViewProps> = ({ currentDate, holidays, set
     { name: "Qua", isWeekend: false },
     { name: "Qui", isWeekend: false },
     { name: "Sex", isWeekend: false },
-    { name: "Sáb", isWeekend: true },
+    { name: "S├íb", isWeekend: true },
   ];
 
   return (

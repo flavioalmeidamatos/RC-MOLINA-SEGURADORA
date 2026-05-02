@@ -24,8 +24,8 @@ import {
   validarDataNascimentoBR,
   validarEmailRFC5322,
   validarRG,
-} from '../lib/validacoes';
-import { SistemaQuerImportModal, type SistemaQuerLeadData } from './SistemaQuerImportModal';
+} from '../../lib/validacoes';
+import { SistemaQuerImportModal, type SistemaQuerLeadData } from '../dashboard/SistemaQuerImportModal';
 
 type TabId = 'geral' | 'endereco' | 'extras' | 'documentacao';
 

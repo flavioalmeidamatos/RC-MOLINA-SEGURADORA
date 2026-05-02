@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Camera, User, Lock, Trash2, Save, X } from 'lucide-react';
-import { supabase } from '../lib/supabase';
-import { validarEmailRFC5322 } from '../lib/validacoes';
+import { supabase } from '../../lib/supabase';
+import { validarEmailRFC5322 } from '../../lib/validacoes';
 
 export const FooterAdmin: React.FC = () => {
     const [showPasswordModal, setShowPasswordModal] = useState(false);

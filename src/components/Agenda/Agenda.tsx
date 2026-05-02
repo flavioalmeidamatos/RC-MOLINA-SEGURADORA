@@ -3,9 +3,9 @@ import { startOfDay } from "date-fns";
 import { fetchHolidays, Holiday } from "../../lib/holidays";
 import { AgendaSidebar } from "./AgendaSidebar";
 import { AgendaHeader } from "./AgendaHeader";
-import { MonthView } from "./Views/MonthView";
-import { WeekView } from "./Views/WeekView";
-import { DayView } from "./Views/DayView";
+import { MonthView } from "./views/MonthView";
+import { WeekView } from "./views/WeekView";
+import { DayView } from "./views/DayView";
 
 export type CalendarView = "month" | "week" | "day";
 

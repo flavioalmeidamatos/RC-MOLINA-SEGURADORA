@@ -1,9 +1,9 @@
-﻿import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, Camera, User } from 'lucide-react';
-import { supabase } from '../lib/supabase';
-import { validarEmailRFC5322 } from '../lib/validacoes';
-import { FooterAdmin } from './FooterAdmin';
+import { supabase } from '../../lib/supabase';
+import { validarEmailRFC5322 } from '../../lib/validacoes';
+import { FooterAdmin } from '../shared/FooterAdmin';
 
 export const Cadastro: React.FC = () => {
   const navigate = useNavigate();
@@ -128,7 +128,7 @@ export const Cadastro: React.FC = () => {
         return;
       }
     } catch (err) {
-      console.warn('Aviso: Nao foi possivel verificar usuario existente via tabela USUARIOS.');
+      console.warn('Aviso: Nao foi possivel verificar usuario existente via tabela RCMOLINASEGUROS.USUARIOS.');
     }
 
     try {

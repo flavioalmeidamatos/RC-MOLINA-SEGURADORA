@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Navigate, Route, Routes } from 'react-router-dom';
-import { AtualizarSenha } from './components/AtualizarSenha';
-import { Cadastro } from './components/Cadastro';
-import { Login } from './components/Login';
-import { Preloader } from './components/Preloader';
-import { RecuperarSenha } from './components/RecuperarSenha';
-import { SCR_MENUPRINCIPAL } from './components/SCR_MENUPRINCIPAL';
+import { AtualizarSenha } from './components/auth/AtualizarSenha';
+import { Cadastro } from './components/auth/Cadastro';
+import { Login } from './components/auth/Login';
+import { Preloader } from './components/shared/Preloader';
+import { RecuperarSenha } from './components/auth/RecuperarSenha';
+import { SCR_MENUPRINCIPAL } from './components/dashboard/SCR_MENUPRINCIPAL';
 import { clearStoredSession, getStoredSession, storeSession, type LocalAuthSession, type UsuarioPerfil } from './lib/localAuth';
 import { isSupabaseConfigured, supabase, supabaseConfigError } from './lib/supabase';
 

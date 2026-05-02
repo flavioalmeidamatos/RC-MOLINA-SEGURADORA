@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import preloaderImage from './prereloader.png';
+import preloaderImage from '../../assets/prereloader.png';
 
 interface PreloaderProps {
   onComplete: () => void;

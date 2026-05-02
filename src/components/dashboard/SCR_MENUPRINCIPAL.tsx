@@ -20,9 +20,9 @@ import {
   X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { ClientRegistrationMultipage } from "./ClientRegistrationMultipage";
+import { ClientRegistrationMultipage } from "../clientes/ClientRegistrationMultipage";
 import type { SistemaQuerLeadData } from "./SistemaQuerImportModal";
-import { Agenda } from "./Agenda/Agenda";
+import { Agenda } from "../agenda/Agenda";
 
 interface DashboardProps {
   session?: any;

@@ -5,7 +5,7 @@ Leitura realizada em 2026-05-01 a partir dos componentes em `src/components`, ro
 ## Observacoes gerais
 
 - O frontend principal usa React/Vite.
-- Autenticacao, usuarios, auditoria e avatars usam Supabase.
+- Autenticacao, usuarios, auditoria e avatars usam Supabase. Tabelas com prefixo `RCMOLINASEGUROS.`.
 - O cabecalho mantem apenas um botao visual com icone do WhatsApp, sem integracao ativa.
 - O cadastro multipagina de cliente ainda nao persiste em banco no codigo atual: o botao Salvar valida campos e exibe feedback dizendo que o proximo passo e conectar ao Supabase.
 - Alguns inputs estao desabilitados ou ocultos, mas foram incluidos porque fazem parte do fluxo de entrada de dados.
@@ -27,9 +27,9 @@ Fonte: `src/components/Login.tsx`
 
 | Campo | Estado/chave | Tipo | Obrigatorio | Validacao/mascara | Destino/uso |
 |---|---|---|---|---|---|
-| E-mail | `email` | `email` | Sim | RFC 5322 via `validarEmailRFC5322`; normaliza com `trim().toLowerCase()` | RPC `usuarios_login`, consulta `USUARIOS.email` |
+| E-mail | `email` | `email` | Sim | RFC 5322 via `validarEmailRFC5322`; normaliza com `trim().toLowerCase()` | RPC `usuarios_login`, consulta `RCMOLINASEGUROS.USUARIOS.email` |
 | Senha | `password` | `password` ou `text` | Sim no login por senha | Minimo 8 caracteres no blur | RPC `usuarios_login` |
-| E-mail cadastrado | `email` | `email` | Sim no fluxo OTP | RFC 5322; verifica existencia em `USUARIOS`; cooldown de 60s | Endpoint `/api/send-login-code`, RPC `usuarios_gerar_codigo_login` |
+| E-mail cadastrado | `email` | `email` | Sim no fluxo OTP | RFC 5322; verifica existencia em `RCMOLINASEGUROS.USUARIOS`; cooldown de 60s | Endpoint `/api/send-login-code`, RPC `usuarios_gerar_codigo_login` |
 | Codigo de acesso | `otpCode` | `text` | Sim no fluxo OTP | Apenas digitos; `maxLength=6`; expira em 10 min; maximo 5 tentativas | RPC `usuarios_verificar_codigo_login` |
 
 ## Cadastro de usuario
@@ -38,12 +38,12 @@ Fonte: `src/components/Cadastro.tsx`
 
 | Campo | Estado/chave | Tipo | Obrigatorio | Validacao/mascara | Destino/uso |
 |---|---|---|---|---|---|
-| Foto/avatar | `avatarFile`, `avatarUrl` | `file` | Nao | `accept="image/*"` | Upload em Supabase Storage bucket `avatars`; URL salva em `USUARIOS.avatar_url` |
-| Nome completo | `formData.nome` | `text` | Sim | Letras e espacos; convertido para maiusculas; minimo 2 palavras | RPC `usuarios_cadastrar`, `USUARIOS.nome_completo` |
-| E-mail | `formData.email` | `email` | Sim | RFC 5322; normaliza com `trim().toLowerCase()`; verifica duplicidade em `USUARIOS.email` | RPC `usuarios_cadastrar`, `USUARIOS.email` |
-| Senha | `formData.senha` | `password` ou `text` | Sim | Minimo 8; exige maiuscula, minuscula, numero e caractere especial | RPC `usuarios_cadastrar`, hash em `USUARIOS.senha_hash` |
+| Foto/avatar | `avatarFile`, `avatarUrl` | `file` | Nao | `accept="image/*"` | Upload em Supabase Storage bucket `avatars`; URL salva em `RCMOLINASEGUROS.USUARIOS.avatar_url` |
+| Nome completo | `formData.nome` | `text` | Sim | Letras e espacos; convertido para maiusculas; minimo 2 palavras | RPC `usuarios_cadastrar`, `RCMOLINASEGUROS.USUARIOS.nome_completo` |
+| E-mail | `formData.email` | `email` | Sim | RFC 5322; normaliza com `trim().toLowerCase()`; verifica duplicidade em `RCMOLINASEGUROS.USUARIOS.email` | RPC `usuarios_cadastrar`, `RCMOLINASEGUROS.USUARIOS.email` |
+| Senha | `formData.senha` | `password` ou `text` | Sim | Minimo 8; exige maiuscula, minuscula, numero e caractere especial | RPC `usuarios_cadastrar`, hash em `RCMOLINASEGUROS.USUARIOS.senha_hash` |
 | Redigite sua senha | `formData.confirmarSenha` | `password` ou `text` | Sim | Deve ser igual a senha | Validacao local |
-| Nome da organizacao | `formData.organizacao` | `text` | Nao | Letras e espacos; convertido para maiusculas | RPC `usuarios_cadastrar`, `USUARIOS.organizacao` |
+| Nome da organizacao | `formData.organizacao` | `text` | Nao | Letras e espacos; convertido para maiusculas | RPC `usuarios_cadastrar`, `RCMOLINASEGUROS.USUARIOS.organizacao` |
 
 ## Recuperar senha
 
@@ -51,7 +51,7 @@ Fonte: `src/components/RecuperarSenha.tsx`
 
 | Campo | Estado/chave | Tipo | Obrigatorio | Validacao/mascara | Destino/uso |
 |---|---|---|---|---|---|
-| E-mail cadastrado | `email` | `email` | Sim | RFC 5322; cooldown de 60s | Consulta `USUARIOS.id`; redireciona para atualizar senha; registra `auditoria.detalhes.email` |
+| E-mail cadastrado | `email` | `email` | Sim | RFC 5322; cooldown de 60s | Consulta `RCMOLINASEGUROS.USUARIOS.id`; redireciona para atualizar senha; registra `RCMOLINASEGUROS.AUDITORIA.detalhes.email` |
 
 ## Atualizar senha
 
@@ -60,7 +60,7 @@ Fonte: `src/components/AtualizarSenha.tsx`
 | Campo | Estado/chave | Tipo | Obrigatorio | Validacao/mascara | Destino/uso |
 |---|---|---|---|---|---|
 | E-mail | `email` | `email` | Sim | RFC 5322 | RPC `usuarios_atualizar_senha` |
-| Nova senha | `password` | `password` ou `text` | Sim | Minimo 8; exige maiuscula, minuscula, numero e caractere especial | RPC `usuarios_atualizar_senha`, hash em `USUARIOS.senha_hash` |
+| Nova senha | `password` | `password` ou `text` | Sim | Minimo 8; exige maiuscula, minuscula, numero e caractere especial | RPC `usuarios_atualizar_senha`, hash em `RCMOLINASEGUROS.USUARIOS.senha_hash` |
 | Confirme a nova senha | `confirmPassword` | `password` ou `text` | Sim | Deve ser igual a nova senha | Validacao local |
 
 ## Rodape administrativo
@@ -70,7 +70,7 @@ Fonte: `src/components/FooterAdmin.tsx`
 | Campo | Estado/chave | Tipo | Obrigatorio | Validacao/mascara | Destino/uso |
 |---|---|---|---|---|---|
 | Senha administrativa | `adminPassword` | `password` | Sim | SHA-256 comparado com hash fixo | Libera painel administrativo |
-| Selecionar usuario | `selectedUserId` | `select` | Sim para editar/excluir | Opcoes vindas de `USUARIOS` | Define usuario alvo |
+| Selecionar usuario | `selectedUserId` | `select` | Sim para editar/excluir | Opcoes vindas de `RCMOLINASEGUROS.USUARIOS` | Define usuario alvo |
 | Foto do usuario | `avatarFile`, `avatarUrl` | `file` | Nao | `accept="image/*"` | Upload em Storage `avatars`; enviado para RPC |
 | Nome completo | `formData.nome` | `text` | Sim | Letras e espacos; convertido para maiusculas | RPC `admin_update_user.p_nome` |
 | E-mail | `formData.email` | `email` | Sim | RFC 5322; normalizado | RPC `admin_update_user.p_email` |
@@ -214,18 +214,19 @@ Fonte: `src/components/Agenda/AgendaSidebar.tsx` e atalho em `SCR_MENUPRINCIPAL.
 | `server.ts` `/api/import-lead` | POST | `login`, `senha`, `leadUrl` | Endpoint Express usado no dev server |
 | `api/import-lead.ts` | POST | `login`, `senha`, `leadUrl` | Function Vercel equivalente |
 | RPC `usuarios_cadastrar` | SDK/RPC | `p_email`, `p_senha`, `p_nome_completo`, `p_organizacao`, `p_avatar_url` | Criacao de conta sem Supabase Auth |
-| Supabase tabela `USUARIOS` insert | SDK | `id`, `email`, `nome_completo`, `organizacao`, `avatar_url` | Criacao de usuario |
+| Supabase tabela `RCMOLINASEGUROS.USUARIOS` insert | SDK | `id`, `email`, `nome_completo`, `organizacao`, `avatar_url` | Criacao de usuario |
 | RPC `usuarios_login` | SDK/RPC | `p_email`, `p_senha` | Login por senha sem Supabase Auth |
 | Endpoint `/api/send-login-code` | POST | `email` | Envio do codigo seguro por e-mail |
 | RPC `usuarios_gerar_codigo_login` | SDK/RPC server-side | `p_email` | Gera codigo seguro de 6 digitos |
 | RPC `usuarios_verificar_codigo_login` | SDK/RPC | `p_email`, `p_codigo` | Login por codigo seguro sem Supabase Auth |
-| RPC `usuarios_atualizar_senha` | SDK/RPC | `p_email`, `p_senha` | Atualizacao de senha sem Supabase Auth |
+| RPC `usuarios_atualizar_senha` | SDK/RPC | `p_email`, `p_senha` | Atualizacao de senha sem Supabase Auth (uso interno) |
+| RPC `usuarios_resetar_senha_com_codigo` | SDK/RPC | `p_email`, `p_codigo`, `p_nova_senha` | Reset atomico: verifica OTP + atualiza senha |
 | Supabase RPC `admin_update_user` | SDK/RPC | `p_id`, `p_nome`, `p_email`, `p_org`, `p_avatar_url`, `p_admin_hash` | Edicao administrativa |
 | Supabase RPC `admin_delete_user` | SDK/RPC | `p_id`, `p_admin_hash` | Exclusao administrativa de usuario |
 
 ## Campos tecnicos/importantes por armazenamento
 
-### Supabase `USUARIOS`
+### Supabase `RCMOLINASEGUROS.USUARIOS`
 
 | Campo | Origem |
 |---|---|
@@ -236,7 +237,7 @@ Fonte: `src/components/Agenda/AgendaSidebar.tsx` e atalho em `SCR_MENUPRINCIPAL.
 | `avatar_url` | Upload de avatar |
 | `senha_hash` | Hash da senha gerado no banco por `pgcrypto` |
 
-### Supabase `auditoria`
+### Supabase `RCMOLINASEGUROS.AUDITORIA`
 
 | Campo | Origem |
 |---|---|

@@ -70,7 +70,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({ setCurrentDate, se
         <div className="flex gap-1">
           <input 
             type="text" 
-            placeholder="Serviço..." 
+            placeholder="Servi├ºo..." 
             className="flex-1 px-3 py-2 border border-black rounded text-sm outline-none focus:border-black"
           />
           <button className="p-2 bg-[#00B5AD] text-white rounded shadow-sm hover:bg-[#009d96]">
@@ -96,7 +96,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({ setCurrentDate, se
 
         <div>
           <select className="w-full px-3 py-2 border border-black rounded text-sm outline-none appearance-none bg-white focus:border-black">
-            <option>Duração...</option>
+            <option>Dura├º├úo...</option>
           </select>
         </div>
 
@@ -108,7 +108,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({ setCurrentDate, se
 
         <div>
           <textarea 
-            placeholder="Observação..." 
+            placeholder="Observa├º├úo..." 
             className="w-full px-3 py-2 border border-black rounded text-sm outline-none h-20 resize-none focus:border-black"
           />
         </div>
@@ -132,7 +132,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({ setCurrentDate, se
           <span className="text-xs font-bold text-gray-500 uppercase">Enviar SMS</span>
           <div className="flex bg-gray-200 rounded p-1">
             <button className="px-3 py-1 text-xs font-bold text-gray-500 uppercase">Sim</button>
-            <button className="px-3 py-1 text-xs font-bold bg-red-500 text-white rounded shadow-sm uppercase">Não</button>
+            <button className="px-3 py-1 text-xs font-bold bg-red-500 text-white rounded shadow-sm uppercase">N├úo</button>
           </div>
         </div>
 

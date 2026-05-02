@@ -1,10 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, KeyRound, Mail } from 'lucide-react';
-import type { UsuarioPerfil } from '../lib/localAuth';
-import { supabase } from '../lib/supabase';
-import { validarEmailRFC5322 } from '../lib/validacoes';
-import { FooterAdmin } from './FooterAdmin';
+import type { UsuarioPerfil } from '../../lib/localAuth';
+import { supabase } from '../../lib/supabase';
+import { validarEmailRFC5322 } from '../../lib/validacoes';
+import { FooterAdmin } from '../shared/FooterAdmin';
 
 interface LoginProps {
   embedded?: boolean;
@@ -93,7 +93,7 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
       p_email: emailToCheck,
     });
 
-    if (profileError) console.warn('Erro ao consultar USUARIOS:', profileError.message);
+    if (profileError) console.warn('Erro ao consultar RCMOLINASEGUROS.USUARIOS:', profileError.message);
     return profile;
   };
 
@@ -166,10 +166,12 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
 
       const payload = await response.json().catch(() => ({}));
 
-      if (!response.ok) {
+      if (response.status === 429) {
+        setError(payload.error || 'Aguarde 60 segundos entre solicitacoes de codigo.');
+      } else if (!response.ok && response.status !== 200) {
         setError(payload.error || 'Nao foi possivel enviar o codigo seguro.');
       } else {
-        setSuccess('Codigo seguro enviado para o seu e-mail.');
+        setSuccess('Se este e-mail estiver cadastrado, voce recebera o codigo seguro.');
         setOtpStage('verify');
         handleSetCooldown();
       }
@@ -201,8 +203,19 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
 
       const perfil = Array.isArray(data) ? data[0] : null;
 
-      if (verifyError || !perfil) {
-        setError('Codigo invalido ou expirado. Verifique novamente.');
+      if (verifyError) {
+        const msg = verifyError.message?.toLowerCase() || '';
+        if (msg.includes('rate_limit')) {
+          setError('Aguarde 60 segundos entre solicitacoes.');
+        } else {
+          setError('Nao foi possivel verificar o codigo agora.');
+        }
+        setLoading(false);
+        return;
+      }
+
+      if (!perfil) {
+        setError('Codigo invalido, expirado ou bloqueado. Verifique ou solicite um novo codigo.');
         setLoading(false);
         return;
       }
