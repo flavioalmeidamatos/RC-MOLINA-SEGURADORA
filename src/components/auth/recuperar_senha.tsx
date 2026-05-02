@@ -111,10 +111,11 @@ export const RecuperarSenha: React.FC = () => {
         setStage('otp');
         handleSetCooldown();
 
-        // Registrar auditoria (sem bloquear o fluxo)
-        supabase.from('RCMOLINASEGUROS.AUDITORIA').insert([
-          { acao: 'SOLICITAR_RESET_SENHA', detalhes: { email: email.trim().toLowerCase() } },
-        ]).then(() => {});
+        // Registrar auditoria sem depender de tabela exposta diretamente no cliente
+        supabase.rpc('registrar_auditoria', {
+          p_acao: 'SOLICITAR_RESET_SENHA',
+          p_detalhes: { email: email.trim().toLowerCase() },
+        }).then(() => {});
       }
     } catch (err) {
       console.error(err);

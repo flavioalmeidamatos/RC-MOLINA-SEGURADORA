@@ -1,0 +1,2 @@
+-- Historical migration placeholder.
+-- This version is already applied on the remote database.
