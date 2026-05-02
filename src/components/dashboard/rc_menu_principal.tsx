@@ -362,15 +362,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       setActiveMenu("Agenda");
       return;
     }
-
-    if (line1 === "Informações") {
-      setCredential((prev) => ({
-        ...prev,
-        leadUrl: "http://sistemaquer.com.br/alterar-indicacao.php?indicacao_id=274959",
-      }));
-      setShowImportModal(true);
-      return;
-    }
   };
 
   const menuItems = [
@@ -379,7 +370,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     { title: "Agenda", icon: Calendar },
     { title: "Simulador", icon: FolderOpen },
     { title: "Webmail", icon: Mail },
-    { title: "Informações", icon: Info },
     { title: "Financeiro", icon: Banknote },
     { title: "Configurações", icon: Wrench },
   ];
@@ -389,7 +379,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     { line1: "Meus", line2: "clientes", icon: Briefcase },
     { line1: "Agenda", line2: "", icon: Calendar },
     { line1: "Simulador", line2: "", icon: FolderOpen },
-    { line1: "Informações", line2: "", icon: Info },
     { line1: "Financeiro", line2: "", icon: Banknote },
     { line1: "Configurar", line2: "", icon: Wrench },
   ];
