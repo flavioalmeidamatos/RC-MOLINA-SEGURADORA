@@ -281,6 +281,17 @@ const formatarTamanhoArquivo = (bytes: number): string => {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
+const criarDocumentoAnexado = (arquivo: File): UploadedDocument => ({
+  id: Date.now() + Math.floor(Math.random() * 100000),
+  file: arquivo,
+  name: arquivo.name,
+  size: arquivo.size,
+  mimeType: arquivo.type,
+  extension: obterExtensaoArquivo(arquivo.name),
+  previewUrl: URL.createObjectURL(arquivo),
+  previewKind: obterTipoPreview(arquivo),
+});
+
 const revogarPreviews = (documentos: UploadedDocument[]) => {
   documentos.forEach((documento) => URL.revokeObjectURL(documento.previewUrl));
 };
@@ -298,6 +309,7 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
   const [showImportModal, setShowImportModal] = useState(false);
   const [isDraggingDocuments, setIsDraggingDocuments] = useState(false);
   const [isFetchingCep, setIsFetchingCep] = useState(false);
+  const [isImportedCodeLocked, setIsImportedCodeLocked] = useState(false);
   const [cepPopupMessage, setCepPopupMessage] = useState('');
   const [feedback, setFeedback] = useState('');
   const [fieldErrors, setFieldErrors] = useState<FieldErrorState>(initialFieldErrors);
@@ -634,16 +646,7 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
 
     if (!listaArquivos.length) return;
 
-    const novosDocumentos = listaArquivos.map<UploadedDocument>((arquivo) => ({
-      id: Date.now() + Math.floor(Math.random() * 100000),
-      file: arquivo,
-      name: arquivo.name,
-      size: arquivo.size,
-      mimeType: arquivo.type,
-      extension: obterExtensaoArquivo(arquivo.name),
-      previewUrl: URL.createObjectURL(arquivo),
-      previewKind: obterTipoPreview(arquivo),
-    }));
+    const novosDocumentos = listaArquivos.map<UploadedDocument>(criarDocumentoAnexado);
 
     setUploadedDocuments((prev) => [...prev, ...novosDocumentos]);
     setFeedback(`${novosDocumentos.length} arquivo(s) adicionado(s) à documentação.`);
@@ -687,6 +690,7 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
     setUploadedDocuments([]);
     setIsDraggingDocuments(false);
     setIsFetchingCep(false);
+    setIsImportedCodeLocked(false);
     setCepPopupMessage('');
     setFieldErrors(initialFieldErrors);
     setContactErrors({});
@@ -706,9 +710,11 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
       const importedPhoneType = importedPhone ? obterTipoTelefoneImportado(importedPhone) : 'Celular';
       const importedEmail = obterEmailImportadoValido(leadData.email);
       const importedDocumentDigits = somenteDigitos(leadData.cpf_cnpj || '');
+      const importedCode = somenteDigitos(leadData.indicacao_id || '').slice(0, 6);
 
       resetForm();
       setIsClientFormEnabled(true);
+      setIsImportedCodeLocked(Boolean(importedCode));
       setActiveTab('geral');
       setFormState((prev) => ({
         ...prev,
@@ -722,7 +728,7 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
         enderecoCidade: normalizarTextoMaiusculo(leadData.cidade || ''),
         enderecoEstado: normalizarTextoMaiusculo(leadData.estado || ''),
         observacoes: normalizarTextoMaiusculo(leadData.observacao || ''),
-        codigo: somenteDigitos(leadData.indicacao_id || '').slice(0, 6) || prev.codigo,
+        codigo: importedCode || prev.codigo,
         dataCadastro: formatarDataAtualBR(),
       }));
       setContacts((prev) => {
@@ -751,43 +757,47 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
       setFeedback('Dados importados aplicados ao novo cliente.');
 
       if (leadData.anuncio_url) {
-        setFeedback((prev) => prev + ' Baixando imagem do anúncio...');
-        
+        setFeedback((prev) => `${prev} Baixando anuncio para documentacao...`);
+
         void (async () => {
           try {
-            const response = await fetch(leadData.anuncio_url as string);
-            if (!response.ok) throw new Error('Falha ao baixar imagem');
-            
+            const anuncioUrl = new URL(leadData.anuncio_url as string, window.location.origin);
+            const response = await fetch(
+              `/api/import-lead-asset?url=${encodeURIComponent(anuncioUrl.toString())}`,
+            );
+            if (!response.ok) throw new Error('Falha ao baixar anuncio');
+
             const blob = await response.blob();
-            let fileName = 'anuncio.jpg';
-            
+            let fileName =
+              response.headers.get('x-imported-file-name') ||
+              `anuncio-${importedCode || 'lead'}`;
+
             try {
-              const urlParts = new URL(leadData.anuncio_url as string).pathname.split('/');
+              const urlParts = anuncioUrl.pathname.split('/');
               const lastPart = urlParts[urlParts.length - 1];
               if (lastPart && lastPart.includes('.')) {
                 fileName = lastPart;
               }
-            } catch (e) {
+            } catch (_error) {
               // Ignore URL parsing errors
             }
 
+            if (!fileName.includes('.')) {
+              if (blob.type.includes('png')) fileName += '.png';
+              else if (blob.type.includes('webp')) fileName += '.webp';
+              else if (blob.type.includes('gif')) fileName += '.gif';
+              else fileName += '.jpg';
+            }
+
             const file = new File([blob], fileName, { type: blob.type });
-            const novoDocumento: UploadedDocument = {
-              id: Date.now() + Math.floor(Math.random() * 100000),
-              file: file,
-              name: file.name,
-              size: file.size,
-              mimeType: file.type,
-              extension: obterExtensaoArquivo(file.name),
-              previewUrl: URL.createObjectURL(file),
-              previewKind: obterTipoPreview(file),
-            };
+            const novoDocumento = criarDocumentoAnexado(file);
 
             setUploadedDocuments((prev) => [...prev, novoDocumento]);
-            setFeedback('Dados importados e anúncio anexado com sucesso.');
+            setActiveTab('documentacao');
+            setFeedback('Dados importados e anuncio anexado com sucesso.');
           } catch (error) {
-            console.error('Erro ao processar imagem do anúncio:', error);
-            setFeedback('Dados importados, mas falha ao anexar o anúncio.');
+            console.error('Erro ao processar imagem do anuncio:', error);
+            setFeedback('Dados importados, mas falha ao anexar o anuncio.');
           }
         })();
       }
@@ -1140,6 +1150,7 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
                       className={`${compactFieldClassName} bg-slate-100`}
                       value={formState.codigo}
                       onChange={(event) => handleFieldChange('codigo', somenteDigitos(event.target.value).slice(0, 6))}
+                      disabled={isImportedCodeLocked}
                       inputMode="numeric"
                       maxLength={6}
                       placeholder="000000"
