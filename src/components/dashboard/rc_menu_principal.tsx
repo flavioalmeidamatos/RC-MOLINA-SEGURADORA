@@ -32,7 +32,7 @@ interface DashboardProps {
 
 type SimulatorMode = "idle" | "loading" | "embedded" | "external";
 type SimulatorBrowser = "chrome" | "edge" | "firefox" | "safari" | "other";
-type SimulatorExternalReason = "manual" | "iframe-error" | "timeout" | "edge-session";
+type SimulatorExternalReason = "manual" | "iframe-error" | "timeout";
 
 const SIMULATOR_LOGIN_URL = "https://app.simuladoronline.com/login/4602";
 const SIMULATOR_LOGOUT_URL = "https://app.simuladoronline.com/logout";
@@ -67,10 +67,8 @@ const detectSimulatorBrowser = (): SimulatorBrowser => {
   return "other";
 };
 
-const isChromiumSimulatorBrowser = (browser: SimulatorBrowser) =>
-  browser === "chrome" || browser === "edge";
-
-const isEdgeSimulatorBrowser = (browser: SimulatorBrowser) => browser === "edge";
+const isSimulatorSupportedBrowser = (browser: SimulatorBrowser) =>
+  browser === "chrome" || browser === "firefox";
 
 const getSimulatorBrowserLabel = (browser: SimulatorBrowser) => {
   const labels: Record<SimulatorBrowser, string> = {
@@ -85,12 +83,12 @@ const getSimulatorBrowserLabel = (browser: SimulatorBrowser) => {
 };
 
 const getSimulatorIframeAllow = (browser: SimulatorBrowser) =>
-  isChromiumSimulatorBrowser(browser)
+  browser === "chrome"
     ? `${BASE_SIMULATOR_IFRAME_ALLOW}; storage-access`
     : BASE_SIMULATOR_IFRAME_ALLOW;
 
 const getSimulatorLoadingMessage = (browser: SimulatorBrowser) =>
-  isChromiumSimulatorBrowser(browser)
+  browser === "chrome"
     ? `Tentando carregar o simulador dentro da aplicação com o fluxo específico para ${getSimulatorBrowserLabel(browser)}...`
     : "Tentando carregar o simulador dentro da aplicação...";
 
@@ -102,11 +100,11 @@ const getSimulatorExternalMessage = (
     return "O simulador foi aberto em uma nova janela.";
   }
 
-  if (reason === "edge-session") {
-    return "No Edge, o Simulador precisa abrir em uma janela propria para manter login e sessao estaveis.";
+  if (!isSimulatorSupportedBrowser(browser)) {
+    return "O Simulador dentro do app esta disponivel somente no Chrome e no Firefox.";
   }
 
-  if (isChromiumSimulatorBrowser(browser)) {
+  if (browser === "chrome") {
     return `${getSimulatorBrowserLabel(browser)} não manteve o simulador incorporado de forma estável. Use o botão abaixo para abrir o simulador em uma janela própria.`;
   }
 
@@ -118,9 +116,9 @@ const getSimulatorExternalMessage = (
 };
 
 const getSimulatorExternalExplanation = (browser: SimulatorBrowser) =>
-  isEdgeSimulatorBrowser(browser)
-    ? "Nos testes, o Edge carregou o iframe, mas isolou a sessao do Simulador como conteudo de terceiro. Em janela propria, o mesmo login funciona normalmente."
-    : isChromiumSimulatorBrowser(browser)
+  !isSimulatorSupportedBrowser(browser)
+    ? "Para evitar falhas de login e sessao, o acesso incorporado ao Simulador foi limitado aos navegadores Chrome e Firefox."
+    : browser === "chrome"
     ? `O ${getSimulatorBrowserLabel(browser)} pode tratar cookies e armazenamento de sites externos dentro de iframes de forma mais restritiva. Quando o simulador roda em janela própria, ele volta a funcionar como site principal e preserva melhor login e sessão.`
     : "Esse fallback é acionado quando o navegador ou o próprio simulador restringe algum recurso necessário para manter o site externo incorporado.";
 
@@ -233,7 +231,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     clearSimulatorTimeout();
     setSimulatorBrowser(browser);
     setSimulatorMode("external");
-    const shouldOpenWindowNow = reason === "manual" || !isChromiumSimulatorBrowser(browser);
+    const shouldOpenWindowNow = reason === "manual" && isSimulatorSupportedBrowser(browser);
     setSimulatorAutoOpenedExternally(shouldOpenWindowNow);
     setSimulatorStatusMessage(getSimulatorExternalMessage(reason, browser));
 
@@ -278,14 +276,21 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     simulatorIframeLoadedRef.current = false;
     setSimulatorBrowser(browser);
     setSimulatorAutoOpenedExternally(false);
-    setSimulatorStatusMessage(getSimulatorLoadingMessage(browser));
-    setSimulatorMode("loading");
     setActiveMenu("Simulador");
     setSimulatorFrameKey((prev) => prev + 1);
 
     clearSimulatorTimeout();
 
-    if (isChromiumSimulatorBrowser(browser)) {
+    if (!isSimulatorSupportedBrowser(browser)) {
+      setSimulatorStatusMessage(getSimulatorExternalMessage("iframe-error", browser));
+      setSimulatorMode("external");
+      return;
+    }
+
+    setSimulatorStatusMessage(getSimulatorLoadingMessage(browser));
+    setSimulatorMode("loading");
+
+    if (browser === "chrome") {
       simulatorTimeoutRef.current = window.setTimeout(() => {
         if (!simulatorIframeLoadedRef.current) {
           openSimulatorExternally("timeout", browser);
@@ -294,49 +299,14 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     }
   };
 
-  const showSimulatorEdgeScreen = (openWindow = false) => {
-    clearSimulatorTimeout();
-    simulatorIframeLoadedRef.current = false;
-    setActiveMenu("Simulador");
-    setSimulatorFrameKey((prev) => prev + 1);
-
-    if (openWindow) {
-      openSimulatorExternally("manual", "edge");
-      return;
-    }
-
-    setSimulatorBrowser("edge");
-    setSimulatorMode("external");
-    setSimulatorAutoOpenedExternally(false);
-    setSimulatorStatusMessage(getSimulatorExternalMessage("edge-session", "edge"));
-  };
-
   const enterSimulator = () => {
     const browser = detectSimulatorBrowser();
-
-    if (isEdgeSimulatorBrowser(browser)) {
-      showSimulatorEdgeScreen(true);
-      return;
-    }
-
-    if (!isChromiumSimulatorBrowser(browser)) {
-      reserveSimulatorFallbackWindow();
-    }
 
     startSimulatorAttempt(browser);
   };
 
   const retrySimulatorInsideApp = () => {
     const browser = detectSimulatorBrowser();
-
-    if (isEdgeSimulatorBrowser(browser)) {
-      showSimulatorEdgeScreen();
-      return;
-    }
-
-    if (!isChromiumSimulatorBrowser(browser)) {
-      reserveSimulatorFallbackWindow();
-    }
 
     startSimulatorAttempt(browser);
   };
@@ -644,9 +614,9 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                       : simulatorMode === "loading"
                         ? "Tentando carregar o Simulador Online"
                         : simulatorMode === "external"
-                          ? isEdgeSimulatorBrowser(simulatorBrowser)
-                            ? "Simulador Online preparado para janela propria"
-                            : "Simulador Online aberto externamente"
+                          ? isSimulatorSupportedBrowser(simulatorBrowser)
+                            ? "Simulador Online aberto externamente"
+                            : "Simulador Online disponivel no Chrome e Firefox"
                           : "Simulador Online"}
                   </span>
 
@@ -667,18 +637,18 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                       onClick={retrySimulatorInsideApp}
                       className="font-medium text-[#b58c2a] hover:underline"
                     >
-                      {isEdgeSimulatorBrowser(simulatorBrowser)
-                        ? "Recarregar tela"
-                        : "Tentar novamente aqui"}
+                      Tentar novamente aqui
                     </button>
 
-                    <button
-                      type="button"
-                      onClick={() => openSimulatorExternally("manual", simulatorBrowser)}
-                      className="flex items-center gap-1 font-medium text-[#b58c2a] hover:underline"
-                    >
-                      Abrir em nova janela <ExternalLink size={12} />
-                    </button>
+                    {isSimulatorSupportedBrowser(simulatorBrowser) ? (
+                      <button
+                        type="button"
+                        onClick={() => openSimulatorExternally("manual", simulatorBrowser)}
+                        className="flex items-center gap-1 font-medium text-[#b58c2a] hover:underline"
+                      >
+                        Abrir em nova janela <ExternalLink size={12} />
+                      </button>
+                    ) : null}
                   </div>
                 </div>
 
@@ -716,25 +686,19 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                 ) : (
                   <div
                     className={
-                      isEdgeSimulatorBrowser(simulatorBrowser)
-                        ? "flex flex-1 bg-gradient-to-br from-white via-[#fbfcfd] to-[#edf3f8]"
-                        : "flex flex-1 items-center justify-center bg-gradient-to-br from-[#f8fafc] to-[#f1f5f9] p-6"
+                      "flex flex-1 items-center justify-center bg-gradient-to-br from-[#f8fafc] to-[#f1f5f9] p-6"
                     }
                   >
                     <div
                       className={
-                        isEdgeSimulatorBrowser(simulatorBrowser)
-                          ? "flex h-full w-full flex-col overflow-hidden bg-white"
-                          : "w-full max-w-2xl overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-2xl"
+                        "w-full max-w-2xl overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-2xl"
                       }
                     >
                       <div className="h-2 bg-gradient-to-r from-[#b58c2a] to-[#d4af37]" />
                       
                       <div
                         className={
-                          isEdgeSimulatorBrowser(simulatorBrowser)
-                            ? "flex min-h-0 flex-1 flex-col items-center justify-center p-6 text-center sm:p-10"
-                            : "p-10 text-center"
+                          "p-10 text-center"
                         }
                       >
                         <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-3xl bg-[#b58c2a]/10 text-[#b58c2a] ring-8 ring-[#b58c2a]/5">
@@ -742,9 +706,9 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                         </div>
 
                         <h3 className="mb-4 text-2xl font-black tracking-tight text-[#0c1826]">
-                          {isEdgeSimulatorBrowser(simulatorBrowser)
-                            ? "Simulador pronto para abrir no Edge"
-                            : "Simulador Ativo em Janela Externa"}
+                          {isSimulatorSupportedBrowser(simulatorBrowser)
+                            ? "Simulador Ativo em Janela Externa"
+                            : "Use Chrome ou Firefox para acessar o Simulador"}
                         </h3>
                         
                         <p className="mx-auto mb-8 max-w-lg text-base leading-relaxed text-gray-600">
@@ -752,19 +716,17 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                             "Não foi possível manter o simulador incorporado neste navegador."}
                         </p>
 
-                        {isEdgeSimulatorBrowser(simulatorBrowser) ? (
-                          <div className="mb-8 grid w-full max-w-3xl grid-cols-1 gap-3 sm:grid-cols-3">
+                        {!isSimulatorSupportedBrowser(simulatorBrowser) ? (
+                          <div className="mb-8 grid w-full max-w-2xl grid-cols-1 gap-3 sm:grid-cols-2">
                             <div className="rounded-2xl border border-gray-200 bg-white p-4 text-left shadow-sm">
-                              <p className="text-xs font-semibold uppercase text-gray-400">Navegador</p>
-                              <p className="mt-1 font-bold text-[#0c1826]">Microsoft Edge</p>
+                              <p className="text-xs font-semibold uppercase text-gray-400">Compatibilidade</p>
+                              <p className="mt-1 font-bold text-[#0c1826]">Chrome e Firefox</p>
                             </div>
                             <div className="rounded-2xl border border-gray-200 bg-white p-4 text-left shadow-sm">
-                              <p className="text-xs font-semibold uppercase text-gray-400">Abertura</p>
-                              <p className="mt-1 font-bold text-[#0c1826]">Janela propria</p>
-                            </div>
-                            <div className="rounded-2xl border border-gray-200 bg-white p-4 text-left shadow-sm">
-                              <p className="text-xs font-semibold uppercase text-gray-400">Tela</p>
-                              <p className="mt-1 font-bold text-[#0c1826]">Mesmo espaco do iframe</p>
+                              <p className="text-xs font-semibold uppercase text-gray-400">Navegador atual</p>
+                              <p className="mt-1 font-bold text-[#0c1826]">
+                                {getSimulatorBrowserLabel(simulatorBrowser)}
+                              </p>
                             </div>
                           </div>
                         ) : null}
@@ -782,20 +744,29 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                         </div>
 
                         <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-                          <button
-                            type="button"
-                            onClick={() => openSimulatorExternally("manual", simulatorBrowser)}
-                            className="group flex items-center gap-3 rounded-xl bg-[#0c1826] px-8 py-4 font-bold text-white shadow-lg transition-all hover:scale-105 hover:bg-[#152a42] active:scale-95"
-                          >
-                            <span>
-                              {isEdgeSimulatorBrowser(simulatorBrowser)
-                                ? "Abrir Simulador no Edge"
-                                : "Abrir Simulador Agora"}
-                            </span>
-                            <ExternalLink size={18} className="transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
-                          </button>
-                          
-                          {isEdgeSimulatorBrowser(simulatorBrowser) ? null : (
+                          {isSimulatorSupportedBrowser(simulatorBrowser) ? (
+                            <button
+                              type="button"
+                              onClick={() => openSimulatorExternally("manual", simulatorBrowser)}
+                              className="group flex items-center gap-3 rounded-xl bg-[#0c1826] px-8 py-4 font-bold text-white shadow-lg transition-all hover:scale-105 hover:bg-[#152a42] active:scale-95"
+                            >
+                              <span>Abrir Simulador Agora</span>
+                              <ExternalLink size={18} className="transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                cleanupSimulatorUi();
+                                setActiveMenu("Home");
+                              }}
+                              className="rounded-xl bg-[#0c1826] px-8 py-4 font-bold text-white shadow-lg transition-all hover:bg-[#152a42] active:scale-95"
+                            >
+                              Voltar ao dashboard
+                            </button>
+                          )}
+
+                          {isSimulatorSupportedBrowser(simulatorBrowser) ? (
                             <button
                               type="button"
                               onClick={retrySimulatorInsideApp}
@@ -803,7 +774,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                             >
                               Tentar incorporar (Legacy)
                             </button>
-                          )}
+                          ) : null}
                         </div>
                         
                         <p className="mt-8 text-xs font-medium text-gray-400">
