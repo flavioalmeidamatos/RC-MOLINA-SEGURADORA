@@ -159,38 +159,14 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
 
         <div className="custom-scrollbar flex-1 overflow-y-auto p-6">
           {!importResult?.data ? (
-            <form onSubmit={handleImportLead} className="space-y-4">
-              <p className="mb-4 text-xs text-gray-500">
-                Insira suas credenciais do <b>Sistema Quer</b> para capturarmos os dados da indicação automaticamente.
+            <form onSubmit={handleImportLead} className="space-y-5">
+              <p className="mb-2 text-xs text-gray-500">
+                Digite o <b>número da indicação</b> (6 dígitos) do <b>Sistema Quer</b> para importar os dados automaticamente.
               </p>
 
               <div>
-                <label className="mb-1 block text-xs font-bold uppercase text-gray-700">Login</label>
-                <input
-                  type="text"
-                  required
-                  disabled
-                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none transition-colors focus:border-[#b58c2a] disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500"
-                  value={credential.login}
-                  onChange={(event) => setCredential({ ...credential, login: event.target.value })}
-                />
-              </div>
-
-              <div>
-                <label className="mb-1 block text-xs font-bold uppercase text-gray-700">Senha</label>
-                <input
-                  type="password"
-                  required
-                  disabled
-                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none transition-colors focus:border-[#b58c2a] disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500"
-                  value={credential.senha}
-                  onChange={(event) => setCredential({ ...credential, senha: event.target.value })}
-                />
-              </div>
-
-              <div>
-                <label className="mb-1 block text-xs font-bold uppercase text-gray-700">
-                  URL da Indicação (Link)
+                <label className="mb-1.5 block text-xs font-bold uppercase text-gray-700">
+                  Número da Indicação
                 </label>
                 <input
                   ref={indicationIdInputRef}
@@ -199,8 +175,14 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
                   inputMode="numeric"
                   maxLength={6}
                   pattern="\d{6}"
-                  placeholder="Digite os 6 números da indicação"
-                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm italic outline-none transition-colors focus:border-[#b58c2a]"
+                  placeholder="000000"
+                  className={`w-full rounded-lg border-2 px-4 py-3.5 text-center text-2xl font-bold tracking-[0.5em] outline-none transition-colors ${
+                    isIndicationIdReady
+                      ? 'border-green-400 bg-green-50/50 text-green-700'
+                      : credential.indicationId.length > 0
+                        ? 'border-[#b58c2a] bg-[#fdf8ef] text-[#0c1826]'
+                        : 'border-gray-300 bg-gray-50 text-gray-700'
+                  } focus:border-[#b58c2a] focus:bg-white`}
                   value={credential.indicationId}
                   onChange={(event) =>
                     setCredential({
@@ -209,9 +191,14 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
                     })
                   }
                 />
-                <p className="mt-1 text-[11px] text-gray-400">
-                  Aceita somente 6 dígitos. Zeros à esquerda serão preservados.
-                </p>
+                <div className="mt-2 flex items-center justify-between">
+                  <p className="text-[11px] text-gray-400">
+                    Somente 6 dígitos numéricos.
+                  </p>
+                  <p className={`text-[11px] font-bold ${isIndicationIdReady ? 'text-green-500' : 'text-gray-400'}`}>
+                    {credential.indicationId.length}/6
+                  </p>
+                </div>
               </div>
 
               {importResult?.type === 'error' ? (
@@ -223,7 +210,11 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
               <button
                 type="submit"
                 disabled={importLoading || !isIndicationIdReady}
-                className="flex w-full items-center justify-center gap-2 rounded bg-[#b58c2a] py-3 font-bold text-white shadow-lg transition-all hover:bg-[#806117] disabled:opacity-50"
+                className={`flex w-full items-center justify-center gap-2 rounded-lg py-3.5 font-bold text-white shadow-lg transition-all ${
+                  isIndicationIdReady
+                    ? 'bg-[#b58c2a] hover:bg-[#806117] cursor-pointer'
+                    : 'bg-gray-300 cursor-not-allowed'
+                }`}
               >
                 {importLoading ? <Loader2 className="animate-spin" size={18} /> : 'IMPORTAR AGORA'}
               </button>
