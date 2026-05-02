@@ -83,7 +83,7 @@ export const Cadastro: React.FC = () => {
     setError('');
     setSuccess('');
 
-    // ValidaÃ§Ã£o de Nome (MÃ­nimo 2 palavras)
+    // Validação de Nome (Mínimo 2 palavras)
     if (formData.nome.trim().split(' ').length < 2) {
       setError('Por favor, insira seu nome completo.');
       return;
@@ -91,26 +91,26 @@ export const Cadastro: React.FC = () => {
 
     const normalizedEmail = formData.email.trim().toLowerCase();
 
-    // ValidaÃ§Ã£o de E-mail RFC 5322
+    // Validação de E-mail RFC 5322
     if (!validarEmailRFC5322(normalizedEmail)) {
-      setError('Por favor, insira um e-mail em formato vÃ¡lido.');
+      setError('Por favor, insira um e-mail em formato válido.');
       return;
     }
 
     if (formData.senha !== formData.confirmarSenha) {
-      setError('As senhas nÃ£o coincidem.');
+      setError('As senhas não coincidem.');
       return;
     }
 
     if (formData.senha.length < 8) {
-      setError('A senha deve ser forte: mÃ­nimo de 8 caracteres.');
+      setError('A senha deve ser forte: mínimo de 8 caracteres.');
       return;
     }
 
-    // ValidaÃ§Ã£o de complexidade de senha (opcional, mas recomendado para "senhas fortes")
+    // Validação de complexidade de senha (opcional, mas recomendado para "senhas fortes")
     const regexSenhaForte = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
     if (!regexSenhaForte.test(formData.senha)) {
-      setError('A senha deve conter pelo menos 8 caracteres, incluindo letras maiÃºsculas, minÃºsculas, nÃºmeros e caracteres especiais.');
+      setError('A senha deve conter pelo menos 8 caracteres, incluindo letras maiúsculas, minúsculas, números e caracteres especiais.');
       return;
     }
 
@@ -123,7 +123,7 @@ export const Cadastro: React.FC = () => {
       });
 
       if (existingUser) {
-        setError('Este e-mail jÃ¡ estÃ¡ cadastrado. Por favor, faÃ§a login.');
+        setError('Este e-mail já está cadastrado. Por favor, faça login.');
         setLoading(false);
         return;
       }
@@ -229,19 +229,19 @@ export const Cadastro: React.FC = () => {
               type="text"
               value={formData.nome}
               onChange={(e) => {
-                const alphaOnly = e.target.value.toUpperCase().replace(/[^A-ZÀ-Ÿ\s]/g, '');
+                const alphaOnly = e.target.value.toUpperCase().replace(/[^A-ZÀ-ÿ\s]/g, '');
                 setFormData({ ...formData, nome: alphaOnly });
               }}
               onKeyDown={handleKeyDown}
               onBlur={(e) => {
                 if (formData.nome.trim().split(' ').length < 2) {
-                  setError('ObrigatÃ³rio informar o nome completo vÃ¡lido (mÃ­n. 2 nomes).');
+                  setError('Obrigatório informar o nome completo válido (mín. 2 nomes).');
                   e.target.focus();
                 } else {
                   setError('');
                 }
               }}
-              placeholder="SOMENTE LETRAS MAIÃšSCULAS"
+              placeholder="SOMENTE LETRAS MAIÚSCULAS"
               className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 focus:outline-none focus:border-[#ccff00] transition uppercase"
               required
             />
@@ -256,13 +256,13 @@ export const Cadastro: React.FC = () => {
               onKeyDown={handleKeyDown}
               onBlur={(e) => {
                 if (!formData.email || !validarEmailRFC5322(formData.email.trim().toLowerCase())) {
-                  setError('ObrigatÃ³rio preencher um e-mail vÃ¡lido.');
+                  setError('Obrigatório preencher um e-mail válido.');
                   e.target.focus();
                 } else {
                   setError('');
                 }
               }}
-              placeholder="vocÃª@exemplo.com"
+              placeholder="você@exemplo.com"
               className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 focus:outline-none focus:border-[#ccff00] transition"
               required
             />
@@ -279,10 +279,10 @@ export const Cadastro: React.FC = () => {
                 onBlur={(e) => {
                   const regexSenhaForte = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
                   if (!formData.senha || formData.senha.length < 8) {
-                    setError('ObrigatÃ³rio preencher a senha com no mÃ­nimo 8 caracteres.');
+                    setError('Obrigatório preencher a senha com no mínimo 8 caracteres.');
                     e.target.focus();
                   } else if (!regexSenhaForte.test(formData.senha)) {
-                    setError('A senha deve ser forte: ter letras maiÃºsculas, minÃºsculas, nÃºmeros e caracteres especiais.');
+                    setError('A senha deve ser forte: ter letras maiúsculas, minúsculas, números e caracteres especiais.');
                     e.target.focus();
                   } else {
                     setError('');
@@ -312,7 +312,7 @@ export const Cadastro: React.FC = () => {
                 onKeyDown={handleKeyDown}
                 onBlur={(e) => {
                   if (!formData.confirmarSenha || formData.confirmarSenha !== formData.senha) {
-                    setError('A confirmaÃ§Ã£o deve ser preenchida e idÃªntica Ã  senha.');
+                    setError('A confirmação deve ser preenchida e idêntica à senha.');
                     e.target.focus();
                   } else {
                     setError('');
@@ -333,16 +333,16 @@ export const Cadastro: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-bold mb-2">Nome da organizaÃ§Ã£o <span className="text-gray-500 font-normal">(Opcional)</span></label>
+            <label className="block text-sm font-bold mb-2">Nome da organização <span className="text-gray-500 font-normal">(Opcional)</span></label>
             <input
               type="text"
               value={formData.organizacao}
               onChange={(e) => {
-                const alphaOnly = e.target.value.toUpperCase().replace(/[^A-ZÀ-Ÿ\s]/g, '');
+                const alphaOnly = e.target.value.toUpperCase().replace(/[^A-ZÀ-ÿ\s]/g, '');
                 setFormData({ ...formData, organizacao: alphaOnly });
               }}
               onKeyDown={handleKeyDown}
-              placeholder="NOME DA SUA ORGANIZAÃ‡ÃƒO (OPCIONAL)"
+              placeholder="NOME DA SUA ORGANIZAÇÃO (OPCIONAL)"
               className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 focus:outline-none focus:border-[#ccff00] transition uppercase"
             />
           </div>
@@ -357,7 +357,7 @@ export const Cadastro: React.FC = () => {
         </form>
 
         <p className="text-center text-sm text-gray-400 mt-8">
-          JÃ¡ tem uma conta? <button onClick={() => navigate('/login')} className="text-[#ccff00] font-bold hover:underline">Iniciar sessÃ£o</button>
+          Já tem uma conta? <button onClick={() => navigate('/login')} className="text-[#ccff00] font-bold hover:underline">Iniciar sessão</button>
         </p>
 
         <FooterAdmin />

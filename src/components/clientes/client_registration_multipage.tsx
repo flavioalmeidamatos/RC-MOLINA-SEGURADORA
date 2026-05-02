@@ -108,9 +108,9 @@ const tabs: Array<{ id: TabId; label: string; icon: React.ComponentType<{ size?:
 
 const tabLabels: Record<TabId, string> = {
   geral: 'Geral',
-  endereco: 'Endereço',
+    endereco: 'Endereço',
   extras: 'Extras',
-  documentacao: 'Documentação',
+    documentacao: 'Documentação',
 };
 
 const initialFormState: ClientFormState = {
@@ -130,7 +130,7 @@ const initialFormState: ClientFormState = {
   observacoes: '',
   documentacao: '',
   marcacoes: '',
-  comoConheceu: '0 - Não informado',
+    comoConheceu: '0 - Não informado',
   permiteAgendarOnline: true,
   status: 'ATIVO',
   codigo: '',
@@ -168,9 +168,9 @@ const camposTextoMaiusculo = new Set<keyof ClientFormState>([
 ]);
 
 const cidadesPorEstado: Record<string, string[]> = {
-  RJ: ['Rio de Janeiro', 'Niterói', 'Petrópolis', 'Volta Redonda'],
-  SP: ['São Paulo', 'Campinas', 'Santos', 'Ribeirão Preto'],
-  MG: ['Belo Horizonte', 'Juiz de Fora', 'Uberlândia', 'Contagem'],
+    RJ: ['Rio de Janeiro', 'Niterói', 'Petrópolis', 'Volta Redonda'],
+    SP: ['São Paulo', 'Campinas', 'Santos', 'Ribeirão Preto'],
+    MG: ['Belo Horizonte', 'Juiz de Fora', 'Uberlândia', 'Contagem'],
 };
 
 const fieldClassName =
@@ -193,7 +193,7 @@ const documentInputAccept =
 const maxVisibleDocumentsBeforeCarouselControls = 6;
 
 const somenteDigitos = (valor: string): string => valor.replace(/\D/g, '');
-const somenteLetrasEEspacos = (valor: string): string => valor.replace(/[^A-Za-zÀ-ÿ\s]/g, '');
+  const somenteLetrasEEspacos = (valor: string): string => valor.replace(/[^A-Za-zÀ-ÿ\s]/g, '');
 
 const normalizarTextoMaiusculo = (valor: string): string => valor.toLocaleUpperCase('pt-BR');
 
@@ -460,7 +460,7 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
         enderecoEstado: normalizarTextoMaiusculo(data.uf || ''),
         enderecoCidade: normalizarTextoMaiusculo(data.localidade || ''),
       }));
-      setFeedback('EndereÃ§o preenchido pelo CEP.');
+      setFeedback('Endereço preenchido pelo CEP.');
       window.setTimeout(() => enderecoNumeroInputRef.current?.focus(), 0);
     } catch (_error) {
       lastCepLookupRef.current = '';
@@ -488,7 +488,7 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
       return true;
     }
     const isValid = validarCPF(formState.cpf);
-    updateFieldError('cpf', isValid ? '' : 'Informe um CPF válido.');
+      updateFieldError('cpf', isValid ? '' : 'Informe um CPF válido.');
     return isValid;
   };
 
@@ -498,7 +498,7 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
       return true;
     }
     const isValid = validarRG(formState.rg);
-    updateFieldError('rg', isValid ? '' : 'Informe um RG válido.');
+      updateFieldError('rg', isValid ? '' : 'Informe um RG válido.');
     return isValid;
   };
 
@@ -508,7 +508,7 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
       return true;
     }
     const isValid = validarCNPJ(formState.cnpj);
-    updateFieldError('cnpj', isValid ? '' : 'Informe um CNPJ válido.');
+      updateFieldError('cnpj', isValid ? '' : 'Informe um CNPJ válido.');
     return isValid;
   };
 
@@ -518,7 +518,7 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
       return true;
     }
     const isValid = validarDataNascimentoBR(formState.dataNascimento);
-    updateFieldError('dataNascimento', isValid ? '' : 'Informe uma data de nascimento válida.');
+      updateFieldError('dataNascimento', isValid ? '' : 'Informe uma data de nascimento válida.');
     return isValid;
   };
 
@@ -606,7 +606,7 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
     const minimo = contact.type === 'Celular' ? 11 : 10;
     setContactErrors((prev) => ({
       ...prev,
-      [id]: totalDigitos === minimo ? '' : 'Informe um telefone válido.',
+        [id]: totalDigitos === minimo ? '' : 'Informe um telefone válido.',
     }));
   };
 
@@ -1137,7 +1137,7 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
                   placeholder="00000-000"
                 />
                 <p className="mt-1.5 text-xs font-semibold text-slate-400">
-                  {isFetchingCep ? 'Buscando CEP...' : 'Digite 8 nÃºmeros e pressione Enter ou Tab.'}
+                  {isFetchingCep ? 'Buscando CEP...' : 'Digite 8 números e pressione Enter ou Tab.'}
                 </p>
               </div>
 
@@ -1398,7 +1398,7 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
                     <p className="mt-1 text-sm leading-5 text-slate-500">
                       {uploadedDocuments.length
                         ? 'Deslize para visualizar as miniaturas dos arquivos adicionados.'
-                        : 'As miniaturas vão aparecer aqui conforme você anexar arquivos.'}
+                        : 'As miniaturas vão aparecer aqui conforme vãocê anexar arquivãos.'}
                     </p>
                   </div>
 
@@ -1514,7 +1514,7 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
       <div className="rounded-[28px] border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
         <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
           <div className="text-sm text-slate-500">
-            Etapa {activeTabIndex + 1} de {tabs.length}. Todas as telas do multipage estão prontas para navegação.
+            Etapa {activeTabIndex + 1} de {tabs.length}. Todas as telas do multipage estão prontas para navegaçãoo.
           </div>
 
           <div className="grid grid-cols-2 gap-2.5 sm:flex sm:flex-wrap">
@@ -1559,7 +1559,7 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
                 <div className="min-w-0">
                   <p className="truncate text-base font-black text-slate-900">{selectedDocumentPreview.name}</p>
                   <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                    {selectedDocumentPreview.extension || 'arquivo'} • {formatarTamanhoArquivo(selectedDocumentPreview.size)}
+                    {selectedDocumentPreview.extension || 'arquivo'} . {formatarTamanhoArquivo(selectedDocumentPreview.size)}
                   </p>
                 </div>
 
@@ -1595,7 +1595,7 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
                     <File size={44} className="text-[#3d8ed8]" />
                     <p className="mt-4 text-lg font-black text-slate-900">{selectedDocumentPreview.name}</p>
                     <p className="mt-2 max-w-lg text-sm leading-6 text-slate-500">
-                      Este formato nÃ£o tem leitura embutida na tela. VocÃª ainda pode abrir o arquivo em uma nova aba para visualizar o conteÃºdo completo.
+                      Este formato não tem leitura embutida na tela. Você ainda pode abrir o arquivo em uma nova aba para visualizar o conteúdo completo.
                     </p>
                     <a
                       href={selectedDocumentPreview.previewUrl}
