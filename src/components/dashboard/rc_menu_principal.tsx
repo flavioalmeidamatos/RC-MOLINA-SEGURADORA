@@ -35,7 +35,6 @@ type SimulatorMode = "idle" | "loading" | "embedded" | "external";
 const SIMULATOR_LOGIN_URL = "https://app.simuladoronline.com/login/4602";
 const SIMULATOR_LOGOUT_URL = "https://app.simuladoronline.com/logout";
 const SIMULATOR_FALLBACK_WINDOW_NAME = "simulador_online_fallback_window";
-const SIMULATOR_EMBED_TIMEOUT_MS = 7000;
 const wait = (ms: number) =>
   new Promise<void>((resolve) => {
     window.setTimeout(resolve, ms);
@@ -193,7 +192,10 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     clearSimulatorTimeout();
   };
 
-  const enterSimulator = () => { openSimulatorExternally(); setActiveMenu("Simulador"); };
+  const enterSimulator = () => {
+    reserveSimulatorFallbackWindow();
+    startSimulatorAttempt();
+  };
 
   const retrySimulatorInsideApp = () => {
     reserveSimulatorFallbackWindow();
