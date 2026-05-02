@@ -193,10 +193,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     clearSimulatorTimeout();
   };
 
-  const enterSimulator = () => {
-    reserveSimulatorFallbackWindow();
-    startSimulatorAttempt();
-  };
+  const enterSimulator = () => { openSimulatorExternally(); setActiveMenu("Simulador"); };
 
   const retrySimulatorInsideApp = () => {
     reserveSimulatorFallbackWindow();
@@ -572,46 +569,60 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                     />
                   </div>
                 ) : (
-                  <div className="flex flex-1 items-center justify-center bg-[#f8fafc] p-6">
-                    <div className="w-full max-w-2xl rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-                      <div className="mb-5 flex items-start gap-4">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#b58c2a]/10 text-[#b58c2a]">
-                          <ExternalLink size={22} />
+                  <div className="flex flex-1 items-center justify-center bg-gradient-to-br from-[#f8fafc] to-[#f1f5f9] p-6">
+                    <div className="w-full max-w-2xl overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-2xl">
+                      <div className="h-2 bg-gradient-to-r from-[#b58c2a] to-[#d4af37]" />
+                      
+                      <div className="p-10 text-center">
+                        <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-3xl bg-[#b58c2a]/10 text-[#b58c2a] ring-8 ring-[#b58c2a]/5">
+                          <ExternalLink size={44} strokeWidth={1.5} />
                         </div>
-                        <div>
-                          <h3 className="text-lg font-bold text-[#0c1826]">
-                            Simulador aberto fora da aplicação
-                          </h3>
-                          <p className="mt-1 text-sm text-gray-600">
-                            {simulatorStatusMessage ||
-                              "O navegador não manteve o carregamento incorporado com estabilidade."}
-                          </p>
+
+                        <h3 className="mb-4 text-2xl font-black tracking-tight text-[#0c1826]">
+                          Simulador Ativo em Janela Externa
+                        </h3>
+                        
+                        <p className="mx-auto mb-8 max-w-lg text-base leading-relaxed text-gray-600">
+                          {simulatorStatusMessage ||
+                            "O Simulador Online implementou novas políticas de segurança que impedem sua visualização dentro de iframes."}
+                        </p>
+
+                        <div className="mb-10 rounded-2xl border border-amber-100 bg-amber-50/50 p-6 text-left">
+                          <div className="flex gap-3">
+                            <Info className="mt-0.5 flex-shrink-0 text-amber-600" size={18} />
+                            <div className="space-y-2 text-sm text-amber-900">
+                              <p className="font-semibold">Por que isso aconteceu?</p>
+                              <p className="opacity-80">
+                                Navegadores modernos como Firefox e Chrome bloqueiam sites que possuem a política 
+                                <code className="mx-1 rounded bg-amber-100 px-1 font-mono text-xs">X-Frame-Options: DENY</code>. 
+                                Isso garante que seus dados de login no simulador fiquem protegidos contra ataques de sequestro de clique.
+                              </p>
+                            </div>
+                          </div>
                         </div>
-                      </div>
 
-                      <div className="rounded-xl border border-amber-100 bg-amber-50 p-4 text-sm text-amber-900">
-                        {simulatorAutoOpenedExternally
-                          ? "A nova janela foi aberta automaticamente para não interromper o fluxo do usuário."
-                          : "Você pode abrir manualmente em nova janela ou tentar novamente dentro da aplicação."}
-                      </div>
-
-                      <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                        <button
-                          type="button"
-                          onClick={retrySimulatorInsideApp}
-                          className="inline-flex items-center justify-center rounded-xl border border-gray-300 px-5 py-3 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50"
-                        >
-                          Tentar novamente no painel
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={openSimulatorExternally}
-                          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#b58c2a] px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-[#8f7124]"
-                        >
-                          Abrir simulador agora
-                          <ExternalLink size={16} />
-                        </button>
+                        <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+                          <button
+                            type="button"
+                            onClick={openSimulatorExternally}
+                            className="group flex items-center gap-3 rounded-xl bg-[#0c1826] px-8 py-4 font-bold text-white shadow-lg transition-all hover:scale-105 hover:bg-[#152a42] active:scale-95"
+                          >
+                            <span>Abrir Simulador Agora</span>
+                            <ExternalLink size={18} className="transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
+                          </button>
+                          
+                          <button
+                            type="button"
+                            onClick={retrySimulatorInsideApp}
+                            className="rounded-xl border border-gray-200 px-8 py-4 text-sm font-semibold text-gray-500 transition-colors hover:bg-gray-50"
+                          >
+                            Tentar incorporar (Legacy)
+                          </button>
+                        </div>
+                        
+                        <p className="mt-8 text-xs font-medium text-gray-400">
+                          ID da Sessão: {simulatorFrameKey}-{Date.now().toString(36)}
+                        </p>
                       </div>
                     </div>
                   </div>
