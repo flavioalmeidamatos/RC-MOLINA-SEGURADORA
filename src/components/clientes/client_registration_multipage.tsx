@@ -749,6 +749,48 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
         return nextContacts;
       });
       setFeedback('Dados importados aplicados ao novo cliente.');
+
+      if (leadData.anuncio_url) {
+        setFeedback((prev) => prev + ' Baixando imagem do anúncio...');
+        
+        void (async () => {
+          try {
+            const response = await fetch(leadData.anuncio_url as string);
+            if (!response.ok) throw new Error('Falha ao baixar imagem');
+            
+            const blob = await response.blob();
+            let fileName = 'anuncio.jpg';
+            
+            try {
+              const urlParts = new URL(leadData.anuncio_url as string).pathname.split('/');
+              const lastPart = urlParts[urlParts.length - 1];
+              if (lastPart && lastPart.includes('.')) {
+                fileName = lastPart;
+              }
+            } catch (e) {
+              // Ignore URL parsing errors
+            }
+
+            const file = new File([blob], fileName, { type: blob.type });
+            const novoDocumento: UploadedDocument = {
+              id: Date.now() + Math.floor(Math.random() * 100000),
+              file: file,
+              name: file.name,
+              size: file.size,
+              mimeType: file.type,
+              extension: obterExtensaoArquivo(file.name),
+              previewUrl: URL.createObjectURL(file),
+              previewKind: obterTipoPreview(file),
+            };
+
+            setUploadedDocuments((prev) => [...prev, novoDocumento]);
+            setFeedback('Dados importados e anúncio anexado com sucesso.');
+          } catch (error) {
+            console.error('Erro ao processar imagem do anúncio:', error);
+            setFeedback('Dados importados, mas falha ao anexar o anúncio.');
+          }
+        })();
+      }
     },
     [resetForm],
   );
