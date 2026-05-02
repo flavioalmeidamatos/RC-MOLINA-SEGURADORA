@@ -772,7 +772,8 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
           const anuncioUrl = new URL(leadData.anuncio_url as string, window.location.origin);
           const rawFileName = anuncioUrl.pathname.split('/').filter(Boolean).pop() || `anuncio-${importedCode || 'lead'}.png`;
           const fileName = rawFileName.includes('.') ? rawFileName : `${rawFileName}.png`;
-          const novoDocumento = criarDocumentoImportadoPorUrl(anuncioUrl.toString(), fileName);
+          const proxiedPreviewUrl = `/api/import-lead-asset?url=${encodeURIComponent(anuncioUrl.toString())}`;
+          const novoDocumento = criarDocumentoImportadoPorUrl(proxiedPreviewUrl, fileName);
 
           setUploadedDocuments((prev) => [...prev, novoDocumento]);
           setActiveTab('documentacao');

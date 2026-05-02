@@ -191,12 +191,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     setSimulatorFrameKey((prev) => prev + 1);
 
     clearSimulatorTimeout();
-
-    simulatorTimeoutRef.current = window.setTimeout(() => {
-      if (!simulatorIframeLoadedRef.current) {
-        openSimulatorExternally();
-      }
-    }, SIMULATOR_EMBED_TIMEOUT_MS);
   };
 
   const enterSimulator = () => {
