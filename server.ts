@@ -3,6 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
 import dotenv from 'dotenv';
+import { registerLocalAuthRoutes } from './api/_lib/local_auth_routes';
 import { ImportLeadHttpError, importLeadFromSistemaQuer } from './api/_lib/import_lead';
 import importLeadAssetHandler from './api/import-lead-asset';
 import sendLoginCodeHandler from './api/send-login-code';
@@ -109,8 +110,12 @@ const rewriteSimulatorText = (content: string, contentType: string) => {
 async function startServer() {
   const app = express();
   const PORT = Number(process.env.PORT) || 3000;
+  const uploadDir = process.env.UPLOAD_DIR || path.join(__dirname, 'uploads');
 
-  app.use(express.json());
+  app.use(express.json({ limit: '10mb' }));
+  app.use('/uploads', express.static(uploadDir));
+
+  registerLocalAuthRoutes(app);
 
   app.post('/api/send-login-code', sendLoginCodeHandler);
 

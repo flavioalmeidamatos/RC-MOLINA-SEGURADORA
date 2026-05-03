@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, KeyRound, Mail } from 'lucide-react';
 import type { UsuarioPerfil } from '../../lib/local_auth';
-import { supabase } from '../../lib/supabase';
+import { apiEmailExists, apiLogin, apiVerifyCode } from '../../lib/local_api';
 import { validarEmailRFC5322 } from '../../lib/validacoes';
 import { FooterAdmin } from '../shared/footer_admin';
 
@@ -89,11 +89,9 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
   };
 
   const verifyProfileExists = async (emailToCheck: string) => {
-    const { data: profile, error: profileError } = await supabase.rpc('usuarios_email_existe', {
-      p_email: emailToCheck,
-    });
+    const { data: profile, error: profileError } = await apiEmailExists(emailToCheck);
 
-    if (profileError) console.warn('Erro ao consultar RCMOLINASEGUROS.USUARIOS:', profileError.message);
+    if (profileError) console.warn('Erro ao consultar RCMOLINASEGUROS.USUARIOS:', profileError);
     return profile;
   };
 
@@ -112,12 +110,7 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
     setLoading(true);
 
     try {
-      const { data, error: authError } = await supabase.rpc('usuarios_login', {
-        p_email: normalizedEmail,
-        p_senha: password,
-      });
-
-      const perfil = Array.isArray(data) ? data[0] : null;
+      const { data: perfil, error: authError } = await apiLogin(normalizedEmail, password);
 
       if (authError || !perfil) {
         const profile = await verifyProfileExists(normalizedEmail);
@@ -196,15 +189,10 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
     setLoading(true);
 
     try {
-      const { data, error: verifyError } = await supabase.rpc('usuarios_verificar_codigo_login', {
-        p_email: email.trim().toLowerCase(),
-        p_codigo: otpCode,
-      });
-
-      const perfil = Array.isArray(data) ? data[0] : null;
+      const { data: perfil, error: verifyError } = await apiVerifyCode(email.trim().toLowerCase(), otpCode);
 
       if (verifyError) {
-        const msg = verifyError.message?.toLowerCase() || '';
+        const msg = verifyError.toLowerCase();
         if (msg.includes('rate_limit')) {
           setError('Aguarde 60 segundos entre solicitações.');
         } else {

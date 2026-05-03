@@ -85,11 +85,6 @@ type UploadedDocument = {
   previewKind: 'image' | 'pdf' | 'document';
 };
 
-type ClientRegistrationMultipageProps = {
-  importedLead?: SistemaQuerLeadData | null;
-  onImportedLeadUsed?: () => void;
-};
-
 type ViaCepResponse = {
   cep?: string;
   logradouro?: string;
@@ -307,10 +302,7 @@ const revogarPreviews = (documentos: UploadedDocument[]) => {
   documentos.forEach((documento) => URL.revokeObjectURL(documento.previewUrl));
 };
 
-export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipageProps> = ({
-  importedLead,
-  onImportedLeadUsed,
-}) => {
+export const ClientRegistrationMultipage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabId>('geral');
   const [isClientFormEnabled, setIsClientFormEnabled] = useState(false);
   const [formState, setFormState] = useState<ClientFormState>(initialFormState);
@@ -786,13 +778,6 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationMultipagePr
     },
     [resetForm],
   );
-
-  useEffect(() => {
-    if (!importedLead) return;
-
-    applyImportedLeadToNewClient(importedLead);
-    onImportedLeadUsed?.();
-  }, [applyImportedLeadToNewClient, importedLead, onImportedLeadUsed]);
 
   const saveClient = () => {
     if (isClientFormLocked) {

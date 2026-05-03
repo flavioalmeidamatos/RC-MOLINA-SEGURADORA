@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, Camera, User } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { apiEmailExists, apiRegister } from '../../lib/local_api';
 import { validarEmailRFC5322 } from '../../lib/validacoes';
 import { FooterAdmin } from '../shared/footer_admin';
 
@@ -118,9 +118,7 @@ export const Cadastro: React.FC = () => {
 
     try {
       // Verifica se o e-mail ja existe na tabela de usuarios
-      const { data: existingUser } = await supabase.rpc('usuarios_email_existe', {
-        p_email: normalizedEmail,
-      });
+      const { data: existingUser } = await apiEmailExists(normalizedEmail);
 
       if (existingUser) {
         setError('Este e-mail já está cadastrado. Por favor, faça login.');
@@ -132,37 +130,17 @@ export const Cadastro: React.FC = () => {
     }
 
     try {
-      let finalAvatarUrl = null;
-      const userId = crypto.randomUUID();
-
-      if (avatarFile) {
-        const fileExt = avatarFile.name.split('.').pop();
-        const filePath = `${userId}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from('avatars')
-          .upload(filePath, avatarFile);
-
-        if (uploadError) {
-          console.error('Erro no upload do avatar:', uploadError);
-        } else {
-          const { data: publicUrlData } = supabase.storage
-            .from('avatars')
-            .getPublicUrl(filePath);
-          finalAvatarUrl = publicUrlData.publicUrl;
-        }
-      }
-
-      const { error: profileError } = await supabase.rpc('usuarios_cadastrar', {
-        p_email: normalizedEmail,
-        p_senha: formData.senha,
-        p_nome_completo: formData.nome.toUpperCase(),
-        p_organizacao: formData.organizacao,
-        p_avatar_url: finalAvatarUrl,
+      const { error: profileError } = await apiRegister({
+        email: normalizedEmail,
+        senha: formData.senha,
+        nome_completo: formData.nome.toUpperCase(),
+        organizacao: formData.organizacao,
+        avatar_data_url: avatarFile ? avatarUrl : null,
+        avatar_file_name: avatarFile?.name || null,
       });
 
       if (profileError) {
-        throw profileError;
+        throw new Error(profileError);
       }
 
       setSuccess('Usuario cadastrado com sucesso! Redirecionando para login...');

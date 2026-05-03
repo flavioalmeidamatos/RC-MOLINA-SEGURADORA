@@ -1,6 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Camera, User, Lock, Trash2, Save, X } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import {
+    apiAdminDeleteUser,
+    apiAdminListUsers,
+    apiAdminLogin,
+    apiAdminUpdateUser,
+} from '../../lib/local_api';
+import type { UsuarioPerfil } from '../../lib/local_auth';
 import { validarEmailRFC5322 } from '../../lib/validacoes';
 
 export const FooterAdmin: React.FC = () => {
@@ -10,7 +16,8 @@ export const FooterAdmin: React.FC = () => {
     const [passwordError, setPasswordError] = useState('');
 
     const [showAdminPanel, setShowAdminPanel] = useState(false);
-    const [users, setUsers] = useState<any[]>([]);
+    const [adminToken, setAdminToken] = useState('');
+    const [users, setUsers] = useState<UsuarioPerfil[]>([]);
     const [selectedUserId, setSelectedUserId] = useState<string>('');
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState({ text: '', type: '' });
@@ -26,9 +33,11 @@ export const FooterAdmin: React.FC = () => {
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
     const fetchUsers = async () => {
+        if (!adminToken) return;
+
         setLoading(true);
         // Não precisamos mais passar o Hash. O próprio token do usuário logado é enviado pelos Headers nativamente.
-        const { data, error } = await supabase.rpc('admin_list_users');
+        const { data, error } = await apiAdminListUsers(adminToken);
         if (error) {
             console.error('Error fetching users', error);
             setMessage({ text: 'Erro ao carregar usuários', type: 'error' });
@@ -42,31 +51,33 @@ export const FooterAdmin: React.FC = () => {
         e.preventDefault();
         setPasswordError('');
         
-        const { error } = await supabase.auth.signInWithPassword({
-            email: adminEmail,
-            password: adminPassword,
-        });
+        const { data, error } = await apiAdminLogin(adminEmail, adminPassword);
 
         if (error) {
             setPasswordError('Credenciais inválidas. Acesso negado.');
         } else {
+            setAdminToken(data?.token || '');
             setShowPasswordModal(false);
             setAdminPassword('');
             setShowAdminPanel(true);
-            fetchUsers();
         }
     };
 
-    const handleAdminClick = async () => {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
+    const handleAdminClick = () => {
+        if (adminToken) {
             // Se já tiver uma sessão válida de administrador (vamos verificar via chamada RPC ou simplesmente pular a senha)
             setShowAdminPanel(true);
-            fetchUsers();
-        } else {
-            setShowPasswordModal(true);
+            return;
         }
+
+        setShowPasswordModal(true);
     };
+
+    useEffect(() => {
+        if (showAdminPanel && adminToken) {
+            fetchUsers();
+        }
+    }, [showAdminPanel, adminToken]);
 
     const handleSelectUser = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const id = e.target.value;
@@ -118,34 +129,16 @@ export const FooterAdmin: React.FC = () => {
         try {
             let finalAvatarUrl = avatarUrl;
 
-            // Upload new avatar if selected
-            if (avatarFile) {
-                const fileExt = avatarFile.name.split('.').pop();
-                const filePath = `${selectedUserId}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-
-                const { error: uploadError } = await supabase.storage
-                    .from('avatars')
-                    .upload(filePath, avatarFile, { upsert: true });
-
-                if (uploadError) {
-                    throw new Error(`Erro no upload da foto: ${uploadError.message}`);
-                }
-
-                const { data: publicUrlData } = supabase.storage
-                    .from('avatars')
-                    .getPublicUrl(filePath);
-                finalAvatarUrl = publicUrlData.publicUrl;
-            }
-
-            const { error } = await supabase.rpc('admin_update_user', {
-                p_id: selectedUserId,
-                p_nome: formData.nome.toUpperCase(),
-                p_email: formData.email.trim().toLowerCase(),
-                p_org: formData.organizacao.toUpperCase(),
-                p_avatar_url: finalAvatarUrl
+            const { error } = await apiAdminUpdateUser(adminToken, selectedUserId, {
+                nome: formData.nome.toUpperCase(),
+                email: formData.email.trim().toLowerCase(),
+                organizacao: formData.organizacao.toUpperCase(),
+                avatar_url: finalAvatarUrl,
+                avatar_data_url: avatarFile ? avatarUrl : null,
+                avatar_file_name: avatarFile?.name || null,
             });
 
-            if (error) throw error;
+            if (error) throw new Error(error);
 
             setMessage({ text: 'Usuário atualizado com sucesso!', type: 'success' });
             await fetchUsers(); // refresh the user list
@@ -163,11 +156,9 @@ export const FooterAdmin: React.FC = () => {
         setMessage({ text: '', type: '' });
 
         try {
-            const { error } = await supabase.rpc('admin_delete_user', {
-                p_id: selectedUserId
-            });
+            const { error } = await apiAdminDeleteUser(adminToken, selectedUserId);
 
-            if (error) throw error;
+            if (error) throw new Error(error);
 
             setMessage({ text: 'Usuário excluído com sucesso!', type: 'success' });
             setSelectedUserId('');
@@ -248,8 +239,8 @@ export const FooterAdmin: React.FC = () => {
                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
                     <div className="bg-[#1a1a1a] shadow-2xl border border-gray-800 rounded-2xl p-6 md:p-8 max-w-lg w-full relative my-8">
                         <button
-                            onClick={async () => {
-                                await supabase.auth.signOut();
+                            onClick={() => {
+                                setAdminToken('');
                                 setShowAdminPanel(false);
                             }}
                             className="absolute top-4 left-4 text-red-500 hover:text-red-400 bg-black/50 rounded-lg px-3 py-1 text-xs font-bold uppercase tracking-wider"

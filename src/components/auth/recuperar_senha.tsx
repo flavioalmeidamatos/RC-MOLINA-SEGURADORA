@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { apiAudit, apiResetPassword } from '../../lib/local_api';
 import { validarEmailRFC5322 } from '../../lib/validacoes';
 import { FooterAdmin } from '../shared/footer_admin';
 
@@ -111,11 +111,7 @@ export const RecuperarSenha: React.FC = () => {
         setStage('otp');
         handleSetCooldown();
 
-        // Registrar auditoria sem depender de tabela exposta diretamente no cliente
-        supabase.rpc('registrar_auditoria', {
-          p_acao: 'SOLICITAR_RESET_SENHA',
-          p_detalhes: { email: email.trim().toLowerCase() },
-        }).then(() => {});
+        apiAudit('SOLICITAR_RESET_SENHA', { email: email.trim().toLowerCase() });
       }
     } catch (err) {
       console.error(err);
@@ -164,14 +160,14 @@ export const RecuperarSenha: React.FC = () => {
     setCarregando(true);
 
     try {
-      const { data, error } = await supabase.rpc('usuarios_resetar_senha_com_codigo', {
-        p_email: email.trim().toLowerCase(),
-        p_codigo: otpCode,
-        p_nova_senha: password,
+      const { data, error } = await apiResetPassword({
+        email: email.trim().toLowerCase(),
+        codigo: otpCode,
+        nova_senha: password,
       });
 
       if (error) {
-        setMensagem({ texto: error.message || 'Erro ao redefinir senha.', tipo: 'erro' });
+        setMensagem({ texto: error || 'Erro ao redefinir senha.', tipo: 'erro' });
         setCarregando(false);
         return;
       }

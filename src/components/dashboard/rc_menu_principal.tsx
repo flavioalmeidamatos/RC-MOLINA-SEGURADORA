@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Banknote,
   Briefcase,
@@ -21,7 +21,6 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ClientRegistrationMultipage } from "../clientes/client_registration_multipage";
-import { SistemaQuerImportModal, type SistemaQuerLeadData } from "./sistema_quer_import_modal";
 import { Agenda } from "../agenda/agenda";
 
 interface DashboardProps {
@@ -147,7 +146,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const avatarUrl = perfil?.avatar_url || null;
 
   const [activeMenu, setActiveMenu] = useState("Home");
-  const [showImportModal, setShowImportModal] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const [simulatorMode, setSimulatorMode] = useState<SimulatorMode>("idle");
@@ -163,11 +161,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const [credential, setCredential] = useState({
     login: "Rosilene Rodrigues",
     senha: "123",
-    leadUrl: "",
   });
-  const [pendingImportedLead, setPendingImportedLead] = useState<SistemaQuerLeadData | null>(null);
-  const clearPendingImportedLead = useCallback(() => setPendingImportedLead(null), []);
-
   const clearSimulatorTimeout = () => {
     if (simulatorTimeoutRef.current !== null) {
       window.clearTimeout(simulatorTimeoutRef.current);
@@ -776,10 +770,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
               </div>
             ) : showClientArea ? (
               <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
-                <ClientRegistrationMultipage
-                  importedLead={pendingImportedLead}
-                  onImportedLeadUsed={clearPendingImportedLead}
-                />
+                <ClientRegistrationMultipage />
               </div>
             ) : activeMenu === "Agenda" ? (
               <Agenda />
@@ -899,19 +890,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
           </div>
         </div>
       </div>
-
-      <SistemaQuerImportModal
-        open={showImportModal}
-        initialLeadUrl={credential.leadUrl}
-        onClose={() => {
-          setShowImportModal(false);
-        }}
-        onUseLeadData={(data) => {
-          setPendingImportedLead(data);
-          setActiveMenu("Meus clientes");
-          setShowImportModal(false);
-        }}
-      />
 
       <style>{`
         .custom-scrollbar::-webkit-scrollbar {

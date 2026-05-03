@@ -2,7 +2,8 @@ param(
   [string]$HostName = "187.77.55.45",
   [string]$User = "root",
   [string]$KeyPath = "$env:USERPROFILE\.ssh\rc_molina_vps",
-  [string]$AppPath = "/var/www/rc-molina"
+  [string]$AppPath = "/var/www/rc-molina",
+  [string]$DomainName = "rcmolinaseguros.resolveplanilhas.com.br"
 )
 
 $ErrorActionPreference = "Stop"
@@ -26,6 +27,7 @@ tar -czf $archivePath `
 Write-Host "Uploading package to $sshTarget..."
 ssh -i $KeyPath $sshTarget "mkdir -p $remoteDeployPath $AppPath/releases $AppPath/shared"
 scp -i $KeyPath $archivePath "${sshTarget}:$remoteDeployPath/app.tgz"
+scp -i $KeyPath "scripts/nginx-rc-molina-domain.conf" "${sshTarget}:/etc/nginx/sites-available/rc-molina-domain"
 
 Write-Host "Installing release on VPS..."
 $remoteScript = @"
@@ -40,6 +42,7 @@ cd "`$release"
 npm ci
 npm run build
 ln -sfn "`$release" "$AppPath/current"
+ln -sfn /etc/nginx/sites-available/rc-molina-domain /etc/nginx/sites-enabled/rc-molina-domain
 pm2 delete rc-molina >/dev/null 2>&1 || true
 cd "$AppPath/current"
 pm2 start npm --name rc-molina -- run start:prod
@@ -51,4 +54,5 @@ systemctl reload nginx
 ssh -i $KeyPath $sshTarget $remoteScript
 
 Remove-Item -LiteralPath $archivePath -Force -ErrorAction SilentlyContinue
-Write-Host "Deploy finished: https://srv1640658.hstgr.cloud"
+Write-Host "Deploy finished: http://$DomainName"
+Write-Host "Production URL: https://$DomainName"
