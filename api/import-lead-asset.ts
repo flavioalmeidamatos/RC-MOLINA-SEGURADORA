@@ -1,15 +1,15 @@
 import * as cheerio from 'cheerio';
 
-type VercelRequest = {
+type AssetRequest = {
   method?: string;
   query?: {
     url?: string | string[];
   };
 };
 
-type VercelResponse = {
+type AssetResponse = {
   setHeader: (name: string, value: string) => void;
-  status: (code: number) => VercelResponse;
+  status: (code: number) => AssetResponse;
   end: (body?: string | Uint8Array) => void;
 };
 
@@ -75,7 +75,7 @@ const resolveHtmlImageUrl = (pageUrl: URL, html: string): URL | null => {
   return null;
 };
 
-export default async function handler(request: VercelRequest, response: VercelResponse) {
+export default async function handler(request: AssetRequest, response: AssetResponse) {
   response.setHeader('Cache-Control', 'no-store');
   response.setHeader('Allow', 'GET');
 

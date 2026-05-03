@@ -17,10 +17,10 @@ tar -czf $archivePath `
   --exclude=.git `
   --exclude=node_modules `
   --exclude=dist `
-  --exclude=.vercel `
   --exclude=.env `
   --exclude=.env.local `
-  --exclude=.env.vercel.local `
+  --exclude=.env.*.local `
+  --exclude=.v* `
   --exclude=.env.example `
   .
 

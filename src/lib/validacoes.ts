@@ -6,7 +6,7 @@ export const validarEmailRFC5322 = (email: string): boolean => {
   return re.test(email);
 };
 
-export const traduzirErroSupabase = (msg: string): string => {
+export const traduzirErroAutenticacao = (msg: string): string => {
   if (!msg) return 'Ocorreu um erro desconhecido.';
   const m = msg.toLowerCase();
   if (m.includes('invalid login credentials')) return 'E-mail ou senha incorretos.';

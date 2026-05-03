@@ -39,27 +39,14 @@ type SistemaQuerImportModalProps = {
 };
 
 const SISTEMA_QUER_INDICATION_URL = 'http://sistemaquer.com.br/alterar-indicacao.php?indicacao_id=';
-const SISTEMA_QUER_LOGIN_STORAGE_KEY = 'rcmolina_sistema_quer_login';
+const SISTEMA_QUER_LOGIN = 'Rosilene Rodrigues';
+const SISTEMA_QUER_PASSWORD = '123';
 const indicationIdPattern = /^\d{6}$/;
 
 const extractIndicationId = (value: string): string => {
   const queryValue = value.match(/[?&]indicacao_id=(\d{1,6})/)?.[1];
   const rawValue = queryValue || value;
   return rawValue.replace(/\D/g, '').slice(0, 6);
-};
-
-const loadStoredLogin = () => {
-  try {
-    return window.localStorage.getItem(SISTEMA_QUER_LOGIN_STORAGE_KEY) || '';
-  } catch (_error) {
-    return '';
-  }
-};
-
-const storeLogin = (login: string) => {
-  try {
-    window.localStorage.setItem(SISTEMA_QUER_LOGIN_STORAGE_KEY, login);
-  } catch (_error) {}
 };
 
 export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
@@ -75,14 +62,13 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
   const indicationIdInputRef = useRef<HTMLInputElement | null>(null);
   const [credential, setCredential] = useState(() => {
     return {
-      login: loadStoredLogin(),
-      senha: '',
+      login: SISTEMA_QUER_LOGIN,
+      senha: SISTEMA_QUER_PASSWORD,
       indicationId: extractIndicationId(initialLeadUrl),
     };
   });
   const isIndicationIdReady = indicationIdPattern.test(credential.indicationId);
-  const isCredentialReady = Boolean(credential.login.trim() && credential.senha.trim());
-  const canImportLead = isIndicationIdReady && isCredentialReady;
+  const canImportLead = isIndicationIdReady;
   const adImageUrl = importResult?.data?.anuncio_url || '';
 
   useEffect(() => {
@@ -112,14 +98,6 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
   const handleImportLead = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (!isCredentialReady) {
-      setImportResult({
-        type: 'error',
-        message: 'Informe login e senha do Sistema Quer.',
-      });
-      return;
-    }
-
     if (!isIndicationIdReady) {
       setImportResult({
         type: 'error',
@@ -133,14 +111,13 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
     setAdImageUnavailable(false);
 
     try {
-      storeLogin(credential.login.trim());
       const leadUrl = `${SISTEMA_QUER_INDICATION_URL}${credential.indicationId}`;
       const response = await fetch('/api/import-lead', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          login: credential.login.trim(),
-          senha: credential.senha.trim(),
+          login: SISTEMA_QUER_LOGIN,
+          senha: SISTEMA_QUER_PASSWORD,
           leadUrl,
         }),
       });
@@ -199,16 +176,11 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
                   </label>
                   <input
                     type="text"
-                    required
                     autoComplete="username"
-                    className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2.5 text-sm font-semibold text-gray-800 outline-none transition-colors focus:border-[#b58c2a] focus:bg-white"
+                    disabled
+                    aria-readonly="true"
+                    className="w-full cursor-not-allowed rounded-lg border border-gray-200 bg-gray-100 px-3 py-2.5 text-sm font-semibold text-gray-500 outline-none"
                     value={credential.login}
-                    onChange={(event) =>
-                      setCredential({
-                        ...credential,
-                        login: event.target.value,
-                      })
-                    }
                   />
                 </div>
 
@@ -218,16 +190,11 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
                   </label>
                   <input
                     type="password"
-                    required
                     autoComplete="current-password"
-                    className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2.5 text-sm font-semibold text-gray-800 outline-none transition-colors focus:border-[#b58c2a] focus:bg-white"
+                    disabled
+                    aria-readonly="true"
+                    className="w-full cursor-not-allowed rounded-lg border border-gray-200 bg-gray-100 px-3 py-2.5 text-sm font-semibold text-gray-500 outline-none"
                     value={credential.senha}
-                    onChange={(event) =>
-                      setCredential({
-                        ...credential,
-                        senha: event.target.value,
-                      })
-                    }
                   />
                 </div>
               </div>

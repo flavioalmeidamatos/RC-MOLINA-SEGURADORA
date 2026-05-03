@@ -1,13 +1,13 @@
 # Mapeamento de campos de entrada de dados
 
-Leitura realizada em 2026-05-01 a partir dos componentes em `src/components`, rotas em `src/App.tsx`, APIs em `api` e servidor local `server.ts`.
+Leitura atualizada em 2026-05-03 a partir dos componentes em `src/components`, rotas em `src/App.tsx`, APIs em `api` e servidor Express `server.ts`.
 
 ## Observacoes gerais
 
 - O frontend principal usa React/Vite.
-- Autenticacao, usuarios, auditoria e avatars usam Supabase. Tabelas com prefixo `RCMOLINASEGUROS.`.
+- Autenticacao, usuarios, auditoria e avatars usam PostgreSQL local no VPS da Hostinger. Tabelas com prefixo `RCMOLINASEGUROS.`.
 - O cabecalho mantem apenas um botao visual com icone do WhatsApp, sem integracao ativa.
-- O cadastro multipagina de cliente ainda nao persiste em banco no codigo atual: o botao Salvar valida campos e exibe feedback dizendo que o proximo passo e conectar ao Supabase.
+- O cadastro multipagina de cliente ainda nao persiste em banco no codigo atual: o botao Salvar valida campos e exibe feedback de sucesso local.
 - Alguns inputs estao desabilitados ou ocultos, mas foram incluidos porque fazem parte do fluxo de entrada de dados.
 
 ## Rotas/telas
@@ -38,7 +38,7 @@ Fonte: `src/components/Cadastro.tsx`
 
 | Campo | Estado/chave | Tipo | Obrigatorio | Validacao/mascara | Destino/uso |
 |---|---|---|---|---|---|
-| Foto/avatar | `avatarFile`, `avatarUrl` | `file` | Nao | `accept="image/*"` | Upload em Supabase Storage bucket `avatars`; URL salva em `RCMOLINASEGUROS.USUARIOS.avatar_url` |
+| Foto/avatar | `avatarFile`, `avatarUrl` | `file` | Nao | `accept="image/*"` | Upload em `/uploads/avatars`; URL salva em `RCMOLINASEGUROS.USUARIOS.avatar_url` |
 | Nome completo | `formData.nome` | `text` | Sim | Letras e espacos; convertido para maiusculas; minimo 2 palavras | RPC `usuarios_cadastrar`, `RCMOLINASEGUROS.USUARIOS.nome_completo` |
 | E-mail | `formData.email` | `email` | Sim | RFC 5322; normaliza com `trim().toLowerCase()`; verifica duplicidade em `RCMOLINASEGUROS.USUARIOS.email` | RPC `usuarios_cadastrar`, `RCMOLINASEGUROS.USUARIOS.email` |
 | Senha | `formData.senha` | `password` ou `text` | Sim | Minimo 8; exige maiuscula, minuscula, numero e caractere especial | RPC `usuarios_cadastrar`, hash em `RCMOLINASEGUROS.USUARIOS.senha_hash` |
@@ -71,7 +71,7 @@ Fonte: `src/components/FooterAdmin.tsx`
 |---|---|---|---|---|---|
 | Senha administrativa | `adminPassword` | `password` | Sim | SHA-256 comparado com hash fixo | Libera painel administrativo |
 | Selecionar usuario | `selectedUserId` | `select` | Sim para editar/excluir | Opcoes vindas de `RCMOLINASEGUROS.USUARIOS` | Define usuario alvo |
-| Foto do usuario | `avatarFile`, `avatarUrl` | `file` | Nao | `accept="image/*"` | Upload em Storage `avatars`; enviado para RPC |
+| Foto do usuario | `avatarFile`, `avatarUrl` | `file` | Nao | `accept="image/*"` | Upload em `/uploads/avatars`; enviado para a API local |
 | Nome completo | `formData.nome` | `text` | Sim | Letras e espacos; convertido para maiusculas | RPC `admin_update_user.p_nome` |
 | E-mail | `formData.email` | `email` | Sim | RFC 5322; normalizado | RPC `admin_update_user.p_email` |
 | Organizacao | `formData.organizacao` | `text` | Nao | Letras e espacos; convertido para maiusculas | RPC `admin_update_user.p_org` |
@@ -137,7 +137,7 @@ Fonte: `src/components/ClientRegistrationMultipage.tsx`
 
 ## Importacao Sistema Quer
 
-Fontes: `src/components/SistemaQuerImportModal.tsx`, bloco legado em `SCR_MENUPRINCIPAL.tsx`, `api/import-lead.ts`, `server.ts`
+Fontes: `src/components/SistemaQuerImportModal.tsx`, `api/_lib/import_lead.ts`, `server.ts`
 
 ### Modal atual reutilizavel
 
@@ -146,14 +146,6 @@ Fontes: `src/components/SistemaQuerImportModal.tsx`, bloco legado em `SCR_MENUPR
 | Login | `credential.login` | `text` desabilitado | Sim | Valor padrao fixo no componente | Enviado para `/api/import-lead` |
 | Senha | `credential.senha` | `password` desabilitado | Sim | Valor padrao fixo no componente | Enviado para `/api/import-lead` |
 | URL da indicacao / ID | `credential.indicationId` | `text` numerico | Sim | Exatamente 6 digitos; preserva zeros a esquerda | Monta `leadUrl` no formato `http://sistemaquer.com.br/alterar-indicacao.php?indicacao_id=...` |
-
-### Bloco legado no menu principal
-
-| Campo | Estado/chave | Tipo | Obrigatorio | Validacao/mascara | Destino/uso |
-|---|---|---|---|---|---|
-| Login | `credential.login` | `text` | Sim | Sem mascara | Enviado para `/api/import-lead` |
-| Senha | `credential.senha` | `password` | Sim | Sem mascara | Enviado para `/api/import-lead` |
-| URL da indicacao | `credential.leadUrl` | `url` | Sim | Browser valida URL | Enviado para `/api/import-lead` |
 
 ### Dados retornados pela importacao
 
@@ -211,22 +203,21 @@ Fonte: `src/components/Agenda/AgendaSidebar.tsx` e atalho em `SCR_MENUPRINCIPAL.
 
 | Endpoint/origem | Metodo | Campos | Observacao |
 |---|---|---|---|
-| `server.ts` `/api/import-lead` | POST | `login`, `senha`, `leadUrl` | Endpoint Express usado no dev server |
-| `api/import-lead.ts` | POST | `login`, `senha`, `leadUrl` | Function Vercel equivalente |
-| RPC `usuarios_cadastrar` | SDK/RPC | `p_email`, `p_senha`, `p_nome_completo`, `p_organizacao`, `p_avatar_url` | Criacao de conta sem Supabase Auth |
-| Supabase tabela `RCMOLINASEGUROS.USUARIOS` insert | SDK | `id`, `email`, `nome_completo`, `organizacao`, `avatar_url` | Criacao de usuario |
-| RPC `usuarios_login` | SDK/RPC | `p_email`, `p_senha` | Login por senha sem Supabase Auth |
+| `server.ts` `/api/import-lead` | POST | `login`, `senha`, `leadUrl` | Endpoint Express usado localmente e na Hostinger |
+| API local `usuarios_cadastrar` | HTTP | `p_email`, `p_senha`, `p_nome_completo`, `p_organizacao`, `p_avatar_url` | Criacao de conta no PostgreSQL local |
+| PostgreSQL tabela `RCMOLINASEGUROS.USUARIOS` insert | Banco local | `id`, `email`, `nome_completo`, `organizacao`, `avatar_url` | Criacao de usuario |
+| API local `usuarios_login` | HTTP | `p_email`, `p_senha` | Login por senha |
 | Endpoint `/api/send-login-code` | POST | `email` | Envio do codigo seguro por e-mail |
-| RPC `usuarios_gerar_codigo_login` | SDK/RPC server-side | `p_email` | Gera codigo seguro de 6 digitos |
-| RPC `usuarios_verificar_codigo_login` | SDK/RPC | `p_email`, `p_codigo` | Login por codigo seguro sem Supabase Auth |
-| RPC `usuarios_atualizar_senha` | SDK/RPC | `p_email`, `p_senha` | Atualizacao de senha sem Supabase Auth (uso interno) |
-| RPC `usuarios_resetar_senha_com_codigo` | SDK/RPC | `p_email`, `p_codigo`, `p_nova_senha` | Reset atomico: verifica OTP + atualiza senha |
-| Supabase RPC `admin_update_user` | SDK/RPC | `p_id`, `p_nome`, `p_email`, `p_org`, `p_avatar_url`, `p_admin_hash` | Edicao administrativa |
-| Supabase RPC `admin_delete_user` | SDK/RPC | `p_id`, `p_admin_hash` | Exclusao administrativa de usuario |
+| Funcao local `usuarios_gerar_codigo_login` | Banco local | `p_email` | Gera codigo seguro de 6 digitos |
+| API local `usuarios_verificar_codigo_login` | HTTP | `p_email`, `p_codigo` | Login por codigo seguro |
+| API local `usuarios_atualizar_senha` | HTTP | `p_email`, `p_senha` | Atualizacao de senha |
+| API local `usuarios_resetar_senha_com_codigo` | HTTP | `p_email`, `p_codigo`, `p_nova_senha` | Reset atomico: verifica OTP + atualiza senha |
+| API local `admin_update_user` | HTTP | `p_id`, `p_nome`, `p_email`, `p_org`, `p_avatar_url`, `p_admin_hash` | Edicao administrativa |
+| API local `admin_delete_user` | HTTP | `p_id`, `p_admin_hash` | Exclusao administrativa de usuario |
 
 ## Campos tecnicos/importantes por armazenamento
 
-### Supabase `RCMOLINASEGUROS.USUARIOS`
+### PostgreSQL local `RCMOLINASEGUROS.USUARIOS`
 
 | Campo | Origem |
 |---|---|
@@ -237,7 +228,7 @@ Fonte: `src/components/Agenda/AgendaSidebar.tsx` e atalho em `SCR_MENUPRINCIPAL.
 | `avatar_url` | Upload de avatar |
 | `senha_hash` | Hash da senha gerado no banco por `pgcrypto` |
 
-### Supabase `RCMOLINASEGUROS.AUDITORIA`
+### PostgreSQL local `RCMOLINASEGUROS.AUDITORIA`
 
 | Campo | Origem |
 |---|---|
@@ -254,7 +245,7 @@ Fonte: `src/components/Agenda/AgendaSidebar.tsx` e atalho em `SCR_MENUPRINCIPAL.
 
 ## Pendencias visiveis no codigo
 
-- Cadastro multipagina de cliente nao grava no Supabase ainda.
+- Cadastro multipagina de cliente ainda nao grava no PostgreSQL local.
 - Agenda possui campos visuais sem estado/controlador e sem persistencia.
-- Bloco legado de importacao Sistema Quer no `SCR_MENUPRINCIPAL.tsx` ainda aceita login/senha/link livre, enquanto o modal atual usa login/senha desabilitados e ID de 6 digitos.
+- Importacao Sistema Quer usa o modal atual com login/senha desabilitados e ID de 6 digitos.
 - Algumas mensagens/textos no codigo aparecem com encoding corrompido em arquivos fonte, mas isso nao altera a identificacao dos campos.

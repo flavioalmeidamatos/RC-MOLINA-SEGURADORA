@@ -4,7 +4,7 @@
 
 # Run and deploy RC Molina
 
-This contains everything you need to run your app locally.
+This project runs as a Vite/React frontend served by an Express app on the Hostinger VPS.
 
 ## Run Locally
 
@@ -17,7 +17,7 @@ This contains everything you need to run your app locally.
 3. Run the app:
    `npm run dev`
 
-## Deploy
+## Deploy to Hostinger
 
 Deploy to the Hostinger VPS with:
 
@@ -55,3 +55,4 @@ Current migration status:
 - A bootstrap admin user is created automatically if `ADMIN_INITIAL_PASSWORD` is configured and the admin e-mail does not exist.
 - Historical Supabase `USUARIOS`, `CODIGOS_LOGIN` and avatar files were migrated to the Hostinger VPS on 2026-05-03.
 - Supabase `AUDITORIA` had no rows at migration time.
+- Runtime API endpoints are served by `server.ts`; old serverless handlers are not part of the production deploy path.

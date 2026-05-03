@@ -812,7 +812,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
       return;
     }
 
-    setFeedback('Layout multipage de clientes pronto. O próximo passo pode ser conectar ao Supabase.');
+    setFeedback('Layout multipage de clientes validado. O próximo passo é persistir no PostgreSQL da Hostinger.');
   };
 
   const importClient = () => {
