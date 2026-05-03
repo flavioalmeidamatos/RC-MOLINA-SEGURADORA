@@ -16,7 +16,6 @@ import {
   Phone,
   User,
   Users,
-  ShieldCheck,
   Wrench,
   X,
 } from "lucide-react";
@@ -35,7 +34,6 @@ type SimulatorMode = "idle" | "loading" | "embedded" | "external";
 type SimulatorBrowser = "chrome" | "edge" | "firefox" | "safari" | "other";
 type SimulatorExternalReason = "manual" | "iframe-error" | "timeout";
 
-const SIMULATOR_LOGIN_URL = "https://app.simuladoronline.com/login/4602";
 const SIMULATOR_ENTRY_URL = "https://app.simuladoronline.com/inicio";
 const SIMULATOR_LOGOUT_URL = "https://app.simuladoronline.com/logout";
 const SIMULATOR_PROXY_LOGIN_URL = "/simulador-proxy/login/4602";
@@ -98,8 +96,7 @@ const getSimulatorLoadingMessage = (browser: SimulatorBrowser) =>
     ? `Tentando carregar o simulador dentro da aplicação pelo proxy experimental do ${getSimulatorBrowserLabel(browser)}...`
     : "Tentando carregar o simulador dentro da aplicação...";
 
-const getSimulatorFrameUrl = (browser: SimulatorBrowser) =>
-  usesSimulatorProxy(browser) ? SIMULATOR_PROXY_LOGIN_URL : SIMULATOR_LOGIN_URL;
+const getSimulatorFrameUrl = () => SIMULATOR_PROXY_LOGIN_URL;
 
 const getSimulatorExternalMessage = (
   reason: SimulatorExternalReason,
@@ -156,7 +153,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const [simulatorMode, setSimulatorMode] = useState<SimulatorMode>("idle");
   const [simulatorFrameKey, setSimulatorFrameKey] = useState(0);
   const [simulatorStatusMessage, setSimulatorStatusMessage] = useState("");
-  const [simulatorAutoOpenedExternally, setSimulatorAutoOpenedExternally] = useState(false);
   const [simulatorBrowser, setSimulatorBrowser] = useState<SimulatorBrowser>("other");
 
   const simulatorTimeoutRef = useRef<number | null>(null);
@@ -169,10 +165,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     senha: "123",
     leadUrl: "",
   });
-  const [isAuthorizingBridge, setIsAuthorizingBridge] = useState(false);
-  const [bridgeStatus, setBridgeStatus] = useState<"idle" | "popup_open" | "success">("idle");
-  const [bridgeProgress, setBridgeProgress] = useState(0);
-  const bridgeCheckIntervalRef = useRef<number | null>(null);
   const [pendingImportedLead, setPendingImportedLead] = useState<SistemaQuerLeadData | null>(null);
   const clearPendingImportedLead = useCallback(() => setPendingImportedLead(null), []);
 
@@ -180,55 +172,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     if (simulatorTimeoutRef.current !== null) {
       window.clearTimeout(simulatorTimeoutRef.current);
       simulatorTimeoutRef.current = null;
-    }
-  };
-
-  const writeFallbackWindowLoadingContent = (popup: Window) => {
-    try {
-      popup.document.title = "Simulador";
-      popup.document.body.innerHTML = `
-        <div style="font-family:sans-serif;font-size:12px;padding:5px;">
-           Preparando...
-        </div>
-      `;
-    } catch (_error) {
-      // Ignora falha de escrita na janela.
-    }
-  };
-
-  const reserveSimulatorFallbackWindow = () => {
-    try {
-      const popup = window.open(
-        "",
-        SIMULATOR_FALLBACK_WINDOW_NAME,
-        "width=100,height=100,left=-9999,top=-9999,resizable=yes,scrollbars=yes"
-      );
-
-      if (popup) {
-        writeFallbackWindowLoadingContent(popup);
-        try {
-          popup.blur();
-          window.focus();
-        } catch (_blurError) {}
-        simulatorWindowRef.current = popup;
-      }
-    } catch (_error) {
-      simulatorWindowRef.current = null;
-    }
-  };
-
-  const closeReservedSimulatorWindowIfStillIdle = () => {
-    const popup = simulatorWindowRef.current;
-    if (!popup || popup.closed) {
-      simulatorWindowRef.current = null;
-      return;
-    }
-
-    try {
-      if (popup.location.href === "about:blank") {
-        popup.close();
-      }
-    } catch (_error) {
     }
   };
 
@@ -242,7 +185,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     setSimulatorBrowser(browser);
     setSimulatorMode("external");
     const shouldOpenWindowNow = reason === "manual" && isSimulatorSupportedBrowser(browser);
-    setSimulatorAutoOpenedExternally(shouldOpenWindowNow);
     setSimulatorStatusMessage(getSimulatorExternalMessage(reason, browser));
 
     if (!shouldOpenWindowNow) {
@@ -283,7 +225,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const startSimulatorAttempt = (browser: SimulatorBrowser) => {
     simulatorIframeLoadedRef.current = false;
     setSimulatorBrowser(browser);
-    setSimulatorAutoOpenedExternally(false);
     setActiveMenu("Simulador");
     setSimulatorFrameKey((prev) => prev + 1);
 
@@ -305,77 +246,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
         }
       }, CHROME_SIMULATOR_LOAD_TIMEOUT_MS);
     }
-  };
-
-  const startBridgeAuthorization = () => {
-    setIsAuthorizingBridge(true);
-    setBridgeStatus("popup_open");
-
-    const bridgeUrl = SIMULATOR_LOGIN_URL;
-
-    // Abre o simulador como site principal para o navegador aceitar login e cookies.
-    const width = 1280;
-    const height = 900;
-    const left = window.screen.width / 2 - width / 2;
-    const top = window.screen.height / 2 - height / 2;
-
-    const popup = window.open(
-      bridgeUrl,
-      "SimulatorBridge",
-      `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes,status=no,location=no,toolbar=no,menubar=no`
-    );
-
-    if (popup) {
-      simulatorWindowRef.current = popup;
-      popup.focus();
-      setBridgeProgress(50);
-
-      // Monitora o fechamento da janela para automatizar o retorno
-      if (bridgeCheckIntervalRef.current) clearInterval(bridgeCheckIntervalRef.current);
-
-      bridgeCheckIntervalRef.current = window.setInterval(() => {
-        // Incrementa o progresso lentamente até 92% para mostrar atividade
-        setBridgeProgress(prev => (prev < 92 ? prev + 0.5 : prev));
-
-        if (!popup || popup.closed) {
-          if (bridgeCheckIntervalRef.current) {
-            clearInterval(bridgeCheckIntervalRef.current);
-            bridgeCheckIntervalRef.current = null;
-          }
-          setBridgeProgress(100);
-          setBridgeStatus("success");
-          // Pequeno delay para garantir que o navegador processou os cookies.
-          setTimeout(() => {
-            completeBridgeAuthorization();
-          }, 800);
-        }
-      }, 800);
-    }
-  };
-
-  const completeBridgeAuthorization = async () => {
-    if (bridgeCheckIntervalRef.current) {
-      clearInterval(bridgeCheckIntervalRef.current);
-      bridgeCheckIntervalRef.current = null;
-    }
-
-    setBridgeProgress(100);
-    setBridgeStatus("success");
-    setIsAuthorizingBridge(false);
-    setSimulatorMode("external");
-    setSimulatorAutoOpenedExternally(true);
-    setSimulatorStatusMessage("Continue usando o simulador na janela propria do navegador. Se ela fechou, use o botao abaixo para abrir novamente.");
-
-    const popup = simulatorWindowRef.current;
-    if (popup && !popup.closed) {
-      try {
-        popup.location.href = SIMULATOR_ENTRY_URL;
-        popup.focus();
-        return;
-      } catch (_error) {}
-    }
-
-    openSimulatorExternally("manual", detectSimulatorBrowser());
   };
 
   const enterSimulator = async () => {
@@ -443,8 +313,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     clearSimulatorTimeout();
     setSimulatorMode("embedded");
     setSimulatorStatusMessage("Simulador carregado dentro da aplicação.");
-    setSimulatorAutoOpenedExternally(false);
-    closeReservedSimulatorWindowIfStillIdle();
   };
 
   const handleSimulatorIframeError = () => {
@@ -456,7 +324,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     simulatorIframeLoadedRef.current = false;
     setSimulatorMode("idle");
     setSimulatorStatusMessage("");
-    setSimulatorAutoOpenedExternally(false);
     setSimulatorBrowser("other");
   };
 
@@ -516,11 +383,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   useEffect(() => {
     return () => {
       clearSimulatorTimeout();
-      closeReservedSimulatorWindowIfStillIdle();
-      if (bridgeCheckIntervalRef.current) {
-        clearInterval(bridgeCheckIntervalRef.current);
-        bridgeCheckIntervalRef.current = null;
-      }
     };
   }, []);
 
@@ -764,135 +626,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                       ) : null}
                     </div>
                   </div>
-
-                  {(simulatorBrowser === "chrome" || simulatorBrowser === "edge") && simulatorMode !== "embedded" && (
-                    <div className="mt-6 flex flex-col overflow-hidden rounded-[2.5rem] border border-amber-200 bg-white shadow-[0_25px_60px_rgba(181,140,42,0.15)] transition-all duration-700 max-w-3xl mx-auto w-full animate-in zoom-in-95 duration-500">
-                      <div className="bg-gradient-to-r from-amber-50/50 via-white to-amber-50/30 px-8 py-6 border-b border-amber-100/50 flex items-center justify-between">
-                        <div className="flex items-center gap-5">
-                          <div className={`flex h-14 w-14 items-center justify-center rounded-2xl shadow-lg ring-8 transition-all duration-500 ${isAuthorizingBridge ? 'bg-green-500 ring-green-50 animate-pulse' : 'bg-gradient-to-br from-amber-400 to-amber-600 text-white ring-amber-50'}`}>
-                            {isAuthorizingBridge ? <ShieldCheck size={28} className="text-white" /> : <User size={28} />}
-                          </div>
-                          <div className="text-left">
-                            <h4 className="text-sm font-black text-amber-900 uppercase tracking-[0.2em]">Ponte de Autorização</h4>
-                            <p className="text-[11px] text-amber-600 font-bold opacity-75">Otimizado para {getSimulatorBrowserLabel(simulatorBrowser)} no {window.location.hostname}</p>
-                          </div>
-                        </div>
-
-                        {!isAuthorizingBridge ? (
-                          <button
-                            type="button"
-                            onClick={startBridgeAuthorization}
-                            className="group relative flex items-center gap-3 overflow-hidden rounded-2xl bg-[#0c1826] px-8 py-4 text-xs font-black text-white shadow-2xl transition-all hover:scale-105 hover:bg-[#152a42] active:scale-95"
-                          >
-                            <span className="relative z-10 uppercase tracking-widest">Abrir Login do Simulador</span>
-                            <ExternalLink size={16} className="relative z-10 opacity-70 transition-transform group-hover:translate-x-1" />
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                          </button>
-                        ) : (
-                          <div className="flex items-center gap-3 rounded-2xl bg-green-50 border border-green-100 px-5 py-3 shadow-inner">
-                             <div className="flex h-2 w-2 rounded-full bg-green-500 animate-ping" />
-                             <span className="text-[10px] font-black text-green-700 uppercase tracking-widest">Aguardando Login...</span>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="p-8 bg-white relative overflow-hidden">
-                        {!isAuthorizingBridge ? (
-                          <div className="flex flex-col md:flex-row items-center gap-8">
-                            <div className="flex-1 w-full space-y-4">
-                              <div className="flex items-center justify-between">
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Perfil de Acesso</p>
-                                <span className="flex items-center gap-1.5 text-[10px] font-bold text-amber-600 bg-amber-50/50 px-3 py-1 rounded-full border border-amber-100">
-                                  <div className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-                                  Automático
-                                </span>
-                              </div>
-                              <div className="grid grid-cols-2 gap-4">
-                                <div className="group flex flex-col gap-1.5">
-                                  <span className="text-[9px] font-black text-gray-300 uppercase ml-2">Usuário</span>
-                                  <div className="h-12 flex items-center rounded-2xl bg-gray-50/50 px-5 text-xs font-bold text-gray-700 border border-gray-100 shadow-sm group-hover:border-amber-200 transition-colors">
-                                    {credential.login}
-                                  </div>
-                                </div>
-                                <div className="group flex flex-col gap-1.5">
-                                  <span className="text-[9px] font-black text-gray-300 uppercase ml-2">Senha</span>
-                                  <div className="h-12 flex items-center rounded-2xl bg-gray-50/50 px-5 text-xs font-bold text-gray-700 border border-gray-100 shadow-sm group-hover:border-amber-200 transition-colors">
-                                    {credential.senha}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="hidden md:block w-px h-24 bg-gradient-to-b from-transparent via-gray-100 to-transparent" />
-                            <div className="md:max-w-[240px] space-y-3">
-                              <p className="text-[11px] text-gray-500 leading-relaxed font-medium">
-                                Este navegador funciona melhor quando o simulador abre em janela propria ou pelo proxy experimental. Use as credenciais ao lado se precisar.
-                              </p>
-                              <div className="flex items-start gap-2 bg-blue-50/50 p-3 rounded-xl border border-blue-100/50">
-                                <Info size={14} className="text-blue-400 mt-0.5 shrink-0" />
-                                <p className="text-[10px] text-blue-600/80 font-semibold leading-snug">
-                                  Depois de clicar em "Entrar", mantenha a janela aberta. Se voltar ao painel, clique em concluir para focar o simulador.
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="flex flex-col items-center justify-center py-6 text-center animate-in fade-in zoom-in-95 duration-500">
-                            <div className="relative mb-8">
-                              <div className="absolute inset-0 rounded-full bg-green-100 animate-ping opacity-20" />
-                              <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-green-50 text-green-600 ring-[12px] ring-green-50/30">
-                                <Loader2 size={40} className="animate-spin text-green-500" />
-                              </div>
-                            </div>
-
-                            <h5 className="mb-3 text-xl font-black text-gray-900 tracking-tight">
-                               {bridgeProgress < 90 ? "Sincronização Ativa" : "Aguardando Conclusão"}
-                             </h5>
-                             <p className="mb-10 max-w-md text-sm text-gray-500 leading-relaxed font-medium">
-                               {bridgeProgress < 85
-                                 ? "Estamos estabelecendo a conexão segura com o servidor do simulador..."
-                                  : "Login concluido? Mantenha a janela do simulador aberta e conclua aqui."}
-                               <br/>
-                               <span className="text-gray-900 font-bold">Não feche esta página do dashboard.</span>
-                             </p>
-
-                             <div className="w-full max-w-lg space-y-4">
-                               <div className="flex items-center justify-between text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">
-                                 <span>Progresso da Ponte</span>
-                                 <span>{Math.floor(bridgeProgress)}%</span>
-                               </div>
-                               <div className="h-3 w-full bg-gray-100 rounded-full overflow-hidden p-1 shadow-inner">
-                                 <div
-                                   className="h-full bg-gradient-to-r from-green-400 to-green-600 rounded-full transition-all duration-700 shadow-sm"
-                                   style={{ width: `${bridgeProgress}%` }}
-                                 />
-                               </div>
-
-                               <p className="text-[11px] text-gray-400 italic">
-                                 Se o login já foi feito e a janela não fechou sozinha, <button onClick={completeBridgeAuthorization} className="text-green-600 font-bold hover:underline">clique aqui para concluir agora</button>.
-                               </p>
-                             </div>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="bg-gray-50/50 px-8 py-4 border-t border-gray-100 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="h-2 w-2 rounded-full bg-amber-400" />
-                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-                            Sistema de Ponte Inteligente v2.0
-                          </p>
-                        </div>
-                        {isAuthorizingBridge && (
-                           <button
-                             onClick={completeBridgeAuthorization}
-                             className="text-[10px] font-black text-amber-600 hover:text-amber-700 uppercase tracking-widest transition-colors flex items-center gap-2"
-                           >
-                             Forçar Conclusão <ShieldCheck size={14} />
-                           </button>
-                        )}
-                      </div>
-                    </div>
-                  )}
                 </div>
 
                 {simulatorMode === "loading" || simulatorMode === "embedded" ? (
@@ -909,7 +642,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                     <iframe
                       ref={simulatorIframeRef}
                       key={simulatorFrameKey}
-                      src={getSimulatorFrameUrl(simulatorBrowser)}
+                      src={getSimulatorFrameUrl()}
                       title="Simulador Online"
                       className="h-full w-full border-none"
                       style={{
@@ -982,25 +715,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                               <p className="opacity-80">
                                 {getSimulatorExternalExplanation(simulatorBrowser)}
                               </p>
-                              {usesSimulatorProxy(simulatorBrowser) && (
-                                <button
-                                  type="button"
-                                  onClick={async () => {
-                                    if (typeof document.requestStorageAccess === "function") {
-                                      try {
-                                        await document.requestStorageAccess();
-                                        retrySimulatorInsideApp();
-                                      } catch (_e) {
-                                        alert(`Por favor, habilite cookies de terceiros nas configurações do ${getSimulatorBrowserLabel(simulatorBrowser)} para este site.`);
-                                      }
-                                    }
-                                  }}
-                                  className="mt-2 text-xs font-bold underline text-amber-700 hover:text-amber-900"
-                                >
-                                  Tentar liberar acesso ao armazenamento ({getSimulatorBrowserLabel(simulatorBrowser)})
-                                </button>
-                              )}
-
                               <div className="mt-4 pt-4 border-t border-amber-200/50">
                                 <p className="text-[10px] font-bold text-amber-800 uppercase tracking-widest mb-2">Credenciais de Acesso</p>
                                 <div className="grid grid-cols-2 gap-4">
@@ -1047,7 +761,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                               onClick={retrySimulatorInsideApp}
                               className="rounded-xl border border-gray-200 px-8 py-4 text-sm font-semibold text-gray-500 transition-colors hover:bg-gray-50"
                             >
-                              Tentar incorporar (Legacy)
+                              Tentar incorporar novamente
                             </button>
                           ) : null}
                         </div>
