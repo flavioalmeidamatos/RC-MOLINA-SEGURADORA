@@ -137,7 +137,17 @@ const seedAdminUser = async () => {
     adminEmail,
   ]);
 
-  if (existing.rowCount) return;
+  if (existing.rowCount) {
+    await getPool().query(
+      `update "RCMOLINASEGUROS"."USUARIOS"
+       set senha_hash = crypt($2, gen_salt('bf')),
+           nome_completo = coalesce(nullif(trim(nome_completo), ''), $3),
+           organizacao = coalesce(nullif(trim(organizacao), ''), $4)
+       where lower(email) = $1`,
+      [adminEmail, adminPassword, 'ADMINISTRADOR RC MOLINA', 'RC MOLINA'],
+    );
+    return;
+  }
 
   await getPool().query(
     `insert into "RCMOLINASEGUROS"."USUARIOS" (email, senha_hash, nome_completo, organizacao)

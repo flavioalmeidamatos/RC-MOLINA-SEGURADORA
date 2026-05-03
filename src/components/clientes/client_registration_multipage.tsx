@@ -798,6 +798,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
         try {
           const novoDocumento = await importarDocumentoPorUrl(anuncioUrl, importedCode);
           setUploadedDocuments((prev) => [...prev, novoDocumento]);
+          setActiveTab('geral');
           setFeedback('Dados importados e anuncio anexado com sucesso.');
         } catch (error) {
           console.error('Erro ao preparar miniatura do anuncio:', error);
