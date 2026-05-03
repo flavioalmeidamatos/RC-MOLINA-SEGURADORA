@@ -168,6 +168,10 @@ const cleanObservationLine = (line: string): string =>
 
 const splitObservationSegments = (value: string): string[] =>
   value
+    .replace(
+      /(?<!^)(Nome|E-?mail|Telefone\/Whatsapp|Telefone|CPF\/CNPJ|CPF|CNPJ|Cidade|Estado|Quais as idades das pessoas)[:：]/gi,
+      '\n$1:',
+    )
     .split(/\r?\n/)
     .flatMap((line) => cleanObservationLine(line).split(/\s+-\s+/).map(cleanObservationLine))
     .filter(Boolean);
@@ -390,9 +394,26 @@ const importLeadFromSistemaQuer = async ({ login, senha, leadUrl }: ImportLeadPa
       redirectDepth += 1;
     }
 
-    const loginHtml = await currentResponse.clone().text().catch(() => '');
-    const loginPage = cheerio.load(loginHtml);
-    const loginPageText = normalizeText(loginPage('body').text());
+    let loginHtml = await currentResponse.clone().text().catch(() => '');
+    let loginPage = cheerio.load(loginHtml);
+    let loginPageText = normalizeText(loginPage('body').text());
+    const scriptRedirect = loginHtml.match(/(?:window\.)?location(?:\.href)?\s*=\s*['"]([^'"]+)['"]/i);
+
+    if (scriptRedirect?.[1] && !scriptRedirect[1].includes('entrar.php')) {
+      const nextUrl = new URL(scriptRedirect[1], currentUrl).href;
+      currentResponse = await fetch(nextUrl, {
+        headers: {
+          ...commonHeaders,
+          Cookie: getCookieHeader(),
+          Referer: currentUrl,
+        },
+      });
+      updateCookies(currentResponse);
+      currentUrl = nextUrl;
+      loginHtml = await currentResponse.clone().text().catch(() => '');
+      loginPage = cheerio.load(loginHtml);
+      loginPageText = normalizeText(loginPage('body').text());
+    }
 
     if (
       loginPageText.includes('login e senha nao conferem') ||
