@@ -287,16 +287,45 @@ const criarDocumentoAnexado = (arquivo: File): UploadedDocument => ({
   previewKind: obterTipoPreview(arquivo),
 });
 
-const criarDocumentoImportadoPorUrl = (url: string, fileName: string, mimeType = 'image/png'): UploadedDocument => ({
-  id: Date.now() + Math.floor(Math.random() * 100000),
-  file: new File([], fileName, { type: mimeType }),
-  name: fileName,
-  size: 0,
-  mimeType,
-  extension: obterExtensaoArquivo(fileName),
-  previewUrl: url,
-  previewKind: 'image',
-});
+const obterExtensaoPorMimeType = (mimeType: string): string => {
+  if (mimeType.includes('png')) return 'png';
+  if (mimeType.includes('webp')) return 'webp';
+  if (mimeType.includes('gif')) return 'gif';
+  if (mimeType.includes('svg')) return 'svg';
+  if (mimeType.includes('pdf')) return 'pdf';
+  return 'jpg';
+};
+
+const sanitizarNomeArquivo = (nome: string): string => {
+  const nomeLimpo = nome.trim().replace(/[\\/:*?"<>|]+/g, '-');
+  return nomeLimpo || 'anuncio-importado.jpg';
+};
+
+const obterNomeArquivoImportado = (response: Response, anuncioUrl: URL, importedCode: string): string => {
+  const headerFileName = response.headers.get('X-Imported-File-Name') || '';
+  const pathFileName = anuncioUrl.pathname.split('/').filter(Boolean).pop() || '';
+  const contentType = response.headers.get('content-type') || 'image/jpeg';
+  const fallbackName = `anuncio-${importedCode || 'lead'}.${obterExtensaoPorMimeType(contentType)}`;
+  const fileName = sanitizarNomeArquivo(headerFileName || pathFileName || fallbackName);
+
+  return obterExtensaoArquivo(fileName) ? fileName : `${fileName}.${obterExtensaoPorMimeType(contentType)}`;
+};
+
+const importarDocumentoPorUrl = async (rawUrl: string, importedCode: string): Promise<UploadedDocument> => {
+  const anuncioUrl = new URL(rawUrl, window.location.origin);
+  const proxiedAssetUrl = `/api/import-lead-asset?url=${encodeURIComponent(anuncioUrl.toString())}`;
+  const response = await fetch(proxiedAssetUrl);
+
+  if (!response.ok) {
+    throw new Error('Falha ao baixar o anuncio remoto.');
+  }
+
+  const blob = await response.blob();
+  const fileName = obterNomeArquivoImportado(response, anuncioUrl, importedCode);
+  const file = new File([blob], fileName, { type: blob.type || response.headers.get('content-type') || 'image/jpeg' });
+
+  return criarDocumentoAnexado(file);
+};
 
 const revogarPreviews = (documentos: UploadedDocument[]) => {
   documentos.forEach((documento) => URL.revokeObjectURL(documento.previewUrl));
@@ -708,12 +737,13 @@ export const ClientRegistrationMultipage: React.FC = () => {
   };
 
   const applyImportedLeadToNewClient = useCallback(
-    (leadData: SistemaQuerLeadData) => {
+    async (leadData: SistemaQuerLeadData) => {
       const importedPhone = normalizarTelefoneImportado(leadData.telefone || '');
       const importedPhoneType = importedPhone ? obterTipoTelefoneImportado(importedPhone) : 'Celular';
       const importedEmail = obterEmailImportadoValido(leadData.email);
       const importedDocumentDigits = somenteDigitos(leadData.cpf_cnpj || '');
       const importedCode = somenteDigitos(leadData.indicacao_id || '').slice(0, 6);
+      const anuncioUrl = (leadData.anuncio_url || '').trim();
 
       resetForm();
       setIsClientFormEnabled(true);
@@ -759,16 +789,13 @@ export const ClientRegistrationMultipage: React.FC = () => {
       });
       setFeedback('Dados importados aplicados ao novo cliente.');
 
-      if (leadData.anuncio_url) {
-        try {
-          const anuncioUrl = new URL(leadData.anuncio_url as string, window.location.origin);
-          const rawFileName = anuncioUrl.pathname.split('/').filter(Boolean).pop() || `anuncio-${importedCode || 'lead'}.png`;
-          const fileName = rawFileName.includes('.') ? rawFileName : `${rawFileName}.png`;
-          const proxiedPreviewUrl = `/api/import-lead-asset?url=${encodeURIComponent(anuncioUrl.toString())}`;
-          const novoDocumento = criarDocumentoImportadoPorUrl(proxiedPreviewUrl, fileName);
+      if (anuncioUrl) {
+        setActiveTab('documentacao');
+        setFeedback('Dados importados. Baixando anuncio para os arquivos anexados...');
 
+        try {
+          const novoDocumento = await importarDocumentoPorUrl(anuncioUrl, importedCode);
           setUploadedDocuments((prev) => [...prev, novoDocumento]);
-          setActiveTab('documentacao');
           setFeedback('Dados importados e anuncio anexado com sucesso.');
         } catch (error) {
           console.error('Erro ao preparar miniatura do anuncio:', error);
