@@ -6,7 +6,7 @@ import {
   rewriteSimulatorCookie,
   rewriteSimulatorLocation,
   rewriteSimulatorText,
-} from './_lib/simulator_proxy';
+} from './_lib/simulator_proxy.js';
 
 type VercelProxyRequest = NodeJS.ReadableStream & {
   method?: string;
