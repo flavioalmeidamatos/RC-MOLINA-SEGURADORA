@@ -59,7 +59,7 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
   const [adImageUnavailable, setAdImageUnavailable] = useState(false);
   const indicationIdInputRef = useRef<HTMLInputElement | null>(null);
   const [credential, setCredential] = useState({
-    login: 'Rosilene Rodrigues de Carvalho Molina',
+    login: 'Rosilene Rodrigues',
     senha: '123',
     indicationId: extractIndicationId(initialLeadUrl),
   });
