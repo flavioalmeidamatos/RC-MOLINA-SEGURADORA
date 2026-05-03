@@ -507,22 +507,57 @@ export async function importLeadFromSistemaQuer({
       return foundValue;
     };
 
+    const normalizeAnuncioCandidate = (candidate: string): string => {
+      const value = candidate.trim();
+
+      if (!value) return '';
+
+      const urlMatch = value.match(/https?:\/\/[^\s"'<>]+/i)?.[0] || '';
+
+      if (urlMatch) {
+        return new URL(urlMatch, targetLeadUrl).href;
+      }
+
+      if (value.startsWith('/') || value.includes('/anuncios/')) {
+        return new URL(value, targetLeadUrl).href;
+      }
+
+      if (/^[\w.-]+\.(png|jpe?g|webp|gif|svg)$/i.test(value)) {
+        return new URL(value, anuncioBaseUrl).href;
+      }
+
+      return '';
+    };
+
     const findAnuncioUrl = () => {
       let anuncioUrl = '';
+      const anuncioFieldValue = findValue(['anuncio', 'anuncio_url', 'url anuncio', 'url do anuncio']);
+
+      anuncioUrl = normalizeAnuncioCandidate(anuncioFieldValue);
+
+      if (anuncioUrl) {
+        return anuncioUrl;
+      }
 
       $('a').each((_, element) => {
         const href = $(element).attr('href') || '';
         const text = normalizeText($(element).text().trim());
+        const candidate = href || $(element).text().trim();
 
-        if (href.includes('/anuncios/') || text.includes('ver anuncio')) {
-          anuncioUrl = new URL(href, targetLeadUrl).href;
+        if (href.includes('/anuncios/') || text.includes('ver anuncio') || text.includes('anuncio')) {
+          anuncioUrl = normalizeAnuncioCandidate(candidate);
           return false;
         }
 
         return undefined;
       });
 
-      return anuncioUrl || (indicacaoId ? `${anuncioBaseUrl}${indicacaoId}.png` : '');
+      if (anuncioUrl) {
+        return anuncioUrl;
+      }
+
+      const bodyMatch = finalHtml.match(/https?:\/\/[^\s"'<>]*\/anuncios\/[^\s"'<>]+/i)?.[0] || '';
+      return normalizeAnuncioCandidate(bodyMatch);
     };
 
     const rawObservation = findValue(['observacao', 'dados do calculo']);
