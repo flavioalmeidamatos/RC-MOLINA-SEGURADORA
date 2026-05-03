@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ChevronLeft,
   ChevronRight,
-  File,
+  File as FileIcon,
   FileImage,
   FileText,
   Info,
@@ -322,7 +322,9 @@ const importarDocumentoPorUrl = async (rawUrl: string, importedCode: string): Pr
 
   const blob = await response.blob();
   const fileName = obterNomeArquivoImportado(response, anuncioUrl, importedCode);
-  const file = new File([blob], fileName, { type: blob.type || response.headers.get('content-type') || 'image/jpeg' });
+  const file = new window.File([blob], fileName, {
+    type: blob.type || response.headers.get('content-type') || 'image/jpeg',
+  });
 
   return criarDocumentoAnexado(file);
 };
@@ -1509,7 +1511,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                                 ) : documento.extension === 'pdf' ? (
                                   <FileText size={30} className="text-[#ef6b74]" />
                                 ) : (
-                                  <File size={30} className="text-[#3d8ed8]" />
+                                  <FileIcon size={30} className="text-[#3d8ed8]" />
                                 )}
                                 <div>
                                   <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">
@@ -1639,7 +1641,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                   </div>
                 ) : (
                   <div className="flex min-h-[320px] flex-col items-center justify-center rounded-[24px] border border-slate-200 bg-slate-50 px-6 py-8 text-center">
-                    <File size={44} className="text-[#3d8ed8]" />
+                    <FileIcon size={44} className="text-[#3d8ed8]" />
                     <p className="mt-4 text-lg font-black text-slate-900">{selectedDocumentPreview.name}</p>
                     <p className="mt-2 max-w-lg text-sm leading-6 text-slate-500">
                       Este formato não tem leitura embutida na tela. Você ainda pode abrir o arquivo em uma nova aba para visualizar o conteúdo completo.
