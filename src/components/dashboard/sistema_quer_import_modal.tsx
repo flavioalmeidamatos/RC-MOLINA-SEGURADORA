@@ -39,12 +39,27 @@ type SistemaQuerImportModalProps = {
 };
 
 const SISTEMA_QUER_INDICATION_URL = 'http://sistemaquer.com.br/alterar-indicacao.php?indicacao_id=';
+const SISTEMA_QUER_LOGIN_STORAGE_KEY = 'rcmolina_sistema_quer_login';
 const indicationIdPattern = /^\d{6}$/;
 
 const extractIndicationId = (value: string): string => {
   const queryValue = value.match(/[?&]indicacao_id=(\d{1,6})/)?.[1];
   const rawValue = queryValue || value;
   return rawValue.replace(/\D/g, '').slice(0, 6);
+};
+
+const loadStoredLogin = () => {
+  try {
+    return window.localStorage.getItem(SISTEMA_QUER_LOGIN_STORAGE_KEY) || '';
+  } catch (_error) {
+    return '';
+  }
+};
+
+const storeLogin = (login: string) => {
+  try {
+    window.localStorage.setItem(SISTEMA_QUER_LOGIN_STORAGE_KEY, login);
+  } catch (_error) {}
 };
 
 export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
@@ -58,12 +73,16 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
   const [expandedAdImageUrl, setExpandedAdImageUrl] = useState('');
   const [adImageUnavailable, setAdImageUnavailable] = useState(false);
   const indicationIdInputRef = useRef<HTMLInputElement | null>(null);
-  const [credential, setCredential] = useState({
-    login: 'Rosilene Rodrigues',
-    senha: '123',
-    indicationId: extractIndicationId(initialLeadUrl),
+  const [credential, setCredential] = useState(() => {
+    return {
+      login: loadStoredLogin(),
+      senha: '',
+      indicationId: extractIndicationId(initialLeadUrl),
+    };
   });
   const isIndicationIdReady = indicationIdPattern.test(credential.indicationId);
+  const isCredentialReady = Boolean(credential.login.trim() && credential.senha.trim());
+  const canImportLead = isIndicationIdReady && isCredentialReady;
   const adImageUrl = importResult?.data?.anuncio_url || '';
 
   useEffect(() => {
@@ -93,6 +112,14 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
   const handleImportLead = async (event: React.FormEvent) => {
     event.preventDefault();
 
+    if (!isCredentialReady) {
+      setImportResult({
+        type: 'error',
+        message: 'Informe login e senha do Sistema Quer.',
+      });
+      return;
+    }
+
     if (!isIndicationIdReady) {
       setImportResult({
         type: 'error',
@@ -106,13 +133,14 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
     setAdImageUnavailable(false);
 
     try {
+      storeLogin(credential.login.trim());
       const leadUrl = `${SISTEMA_QUER_INDICATION_URL}${credential.indicationId}`;
       const response = await fetch('/api/import-lead', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          login: credential.login,
-          senha: credential.senha,
+          login: credential.login.trim(),
+          senha: credential.senha.trim(),
           leadUrl,
         }),
       });
@@ -164,6 +192,46 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
                 Digite o <b>número da indicação</b> (6 dígitos) do <b>Sistema Quer</b> para importar os dados automaticamente.
               </p>
 
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1.5 block text-xs font-bold uppercase text-gray-700">
+                    Login Sistema Quer
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    autoComplete="username"
+                    className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2.5 text-sm font-semibold text-gray-800 outline-none transition-colors focus:border-[#b58c2a] focus:bg-white"
+                    value={credential.login}
+                    onChange={(event) =>
+                      setCredential({
+                        ...credential,
+                        login: event.target.value,
+                      })
+                    }
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-xs font-bold uppercase text-gray-700">
+                    Senha Sistema Quer
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    autoComplete="current-password"
+                    className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2.5 text-sm font-semibold text-gray-800 outline-none transition-colors focus:border-[#b58c2a] focus:bg-white"
+                    value={credential.senha}
+                    onChange={(event) =>
+                      setCredential({
+                        ...credential,
+                        senha: event.target.value,
+                      })
+                    }
+                  />
+                </div>
+              </div>
+
               <div>
                 <label className="mb-1.5 block text-xs font-bold uppercase text-gray-700">
                   Número da Indicação
@@ -209,9 +277,9 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
 
               <button
                 type="submit"
-                disabled={importLoading || !isIndicationIdReady}
+                disabled={importLoading || !canImportLead}
                 className={`flex w-full items-center justify-center gap-2 rounded-lg py-3.5 font-bold text-white shadow-lg transition-all ${
-                  isIndicationIdReady
+                  canImportLead
                     ? 'bg-[#b58c2a] hover:bg-[#806117] cursor-pointer'
                     : 'bg-gray-300 cursor-not-allowed'
                 }`}

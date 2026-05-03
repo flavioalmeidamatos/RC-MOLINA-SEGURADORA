@@ -390,6 +390,22 @@ const importLeadFromSistemaQuer = async ({ login, senha, leadUrl }: ImportLeadPa
       redirectDepth += 1;
     }
 
+    const loginHtml = await currentResponse.clone().text().catch(() => '');
+    const loginPage = cheerio.load(loginHtml);
+    const loginPageText = normalizeText(loginPage('body').text());
+
+    if (
+      loginPageText.includes('login e senha nao conferem') ||
+      loginPageText.includes('senha nao confere') ||
+      loginPageText.includes('credenciais invalidas')
+    ) {
+      throw new ImportLeadHttpError(401, 'Login ou senha do Sistema Quer invalidos.');
+    }
+
+    if (loginHtml.includes('login100-form') || loginPage('title').text().includes('Login')) {
+      throw new ImportLeadHttpError(401, 'Login ou senha do Sistema Quer invalidos.');
+    }
+
     await sleep(1500);
 
     const targetLeadUrl = originalLeadUrl.replace('http://', 'https://');
