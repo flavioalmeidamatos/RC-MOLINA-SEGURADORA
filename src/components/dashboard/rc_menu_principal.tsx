@@ -73,16 +73,8 @@ const detectSimulatorBrowser = (): SimulatorBrowser => {
 const isSimulatorSupportedBrowser = (browser: SimulatorBrowser) =>
   browser === "chrome" || browser === "edge" || browser === "firefox";
 
-const isLocalSimulatorProxyHost = () => {
-  if (typeof window === "undefined") {
-    return false;
-  }
-
-  return ["localhost", "127.0.0.1"].includes(window.location.hostname);
-};
-
 const usesSimulatorProxy = (browser: SimulatorBrowser) =>
-  (browser === "chrome" || browser === "edge") && isLocalSimulatorProxyHost();
+  browser === "chrome" || browser === "edge" || browser === "firefox";
 
 const getSimulatorBrowserLabel = (browser: SimulatorBrowser) => {
   const labels: Record<SimulatorBrowser, string> = {
@@ -396,13 +388,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       return;
     }
 
-    if (browser === "chrome" || browser === "edge") {
-      setSimulatorMode("idle");
-      setSimulatorStatusMessage("Aguardando abertura do simulador em janela propria para este navegador...");
-      return;
-    }
-
-    // Para outros navegadores suportados, carrega direto.
     startSimulatorAttempt(browser);
   };
 

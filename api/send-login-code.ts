@@ -1,10 +1,5 @@
 import type { Request, Response } from 'express';
 
-const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const resendApiKey = process.env.RESEND_API_KEY;
-const resendFromEmail = process.env.RESEND_FROM_EMAIL || 'RC Molina Seguradora <onboarding@resend.dev>';
-
 /* ── RFC 5322 e-mail validation (server-side) ─────────────────────── */
 const EMAIL_RFC5322_RE =
   /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
@@ -79,6 +74,11 @@ const buildEmailText = (codigo: string) =>
 
 /* ── Handler principal ────────────────────────────────────────────── */
 export default async function handler(req: Request, res: Response) {
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const resendApiKey = process.env.RESEND_API_KEY;
+  const resendFromEmail = process.env.RESEND_FROM_EMAIL || 'RC Molina Seguradora <onboarding@resend.dev>';
+
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     respond(res, 405, { error: 'Metodo nao permitido.' });

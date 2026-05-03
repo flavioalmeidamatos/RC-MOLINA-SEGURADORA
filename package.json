@@ -5,6 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch server.ts",
+    "start": "tsx server.ts",
+    "start:prod": "node --import tsx -e \"process.env.NODE_ENV='production'; import('./server.ts')\"",
+    "deploy:hostinger": "powershell -ExecutionPolicy Bypass -File scripts/deploy-hostinger.ps1",
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist",

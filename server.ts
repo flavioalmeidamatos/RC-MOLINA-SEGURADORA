@@ -2,12 +2,32 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
+import dotenv from 'dotenv';
 import { ImportLeadHttpError, importLeadFromSistemaQuer } from './api/_lib/import_lead';
+import importLeadAssetHandler from './api/import-lead-asset';
+import sendLoginCodeHandler from './api/send-login-code';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.join(__dirname, '.env.local') });
 const SIMULATOR_ORIGIN = 'https://app.simuladoronline.com';
 const SIMULATOR_PROXY_PREFIX = '/simulador-proxy';
+const SIMULATOR_PROXY_PREFIX_ESCAPED = SIMULATOR_PROXY_PREFIX.replace(/\//g, '\\/');
+const SIMULATOR_APP_PATHS =
+  'static|js|files|login|login_check|inicio|logout|simulador|operadoras|cliente|clientes|agenda|admin|io|mig|recuperar-senha|favicon\\.ico';
+const SIMULATOR_BLOCKED_RESPONSE_HEADERS = new Set([
+  'content-encoding',
+  'content-length',
+  'content-security-policy',
+  'content-security-policy-report-only',
+  'connection',
+  'cross-origin-embedder-policy',
+  'cross-origin-opener-policy',
+  'cross-origin-resource-policy',
+  'permissions-policy',
+  'transfer-encoding',
+  'x-frame-options',
+]);
 
 const getRequestBody = (req: express.Request) =>
   new Promise<Buffer>((resolve, reject) => {
@@ -40,6 +60,17 @@ const rewriteSimulatorCookie = (cookie: string) =>
     .replace(/;\s*path=[^;]*/gi, `; Path=${SIMULATOR_PROXY_PREFIX}`)
     .replace(/;\s*secure/gi, '');
 
+const rewriteSimulatorAppPaths = (content: string) =>
+  content
+    .replace(
+      new RegExp(`(["'=:(,]\\s*)/(?!/|simulador-proxy/)(${SIMULATOR_APP_PATHS})(?=/|\\?|["'])`, 'gi'),
+      `$1${SIMULATOR_PROXY_PREFIX}/$2`
+    )
+    .replace(
+      new RegExp(`(["'])\\\\/(?!simulador-proxy\\\\/)(${SIMULATOR_APP_PATHS})(?=\\\\/|\\?|["'])`, 'gi'),
+      `$1${SIMULATOR_PROXY_PREFIX_ESCAPED}\\/$2`
+    );
+
 const rewriteSimulatorText = (content: string, contentType: string) => {
   const proxyOrigin = SIMULATOR_PROXY_PREFIX;
   let rewritten = content
@@ -66,17 +97,26 @@ const rewriteSimulatorText = (content: string, contentType: string) => {
   if (contentType.includes('text/css') || contentType.includes('javascript')) {
     rewritten = rewritten
       .replace(/url\((['"]?)\/(?!\/)/gi, `url($1${SIMULATOR_PROXY_PREFIX}/`)
-      .replace(/(["'])\/(?!simulador-proxy\/)(static|js|files|login|inicio|logout|simulador|operadoras|cliente|agenda|admin|io|mig)\//g, `$1${SIMULATOR_PROXY_PREFIX}/$2/`);
+      .replace(
+        new RegExp(`(["'])/(?!simulador-proxy/)(${SIMULATOR_APP_PATHS})/`, 'gi'),
+        `$1${SIMULATOR_PROXY_PREFIX}/$2/`
+      );
   }
 
-  return rewritten;
+  return rewriteSimulatorAppPaths(rewritten);
 };
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = Number(process.env.PORT) || 3000;
 
   app.use(express.json());
+
+  app.post('/api/send-login-code', sendLoginCodeHandler);
+
+  app.get('/api/import-lead-asset', (req, res) => {
+    importLeadAssetHandler(req, res);
+  });
 
   app.post('/api/import-lead', async (req, res) => {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
@@ -136,7 +176,7 @@ async function startServer() {
       upstreamResponse.headers.forEach((value, name) => {
         const lowerName = name.toLowerCase();
 
-        if (['content-encoding', 'content-length', 'transfer-encoding', 'connection'].includes(lowerName)) {
+        if (SIMULATOR_BLOCKED_RESPONSE_HEADERS.has(lowerName)) {
           return;
         }
 
