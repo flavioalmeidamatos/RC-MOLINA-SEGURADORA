@@ -86,7 +86,13 @@ export const apiAdminLogin = async (email: string, senha: string) => {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ email, senha }),
   });
-  return parseJson<{ token: string; data: UsuarioPerfil }>(response);
+  const payload = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    return { error: payload?.error || 'Nao foi possivel concluir a operacao.' };
+  }
+
+  return { data: { token: payload?.token || '', data: payload?.data as UsuarioPerfil } };
 };
 
 export const apiAdminListUsers = async (token: string) => {
