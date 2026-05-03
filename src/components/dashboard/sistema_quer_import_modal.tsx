@@ -39,7 +39,7 @@ type SistemaQuerImportModalProps = {
 };
 
 const SISTEMA_QUER_INDICATION_URL = 'http://sistemaquer.com.br/alterar-indicacao.php?indicacao_id=';
-const SISTEMA_QUER_LOGIN = 'Rosilene Rodrigues';
+const SISTEMA_QUER_LOGIN = 'Rosilene Rodrigues de Carvalho Molina';
 const SISTEMA_QUER_PASSWORD = '123';
 const indicationIdPattern = /^\d{6}$/;
 

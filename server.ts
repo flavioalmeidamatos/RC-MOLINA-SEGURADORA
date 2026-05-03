@@ -87,7 +87,7 @@ const rewriteSimulatorText = (content: string, contentType: string) => {
       .replace(/window\.ASSETS_URL\s*=\s*['"][^'"]*['"]/g, `window.ASSETS_URL = '${SIMULATOR_PROXY_PREFIX}/static/'`)
       .replace(
         /<input([^>]*id=["']login_usuario["'][^>]*?)\s*\/?>/i,
-        '<input$1 value="Rosilene Rodrigues" autocomplete="off" data-lpignore="true">'
+        '<input$1 value="Rosilene Rodrigues de Carvalho Molina" autocomplete="off" data-lpignore="true">'
       )
       .replace(
         /<input([^>]*id=["']login_senha["'][^>]*?)\s*\/?>/i,

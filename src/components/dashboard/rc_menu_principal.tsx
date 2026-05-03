@@ -159,7 +159,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const simulatorIframeLoadedRef = useRef(false);
 
   const [credential, setCredential] = useState({
-    login: "Rosilene Rodrigues",
+    login: "Rosilene Rodrigues de Carvalho Molina",
     senha: "123",
   });
   const clearSimulatorTimeout = () => {
@@ -714,7 +714,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                 <div className="grid grid-cols-2 gap-4">
                                   <div>
                                     <p className="text-[10px] text-amber-600">LOGIN</p>
-                                    <p className="font-mono font-bold text-amber-950">Rosilene Rodrigues</p>
+                                    <p className="font-mono font-bold text-amber-950">Rosilene Rodrigues de Carvalho Molina</p>
                                   </div>
                                   <div>
                                     <p className="text-[10px] text-amber-600">SENHA</p>
