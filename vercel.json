@@ -7,14 +7,6 @@
   },
   "rewrites": [
     {
-      "source": "/simulador-proxy",
-      "destination": "/api/simulador-proxy?path=login/4602"
-    },
-    {
-      "source": "/simulador-proxy/(.*)",
-      "destination": "/api/simulador-proxy?path=$1"
-    },
-    {
       "source": "/((?!api/|assets/).*)",
       "destination": "/index.html"
     }
