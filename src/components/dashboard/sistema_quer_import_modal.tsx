@@ -35,7 +35,7 @@ type SistemaQuerImportModalProps = {
   open: boolean;
   initialLeadUrl?: string;
   onClose: () => void;
-  onUseLeadData?: (data: SistemaQuerLeadData) => void;
+  onUseLeadData?: (data: SistemaQuerLeadData) => void | Promise<void>;
 };
 
 const SISTEMA_QUER_INDICATION_URL = 'http://sistemaquer.com.br/alterar-indicacao.php?indicacao_id=';
@@ -56,6 +56,7 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
   onUseLeadData,
 }) => {
   const [importLoading, setImportLoading] = useState(false);
+  const [useLeadLoading, setUseLeadLoading] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult>(null);
   const [expandedAdImageUrl, setExpandedAdImageUrl] = useState('');
   const [adImageUnavailable, setAdImageUnavailable] = useState(false);
@@ -92,7 +93,24 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
     setImportResult(null);
     setExpandedAdImageUrl('');
     setAdImageUnavailable(false);
+    setUseLeadLoading(false);
     onClose();
+  };
+
+  const handleUseLeadData = async () => {
+    if (!importResult?.data || useLeadLoading) return;
+
+    setUseLeadLoading(true);
+
+    try {
+      await onUseLeadData?.({
+        ...importResult.data,
+        indicacao_id: importResult.data.indicacao_id || credential.indicationId,
+      });
+      closeModal();
+    } finally {
+      setUseLeadLoading(false);
+    }
   };
 
   const handleImportLead = async (event: React.FormEvent) => {
@@ -378,18 +396,18 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
 
               <button
                 type="button"
-                onClick={() => {
-                  if (importResult.data) {
-                    onUseLeadData?.({
-                      ...importResult.data,
-                      indicacao_id: importResult.data.indicacao_id || credential.indicationId,
-                    });
-                  }
-                  closeModal();
-                }}
-                className="flex w-full items-center justify-center gap-2 rounded bg-[#0c1826] py-4 text-sm font-bold text-white shadow-lg transition-all hover:bg-black"
+                onClick={handleUseLeadData}
+                disabled={useLeadLoading}
+                className="flex w-full items-center justify-center gap-2 rounded bg-[#0c1826] py-4 text-sm font-bold text-white shadow-lg transition-all hover:bg-black disabled:cursor-not-allowed disabled:opacity-70"
               >
-                CONCLUIR E USAR DADOS
+                {useLeadLoading ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    ANEXANDO ANUNCIO...
+                  </>
+                ) : (
+                  'CONCLUIR E USAR DADOS'
+                )}
               </button>
             </div>
           )}
