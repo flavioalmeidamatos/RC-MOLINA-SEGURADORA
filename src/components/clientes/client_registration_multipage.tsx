@@ -71,21 +71,24 @@ type FieldErrorState = {
   rg: string;
   cnpj: string;
   dataNascimento: string;
+  dataCadastro: string;
+  dataAtualizacao: string;
 };
 
-type DocumentFieldId = keyof FieldErrorState;
+type DocumentFieldId = 'cpf' | 'rg' | 'cnpj' | 'dataNascimento';
 
 type ContactErrorState = Record<number, string>;
 
 type UploadedDocument = {
   id: number;
-  file: File;
+  file?: File;
   name: string;
   size: number;
   mimeType: string;
   extension: string;
   previewUrl: string;
   previewKind: 'image' | 'pdf' | 'document';
+  caminhoArquivo?: string;
 };
 
 type ViaCepResponse = {
@@ -141,6 +144,8 @@ const initialFieldErrors: FieldErrorState = {
   rg: '',
   cnpj: '',
   dataNascimento: '',
+  dataCadastro: '',
+  dataAtualizacao: '',
 };
 
 const initialContacts: ContactRow[] = [
@@ -194,6 +199,34 @@ const somenteDigitos = (valor: string): string => valor.replace(/\D/g, '');
   const somenteLetrasEEspacos = (valor: string): string => valor.replace(/[^A-Za-zÀ-ÿ\s]/g, '');
 
 const normalizarTextoMaiusculo = (valor: string): string => valor.toLocaleUpperCase('pt-BR');
+
+const normalizarMarcacoes = (valor: string): string =>
+  normalizarTextoMaiusculo(valor).replace(/[^0-9A-Z\s]/g, '');
+
+const validarDataBR = (valor: string): boolean => {
+  if (!valor) return true;
+  const match = valor.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!match) return false;
+
+  const dia = Number(match[1]);
+  const mes = Number(match[2]);
+  const ano = Number(match[3]);
+  const data = new Date(ano, mes - 1, dia);
+
+  return (
+    ano >= 1900 &&
+    data.getFullYear() === ano &&
+    data.getMonth() === mes - 1 &&
+    data.getDate() === dia
+  );
+};
+
+const formatarDataBancoParaBR = (valor?: string | null): string => {
+  if (!valor) return '';
+  const iso = valor.slice(0, 10);
+  const match = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return match ? `${match[3]}/${match[2]}/${match[1]}` : formatarDataBR(valor);
+};
 
 const formatarCep = (valor: string): string => {
   const digitos = somenteDigitos(valor).slice(0, 8);
@@ -290,6 +323,32 @@ const criarDocumentoAnexado = (arquivo: File): UploadedDocument => ({
   previewKind: obterTipoPreview(arquivo),
 });
 
+const criarDocumentoPersistido = (anexo: ClienteSearchResult['anexos'][number]): UploadedDocument => {
+  const caminhoArquivo = anexo.caminho_arquivo || '';
+  const nome = anexo.nome_arquivo || caminhoArquivo.split('/').pop() || 'anexo';
+  const mimeType = anexo.tipo_mime || '';
+  const extension = obterExtensaoArquivo(nome);
+
+  return {
+    id: Date.now() + Math.floor(Math.random() * 100000),
+    name: nome,
+    size: Number(anexo.tamanho_bytes || 0),
+    mimeType,
+    extension,
+    previewUrl: caminhoArquivo,
+    previewKind: mimeType.startsWith('image/') ? 'image' : extension === 'pdf' ? 'pdf' : 'document',
+    caminhoArquivo,
+  };
+};
+
+const lerArquivoComoDataUrl = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(reader.error || new Error('Falha ao ler arquivo.'));
+    reader.readAsDataURL(file);
+  });
+
 const obterExtensaoPorMimeType = (mimeType: string): string => {
   if (mimeType.includes('png')) return 'png';
   if (mimeType.includes('webp')) return 'webp';
@@ -343,18 +402,30 @@ type ClienteSearchResult = {
   rg: string | null;
   cnpj: string | null;
   data_nascimento: string | null;
+  status_cliente: 'ATIVO' | 'INATIVO' | null;
   codigo: string | null;
+  data_cadastro: string | null;
+  data_atualizacao: string | null;
   cep: string | null;
   logradouro: string | null;
   numero: string | null;
   complemento: string | null;
+  ponto_referencia: string | null;
   bairro: string | null;
   cidade: string | null;
   uf: string | null;
   observacoes_extras: string | null;
+  marcacoes: string | null;
+  como_conheceu: string | null;
   documentacao_anotacoes: string | null;
   permite_agendar_online: boolean;
   contatos: Array<{ tipo: string; valor: string; complemento: string | null; observacoes: string | null; preferencial: boolean }> | null;
+  anexos: Array<{
+    nome_arquivo: string;
+    caminho_arquivo: string;
+    tamanho_bytes: number | null;
+    tipo_mime: string | null;
+  }>;
 };
 
 export const ClientRegistrationMultipage: React.FC = () => {
@@ -448,9 +519,12 @@ export const ClientRegistrationMultipage: React.FC = () => {
 
   const handleFieldChange = <K extends keyof ClientFormState>(field: K, value: ClientFormState[K]) => {
     const nextValue =
-      typeof value === 'string' && camposTextoMaiusculo.has(field)
+      typeof value === 'string' && field === 'marcacoes'
+        ? normalizarMarcacoes(value)
+        : typeof value === 'string' && camposTextoMaiusculo.has(field)
         ? normalizarTextoMaiusculo(value)
         : value;
+
 
     setFormState((prev) => ({ ...prev, [field]: nextValue }));
   };
@@ -481,6 +555,12 @@ export const ClientRegistrationMultipage: React.FC = () => {
 
   const handleDataCadastroChange = (value: string) => {
     handleFieldChange('dataCadastro', formatarDataBR(value));
+    updateFieldError('dataCadastro', '');
+  };
+
+  const handleDataAtualizacaoChange = (value: string) => {
+    handleFieldChange('dataAtualizacao', formatarDataBR(value));
+    updateFieldError('dataAtualizacao', '');
   };
 
   const handleCepChange = (value: string) => {
@@ -841,7 +921,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
     [resetForm],
   );
 
-  const saveClient = () => {
+  const saveClient = async () => {
     if (isClientFormLocked) {
       setFeedback('Clique em Novo Cliente para liberar o preenchimento.');
       return;
@@ -855,6 +935,9 @@ export const ClientRegistrationMultipage: React.FC = () => {
     ];
     const firstInvalidDocument = documentValidations.find(([, isValid]) => !isValid)?.[0];
     const areDocumentsValid = !firstInvalidDocument;
+    const areDatesValid =
+      validateDateField('dataCadastro', 'Data de cadastro') &&
+      validateDateField('dataAtualizacao', 'Data de atualizacao');
     contacts.forEach((contact) => validateContactValue(contact.id));
 
     const areContactsValid = contacts.every((contact) => {
@@ -866,10 +949,12 @@ export const ClientRegistrationMultipage: React.FC = () => {
       return totalDigitos === minimo;
     });
 
-    if (!areDocumentsValid || !areContactsValid) {
+    if (!areDocumentsValid || !areContactsValid || !areDatesValid) {
       setFeedback('Corrija os campos destacados antes de salvar.');
       if (firstInvalidDocument) {
         focusDocumentField(firstInvalidDocument);
+      } else if (!areDatesValid) {
+        setActiveTab('extras');
       }
       return;
     }
@@ -879,6 +964,44 @@ export const ClientRegistrationMultipage: React.FC = () => {
     const isNew = !editingClienteId;
     const url = isNew ? '/api/clientes' : `/api/clientes/${editingClienteId}`;
     const method = isNew ? 'POST' : 'PUT';
+
+    try {
+      const anexos = await Promise.all(
+        uploadedDocuments.map(async (documento) => ({
+          nome: documento.name,
+          tamanho: documento.size,
+          tipoMime: documento.mimeType,
+          caminhoArquivo: documento.caminhoArquivo,
+          dataUrl: documento.file ? await lerArquivoComoDataUrl(documento.file) : undefined,
+        })),
+      );
+
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...formState, contatos: contacts, anexos }),
+      });
+
+      if (!response.ok) throw new Error('Falha ao salvar o cliente');
+      await response.json();
+      const nome = formState.nome || 'Cliente';
+
+      if (isNew) {
+        setFeedback(`Cliente ${nome} cadastrado com sucesso. Formulario limpo para novo cadastro.`);
+        setTimeout(() => {
+          setEditingClienteId(null);
+          resetForm();
+          setIsClientFormEnabled(false);
+        }, 2500);
+      } else {
+        setFeedback(`Dados de ${nome} atualizados com sucesso.`);
+      }
+    } catch (error) {
+      console.error(error);
+      setFeedback('Erro ao salvar. Tente novamente ou verifique a conexao.');
+    }
+
+    return;
 
     fetch(url, {
       method,
@@ -905,6 +1028,13 @@ export const ClientRegistrationMultipage: React.FC = () => {
         console.error(error);
         setFeedback('❌ Erro ao salvar. Tente novamente ou verifique a conexão.');
       });
+  };
+
+  const validateDateField = (field: 'dataCadastro' | 'dataAtualizacao', label: string) => {
+    const value = formState[field];
+    const isValid = validarDataBR(value);
+    updateFieldError(field, isValid ? '' : `${label} deve ser uma data valida.`);
+    return isValid;
   };
 
   const deleteCliente = () => {
@@ -948,9 +1078,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
   };
 
   const loadClienteIntoForm = (c: ClienteSearchResult) => {
-    const nascFormatado = c.data_nascimento
-      ? c.data_nascimento.slice(0, 10).split('-').reverse().join('/')
-      : '';
+    const nascFormatado = formatarDataBancoParaBR(c.data_nascimento);
     setFormState({
       nome: c.nome_completo || '',
       cpf: c.cpf || '',
@@ -961,19 +1089,19 @@ export const ClientRegistrationMultipage: React.FC = () => {
       enderecoRua: c.logradouro || '',
       enderecoNumero: c.numero || '',
       enderecoComplemento: c.complemento || '',
-      enderecoReferencia: '',
+      enderecoReferencia: c.ponto_referencia || '',
       enderecoBairro: c.bairro || '',
       enderecoEstado: c.uf || '',
       enderecoCidade: c.cidade || '',
       observacoes: c.observacoes_extras || '',
       documentacao: c.documentacao_anotacoes || '',
-      marcacoes: '',
-      comoConheceu: '0 - Não informado',
+      marcacoes: c.marcacoes || '',
+      comoConheceu: c.como_conheceu || initialFormState.comoConheceu,
       permiteAgendarOnline: c.permite_agendar_online ?? true,
-      status: 'ATIVO',
+      status: c.status_cliente || 'ATIVO',
       codigo: c.codigo || '',
-      dataCadastro: '',
-      dataAtualizacao: '',
+      dataCadastro: formatarDataBancoParaBR(c.data_cadastro),
+      dataAtualizacao: formatarDataBancoParaBR(c.data_atualizacao),
     });
     const loadedContacts: ContactRow[] = (c.contatos || []).map((ct, i) => ({
       id: i + 1,
@@ -984,6 +1112,10 @@ export const ClientRegistrationMultipage: React.FC = () => {
       favorite: ct.preferencial,
     }));
     setContacts(loadedContacts.length > 0 ? loadedContacts : initialContacts);
+    setUploadedDocuments((prev) => {
+      revogarPreviews(prev.filter((documento) => documento.file));
+      return (c.anexos || []).map(criarDocumentoPersistido);
+    });
     setEditingClienteId(c.id_cliente);
     setIsClientFormEnabled(true);
     setSearchQuery('');
@@ -1410,6 +1542,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                       maxLength={10}
                       placeholder="dd/mm/aaaa"
                     />
+                    {fieldErrors.dataCadastro ? <p className={errorMessageClassName}>{fieldErrors.dataCadastro}</p> : null}
                   </div>
                 </div>
               </div>
@@ -1533,6 +1666,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                     className={fieldClassName}
                     value={formState.marcacoes}
                     onChange={(event) => handleFieldChange('marcacoes', event.target.value)}
+                    maxLength={255}
                     placeholder="Digite o texto e pressione enter"
                   />
                 </div>
@@ -1615,9 +1749,12 @@ export const ClientRegistrationMultipage: React.FC = () => {
                   <input
                     className={fieldClassName}
                     value={formState.dataAtualizacao}
-                    onChange={(event) => handleFieldChange('dataAtualizacao', event.target.value)}
+                    onChange={(event) => handleDataAtualizacaoChange(event.target.value)}
+                    inputMode="numeric"
+                    maxLength={10}
                     placeholder="dd/mm/aaaa"
                   />
+                  {fieldErrors.dataAtualizacao ? <p className={errorMessageClassName}>{fieldErrors.dataAtualizacao}</p> : null}
                 </div>
               </div>
             </div>

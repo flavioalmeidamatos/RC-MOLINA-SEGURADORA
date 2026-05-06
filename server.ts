@@ -113,7 +113,7 @@ async function startServer() {
   const PORT = Number(process.env.PORT) || 3000;
   const uploadDir = process.env.UPLOAD_DIR || path.join(__dirname, 'uploads');
 
-  app.use(express.json({ limit: '10mb' }));
+  app.use(express.json({ limit: '25mb' }));
   app.use('/uploads', express.static(uploadDir));
 
   registerLocalAuthRoutes(app);

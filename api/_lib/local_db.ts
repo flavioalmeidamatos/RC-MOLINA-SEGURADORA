@@ -98,7 +98,7 @@ create table if not exists "RCMOLINASEGUROS"."CLIENTES" (
   status_cliente varchar(20) default 'ATIVO',
   codigo varchar(50) default '000000',
   data_cadastro date default current_date,
-  data_atualizacao timestamptz not null default timezone('utc', now()),
+  data_atualizacao date not null default current_date,
   cep varchar(9),
   logradouro varchar(255),
   numero varchar(20),
@@ -136,10 +136,9 @@ create table if not exists "RCMOLINASEGUROS"."CLIENTES_ANEXOS" (
 );
 
 drop trigger if exists trg_clientes_touch_updated_at on "RCMOLINASEGUROS"."CLIENTES";
-create trigger trg_clientes_touch_updated_at
-before update on "RCMOLINASEGUROS"."CLIENTES"
-for each row
-execute function "RCMOLINASEGUROS".touch_updated_at();
+alter table "RCMOLINASEGUROS"."CLIENTES"
+  alter column data_atualizacao type date using data_atualizacao::date,
+  alter column data_atualizacao set default current_date;
 
 `;
 
