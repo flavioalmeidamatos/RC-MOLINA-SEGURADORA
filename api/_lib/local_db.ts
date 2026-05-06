@@ -88,6 +88,59 @@ create trigger trg_usuarios_touch_updated_at
 before update on "RCMOLINASEGUROS"."USUARIOS"
 for each row
 execute function "RCMOLINASEGUROS".touch_updated_at();
+create table if not exists "RCMOLINASEGUROS"."CLIENTES" (
+  id_cliente uuid primary key default gen_random_uuid(),
+  nome_completo varchar(255) not null,
+  cpf varchar(14),
+  rg varchar(20),
+  cnpj varchar(18),
+  data_nascimento date,
+  status_cliente varchar(20) default 'ATIVO',
+  codigo varchar(50) default '000000',
+  data_cadastro date default current_date,
+  data_atualizacao timestamptz not null default timezone('utc', now()),
+  cep varchar(9),
+  logradouro varchar(255),
+  numero varchar(20),
+  complemento varchar(100),
+  ponto_referencia varchar(255),
+  bairro varchar(100),
+  cidade varchar(100),
+  uf varchar(2),
+  observacoes_extras text,
+  marcacoes varchar(255),
+  como_conheceu varchar(100) default '0 - Não informado',
+  permite_agendar_online boolean default true,
+  documentacao_anotacoes text
+);
+
+create table if not exists "RCMOLINASEGUROS"."CLIENTES_CONTATOS" (
+  id_contato uuid primary key default gen_random_uuid(),
+  id_cliente uuid not null references "RCMOLINASEGUROS"."CLIENTES"(id_cliente) on delete cascade,
+  tipo varchar(50) not null,
+  valor varchar(100) not null,
+  complemento varchar(100),
+  observacoes varchar(255),
+  preferencial boolean default false,
+  criado_em timestamptz default timezone('utc', now())
+);
+
+create table if not exists "RCMOLINASEGUROS"."CLIENTES_ANEXOS" (
+  id_anexo uuid primary key default gen_random_uuid(),
+  id_cliente uuid not null references "RCMOLINASEGUROS"."CLIENTES"(id_cliente) on delete cascade,
+  nome_arquivo varchar(255) not null,
+  caminho_arquivo varchar(500) not null,
+  tamanho_bytes integer,
+  tipo_mime varchar(100),
+  criado_em timestamptz default timezone('utc', now())
+);
+
+drop trigger if exists trg_clientes_touch_updated_at on "RCMOLINASEGUROS"."CLIENTES";
+create trigger trg_clientes_touch_updated_at
+before update on "RCMOLINASEGUROS"."CLIENTES"
+for each row
+execute function "RCMOLINASEGUROS".touch_updated_at();
+
 `;
 
 const rowToPerfil = (row: any): UsuarioPerfil => ({

@@ -7,6 +7,7 @@ import { registerLocalAuthRoutes } from './api/_lib/local_auth_routes';
 import { ImportLeadHttpError, importLeadFromSistemaQuer } from './api/_lib/import_lead';
 import importLeadAssetHandler from './api/import-lead-asset';
 import sendLoginCodeHandler from './api/send-login-code';
+import { createClienteHandler, listClientesHandler, searchClientesHandler, updateClienteHandler, deleteClienteHandler } from './api/clientes';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -119,6 +120,12 @@ async function startServer() {
 
   app.post('/api/send-login-code', sendLoginCodeHandler);
 
+  app.post('/api/clientes', createClienteHandler);
+  app.get('/api/clientes', listClientesHandler);
+  app.get('/api/clientes/search', searchClientesHandler);
+  app.put('/api/clientes/:id', updateClienteHandler);
+  app.delete('/api/clientes/:id', deleteClienteHandler);
+
   app.get('/api/import-lead-asset', (req, res) => {
     importLeadAssetHandler(req, res);
   });
@@ -168,11 +175,11 @@ async function startServer() {
     requestHeaders.set('referer', `${SIMULATOR_ORIGIN}/login/4602`);
 
     try {
-      const body = ['GET', 'HEAD'].includes(req.method) ? undefined : await getRequestBody(req);
+      const bodyBuffer = ['GET', 'HEAD'].includes(req.method) ? undefined : await getRequestBody(req);
       const upstreamResponse = await fetch(upstreamUrl, {
         method: req.method,
         headers: requestHeaders,
-        body,
+        body: bodyBuffer as unknown as BodyInit,
         redirect: 'manual',
       });
 

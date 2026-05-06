@@ -6,12 +6,15 @@ import {
   FileImage,
   FileText,
   Info,
+  Loader2,
   MapPinned,
   PlusCircle,
   Save,
+  Search,
   Trash2,
   Upload,
   UserRound,
+  AlertTriangle,
   X,
 } from 'lucide-react';
 import {
@@ -333,6 +336,27 @@ const revogarPreviews = (documentos: UploadedDocument[]) => {
   documentos.forEach((documento) => URL.revokeObjectURL(documento.previewUrl));
 };
 
+type ClienteSearchResult = {
+  id_cliente: string;
+  nome_completo: string;
+  cpf: string | null;
+  rg: string | null;
+  cnpj: string | null;
+  data_nascimento: string | null;
+  codigo: string | null;
+  cep: string | null;
+  logradouro: string | null;
+  numero: string | null;
+  complemento: string | null;
+  bairro: string | null;
+  cidade: string | null;
+  uf: string | null;
+  observacoes_extras: string | null;
+  documentacao_anotacoes: string | null;
+  permite_agendar_online: boolean;
+  contatos: Array<{ tipo: string; valor: string; complemento: string | null; observacoes: string | null; preferencial: boolean }> | null;
+};
+
 export const ClientRegistrationMultipage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabId>('geral');
   const [isClientFormEnabled, setIsClientFormEnabled] = useState(false);
@@ -348,6 +372,14 @@ export const ClientRegistrationMultipage: React.FC = () => {
   const [feedback, setFeedback] = useState('');
   const [fieldErrors, setFieldErrors] = useState<FieldErrorState>(initialFieldErrors);
   const [contactErrors, setContactErrors] = useState<ContactErrorState>({});
+  const [editingClienteId, setEditingClienteId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<ClienteSearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const carouselRef = useRef<HTMLDivElement | null>(null);
   const uploadedDocumentsRef = useRef<UploadedDocument[]>([]);
@@ -842,7 +874,123 @@ export const ClientRegistrationMultipage: React.FC = () => {
       return;
     }
 
-    setFeedback('Layout multipage de clientes validado. O próximo passo é persistir no PostgreSQL da Hostinger.');
+    setFeedback('Salvando...');
+
+    const isNew = !editingClienteId;
+    const url = isNew ? '/api/clientes' : `/api/clientes/${editingClienteId}`;
+    const method = isNew ? 'POST' : 'PUT';
+
+    fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...formState, contatos: contacts }),
+    })
+      .then(async (response) => {
+        if (!response.ok) throw new Error('Falha ao salvar o cliente');
+        const data = await response.json();
+        const nome = formState.nome || 'Cliente';
+        if (isNew) {
+          setFeedback(`✅ ${nome} cadastrado com sucesso! Formulário limpo para novo cadastro.`);
+          // Limpa o form após breve delay para o usuário ler a mensagem
+          setTimeout(() => {
+            setEditingClienteId(null);
+            resetForm();
+            setIsClientFormEnabled(false);
+          }, 2500);
+        } else {
+          setFeedback(`✅ Dados de ${nome} atualizados com sucesso!`);
+        }
+      })
+      .catch((error) => {
+        console.error(error);
+        setFeedback('❌ Erro ao salvar. Tente novamente ou verifique a conexão.');
+      });
+  };
+
+  const deleteCliente = () => {
+    if (!editingClienteId) return;
+    setIsDeleting(true);
+    const nome = formState.nome || 'Cliente';
+    fetch(`/api/clientes/${editingClienteId}`, { method: 'DELETE' })
+      .then(async (response) => {
+        if (!response.ok) throw new Error('Falha ao excluir');
+        setConfirmDelete(false);
+        setEditingClienteId(null);
+        resetForm();
+        setIsClientFormEnabled(false);
+        setFeedback(`🗑️ ${nome} excluído com sucesso.`);
+      })
+      .catch((error) => {
+        console.error(error);
+        setFeedback('❌ Erro ao excluir cliente. Tente novamente.');
+        setConfirmDelete(false);
+      })
+      .finally(() => setIsDeleting(false));
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const q = e.target.value;
+    setSearchQuery(q);
+    setShowSearchResults(true);
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    if (q.trim().length < 1) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+    setIsSearching(true);
+    searchTimeoutRef.current = setTimeout(() => {
+      fetch(`/api/clientes/search?q=${encodeURIComponent(q.trim())}`)
+        .then((r) => r.json())
+        .then((data: ClienteSearchResult[]) => { setSearchResults(data); setIsSearching(false); })
+        .catch(() => setIsSearching(false));
+    }, 150);
+  };
+
+  const loadClienteIntoForm = (c: ClienteSearchResult) => {
+    const nascFormatado = c.data_nascimento
+      ? c.data_nascimento.slice(0, 10).split('-').reverse().join('/')
+      : '';
+    setFormState({
+      nome: c.nome_completo || '',
+      cpf: c.cpf || '',
+      rg: c.rg || '',
+      cnpj: c.cnpj || '',
+      dataNascimento: nascFormatado,
+      enderecoCep: c.cep || '',
+      enderecoRua: c.logradouro || '',
+      enderecoNumero: c.numero || '',
+      enderecoComplemento: c.complemento || '',
+      enderecoReferencia: '',
+      enderecoBairro: c.bairro || '',
+      enderecoEstado: c.uf || '',
+      enderecoCidade: c.cidade || '',
+      observacoes: c.observacoes_extras || '',
+      documentacao: c.documentacao_anotacoes || '',
+      marcacoes: '',
+      comoConheceu: '0 - Não informado',
+      permiteAgendarOnline: c.permite_agendar_online ?? true,
+      status: 'ATIVO',
+      codigo: c.codigo || '',
+      dataCadastro: '',
+      dataAtualizacao: '',
+    });
+    const loadedContacts: ContactRow[] = (c.contatos || []).map((ct, i) => ({
+      id: i + 1,
+      type: ct.tipo,
+      value: ct.valor,
+      extra: ct.complemento || '',
+      notes: ct.observacoes || '',
+      favorite: ct.preferencial,
+    }));
+    setContacts(loadedContacts.length > 0 ? loadedContacts : initialContacts);
+    setEditingClienteId(c.id_cliente);
+    setIsClientFormEnabled(true);
+    setSearchQuery('');
+    setSearchResults([]);
+    setShowSearchResults(false);
+    setFeedback(`📋 Cliente "${c.nome_completo}" carregado para edição.`);
+    setActiveTab('geral');
   };
 
   const importClient = () => {
@@ -870,6 +1018,50 @@ export const ClientRegistrationMultipage: React.FC = () => {
             <Info size={16} className="shrink-0" />
           </div>
 
+          {/* Search bar */}
+          <div className="relative flex-1 sm:max-w-xs">
+            <div className="relative">
+              <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              {isSearching && (
+                <Loader2 size={15} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-[#3d8ed8]" />
+              )}
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={handleSearchChange}
+                onFocus={() => searchQuery.length >= 2 && setShowSearchResults(true)}
+                onBlur={() => setTimeout(() => setShowSearchResults(false), 200)}
+                placeholder="Buscar por nome, telefone ou código…"
+                className="h-10 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-9 pr-8 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#3d8ed8] focus:bg-white focus:ring-2 focus:ring-[#3d8ed8]/20"
+              />
+            </div>
+            {showSearchResults && searchResults.length > 0 && (
+              <ul className="absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-xl">
+                {searchResults.map((c) => (
+                  <li key={c.id_cliente}>
+                    <button
+                      type="button"
+                      onMouseDown={() => loadClienteIntoForm(c)}
+                      className="flex w-full flex-col gap-0.5 px-4 py-2.5 text-left transition hover:bg-[#3d8ed8]/5"
+                    >
+                      <span className="text-sm font-bold text-slate-800">{c.nome_completo}</span>
+                      <span className="text-xs text-slate-500">
+                        {c.codigo ? `Cód: ${c.codigo}` : ''}
+                        {c.cpf ? ` · CPF: ${c.cpf}` : ''}
+                        {(c.contatos || []).length > 0 ? ` · ${c.contatos![0].valor}` : ''}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {showSearchResults && searchQuery.length >= 1 && !isSearching && searchResults.length === 0 && (
+              <div className="absolute left-0 right-0 top-full z-50 mt-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-xl">
+                Nenhum cliente encontrado.
+              </div>
+            )}
+          </div>
+
           <div className="grid grid-cols-3 gap-2.5 sm:flex sm:flex-wrap">
             <button
               type="button"
@@ -879,6 +1071,16 @@ export const ClientRegistrationMultipage: React.FC = () => {
               <Upload size={18} />
               Importar
             </button>
+            {editingClienteId && (
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(true)}
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-red-500 px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-red-500/20 transition hover:bg-red-600 sm:min-h-10"
+              >
+                <Trash2 size={18} />
+                Excluir
+              </button>
+            )}
             <button
               type="button"
               onClick={saveClient}
@@ -886,11 +1088,11 @@ export const ClientRegistrationMultipage: React.FC = () => {
               className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:bg-emerald-200 disabled:text-emerald-50 disabled:shadow-none sm:min-h-10"
             >
               <Save size={18} />
-              Salvar
+              {editingClienteId ? 'Atualizar' : 'Salvar'}
             </button>
             <button
               type="button"
-              onClick={startNewClient}
+              onClick={() => { setEditingClienteId(null); startNewClient(); }}
               className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-[#4e9bdd] px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-[#4e9bdd]/20 transition hover:bg-[#377fbf] sm:min-h-10"
             >
               <PlusCircle size={18} />
@@ -901,7 +1103,12 @@ export const ClientRegistrationMultipage: React.FC = () => {
 
         {feedback ? (
           <div className="px-3 pt-3">
-            <div className="rounded-2xl border border-[#3d8ed8]/20 bg-[#3d8ed8]/5 px-4 py-2.5 text-sm text-[#225f97]">
+            <div className={`rounded-2xl px-4 py-2.5 text-sm font-medium ${
+              feedback.startsWith('✅') ? 'border border-emerald-200 bg-emerald-50 text-emerald-800' :
+              feedback.startsWith('❌') ? 'border border-red-200 bg-red-50 text-red-800' :
+              feedback.startsWith('🗑️') ? 'border border-slate-200 bg-slate-50 text-slate-700' :
+              'border border-[#3d8ed8]/20 bg-[#3d8ed8]/5 text-[#225f97]'
+            }`}>
               {feedback}
             </div>
           </div>
@@ -916,6 +1123,45 @@ export const ClientRegistrationMultipage: React.FC = () => {
             {cepPopupMessage}
           </div>
         ) : null}
+
+        {/* Modal de confirmação de exclusão */}
+        {confirmDelete && (
+          <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+            <div className="mx-4 w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl">
+              <div className="mb-4 flex items-center gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-red-100">
+                  <AlertTriangle size={22} className="text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-800">Confirmar exclusão</h3>
+                  <p className="text-sm text-slate-500">Esta ação não pode ser desfeita.</p>
+                </div>
+              </div>
+              <p className="mb-5 rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                Deseja excluir permanentemente o cadastro de <strong>{formState.nome || 'este cliente'}</strong> e todos os seus contatos?
+              </p>
+              <div className="flex gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setConfirmDelete(false)}
+                  disabled={isDeleting}
+                  className="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={deleteCliente}
+                  disabled={isDeleting}
+                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-2xl bg-red-500 px-4 py-2.5 text-sm font-black text-white transition hover:bg-red-600 disabled:opacity-50"
+                >
+                  {isDeleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                  {isDeleting ? 'Excluindo...' : 'Sim, excluir'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {isClientFormLocked ? (
           <div className="px-3 pt-3">
