@@ -26,6 +26,9 @@ export const Cadastro: React.FC = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  const sanitizeOrganizacao = (value: string) =>
+    value.toUpperCase().replace(/[^A-ZÀ-ÿ0-9\s.&'/-]/g, '');
+
   // Preenche o e-mail e senha se vierem da tela de login
   useEffect(() => {
     if (location.state) {
@@ -214,7 +217,6 @@ export const Cadastro: React.FC = () => {
               onBlur={(e) => {
                 if (formData.nome.trim().split(' ').length < 2) {
                   setError('Obrigatório informar o nome completo válido (mín. 2 nomes).');
-                  e.target.focus();
                 } else {
                   setError('');
                 }
@@ -235,7 +237,6 @@ export const Cadastro: React.FC = () => {
               onBlur={(e) => {
                 if (!formData.email || !validarEmailRFC5322(formData.email.trim().toLowerCase())) {
                   setError('Obrigatório preencher um e-mail válido.');
-                  e.target.focus();
                 } else {
                   setError('');
                 }
@@ -258,10 +259,8 @@ export const Cadastro: React.FC = () => {
                   const regexSenhaForte = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
                   if (!formData.senha || formData.senha.length < 8) {
                     setError('Obrigatório preencher a senha com no mínimo 8 caracteres.');
-                    e.target.focus();
                   } else if (!regexSenhaForte.test(formData.senha)) {
                     setError('A senha deve ser forte: ter letras maiúsculas, minúsculas, números e caracteres especiais.');
-                    e.target.focus();
                   } else {
                     setError('');
                   }
@@ -291,7 +290,6 @@ export const Cadastro: React.FC = () => {
                 onBlur={(e) => {
                   if (!formData.confirmarSenha || formData.confirmarSenha !== formData.senha) {
                     setError('A confirmação deve ser preenchida e idêntica à senha.');
-                    e.target.focus();
                   } else {
                     setError('');
                   }
@@ -316,8 +314,7 @@ export const Cadastro: React.FC = () => {
               type="text"
               value={formData.organizacao}
               onChange={(e) => {
-                const alphaOnly = e.target.value.toUpperCase().replace(/[^A-ZÀ-ÿ\s]/g, '');
-                setFormData({ ...formData, organizacao: alphaOnly });
+                setFormData({ ...formData, organizacao: sanitizeOrganizacao(e.target.value) });
               }}
               onKeyDown={handleKeyDown}
               placeholder="NOME DA SUA ORGANIZAÇÃO (OPCIONAL)"
