@@ -1295,14 +1295,6 @@ export const ClientRegistrationMultipage: React.FC = () => {
           </div>
         )}
 
-        {isClientFormLocked ? (
-          <div className="px-3 pt-3">
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-800">
-              Clique em Novo Cliente para liberar o preenchimento das 4 abas.
-            </div>
-          </div>
-        ) : null}
-
         <div className="flex gap-2 overflow-x-auto px-1 pb-1">
           {tabs.map((tab) => {
             const Icon = tab.icon;

@@ -22,6 +22,9 @@ const EMAIL_RFC5322_RE =
 
 const isValidEmail = (email: string) => EMAIL_RFC5322_RE.test(email);
 
+const senhaAtendeCriterios = (senha: string) =>
+  senha.length >= 8 && /[A-Za-z]/.test(senha) && /\d/.test(senha) && /[^A-Za-z0-9\s]/.test(senha);
+
 const asyncRoute =
   (handler: express.RequestHandler): express.RequestHandler =>
   (req, res, next) => {
@@ -111,7 +114,7 @@ export const registerLocalAuthRoutes = (app: express.Express) => {
       const nomeCompleto = String(req.body?.nome_completo || '').trim();
       const organizacao = String(req.body?.organizacao || '').trim();
 
-      if (!isValidEmail(email) || senha.length < 8 || nomeCompleto.split(/\s+/).length < 2) {
+      if (!isValidEmail(email) || !senhaAtendeCriterios(senha) || nomeCompleto.split(/\s+/).length < 2) {
         res.status(400).json({ error: 'Dados de cadastro invalidos.' });
         return;
       }

@@ -5,6 +5,12 @@ import { apiEmailExists, apiRegister } from '../../lib/local_api';
 import { validarEmailRFC5322 } from '../../lib/validacoes';
 import { FooterAdmin } from '../shared/footer_admin';
 
+const SENHA_FORTE_MENSAGEM =
+  'A senha deve ter no minimo 8 caracteres, incluindo letras, numeros e caracteres especiais.';
+
+const senhaAtendeCriterios = (senha: string) =>
+  senha.length >= 8 && /[A-Za-z]/.test(senha) && /\d/.test(senha) && /[^A-Za-z0-9\s]/.test(senha);
+
 export const Cadastro: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -100,20 +106,18 @@ export const Cadastro: React.FC = () => {
       return;
     }
 
+    if (!senhaAtendeCriterios(formData.senha)) {
+      setError(SENHA_FORTE_MENSAGEM);
+      return;
+    }
+
+    if (!senhaAtendeCriterios(formData.confirmarSenha)) {
+      setError(`A confirmacao de senha tambem deve atender aos criterios. ${SENHA_FORTE_MENSAGEM}`);
+      return;
+    }
+
     if (formData.senha !== formData.confirmarSenha) {
       setError('As senhas não coincidem.');
-      return;
-    }
-
-    if (formData.senha.length < 8) {
-      setError('A senha deve ser forte: mínimo de 8 caracteres.');
-      return;
-    }
-
-    // Validação de complexidade de senha (opcional, mas recomendado para "senhas fortes")
-    const regexSenhaForte = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-    if (!regexSenhaForte.test(formData.senha)) {
-      setError('A senha deve conter pelo menos 8 caracteres, incluindo letras maiúsculas, minúsculas, números e caracteres especiais.');
       return;
     }
 
@@ -256,11 +260,8 @@ export const Cadastro: React.FC = () => {
                 onChange={(e) => setFormData({ ...formData, senha: e.target.value })}
                 onKeyDown={handleKeyDown}
                 onBlur={(e) => {
-                  const regexSenhaForte = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-                  if (!formData.senha || formData.senha.length < 8) {
-                    setError('Obrigatório preencher a senha com no mínimo 8 caracteres.');
-                  } else if (!regexSenhaForte.test(formData.senha)) {
-                    setError('A senha deve ser forte: ter letras maiúsculas, minúsculas, números e caracteres especiais.');
+                  if (!senhaAtendeCriterios(formData.senha)) {
+                    setError(SENHA_FORTE_MENSAGEM);
                   } else {
                     setError('');
                   }
@@ -288,7 +289,9 @@ export const Cadastro: React.FC = () => {
                 onChange={(e) => setFormData({ ...formData, confirmarSenha: e.target.value })}
                 onKeyDown={handleKeyDown}
                 onBlur={(e) => {
-                  if (!formData.confirmarSenha || formData.confirmarSenha !== formData.senha) {
+                  if (!senhaAtendeCriterios(formData.confirmarSenha)) {
+                    setError(`A confirmacao de senha tambem deve atender aos criterios. ${SENHA_FORTE_MENSAGEM}`);
+                  } else if (formData.confirmarSenha !== formData.senha) {
                     setError('A confirmação deve ser preenchida e idêntica à senha.');
                   } else {
                     setError('');

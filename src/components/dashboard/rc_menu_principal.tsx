@@ -769,7 +769,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                 )}
               </div>
             ) : showClientArea ? (
-              <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
+              <div className="flex-1 overflow-y-auto px-4 pb-4 pt-2 sm:px-6 sm:pb-6 sm:pt-3 md:px-8 md:pb-8 md:pt-4">
                 <ClientRegistrationMultipage />
               </div>
             ) : activeMenu === "Agenda" ? (
