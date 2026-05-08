@@ -48,6 +48,10 @@ const SIMULATOR_LOGOUT_URL = "https://app.simuladoronline.com/logout";
 const SIMULATOR_PROXY_LOGIN_URL = "/simulador-proxy/login/4602";
 const SULAMERICA_SIMULATOR_URL = "https://os11.sulamerica.com.br/SaudeCotador/LoginVendedor.aspx";
 const SULAMERICA_PROXY_LOGIN_URL = "/sulamerica-proxy/SaudeCotador/LoginVendedor.aspx";
+const AMIL_SIMULATOR_URL = "https://portalcorretor.amil.com.br/portal/web/servicos/usuario/corretor/login";
+const AMIL_PROXY_LOGIN_URL = "/amil-proxy/portal/web/servicos/usuario/corretor/login";
+const AMIL_LOGIN = "77915445715";
+const AMIL_PASSWORD = "sqn0y3zqmo";
 const SIMULATOR_FALLBACK_WINDOW_NAME = "simulador_online_fallback_window";
 const CHROME_SIMULATOR_LOAD_TIMEOUT_MS = 18000;
 const BASE_SIMULATOR_IFRAME_ALLOW =
@@ -180,6 +184,8 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const simulatorWindowRef = useRef<Window | null>(null);
   const simulatorIframeRef = useRef<HTMLIFrameElement | null>(null);
   const simulatorIframeLoadedRef = useRef(false);
+  const amilIframeRef = useRef<HTMLIFrameElement | null>(null);
+  const amilLoginSubmittedRef = useRef(false);
 
   const [credential, setCredential] = useState({
     login: "Rosilene Rodrigues",
@@ -313,6 +319,86 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     cleanupSimulatorUi();
     setShowSimulatorChooser(false);
     setActiveMenu("Simulador SulAmerica");
+  };
+
+  const enterAmilSimulator = () => {
+    cleanupSimulatorUi();
+    amilLoginSubmittedRef.current = false;
+    setShowSimulatorChooser(false);
+    setActiveMenu("Simulador Amil");
+  };
+
+  const fillAndSubmitAmilLogin = () => {
+    const frame = amilIframeRef.current;
+    if (!frame) {
+      return;
+    }
+
+    const applyCredentials = () => {
+      try {
+        const frameDocument = frame.contentDocument;
+        if (!frameDocument) {
+          return;
+        }
+
+        const loginInput = frameDocument.querySelector<HTMLInputElement>("#login");
+        const senhaInput = frameDocument.querySelector<HTMLInputElement>("#senha");
+        const perfilInput = frameDocument.querySelector<HTMLInputElement>("#perfilUsuario");
+        const entrarButton = frameDocument.querySelector<HTMLButtonElement>("#efetuarLogin");
+
+        if (!loginInput || !senhaInput) {
+          return;
+        }
+
+        const updateInput = (input: HTMLInputElement, value: string) => {
+          input.value = value;
+          input.setAttribute("autocomplete", "off");
+          input.setAttribute("data-lpignore", "true");
+          input.dispatchEvent(new Event("input", { bubbles: true }));
+          input.dispatchEvent(new Event("change", { bubbles: true }));
+        };
+
+        updateInput(loginInput, AMIL_LOGIN);
+        updateInput(senhaInput, AMIL_PASSWORD);
+
+        if (perfilInput && !perfilInput.value) {
+          updateInput(perfilInput, "CORRETOR");
+        }
+
+        if (amilLoginSubmittedRef.current) {
+          return;
+        }
+
+        amilLoginSubmittedRef.current = true;
+        senhaInput.focus();
+        ["keydown", "keypress", "keyup"].forEach((eventName) => {
+          senhaInput.dispatchEvent(
+            new KeyboardEvent(eventName, {
+              bubbles: true,
+              cancelable: true,
+              key: "Enter",
+              code: "Enter",
+              keyCode: 13,
+              which: 13,
+            })
+          );
+        });
+
+        window.setTimeout(() => {
+          entrarButton?.click();
+        }, 250);
+
+        window.setTimeout(() => {
+          const form = frameDocument.querySelector<HTMLFormElement>("#formLoginCorretor");
+          if (form && frame.contentWindow?.location.href.includes("/login")) {
+            form.submit();
+          }
+        }, 1400);
+      } catch (_error) {}
+    };
+
+    applyCredentials();
+    [350, 900, 1800, 3200].forEach((delay) => window.setTimeout(applyCredentials, delay));
   };
 
   const retrySimulatorInsideApp = () => {
@@ -467,7 +553,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       return;
     }
 
-    if (activeMenu === "Simuladores" || activeMenu === "Simulador SulAmerica") {
+    if (activeMenu === "Simuladores" || activeMenu === "Simulador SulAmerica" || activeMenu === "Simulador Amil") {
       cleanupSimulatorUi();
     }
 
@@ -482,7 +568,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     }
 
     if (line1 === "Meus" && line2 === "clientes") {
-      if (activeMenu === "Simuladores" || activeMenu === "Simulador SulAmerica") {
+      if (activeMenu === "Simuladores" || activeMenu === "Simulador SulAmerica" || activeMenu === "Simulador Amil") {
         cleanupSimulatorUi();
       }
       setShowSimulatorChooser(false);
@@ -528,6 +614,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
   const showSimulator = activeMenu === "Simuladores";
   const showSulamericaSimulator = activeMenu === "Simulador SulAmerica";
+  const showAmilSimulator = activeMenu === "Simulador Amil";
   const showClientArea = activeMenu === "Meus clientes";
   const showAgendaArea = activeMenu === "Agenda";
 
@@ -550,7 +637,8 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
             const Icon = item.icon;
             const isActive =
               activeMenu === item.title ||
-              (item.title === "Simuladores" && activeMenu === "Simulador SulAmerica");
+              (item.title === "Simuladores" &&
+                (activeMenu === "Simulador SulAmerica" || activeMenu === "Simulador Amil"));
 
             return (
               <button
@@ -591,7 +679,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-            {showClientArea || showSimulator || showSulamericaSimulator || showAgendaArea ? (
+            {showClientArea || showSimulator || showSulamericaSimulator || showAmilSimulator || showAgendaArea ? (
               <button
                 type="button"
                 onClick={() => handleMenuClick("Home")}
@@ -821,6 +909,32 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                   allow="geolocation; microphone; camera; payment; encrypted-media"
                 />
               </div>
+            ) : showAmilSimulator ? (
+              <div className="flex flex-1 flex-col bg-white" style={{ height: "calc(100vh - 120px)" }}>
+                <div className="flex items-center justify-between border-b bg-gray-50 px-4 py-2 text-xs text-gray-500">
+                  <span className="flex items-center gap-2">
+                    <ExternalLink size={14} />
+                    Simulador Amil
+                  </span>
+                  <a
+                    href={AMIL_SIMULATOR_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-600 transition hover:border-[#b58c2a]/40 hover:text-[#b58c2a]"
+                  >
+                    Abrir portal Amil
+                    <ExternalLink size={13} />
+                  </a>
+                </div>
+                <iframe
+                  ref={amilIframeRef}
+                  src={AMIL_PROXY_LOGIN_URL}
+                  title="Simulador Amil"
+                  className="h-full w-full flex-1 border-none"
+                  allow="geolocation; microphone; camera; payment; encrypted-media"
+                  onLoad={fillAndSubmitAmilLogin}
+                />
+              </div>
             ) : showClientArea ? (
               <div className="flex-1 overflow-y-auto px-4 pb-4 pt-2 sm:px-6 sm:pb-6 sm:pt-3 md:px-8 md:pb-8 md:pt-4">
                 <ClientRegistrationMultipage />
@@ -1048,6 +1162,23 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                   <span className="block text-base font-black text-[#0c1826]">Simulador SulAmerica</span>
                   <span className="mt-1 block text-sm font-medium text-slate-500">
                     Abrir cotador SulAmerica dentro da propria aplicacao.
+                  </span>
+                </span>
+                <ExternalLink size={20} className="text-[#b58c2a] transition group-hover:translate-x-0.5" />
+              </a>
+
+              <a
+                href={AMIL_SIMULATOR_URL}
+                onClick={(event) => {
+                  event.preventDefault();
+                  enterAmilSimulator();
+                }}
+                className="group flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-left transition hover:border-[#d4af37]/70 hover:bg-[#fffaf0]"
+              >
+                <span>
+                  <span className="block text-base font-black text-[#0c1826]">Simulador Amil</span>
+                  <span className="mt-1 block text-sm font-medium text-slate-500">
+                    Acessar portal do corretor Amil dentro do app.
                   </span>
                 </span>
                 <ExternalLink size={20} className="text-[#b58c2a] transition group-hover:translate-x-0.5" />

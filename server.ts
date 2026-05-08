@@ -23,6 +23,16 @@ const SULAMERICA_PROXY_PREFIX_ESCAPED = SULAMERICA_PROXY_PREFIX.replace(/\//g, '
 const SULAMERICA_LOGIN_PATH = '/SaudeCotador/LoginVendedor.aspx';
 const SULAMERICA_APP_PATHS =
   'SaudeCotador|WebPatterns|EPA_Taskbox|PerformanceProbe|RichWidgets|favicon\\.ico|_osjs\\.js|_OSGlobalJS\\.pt-BR\\.js|Theme\\.SaudeCotador\\.css';
+const AMIL_ORIGIN = 'https://portalcorretor.amil.com.br';
+const AMIL_PROXY_PREFIX = '/amil-proxy';
+const AMIL_PROXY_PREFIX_ESCAPED = AMIL_PROXY_PREFIX.replace(/\//g, '\\/');
+const AMIL_LOGIN_PATH = '/portal/web/servicos/usuario/corretor/login';
+const AMIL_APP_PATHS =
+  'portal|web|servicos|usuario|corretor|o|combo|html|image|documents|favicon\\.ico|api|css|js|fonts';
+const AMIL_LOGIN = '77915445715';
+const AMIL_PASSWORD = 'sqn0y3zqmo';
+const AMIL_BROWSER_USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 const SIMULATOR_BLOCKED_RESPONSE_HEADERS = new Set([
   'content-encoding',
   'content-length',
@@ -112,6 +122,39 @@ const rewriteSulamericaAppPaths = (content: string) =>
       `$1${SULAMERICA_PROXY_PREFIX_ESCAPED}\\/$2`
     );
 
+const rewriteAmilLocation = (location: string) => {
+  if (location.startsWith(AMIL_ORIGIN)) {
+    return `${AMIL_PROXY_PREFIX}${location.slice(AMIL_ORIGIN.length)}`;
+  }
+
+  if (location.startsWith('//portalcorretor.amil.com.br')) {
+    return `${AMIL_PROXY_PREFIX}${location.slice('//portalcorretor.amil.com.br'.length)}`;
+  }
+
+  if (location.startsWith('/')) {
+    return `${AMIL_PROXY_PREFIX}${location}`;
+  }
+
+  return location;
+};
+
+const rewriteAmilCookie = (cookie: string) =>
+  cookie
+    .replace(/;\s*domain=[^;]*/gi, '')
+    .replace(/;\s*path=[^;]*/gi, `; Path=${AMIL_PROXY_PREFIX}`)
+    .replace(/;\s*secure/gi, '');
+
+const rewriteAmilAppPaths = (content: string) =>
+  content
+    .replace(
+      new RegExp(`(["'=:(,]\\s*)/(?!/|amil-proxy/)(${AMIL_APP_PATHS})(?=/|\\?|["'])`, 'gi'),
+      `$1${AMIL_PROXY_PREFIX}/$2`
+    )
+    .replace(
+      new RegExp(`(["'])\\\\/(?!amil-proxy\\\\/)(${AMIL_APP_PATHS})(?=\\\\/|\\?|["'])`, 'gi'),
+      `$1${AMIL_PROXY_PREFIX_ESCAPED}\\/$2`
+    );
+
 const sulamericaAutofillScript = `
 <script>
 (function () {
@@ -176,6 +219,116 @@ const rewriteSulamericaText = (content: string, contentType: string, upstreamPat
   }
 
   return rewriteSulamericaAppPaths(rewritten);
+};
+
+const amilAutofillScript = `
+<script>
+(function () {
+  var loginValue = ${JSON.stringify(AMIL_LOGIN)};
+  var senhaValue = ${JSON.stringify(AMIL_PASSWORD)};
+  var enterPressed = false;
+
+  function findLoginInput() {
+    var candidates = document.querySelectorAll('#login, input[name="login"], input[name*="login" i], input[id*="login" i], input[name*="cpf" i], input[id*="cpf" i], input[type="email"], input[type="text"]');
+    for (var index = 0; index < candidates.length; index += 1) {
+      var input = candidates[index];
+      if (input.type !== 'hidden' && !input.disabled && !input.readOnly) return input;
+    }
+    return null;
+  }
+
+  function findPasswordInput() {
+    return document.querySelector('input[type="password"], input[name*="senha" i], input[id*="senha" i], input[name*="password" i], input[id*="password" i]');
+  }
+
+  function triggerFieldEvents(input) {
+    input.setAttribute('autocomplete', 'off');
+    input.setAttribute('data-lpignore', 'true');
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  function pressEnter(input) {
+    if (!input || enterPressed) return;
+    enterPressed = true;
+    var perfil = document.getElementById('perfilUsuario');
+    if (perfil && !perfil.value) {
+      perfil.value = 'CORRETOR';
+      triggerFieldEvents(perfil);
+    }
+
+    input.focus();
+    ['keydown', 'keypress', 'keyup'].forEach(function (eventName) {
+      input.dispatchEvent(new KeyboardEvent(eventName, {
+        bubbles: true,
+        cancelable: true,
+        key: 'Enter',
+        code: 'Enter',
+        keyCode: 13,
+        which: 13
+      }));
+    });
+
+    var button = document.getElementById('efetuarLogin') || document.querySelector('button[type="submit"], input[type="submit"], button.acaoPrincipal, button, a[role="button"]');
+    if (button) button.click();
+
+    window.setTimeout(function () {
+      var form = document.getElementById('formLoginCorretor');
+      if (form && location.href.indexOf('/login') !== -1) form.submit();
+    }, 1200);
+  }
+
+  function fillAmilLogin() {
+    var login = findLoginInput();
+    var senha = findPasswordInput();
+
+    if (login) {
+      login.value = loginValue;
+      triggerFieldEvents(login);
+    }
+
+    if (senha) {
+      senha.value = senhaValue;
+      triggerFieldEvents(senha);
+      window.setTimeout(function () { pressEnter(senha); }, 1800);
+    }
+  }
+
+  fillAmilLogin();
+  [250, 750, 1500, 3000, 5000].forEach(function (delay) {
+    window.setTimeout(fillAmilLogin, delay);
+  });
+})();
+</script>`;
+
+const rewriteAmilText = (content: string, contentType: string, upstreamPath: string) => {
+  let rewritten = content
+    .replaceAll(AMIL_ORIGIN, AMIL_PROXY_PREFIX)
+    .replaceAll('http://portalcorretor.amil.com.br', AMIL_PROXY_PREFIX)
+    .replaceAll('//portalcorretor.amil.com.br', AMIL_PROXY_PREFIX);
+
+  if (contentType.includes('text/html')) {
+    const basePath = upstreamPath.includes('/') ? upstreamPath.slice(0, upstreamPath.lastIndexOf('/') + 1) : '/';
+    rewritten = rewritten
+      .replace(/<base\s+href=["'][^"']*["']\s*\/?>/i, '')
+      .replace(/<head([^>]*)>/i, `<head$1><base href="${AMIL_PROXY_PREFIX}${basePath}" />`)
+      .replace(/\b(href|src|action)=["']\/(?!\/|amil-proxy\/)/gi, `$1="${AMIL_PROXY_PREFIX}/`);
+
+    rewritten = rewritten.includes('</body>')
+      ? rewritten.replace('</body>', `${amilAutofillScript}</body>`)
+      : `${rewritten}${amilAutofillScript}`;
+  }
+
+  if (contentType.includes('text/css') || contentType.includes('javascript')) {
+    rewritten = rewritten
+      .replace(/url\((['"]?)\/(?!\/)/gi, `url($1${AMIL_PROXY_PREFIX}/`)
+      .replace(
+        new RegExp(`(["'])/(?!amil-proxy/)(${AMIL_APP_PATHS})(?=/|\\?)`, 'gi'),
+        `$1${AMIL_PROXY_PREFIX}/$2`
+      );
+  }
+
+  return rewriteAmilAppPaths(rewritten);
 };
 
 const rewriteSimulatorText = (content: string, contentType: string) => {
@@ -398,6 +551,83 @@ async function startServer() {
     } catch (error) {
       console.error('ERRO NO PROXY SULAMERICA:', error);
       res.status(502).send('Erro ao carregar o proxy SulAmerica.');
+    }
+  });
+
+  app.all(`${AMIL_PROXY_PREFIX}*`, async (req, res) => {
+    const upstreamPath = req.originalUrl.slice(AMIL_PROXY_PREFIX.length) || AMIL_LOGIN_PATH;
+    const upstreamUrl = new URL(upstreamPath, AMIL_ORIGIN);
+    const requestHeaders = new Headers();
+
+    for (const [name, value] of Object.entries(req.headers)) {
+      if (!value) continue;
+
+      const lowerName = name.toLowerCase();
+      if (
+        ['host', 'connection', 'content-length', 'accept-encoding', 'origin', 'referer', 'user-agent'].includes(lowerName) ||
+        lowerName.startsWith('sec-')
+      ) {
+        continue;
+      }
+
+      requestHeaders.set(name, Array.isArray(value) ? value.join(',') : value);
+    }
+
+    requestHeaders.set('host', 'portalcorretor.amil.com.br');
+    requestHeaders.set('origin', AMIL_ORIGIN);
+    requestHeaders.set('referer', `${AMIL_ORIGIN}${AMIL_LOGIN_PATH}`);
+    requestHeaders.set('user-agent', AMIL_BROWSER_USER_AGENT);
+    requestHeaders.set('accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8');
+    requestHeaders.set('accept-language', 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7');
+    requestHeaders.set('upgrade-insecure-requests', '1');
+
+    try {
+      const bodyBuffer = ['GET', 'HEAD'].includes(req.method) ? undefined : await getRequestBody(req);
+      const upstreamResponse = await fetch(upstreamUrl, {
+        method: req.method,
+        headers: requestHeaders,
+        body: bodyBuffer as unknown as BodyInit,
+        redirect: 'manual',
+      });
+
+      res.status(upstreamResponse.status);
+
+      upstreamResponse.headers.forEach((value, name) => {
+        const lowerName = name.toLowerCase();
+
+        if (SIMULATOR_BLOCKED_RESPONSE_HEADERS.has(lowerName)) {
+          return;
+        }
+
+        if (lowerName === 'location') {
+          res.setHeader('Location', rewriteAmilLocation(value));
+          return;
+        }
+
+        if (lowerName === 'set-cookie') {
+          return;
+        }
+
+        res.setHeader(name, value);
+      });
+
+      const setCookies = upstreamResponse.headers.getSetCookie?.() || [];
+      for (const cookie of setCookies) {
+        res.append('Set-Cookie', rewriteAmilCookie(cookie));
+      }
+
+      const contentType = upstreamResponse.headers.get('content-type') || '';
+      const responseBuffer = Buffer.from(await upstreamResponse.arrayBuffer());
+
+      if (contentType.includes('text/html') || contentType.includes('text/css') || contentType.includes('javascript')) {
+        res.send(rewriteAmilText(responseBuffer.toString('utf8'), contentType, upstreamPath));
+        return;
+      }
+
+      res.send(responseBuffer);
+    } catch (error) {
+      console.error('ERRO NO PROXY AMIL:', error);
+      res.status(502).send('Erro ao carregar o proxy Amil.');
     }
   });
 
