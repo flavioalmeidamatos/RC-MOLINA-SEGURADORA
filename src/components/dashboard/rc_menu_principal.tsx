@@ -463,6 +463,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
   const showSimulator = activeMenu === "Simuladores";
   const showClientArea = activeMenu === "Meus clientes";
+  const showAgendaArea = activeMenu === "Agenda";
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-[#F0F4F8] font-sans lg:h-screen lg:flex-row lg:overflow-hidden">
@@ -522,7 +523,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-            {showClientArea || showSimulator ? (
+            {showClientArea || showSimulator || showAgendaArea ? (
               <button
                 type="button"
                 onClick={() => handleMenuClick("Home")}
