@@ -30,7 +30,7 @@ import {
 } from '../../lib/validacoes';
 import { SistemaQuerImportModal, type SistemaQuerLeadData } from '../dashboard/sistema_quer_import_modal';
 
-type TabId = 'geral' | 'endereco' | 'extras' | 'documentacao';
+type TabId = 'geral' | 'endereco' | 'documentacao';
 
 type ContactRow = {
   id: number;
@@ -102,14 +102,12 @@ type ViaCepResponse = {
 const tabs: Array<{ id: TabId; label: string; icon: React.ComponentType<{ size?: number; className?: string }> }> = [
   { id: 'geral', label: 'Geral', icon: UserRound },
   { id: 'endereco', label: 'Endereço', icon: MapPinned },
-  { id: 'extras', label: 'Extras', icon: FileText },
   { id: 'documentacao', label: 'Documentação', icon: FileText },
 ];
 
 const tabLabels: Record<TabId, string> = {
   geral: 'Geral',
     endereco: 'Endereço',
-  extras: 'Extras',
     documentacao: 'Documentação',
 };
 
@@ -949,7 +947,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
       if (firstInvalidDocument) {
         focusDocumentField(firstInvalidDocument);
       } else if (!areDatesValid) {
-        setActiveTab('extras');
+        setActiveTab('endereco');
       }
       return;
     }
@@ -1536,7 +1534,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
           </div>
         </section>
 
-        <section className={activeTab === 'endereco' ? 'block' : 'hidden'}>
+        <section className={activeTab === 'endereco' ? 'space-y-3' : 'hidden'}>
           <div className={sectionCardClassName}>
             <div className="grid gap-3 xl:grid-cols-[0.8fr_2.2fr_0.8fr]">
               <div>
@@ -1640,9 +1638,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
               </div>
             </div>
           </div>
-        </section>
 
-        <section className={activeTab === 'extras' ? 'block' : 'hidden'}>
           <div className={sectionCardClassName}>
             <div className="grid gap-3">
               <div className="grid gap-3 xl:grid-cols-[1fr_0.8fr]">

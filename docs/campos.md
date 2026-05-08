@@ -118,7 +118,7 @@ Fonte: `src/components/ClientRegistrationMultipage.tsx`
 | Cidade | `formState.enderecoCidade` | `text` desabilitado | Nao | Convertido para maiusculas; preenchido via CEP/importacao | Estado local |
 | Estado | `formState.enderecoEstado` | `select` desabilitado | Nao | Lista de UFs | Estado local |
 
-### Aba Extras
+### Card de dados extras na aba Endereco
 
 | Campo | Estado/chave | Tipo | Obrigatorio | Validacao/mascara | Destino/uso |
 |---|---|---|---|---|---|
