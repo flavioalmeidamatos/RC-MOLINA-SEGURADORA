@@ -123,7 +123,19 @@ const rewriteSulamericaText = (content: string, contentType: string, upstreamPat
     rewritten = rewritten
       .replace(/<base\s+href=["'][^"']*["']\s*\/?>/i, '')
       .replace(/<head([^>]*)>/i, `<head$1><base href="${SULAMERICA_PROXY_PREFIX}${basePath}" />`)
-      .replace(/\b(href|src|action)=["']\/(?!\/|sulamerica-proxy\/)/gi, `$1="${SULAMERICA_PROXY_PREFIX}/`);
+      .replace(/\b(href|src|action)=["']\/(?!\/|sulamerica-proxy\/)/gi, `$1="${SULAMERICA_PROXY_PREFIX}/`)
+      .replace(
+        /<input([^>]*id=["']VanillaTheme_wtLayLoginVendedor_block_wtMainContent_WebPatterns_wtLatLogin_block_wtUsername_wtInpCodCPFVendedor["'][^>]*?)\s*\/?>/i,
+        '<input$1 value="77915445715" autocomplete="off" data-lpignore="true">'
+      )
+      .replace(
+        /<input([^>]*id=["']VanillaTheme_wtLayLoginVendedor_block_wtMainContent_WebPatterns_wtLatLogin_block_wtUsername_ValidationTools_wtWbbValEmail_block_wtInputToValidate_wtInpEmlVendedor["'][^>]*?)\s*\/?>/i,
+        '<input$1 value="rcmolina.invest.segurosaude@gmail.com" autocomplete="off" data-lpignore="true">'
+      )
+      .replace(
+        /<input([^>]*id=["']VanillaTheme_wtLayLoginVendedor_block_wtMainContent_WebPatterns_wtLatLogin_block_wtPassword_wtInpPassword["'][^>]*?)\s*\/?>/i,
+        '<input$1 value="Benj@min88" autocomplete="off" data-lpignore="true">'
+      );
   }
 
   if (contentType.includes('text/css') || contentType.includes('javascript')) {

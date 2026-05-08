@@ -1047,7 +1047,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                 <span>
                   <span className="block text-base font-black text-[#0c1826]">Simulador SulAmerica</span>
                   <span className="mt-1 block text-sm font-medium text-slate-500">
-                    https://os11.sulamerica.com.br/SaudeCotador/LoginVendedor.aspx
+                    Abrir cotador SulAmerica dentro da propria aplicacao.
                   </span>
                 </span>
                 <ExternalLink size={20} className="text-[#b58c2a] transition group-hover:translate-x-0.5" />
