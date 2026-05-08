@@ -522,7 +522,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-            {showClientArea ? (
+            {showClientArea || showSimulator ? (
               <button
                 type="button"
                 onClick={() => handleMenuClick("Home")}
@@ -599,19 +599,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                             : "Simulador Online"}
                     </span>
 
-                    <div className="flex items-center gap-3">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          cleanupSimulatorUi();
-                          setActiveMenu("Home");
-                        }}
-                        className="inline-flex min-h-10 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
-                      >
-                        <Home size={16} />
-                        Menu Principal
-                      </button>
-                    </div>
                   </div>
                 </div>
 
