@@ -509,6 +509,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
     [contacts, formState, uploadedDocuments.length],
   );
   const isClientFormLocked = !isClientFormEnabled;
+  const isCodigoFieldLocked = isImportedCodeLocked || (!editingClienteId && isClientFormEnabled);
   const feedbackTone = feedback ? getSystemMessageTone(feedback) : 'info';
   const feedbackStyle = systemMessageStyles[feedbackTone];
   const FeedbackIcon = feedbackStyle.Icon;
@@ -881,9 +882,22 @@ export const ClientRegistrationMultipage: React.FC = () => {
     setFeedback('Novo cliente pronto para preenchimento.');
   }, []);
 
-  const startNewClient = () => {
+  const startNewClient = async () => {
     resetForm();
     setIsClientFormEnabled(true);
+
+    try {
+      const response = await fetch('/api/clientes/next-code');
+      if (!response.ok) throw new Error('Falha ao gerar codigo.');
+      const data = (await response.json()) as { codigo?: string };
+      setFormState((prev) => ({
+        ...prev,
+        codigo: normalizarCodigoCliente(data.codigo || ''),
+      }));
+    } catch (error) {
+      console.error('Erro ao gerar codigo automatico:', error);
+      setFeedback('Não foi possível gerar o código automático. Tente novamente.');
+    }
   };
 
   const applyImportedLeadToNewClient = useCallback(
@@ -1019,10 +1033,18 @@ export const ClientRegistrationMultipage: React.FC = () => {
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formState, contatos: contacts, anexos }),
+        body: JSON.stringify({
+          ...formState,
+          codigoAutoGerado: isNew && !isImportedCodeLocked,
+          contatos: contacts,
+          anexos,
+        }),
       });
 
-      if (!response.ok) throw new Error('Falha ao salvar o cliente');
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.error || 'Falha ao salvar o cliente');
+      }
       await response.json();
       const nome = formState.nome || 'Cliente';
 
@@ -1038,7 +1060,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
       }
     } catch (error) {
       console.error(error);
-      setFeedback('Erro ao salvar. Tente novamente ou verifique a conexao.');
+      setFeedback(error instanceof Error ? error.message : 'Erro ao salvar. Tente novamente ou verifique a conexao.');
     }
 
     return;
@@ -1592,7 +1614,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                       value={formState.codigo}
                       onChange={(event) => handleFieldChange('codigo', somenteDigitos(event.target.value).slice(0, 7))}
                       onBlur={(event) => handleFieldChange('codigo', normalizarCodigoCliente(event.target.value))}
-                      disabled={isImportedCodeLocked}
+                      disabled={isCodigoFieldLocked}
                       inputMode="numeric"
                       maxLength={7}
                       placeholder="0000000"

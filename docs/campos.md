@@ -102,7 +102,7 @@ Fonte: `src/components/ClientRegistrationMultipage.tsx`
 | Complemento do contato | `contacts[].extra` | `text` | Nao | Convertido para maiusculas | Estado local |
 | Observacoes do contato | `contacts[].notes` | `text` | Nao | Convertido para maiusculas | Estado local |
 | Observacoes | `formState.observacoes` | `textarea` | Nao | Convertido para maiusculas | Estado local; preenchido por importacao |
-| Codigo | `formState.codigo` | `text` numerico | Nao | Apenas digitos; maximo 7; completa com zeros a esquerda no blur | Estado local; preenchido por `indicacao_id` importado |
+| Codigo | `formState.codigo` | `text` numerico | Nao | Apenas digitos; maximo 7; cadastro manual usa autonumeracao; importacao preserva `indicacao_id`; API impede duplicidade | Estado local/API `/api/clientes/next-code` |
 | Data de cadastro | `formState.dataCadastro` | `text` numerico | Nao | `formatarDataBR`; `maxLength=10` | Estado local; importacao usa data atual |
 
 ### Aba Endereco
