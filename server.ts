@@ -17,6 +17,12 @@ const SIMULATOR_PROXY_PREFIX = '/simulador-proxy';
 const SIMULATOR_PROXY_PREFIX_ESCAPED = SIMULATOR_PROXY_PREFIX.replace(/\//g, '\\/');
 const SIMULATOR_APP_PATHS =
   'static|js|files|login|login_check|inicio|logout|simulador|operadoras|cliente|clientes|agenda|admin|io|mig|recuperar-senha|favicon\\.ico';
+const SULAMERICA_ORIGIN = 'https://os11.sulamerica.com.br';
+const SULAMERICA_PROXY_PREFIX = '/sulamerica-proxy';
+const SULAMERICA_PROXY_PREFIX_ESCAPED = SULAMERICA_PROXY_PREFIX.replace(/\//g, '\\/');
+const SULAMERICA_LOGIN_PATH = '/SaudeCotador/LoginVendedor.aspx';
+const SULAMERICA_APP_PATHS =
+  'SaudeCotador|WebPatterns|EPA_Taskbox|PerformanceProbe|RichWidgets|favicon\\.ico|_osjs\\.js|_OSGlobalJS\\.pt-BR\\.js|Theme\\.SaudeCotador\\.css';
 const SIMULATOR_BLOCKED_RESPONSE_HEADERS = new Set([
   'content-encoding',
   'content-length',
@@ -72,6 +78,65 @@ const rewriteSimulatorAppPaths = (content: string) =>
       new RegExp(`(["'])\\\\/(?!simulador-proxy\\\\/)(${SIMULATOR_APP_PATHS})(?=\\\\/|\\?|["'])`, 'gi'),
       `$1${SIMULATOR_PROXY_PREFIX_ESCAPED}\\/$2`
     );
+
+const rewriteSulamericaLocation = (location: string) => {
+  if (location.startsWith(SULAMERICA_ORIGIN)) {
+    return `${SULAMERICA_PROXY_PREFIX}${location.slice(SULAMERICA_ORIGIN.length)}`;
+  }
+
+  if (location.startsWith('//os11.sulamerica.com.br')) {
+    return `${SULAMERICA_PROXY_PREFIX}${location.slice('//os11.sulamerica.com.br'.length)}`;
+  }
+
+  if (location.startsWith('/')) {
+    return `${SULAMERICA_PROXY_PREFIX}${location}`;
+  }
+
+  return location;
+};
+
+const rewriteSulamericaCookie = (cookie: string) =>
+  cookie
+    .replace(/;\s*domain=[^;]*/gi, '')
+    .replace(/;\s*path=[^;]*/gi, `; Path=${SULAMERICA_PROXY_PREFIX}`)
+    .replace(/;\s*secure/gi, '');
+
+const rewriteSulamericaAppPaths = (content: string) =>
+  content
+    .replace(
+      new RegExp(`(["'=:(,]\\s*)/(?!/|sulamerica-proxy/)(${SULAMERICA_APP_PATHS})(?=/|\\?|["'])`, 'gi'),
+      `$1${SULAMERICA_PROXY_PREFIX}/$2`
+    )
+    .replace(
+      new RegExp(`(["'])\\\\/(?!sulamerica-proxy\\\\/)(${SULAMERICA_APP_PATHS})(?=\\\\/|\\?|["'])`, 'gi'),
+      `$1${SULAMERICA_PROXY_PREFIX_ESCAPED}\\/$2`
+    );
+
+const rewriteSulamericaText = (content: string, contentType: string, upstreamPath: string) => {
+  let rewritten = content
+    .replaceAll(SULAMERICA_ORIGIN, SULAMERICA_PROXY_PREFIX)
+    .replaceAll('http://os11.sulamerica.com.br', SULAMERICA_PROXY_PREFIX)
+    .replaceAll('//os11.sulamerica.com.br', SULAMERICA_PROXY_PREFIX);
+
+  if (contentType.includes('text/html')) {
+    const basePath = upstreamPath.includes('/') ? upstreamPath.slice(0, upstreamPath.lastIndexOf('/') + 1) : '/';
+    rewritten = rewritten
+      .replace(/<base\s+href=["'][^"']*["']\s*\/?>/i, '')
+      .replace(/<head([^>]*)>/i, `<head$1><base href="${SULAMERICA_PROXY_PREFIX}${basePath}" />`)
+      .replace(/\b(href|src|action)=["']\/(?!\/|sulamerica-proxy\/)/gi, `$1="${SULAMERICA_PROXY_PREFIX}/`);
+  }
+
+  if (contentType.includes('text/css') || contentType.includes('javascript')) {
+    rewritten = rewritten
+      .replace(/url\((['"]?)\/(?!\/)/gi, `url($1${SULAMERICA_PROXY_PREFIX}/`)
+      .replace(
+        new RegExp(`(["'])/(?!sulamerica-proxy/)(${SULAMERICA_APP_PATHS})(?=/|\\?)`, 'gi'),
+        `$1${SULAMERICA_PROXY_PREFIX}/$2`
+      );
+  }
+
+  return rewriteSulamericaAppPaths(rewritten);
+};
 
 const rewriteSimulatorText = (content: string, contentType: string) => {
   const proxyOrigin = SIMULATOR_PROXY_PREFIX;
@@ -223,6 +288,76 @@ async function startServer() {
     } catch (error) {
       console.error('ERRO NO PROXY DO SIMULADOR:', error);
       res.status(502).send('Erro ao carregar o proxy do simulador.');
+    }
+  });
+
+  app.all(`${SULAMERICA_PROXY_PREFIX}*`, async (req, res) => {
+    const upstreamPath = req.originalUrl.slice(SULAMERICA_PROXY_PREFIX.length) || SULAMERICA_LOGIN_PATH;
+    const upstreamUrl = new URL(upstreamPath, SULAMERICA_ORIGIN);
+    const requestHeaders = new Headers();
+
+    for (const [name, value] of Object.entries(req.headers)) {
+      if (!value) continue;
+
+      const lowerName = name.toLowerCase();
+      if (['host', 'connection', 'content-length', 'accept-encoding'].includes(lowerName)) {
+        continue;
+      }
+
+      requestHeaders.set(name, Array.isArray(value) ? value.join(',') : value);
+    }
+
+    requestHeaders.set('host', 'os11.sulamerica.com.br');
+    requestHeaders.set('origin', SULAMERICA_ORIGIN);
+    requestHeaders.set('referer', `${SULAMERICA_ORIGIN}${SULAMERICA_LOGIN_PATH}`);
+
+    try {
+      const bodyBuffer = ['GET', 'HEAD'].includes(req.method) ? undefined : await getRequestBody(req);
+      const upstreamResponse = await fetch(upstreamUrl, {
+        method: req.method,
+        headers: requestHeaders,
+        body: bodyBuffer as unknown as BodyInit,
+        redirect: 'manual',
+      });
+
+      res.status(upstreamResponse.status);
+
+      upstreamResponse.headers.forEach((value, name) => {
+        const lowerName = name.toLowerCase();
+
+        if (SIMULATOR_BLOCKED_RESPONSE_HEADERS.has(lowerName)) {
+          return;
+        }
+
+        if (lowerName === 'location') {
+          res.setHeader('Location', rewriteSulamericaLocation(value));
+          return;
+        }
+
+        if (lowerName === 'set-cookie') {
+          return;
+        }
+
+        res.setHeader(name, value);
+      });
+
+      const setCookies = upstreamResponse.headers.getSetCookie?.() || [];
+      for (const cookie of setCookies) {
+        res.append('Set-Cookie', rewriteSulamericaCookie(cookie));
+      }
+
+      const contentType = upstreamResponse.headers.get('content-type') || '';
+      const responseBuffer = Buffer.from(await upstreamResponse.arrayBuffer());
+
+      if (contentType.includes('text/html') || contentType.includes('text/css') || contentType.includes('javascript')) {
+        res.send(rewriteSulamericaText(responseBuffer.toString('utf8'), contentType, upstreamPath));
+        return;
+      }
+
+      res.send(responseBuffer);
+    } catch (error) {
+      console.error('ERRO NO PROXY SULAMERICA:', error);
+      res.status(502).send('Erro ao carregar o proxy SulAmerica.');
     }
   });
 

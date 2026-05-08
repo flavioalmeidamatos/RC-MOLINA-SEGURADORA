@@ -47,6 +47,7 @@ const SIMULATOR_ENTRY_URL = "https://app.simuladoronline.com/inicio";
 const SIMULATOR_LOGOUT_URL = "https://app.simuladoronline.com/logout";
 const SIMULATOR_PROXY_LOGIN_URL = "/simulador-proxy/login/4602";
 const SULAMERICA_SIMULATOR_URL = "https://os11.sulamerica.com.br/SaudeCotador/LoginVendedor.aspx";
+const SULAMERICA_PROXY_LOGIN_URL = "/sulamerica-proxy/SaudeCotador/LoginVendedor.aspx";
 const SIMULATOR_FALLBACK_WINDOW_NAME = "simulador_online_fallback_window";
 const CHROME_SIMULATOR_LOAD_TIMEOUT_MS = 18000;
 const BASE_SIMULATOR_IFRAME_ALLOW =
@@ -814,7 +815,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                   </a>
                 </div>
                 <iframe
-                  src={SULAMERICA_SIMULATOR_URL}
+                  src={SULAMERICA_PROXY_LOGIN_URL}
                   title="Simulador SulAmerica"
                   className="h-full w-full flex-1 border-none"
                   allow="geolocation; microphone; camera; payment; encrypted-media"
