@@ -1,23 +1,15 @@
 import React, { useRef } from "react";
-import { Plus, Search, Calendar, User, PartyPopper } from "lucide-react";
+import { Plus, Search, Calendar, User } from "lucide-react";
 import { CalendarView } from "./agenda";
-import type { AniversarianteMes } from "../dashboard/rc_menu_principal";
 
 interface AgendaSidebarProps {
   setCurrentDate: (date: Date) => void;
   setActiveView: (view: CalendarView) => void;
-  aniversariantesMes?: AniversarianteMes[];
 }
-
-const formatBirthDate = (value: string) => {
-  const [year, month, day] = String(value || "").slice(0, 10).split("-");
-  return day && month && year ? `${day}/${month}` : "";
-};
 
 export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
   setCurrentDate,
   setActiveView,
-  aniversariantesMes = [],
 }) => {
   const dateInputRef = useRef<HTMLInputElement>(null);
   return (
@@ -151,38 +143,6 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
           <Plus size={18} />
           SALVAR
         </button>
-
-        <div className="rounded-2xl border border-[#d4af37]/50 bg-[#fff9e8] p-3 shadow-sm">
-          <div className="mb-3 flex items-center gap-2 text-[#8a681d]">
-            <PartyPopper size={18} />
-            <span className="text-xs font-black uppercase tracking-[0.14em]">Aniversariantes do mês</span>
-          </div>
-
-          <div className="max-h-56 space-y-2 overflow-y-auto pr-1 custom-scrollbar">
-            {aniversariantesMes.length > 0 ? (
-              aniversariantesMes.map((cliente) => (
-                <div
-                  key={cliente.codigo}
-                  className="rounded-xl border border-[#d4af37]/30 bg-white px-3 py-2 text-[#6f5318]"
-                >
-                  <div className="flex items-start gap-2">
-                    <PartyPopper size={15} className="mt-0.5 shrink-0 text-[#c79622]" />
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-black">{cliente.nome_completo}</p>
-                      <p className="text-xs font-semibold text-[#9b7a2f]">
-                        {formatBirthDate(cliente.data_nascimento)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="rounded-xl border border-dashed border-[#d4af37]/40 bg-white/70 px-3 py-3 text-center text-xs font-bold text-[#9b7a2f]">
-                Nenhum aniversariante neste mês.
-              </p>
-            )}
-          </div>
-        </div>
       </div>
     </aside>
   );

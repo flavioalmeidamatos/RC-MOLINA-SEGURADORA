@@ -1,18 +1,29 @@
 import React from "react";
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { PartyPopper } from "lucide-react";
 import { Holiday } from "../../../lib/holidays";
 
 import { CalendarView } from "../agenda";
+import type { AniversarianteMes } from "../../dashboard/rc_menu_principal";
 
 interface MonthViewProps {
   currentDate: Date;
   holidays: Holiday[];
+  aniversariantesMes?: AniversarianteMes[];
   setCurrentDate: (date: Date) => void;
   setActiveView: (view: CalendarView) => void;
 }
 
-export const MonthView: React.FC<MonthViewProps> = ({ currentDate, holidays, setCurrentDate, setActiveView }) => {
+const birthMonthDay = (value: string) => String(value || "").slice(5, 10);
+
+export const MonthView: React.FC<MonthViewProps> = ({
+  currentDate,
+  holidays,
+  aniversariantesMes = [],
+  setCurrentDate,
+  setActiveView,
+}) => {
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(monthStart);
   const startDate = startOfWeek(monthStart, { weekStartsOn: 0 }); // Sunday
@@ -51,6 +62,9 @@ export const MonthView: React.FC<MonthViewProps> = ({ currentDate, holidays, set
       <div className="flex-1 grid grid-cols-7 auto-rows-fr overflow-y-auto custom-scrollbar">
         {days.map((day, i) => {
           const dayHolidays = holidays.filter(h => h.date === format(day, "yyyy-MM-dd"));
+          const dayBirthdays = aniversariantesMes.filter(
+            (cliente) => birthMonthDay(cliente.data_nascimento) === format(day, "MM-dd")
+          );
           const isToday = isSameDay(day, new Date());
           const isCurrentMonth = isSameMonth(day, monthStart);
           const dayOfWeek = day.getDay();
@@ -82,6 +96,19 @@ export const MonthView: React.FC<MonthViewProps> = ({ currentDate, holidays, set
                     className="bg-black text-white p-1 rounded text-[10px] font-bold leading-tight uppercase"
                   >
                     FERIADO: {holiday.name}
+                  </div>
+                ))}
+
+                {dayBirthdays.map((cliente) => (
+                  <div
+                    key={cliente.codigo}
+                    className="rounded border border-[#d4af37]/50 bg-[#fff7df] px-1.5 py-1 text-[10px] font-black leading-tight text-[#7a5a12] shadow-sm"
+                    title={`Aniversariante: ${cliente.nome_completo}`}
+                  >
+                    <div className="flex items-center gap-1">
+                      <PartyPopper size={11} className="shrink-0 text-[#c79622]" />
+                      <span className="truncate">{cliente.nome_completo}</span>
+                    </div>
                   </div>
                 ))}
               </div>

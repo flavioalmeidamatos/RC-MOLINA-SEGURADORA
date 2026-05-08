@@ -34,7 +34,6 @@ export const Agenda: React.FC<AgendaProps> = ({ aniversariantesMes = [] }) => {
         <AgendaSidebar 
           setCurrentDate={setCurrentDate} 
           setActiveView={setActiveView} 
-          aniversariantesMes={aniversariantesMes}
         />
 
         <div className="flex min-w-0 flex-1 flex-col border-l border-black bg-white">
@@ -50,6 +49,7 @@ export const Agenda: React.FC<AgendaProps> = ({ aniversariantesMes = [] }) => {
               <MonthView 
                 currentDate={currentDate} 
                 holidays={holidays} 
+                aniversariantesMes={aniversariantesMes}
                 setCurrentDate={setCurrentDate} 
                 setActiveView={setActiveView} 
               />
