@@ -53,6 +53,9 @@ const parseDateBR = (value?: string | null) => {
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 };
 
+const resolvePermiteAgendarOnline = (data: any) =>
+  data.permiteAgendarOnline ?? data.permiteAgendamentoOnline ?? true;
+
 const sanitizeFileName = (name: string) => {
   const cleanName = name.trim().replace(/[\\/:*?"<>|]+/g, '-');
   return cleanName || 'anexo';
@@ -161,7 +164,7 @@ export const createClienteHandler = async (req: express.Request, res: express.Re
         data.observacoes || null,
         data.marcacoes || null,
         data.comoConheceu || '0 - Nao informado',
-        data.permiteAgendamentoOnline !== false,
+        resolvePermiteAgendarOnline(data) !== false,
         data.documentacao || null
       ]
     );
@@ -316,7 +319,7 @@ export const updateClienteHandler = async (req: express.Request, res: express.Re
         data.observacoes || null,
         data.marcacoes || null,
         data.comoConheceu || '0 - Nao informado',
-        data.permiteAgendamentoOnline !== false,
+        resolvePermiteAgendarOnline(data) !== false,
         data.documentacao || null,
         id
       ]

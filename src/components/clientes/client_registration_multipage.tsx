@@ -875,8 +875,12 @@ export const ClientRegistrationMultipage: React.FC = () => {
         enderecoCidade: normalizarTextoMaiusculo(leadData.cidade || ''),
         enderecoEstado: normalizarTextoMaiusculo(leadData.estado || ''),
         observacoes: normalizarTextoMaiusculo(leadData.observacao || ''),
+        comoConheceu: '1 - Indicação',
+        permiteAgendarOnline: true,
+        status: 'ATIVO',
         codigo: importedCode || prev.codigo,
         dataCadastro: formatarDataAtualBR(),
+        dataAtualizacao: formatarDataAtualBR(),
       }));
       setContacts((prev) => {
         const nextContacts: ContactRow[] = [
