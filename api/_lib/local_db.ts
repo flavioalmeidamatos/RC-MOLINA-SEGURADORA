@@ -96,7 +96,7 @@ create table if not exists "RCMOLINASEGUROS"."CLIENTES" (
   cnpj varchar(18),
   data_nascimento date,
   status_cliente varchar(20) default 'ATIVO',
-  codigo varchar(50) default '000000',
+  codigo varchar(50) default '0000000',
   data_cadastro date default current_date,
   data_atualizacao date not null default current_date,
   cep varchar(9),
@@ -138,6 +138,9 @@ drop trigger if exists trg_clientes_touch_updated_at on "RCMOLINASEGUROS"."CLIEN
 alter table "RCMOLINASEGUROS"."CLIENTES"
   alter column data_atualizacao type date using data_atualizacao::date,
   alter column data_atualizacao set default current_date;
+
+alter table "RCMOLINASEGUROS"."CLIENTES"
+  alter column codigo set default '0000000';
 
 alter table "RCMOLINASEGUROS"."CLIENTES"
   drop column if exists marcacoes;

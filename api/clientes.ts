@@ -56,6 +56,11 @@ const parseDateBR = (value?: string | null) => {
 const resolvePermiteAgendarOnline = (data: any) =>
   data.permiteAgendarOnline ?? data.permiteAgendamentoOnline ?? true;
 
+const normalizeClienteCodigo = (value?: string | null) => {
+  const digits = String(value || '').replace(/\D/g, '').slice(0, 7);
+  return digits ? digits.padStart(7, '0') : '0000000';
+};
+
 const sanitizeFileName = (name: string) => {
   const cleanName = name.trim().replace(/[\\/:*?"<>|]+/g, '-');
   return cleanName || 'anexo';
@@ -150,7 +155,7 @@ export const createClienteHandler = async (req: express.Request, res: express.Re
         data.cnpj || null,
         parseDateBR(data.dataNascimento),
         data.status || 'ATIVO',
-        data.codigo || '000000',
+        normalizeClienteCodigo(data.codigo),
         dataCadastro,
         dataAtualizacao,
         data.enderecoCep || null,
@@ -304,7 +309,7 @@ export const updateClienteHandler = async (req: express.Request, res: express.Re
         data.cnpj || null,
         parseDateBR(data.dataNascimento),
         data.status || 'ATIVO',
-        data.codigo || '000000',
+        normalizeClienteCodigo(data.codigo),
         dataCadastro,
         dataAtualizacao,
         data.enderecoCep || null,

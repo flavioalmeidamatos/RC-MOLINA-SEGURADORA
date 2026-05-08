@@ -195,6 +195,11 @@ const somenteDigitos = (valor: string): string => valor.replace(/\D/g, '');
 
 const normalizarTextoMaiusculo = (valor: string): string => valor.toLocaleUpperCase('pt-BR');
 
+const normalizarCodigoCliente = (valor: string): string => {
+  const digitos = somenteDigitos(valor).slice(0, 7);
+  return digitos ? digitos.padStart(7, '0') : '';
+};
+
 const validarDataBR = (valor: string): boolean => {
   if (!valor) return true;
   const match = valor.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
@@ -845,7 +850,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
       const importedPhoneType = importedPhone ? obterTipoTelefoneImportado(importedPhone) : 'Celular';
       const importedEmail = obterEmailImportadoValido(leadData.email);
       const importedDocumentDigits = somenteDigitos(leadData.cpf_cnpj || '');
-      const importedCode = somenteDigitos(leadData.indicacao_id || '').slice(0, 6);
+      const importedCode = normalizarCodigoCliente(leadData.indicacao_id || '');
       const anuncioUrl = (leadData.anuncio_url || '').trim();
 
       resetForm();
@@ -1508,11 +1513,12 @@ export const ClientRegistrationMultipage: React.FC = () => {
                     <input
                       className={`${compactFieldClassName} bg-slate-100`}
                       value={formState.codigo}
-                      onChange={(event) => handleFieldChange('codigo', somenteDigitos(event.target.value).slice(0, 6))}
+                      onChange={(event) => handleFieldChange('codigo', somenteDigitos(event.target.value).slice(0, 7))}
+                      onBlur={(event) => handleFieldChange('codigo', normalizarCodigoCliente(event.target.value))}
                       disabled={isImportedCodeLocked}
                       inputMode="numeric"
-                      maxLength={6}
-                      placeholder="000000"
+                      maxLength={7}
+                      placeholder="0000000"
                     />
                   </div>
 
