@@ -13,6 +13,7 @@ import {
   Mail,
   MapPin,
   Phone,
+  PartyPopper,
   User,
   Users,
   Wrench,
@@ -26,6 +27,16 @@ interface DashboardProps {
   session?: any;
   perfil?: any;
   onLogout?: () => void;
+}
+
+export interface AniversarianteMes {
+  codigo: string;
+  nome_completo: string;
+  cpf: string | null;
+  data_nascimento: string;
+  cidade: string | null;
+  uf: string | null;
+  status_cliente: string | null;
 }
 
 type SimulatorMode = "idle" | "loading" | "embedded" | "external";
@@ -43,6 +54,14 @@ const wait = (ms: number) =>
   new Promise<void>((resolve) => {
     window.setTimeout(resolve, ms);
   });
+
+const formatBirthDate = (value: string) => {
+  const [year, month, day] = String(value || "").slice(0, 10).split("-");
+  return day && month && year ? `${day}/${month}` : "";
+};
+
+const currentMonthName = () =>
+  new Intl.DateTimeFormat("pt-BR", { month: "long" }).format(new Date()).replace(/^./, (letter) => letter.toUpperCase());
 
 const detectSimulatorBrowser = (): SimulatorBrowser => {
   const userAgent = window.navigator.userAgent;
@@ -146,6 +165,8 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
   const [activeMenu, setActiveMenu] = useState("Home");
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [aniversariantesMes, setAniversariantesMes] = useState<AniversarianteMes[]>([]);
+  const [isLoadingAniversariantes, setIsLoadingAniversariantes] = useState(false);
 
   const [simulatorMode, setSimulatorMode] = useState<SimulatorMode>("idle");
   const [simulatorFrameKey, setSimulatorFrameKey] = useState(0);
@@ -161,6 +182,32 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     login: "Rosilene Rodrigues",
     senha: "123",
   });
+
+  useEffect(() => {
+    let ignore = false;
+
+    const loadAniversariantes = async () => {
+      setIsLoadingAniversariantes(true);
+      try {
+        const response = await fetch("/api/clientes/aniversariantes-mes");
+        if (!response.ok) throw new Error("Falha ao carregar aniversariantes.");
+        const data = (await response.json()) as AniversarianteMes[];
+        if (!ignore) setAniversariantesMes(data);
+      } catch (error) {
+        console.error("Erro ao carregar aniversariantes do mes:", error);
+        if (!ignore) setAniversariantesMes([]);
+      } finally {
+        if (!ignore) setIsLoadingAniversariantes(false);
+      }
+    };
+
+    void loadAniversariantes();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
   const clearSimulatorTimeout = () => {
     if (simulatorTimeoutRef.current !== null) {
       window.clearTimeout(simulatorTimeoutRef.current);
@@ -734,7 +781,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                 <ClientRegistrationMultipage />
               </div>
             ) : activeMenu === "Agenda" ? (
-              <Agenda />
+              <Agenda aniversariantesMes={aniversariantesMes} />
             ) : (
               <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
                 <div className="flex flex-col gap-6">
@@ -770,6 +817,60 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                       );
                     })}
                   </div>
+
+                  <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+                    <div className="grid gap-0 lg:grid-cols-[minmax(0,0.72fr)_minmax(0,1fr)]">
+                      <div className="relative overflow-hidden bg-[#0c1826] p-6 text-white">
+                        <div className="absolute -right-10 -top-12 h-32 w-32 rounded-full bg-[#b58c2a]/20" />
+                        <div className="relative flex items-start justify-between gap-4">
+                          <div>
+                            <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#d4af37]">
+                              Aniversariantes do mês
+                            </p>
+                            <h2 className="mt-2 text-3xl font-black leading-none">{currentMonthName()}</h2>
+                            <p className="mt-3 text-sm text-white/70">
+                              {isLoadingAniversariantes
+                                ? "Carregando lista do banco..."
+                                : `${aniversariantesMes.length} cliente(s) com aniversário neste mês.`}
+                            </p>
+                          </div>
+                          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-[#d4af37] ring-1 ring-white/10">
+                            <PartyPopper size={28} />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="custom-scrollbar max-h-64 overflow-y-auto p-4">
+                        {aniversariantesMes.length > 0 ? (
+                          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                            {aniversariantesMes.map((cliente) => (
+                              <div
+                                key={cliente.codigo}
+                                className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 transition hover:border-[#d4af37]/50 hover:bg-[#fffaf0]"
+                              >
+                                <div className="flex items-start gap-3">
+                                  <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#d4af37]/15 text-[#a2812a]">
+                                    <PartyPopper size={18} />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="truncate text-sm font-black text-[#0c1826]">{cliente.nome_completo}</p>
+                                    <p className="mt-1 text-xs font-semibold text-slate-500">
+                                      {formatBirthDate(cliente.data_nascimento)}
+                                      {cliente.cidade ? ` · ${cliente.cidade}${cliente.uf ? `/${cliente.uf}` : ""}` : ""}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="flex min-h-28 items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 text-sm font-semibold text-slate-400">
+                            Nenhum aniversariante encontrado para este mês.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </section>
 
                   <aside className="h-fit w-full max-h-full flex-shrink-0 overflow-hidden rounded-sm border border-gray-100 bg-white shadow-sm">
                     <div className="bg-[#0c1826] px-4 py-3 text-center text-xs font-bold uppercase tracking-[0.15em] text-white">

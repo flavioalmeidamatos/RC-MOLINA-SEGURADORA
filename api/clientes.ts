@@ -289,6 +289,33 @@ export const nextClienteCodigoHandler = async (_req: express.Request, res: expre
   }
 };
 
+export const aniversariantesMesHandler = async (_req: express.Request, res: express.Response) => {
+  await initLocalDatabase();
+  const pool = getPool();
+
+  try {
+    const result = await pool.query(`
+      select
+        codigo,
+        nome_completo,
+        cpf,
+        data_nascimento,
+        cidade,
+        uf,
+        status_cliente
+      from "RCMOLINASEGUROS"."CLIENTES"
+      where data_nascimento is not null
+        and extract(month from data_nascimento) = extract(month from current_date)
+      order by extract(day from data_nascimento), nome_completo
+    `);
+
+    res.json(result.rows);
+  } catch (error: any) {
+    console.error('Error listing aniversariantes do mes:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 export const searchClientesHandler = async (req: express.Request, res: express.Response) => {
   await initLocalDatabase();
   const pool = getPool();

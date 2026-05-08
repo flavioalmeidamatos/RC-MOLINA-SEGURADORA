@@ -6,10 +6,15 @@ import { AgendaHeader } from "./agenda_header";
 import { MonthView } from "./views/month_view";
 import { WeekView } from "./views/week_view";
 import { DayView } from "./views/day_view";
+import type { AniversarianteMes } from "../dashboard/rc_menu_principal";
 
 export type CalendarView = "month" | "week" | "day";
 
-export const Agenda: React.FC = () => {
+interface AgendaProps {
+  aniversariantesMes?: AniversarianteMes[];
+}
+
+export const Agenda: React.FC<AgendaProps> = ({ aniversariantesMes = [] }) => {
   const [activeView, setActiveView] = useState<CalendarView>("month");
   const [currentDate, setCurrentDateRaw] = useState(() => startOfDay(new Date()));
 
@@ -29,6 +34,7 @@ export const Agenda: React.FC = () => {
         <AgendaSidebar 
           setCurrentDate={setCurrentDate} 
           setActiveView={setActiveView} 
+          aniversariantesMes={aniversariantesMes}
         />
 
         <div className="flex min-w-0 flex-1 flex-col border-l border-black bg-white">
