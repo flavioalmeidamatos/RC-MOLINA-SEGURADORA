@@ -599,35 +599,18 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                             : "Simulador Online"}
                     </span>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3">
                       <button
                         type="button"
                         onClick={() => {
                           cleanupSimulatorUi();
                           setActiveMenu("Home");
                         }}
-                        className="text-gray-400 hover:text-gray-600"
+                        className="inline-flex min-h-10 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
                       >
+                        <Home size={16} />
                         Menu Principal
                       </button>
-
-                      <button
-                        type="button"
-                        onClick={retrySimulatorInsideApp}
-                        className="font-medium text-[#b58c2a] hover:underline"
-                      >
-                        Tentar novamente aqui
-                      </button>
-
-                      {isSimulatorSupportedBrowser(simulatorBrowser) ? (
-                        <button
-                          type="button"
-                          onClick={() => openSimulatorExternally("manual", simulatorBrowser)}
-                          className="flex items-center gap-1 font-medium text-[#b58c2a] hover:underline"
-                        >
-                          Abrir em nova janela <ExternalLink size={12} />
-                        </button>
-                      ) : null}
                     </div>
                   </div>
                 </div>
@@ -737,37 +720,17 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                         </div>
 
                         <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-                          {isSimulatorSupportedBrowser(simulatorBrowser) ? (
-                            <button
-                              type="button"
-                              onClick={() => openSimulatorExternally("manual", simulatorBrowser)}
-                              className="group flex items-center gap-3 rounded-xl bg-[#0c1826] px-8 py-4 font-bold text-white shadow-lg transition-all hover:scale-105 hover:bg-[#152a42] active:scale-95"
-                            >
-                              <span>Abrir Simulador Agora</span>
-                              <ExternalLink size={18} className="transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                cleanupSimulatorUi();
-                                setActiveMenu("Home");
-                              }}
-                              className="rounded-xl bg-[#0c1826] px-8 py-4 font-bold text-white shadow-lg transition-all hover:bg-[#152a42] active:scale-95"
-                            >
-                              Menu Principal
-                            </button>
-                          )}
-
-                          {isSimulatorSupportedBrowser(simulatorBrowser) ? (
-                            <button
-                              type="button"
-                              onClick={retrySimulatorInsideApp}
-                              className="rounded-xl border border-gray-200 px-8 py-4 text-sm font-semibold text-gray-500 transition-colors hover:bg-gray-50"
-                            >
-                              Tentar incorporar novamente
-                            </button>
-                          ) : null}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              cleanupSimulatorUi();
+                              setActiveMenu("Home");
+                            }}
+                            className="inline-flex min-h-11 items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
+                          >
+                            <Home size={17} />
+                            Menu Principal
+                          </button>
                         </div>
 
                         <p className="mt-8 text-xs font-medium text-gray-400">
