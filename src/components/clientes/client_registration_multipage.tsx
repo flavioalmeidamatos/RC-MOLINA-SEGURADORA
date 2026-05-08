@@ -5,6 +5,7 @@ import {
   File as FileIcon,
   FileImage,
   FileText,
+  CheckCircle2,
   Info,
   Loader2,
   MapPinned,
@@ -16,6 +17,7 @@ import {
   UserRound,
   AlertTriangle,
   X,
+  XCircle,
 } from 'lucide-react';
 import {
   formatarCNPJ,
@@ -189,6 +191,42 @@ const errorMessageClassName = 'mt-2 text-xs font-semibold text-red-600';
 const documentInputAccept =
   '.png,.jpg,.jpeg,.webp,.gif,.bmp,.svg,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv';
 const maxVisibleDocumentsBeforeCarouselControls = 6;
+
+type SystemMessageTone = 'success' | 'error' | 'warning' | 'info';
+
+const getSystemMessageTone = (message: string): SystemMessageTone => {
+  const normalized = message.toLocaleLowerCase('pt-BR');
+
+  if (
+    normalized.includes('erro') ||
+    normalized.includes('corrija') ||
+    normalized.includes('falha') ||
+    normalized.includes('inválido') ||
+    normalized.includes('invalido')
+  ) {
+    return 'error';
+  }
+
+  if (normalized.includes('exclu') || normalized.includes('sucesso') || normalized.includes('adicionado')) {
+    return 'success';
+  }
+
+  if (normalized.includes('atenção') || normalized.includes('clique em novo cliente')) {
+    return 'warning';
+  }
+
+  return 'info';
+};
+
+const systemMessageStyles: Record<
+  SystemMessageTone,
+  { iconClass: string; ringClass: string; Icon: React.ComponentType<{ size?: number; className?: string }> }
+> = {
+  success: { iconClass: 'bg-emerald-50 text-emerald-600', ringClass: 'ring-emerald-500/15', Icon: CheckCircle2 },
+  error: { iconClass: 'bg-red-50 text-red-600', ringClass: 'ring-red-500/15', Icon: XCircle },
+  warning: { iconClass: 'bg-amber-50 text-amber-600', ringClass: 'ring-amber-500/15', Icon: AlertTriangle },
+  info: { iconClass: 'bg-blue-50 text-blue-600', ringClass: 'ring-blue-500/15', Icon: Info },
+};
 
 const somenteDigitos = (valor: string): string => valor.replace(/\D/g, '');
   const somenteLetrasEEspacos = (valor: string): string => valor.replace(/[^A-Za-zÀ-ÿ\s]/g, '');
@@ -471,6 +509,10 @@ export const ClientRegistrationMultipage: React.FC = () => {
     [contacts, formState, uploadedDocuments.length],
   );
   const isClientFormLocked = !isClientFormEnabled;
+  const feedbackTone = feedback ? getSystemMessageTone(feedback) : 'info';
+  const feedbackStyle = systemMessageStyles[feedbackTone];
+  const FeedbackIcon = feedbackStyle.Icon;
+  const CepPopupIcon = systemMessageStyles.error.Icon;
 
   useEffect(() => {
     uploadedDocumentsRef.current = uploadedDocuments;
@@ -498,7 +540,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
 
     const timeout = window.setTimeout(() => {
       setFeedback('');
-    }, 3500);
+    }, 3000);
 
     return () => window.clearTimeout(timeout);
   }, [feedback]);
@@ -508,7 +550,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
 
     const timeout = window.setTimeout(() => {
       setCepPopupMessage('');
-    }, 4000);
+    }, 3000);
 
     return () => window.clearTimeout(timeout);
   }, [cepPopupMessage]);
@@ -1230,26 +1272,61 @@ export const ClientRegistrationMultipage: React.FC = () => {
           </div>
         </div>
 
-        {feedback ? (
-          <div className="px-3 pt-3">
-            <div className={`rounded-2xl px-4 py-2.5 text-sm font-medium ${
-              feedback.startsWith('✅') ? 'border border-emerald-200 bg-emerald-50 text-emerald-800' :
-              feedback.startsWith('❌') ? 'border border-red-200 bg-red-50 text-red-800' :
-              feedback.startsWith('🗑️') ? 'border border-slate-200 bg-slate-50 text-slate-700' :
-              'border border-[#3d8ed8]/20 bg-[#3d8ed8]/5 text-[#225f97]'
-            }`}>
-              {feedback}
-            </div>
-          </div>
-        ) : null}
+        {feedback || cepPopupMessage ? (
+          <div className="pointer-events-none fixed inset-0 z-[90] flex items-center justify-center px-4">
+            <div className="flex w-full max-w-md flex-col gap-3">
+              {feedback ? (
+                <div
+                  role="status"
+                  aria-live="polite"
+                  className={`pointer-events-auto rounded-3xl border border-white/70 bg-white/95 p-4 text-slate-800 shadow-2xl ring-8 backdrop-blur-md ${feedbackStyle.ringClass}`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${feedbackStyle.iconClass}`}>
+                      <FeedbackIcon size={22} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Aviso do sistema</p>
+                      <p className="mt-1 text-sm font-bold leading-5 text-slate-800">{feedback}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setFeedback('')}
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                      aria-label="Fechar aviso"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                </div>
+              ) : null}
 
-        {cepPopupMessage ? (
-          <div
-            role="alert"
-            aria-live="assertive"
-            className="fixed right-4 top-4 z-[70] w-[min(360px,calc(100vw-32px))] rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700 shadow-xl"
-          >
-            {cepPopupMessage}
+              {cepPopupMessage ? (
+                <div
+                  role="alert"
+                  aria-live="assertive"
+                  className="pointer-events-auto rounded-3xl border border-white/70 bg-white/95 p-4 text-slate-800 shadow-2xl ring-8 ring-red-500/15 backdrop-blur-md"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-red-50 text-red-600">
+                      <CepPopupIcon size={22} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Aviso do sistema</p>
+                      <p className="mt-1 text-sm font-bold leading-5 text-slate-800">{cepPopupMessage}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setCepPopupMessage('')}
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                      aria-label="Fechar aviso"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+            </div>
           </div>
         ) : null}
 
