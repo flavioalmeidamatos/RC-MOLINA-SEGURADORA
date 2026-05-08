@@ -1701,7 +1701,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                       onClick={() => handleFieldChange('permiteAgendarOnline', false)}
                       className={`min-h-11 rounded-2xl border px-4 py-2.5 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-10 ${
                         !formState.permiteAgendarOnline
-                          ? 'border-slate-700 bg-slate-700 text-white'
+                          ? 'border-teal-500 bg-teal-500 text-white'
                           : 'border-black bg-white text-slate-500'
                       }`}
                     >
@@ -1731,7 +1731,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                       onClick={() => handleFieldChange('status', 'INATIVO')}
                       className={`min-h-11 rounded-2xl border px-4 py-2.5 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-10 ${
                         formState.status === 'INATIVO'
-                          ? 'border-slate-700 bg-slate-700 text-white'
+                          ? 'border-teal-500 bg-teal-500 text-white'
                           : 'border-black bg-white text-slate-500'
                       }`}
                     >
