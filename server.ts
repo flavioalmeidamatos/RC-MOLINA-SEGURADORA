@@ -112,6 +112,42 @@ const rewriteSulamericaAppPaths = (content: string) =>
       `$1${SULAMERICA_PROXY_PREFIX_ESCAPED}\\/$2`
     );
 
+const sulamericaAutofillScript = `
+<script>
+(function () {
+  function fillSulamericaLogin() {
+    var cpf = document.getElementById('VanillaTheme_wtLayLoginVendedor_block_wtMainContent_WebPatterns_wtLatLogin_block_wtUsername_wtInpCodCPFVendedor');
+    var email = document.getElementById('VanillaTheme_wtLayLoginVendedor_block_wtMainContent_WebPatterns_wtLatLogin_block_wtUsername_ValidationTools_wtWbbValEmail_block_wtInputToValidate_wtInpEmlVendedor');
+    var senha = document.getElementById('VanillaTheme_wtLayLoginVendedor_block_wtMainContent_WebPatterns_wtLatLogin_block_wtPassword_wtInpPassword');
+    var aceite = document.getElementById('VanillaTheme_wtLayLoginVendedor_block_wtMainContent_WebPatterns_wtLatLogin_block_wtPassword_wt9_wt4');
+
+    [
+      [cpf, '77915445715'],
+      [email, 'rcmolina.invest.segurosaude@gmail.com'],
+      [senha, 'Benj@min88']
+    ].forEach(function (item) {
+      if (!item[0]) return;
+      item[0].value = item[1];
+      item[0].setAttribute('autocomplete', 'off');
+      item[0].setAttribute('data-lpignore', 'true');
+      item[0].dispatchEvent(new Event('input', { bubbles: true }));
+      item[0].dispatchEvent(new Event('change', { bubbles: true }));
+    });
+
+    if (aceite && !aceite.checked) {
+      aceite.checked = true;
+      aceite.dispatchEvent(new Event('click', { bubbles: true }));
+      aceite.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  }
+
+  fillSulamericaLogin();
+  [250, 750, 1500, 3000].forEach(function (delay) {
+    window.setTimeout(fillSulamericaLogin, delay);
+  });
+})();
+</script>`;
+
 const rewriteSulamericaText = (content: string, contentType: string, upstreamPath: string) => {
   let rewritten = content
     .replaceAll(SULAMERICA_ORIGIN, SULAMERICA_PROXY_PREFIX)
@@ -123,19 +159,11 @@ const rewriteSulamericaText = (content: string, contentType: string, upstreamPat
     rewritten = rewritten
       .replace(/<base\s+href=["'][^"']*["']\s*\/?>/i, '')
       .replace(/<head([^>]*)>/i, `<head$1><base href="${SULAMERICA_PROXY_PREFIX}${basePath}" />`)
-      .replace(/\b(href|src|action)=["']\/(?!\/|sulamerica-proxy\/)/gi, `$1="${SULAMERICA_PROXY_PREFIX}/`)
-      .replace(
-        /<input([^>]*id=["']VanillaTheme_wtLayLoginVendedor_block_wtMainContent_WebPatterns_wtLatLogin_block_wtUsername_wtInpCodCPFVendedor["'][^>]*?)\s*\/?>/i,
-        '<input$1 value="77915445715" autocomplete="off" data-lpignore="true">'
-      )
-      .replace(
-        /<input([^>]*id=["']VanillaTheme_wtLayLoginVendedor_block_wtMainContent_WebPatterns_wtLatLogin_block_wtUsername_ValidationTools_wtWbbValEmail_block_wtInputToValidate_wtInpEmlVendedor["'][^>]*?)\s*\/?>/i,
-        '<input$1 value="rcmolina.invest.segurosaude@gmail.com" autocomplete="off" data-lpignore="true">'
-      )
-      .replace(
-        /<input([^>]*id=["']VanillaTheme_wtLayLoginVendedor_block_wtMainContent_WebPatterns_wtLatLogin_block_wtPassword_wtInpPassword["'][^>]*?)\s*\/?>/i,
-        '<input$1 value="Benj@min88" autocomplete="off" data-lpignore="true">'
-      );
+      .replace(/\b(href|src|action)=["']\/(?!\/|sulamerica-proxy\/)/gi, `$1="${SULAMERICA_PROXY_PREFIX}/`);
+
+    rewritten = rewritten.includes('</body>')
+      ? rewritten.replace('</body>', `${sulamericaAutofillScript}</body>`)
+      : `${rewritten}${sulamericaAutofillScript}`;
   }
 
   if (contentType.includes('text/css') || contentType.includes('javascript')) {
