@@ -108,7 +108,6 @@ create table if not exists "RCMOLINASEGUROS"."CLIENTES" (
   cidade varchar(100),
   uf varchar(2),
   observacoes_extras text,
-  marcacoes varchar(255),
   como_conheceu varchar(100) default '0 - Não informado',
   permite_agendar_online boolean default true,
   documentacao_anotacoes text
@@ -139,6 +138,9 @@ drop trigger if exists trg_clientes_touch_updated_at on "RCMOLINASEGUROS"."CLIEN
 alter table "RCMOLINASEGUROS"."CLIENTES"
   alter column data_atualizacao type date using data_atualizacao::date,
   alter column data_atualizacao set default current_date;
+
+alter table "RCMOLINASEGUROS"."CLIENTES"
+  drop column if exists marcacoes;
 
 `;
 

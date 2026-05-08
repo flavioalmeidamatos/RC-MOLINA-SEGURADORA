@@ -57,7 +57,6 @@ type ClientFormState = {
   enderecoCidade: string;
   observacoes: string;
   documentacao: string;
-  marcacoes: string;
   comoConheceu: string;
   permiteAgendarOnline: boolean;
   status: 'ATIVO' | 'INATIVO';
@@ -130,7 +129,6 @@ const initialFormState: ClientFormState = {
   enderecoCidade: '',
   observacoes: '',
   documentacao: '',
-  marcacoes: '',
     comoConheceu: '0 - Não informado',
   permiteAgendarOnline: true,
   status: 'ATIVO',
@@ -167,7 +165,6 @@ const camposTextoMaiusculo = new Set<keyof ClientFormState>([
   'enderecoCidade',
   'observacoes',
   'documentacao',
-  'marcacoes',
 ]);
 
 const cidadesPorEstado: Record<string, string[]> = {
@@ -199,9 +196,6 @@ const somenteDigitos = (valor: string): string => valor.replace(/\D/g, '');
   const somenteLetrasEEspacos = (valor: string): string => valor.replace(/[^A-Za-zÀ-ÿ\s]/g, '');
 
 const normalizarTextoMaiusculo = (valor: string): string => valor.toLocaleUpperCase('pt-BR');
-
-const normalizarMarcacoes = (valor: string): string =>
-  normalizarTextoMaiusculo(valor).replace(/[^0-9A-Z\s]/g, '');
 
 const validarDataBR = (valor: string): boolean => {
   if (!valor) return true;
@@ -415,7 +409,6 @@ type ClienteSearchResult = {
   cidade: string | null;
   uf: string | null;
   observacoes_extras: string | null;
-  marcacoes: string | null;
   como_conheceu: string | null;
   documentacao_anotacoes: string | null;
   permite_agendar_online: boolean;
@@ -519,9 +512,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
 
   const handleFieldChange = <K extends keyof ClientFormState>(field: K, value: ClientFormState[K]) => {
     const nextValue =
-      typeof value === 'string' && field === 'marcacoes'
-        ? normalizarMarcacoes(value)
-        : typeof value === 'string' && camposTextoMaiusculo.has(field)
+      typeof value === 'string' && camposTextoMaiusculo.has(field)
         ? normalizarTextoMaiusculo(value)
         : value;
 
@@ -1099,7 +1090,6 @@ export const ClientRegistrationMultipage: React.FC = () => {
       enderecoCidade: c.cidade || '',
       observacoes: c.observacoes_extras || '',
       documentacao: c.documentacao_anotacoes || '',
-      marcacoes: c.marcacoes || '',
       comoConheceu: c.como_conheceu || initialFormState.comoConheceu,
       permiteAgendarOnline: c.permite_agendar_online ?? true,
       status: c.status_cliente || 'ATIVO',
@@ -1655,18 +1645,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
         <section className={activeTab === 'extras' ? 'block' : 'hidden'}>
           <div className={sectionCardClassName}>
             <div className="grid gap-3">
-              <div className="grid gap-3 xl:grid-cols-[1.2fr_1fr_0.8fr]">
-                <div>
-                  <label className="mb-2 block text-sm font-bold text-slate-700">Marcações</label>
-                  <input
-                    className={fieldClassName}
-                    value={formState.marcacoes}
-                    onChange={(event) => handleFieldChange('marcacoes', event.target.value)}
-                    maxLength={255}
-                    placeholder="Digite o texto e pressione enter"
-                  />
-                </div>
-
+              <div className="grid gap-3 xl:grid-cols-[1fr_0.8fr]">
                 <div>
                   <label className="mb-2 block text-sm font-bold text-slate-700">Como nos conheceu?</label>
                   <select
