@@ -46,6 +46,7 @@ type SimulatorExternalReason = "manual" | "iframe-error" | "timeout";
 const SIMULATOR_ENTRY_URL = "https://app.simuladoronline.com/inicio";
 const SIMULATOR_LOGOUT_URL = "https://app.simuladoronline.com/logout";
 const SIMULATOR_PROXY_LOGIN_URL = "/simulador-proxy/login/4602";
+const SULAMERICA_SIMULATOR_URL = "https://os11.sulamerica.com.br/SaudeCotador/LoginVendedor.aspx";
 const SIMULATOR_FALLBACK_WINDOW_NAME = "simulador_online_fallback_window";
 const CHROME_SIMULATOR_LOAD_TIMEOUT_MS = 18000;
 const BASE_SIMULATOR_IFRAME_ALLOW =
@@ -172,6 +173,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const [simulatorFrameKey, setSimulatorFrameKey] = useState(0);
   const [simulatorStatusMessage, setSimulatorStatusMessage] = useState("");
   const [simulatorBrowser, setSimulatorBrowser] = useState<SimulatorBrowser>("other");
+  const [showSimulatorChooser, setShowSimulatorChooser] = useState(false);
 
   const simulatorTimeoutRef = useRef<number | null>(null);
   const simulatorWindowRef = useRef<Window | null>(null);
@@ -291,6 +293,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const enterSimulator = async () => {
     const browser = detectSimulatorBrowser();
     setSimulatorBrowser(browser);
+    setShowSimulatorChooser(false);
     setActiveMenu("Simuladores");
 
     if (usesSimulatorProxy(browser)) {
@@ -299,6 +302,16 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     }
 
     startSimulatorAttempt(browser);
+  };
+
+  const openSimulatorChooser = () => {
+    setShowSimulatorChooser(true);
+  };
+
+  const enterSulamericaSimulator = () => {
+    cleanupSimulatorUi();
+    setShowSimulatorChooser(false);
+    setActiveMenu("Simulador SulAmerica");
   };
 
   const retrySimulatorInsideApp = () => {
@@ -368,6 +381,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   };
 
   const clearLocalUiState = () => {
+    setShowSimulatorChooser(false);
     cleanupSimulatorUi();
   };
 
@@ -448,32 +462,35 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
   const handleMenuClick = (title: string) => {
     if (title === "Simuladores") {
-      enterSimulator();
+      openSimulatorChooser();
       return;
     }
 
-    if (activeMenu === "Simuladores") {
+    if (activeMenu === "Simuladores" || activeMenu === "Simulador SulAmerica") {
       cleanupSimulatorUi();
     }
 
+    setShowSimulatorChooser(false);
     setActiveMenu(title);
   };
 
   const handleCardClick = (line1: string, line2: string) => {
     if (line1 === "Simuladores") {
-      enterSimulator();
+      openSimulatorChooser();
       return;
     }
 
     if (line1 === "Meus" && line2 === "clientes") {
-      if (activeMenu === "Simuladores") {
+      if (activeMenu === "Simuladores" || activeMenu === "Simulador SulAmerica") {
         cleanupSimulatorUi();
       }
+      setShowSimulatorChooser(false);
       setActiveMenu("Meus clientes");
       return;
     }
 
     if (line1 === "Agenda") {
+      setShowSimulatorChooser(false);
       setActiveMenu("Agenda");
       return;
     }
@@ -509,6 +526,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   ];
 
   const showSimulator = activeMenu === "Simuladores";
+  const showSulamericaSimulator = activeMenu === "Simulador SulAmerica";
   const showClientArea = activeMenu === "Meus clientes";
   const showAgendaArea = activeMenu === "Agenda";
 
@@ -529,7 +547,9 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
         <div className="custom-scrollbar flex gap-2 overflow-x-auto px-3 py-3 lg:block lg:space-y-0 lg:overflow-y-auto lg:px-0 lg:py-4">
           {menuItems.map((item) => {
             const Icon = item.icon;
-            const isActive = activeMenu === item.title;
+            const isActive =
+              activeMenu === item.title ||
+              (item.title === "Simuladores" && activeMenu === "Simulador SulAmerica");
 
             return (
               <button
@@ -570,7 +590,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-            {showClientArea || showSimulator || showAgendaArea ? (
+            {showClientArea || showSimulator || showSulamericaSimulator || showAgendaArea ? (
               <button
                 type="button"
                 onClick={() => handleMenuClick("Home")}
@@ -776,6 +796,30 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                   </div>
                 )}
               </div>
+            ) : showSulamericaSimulator ? (
+              <div className="flex flex-1 flex-col bg-white" style={{ height: "calc(100vh - 120px)" }}>
+                <div className="flex items-center justify-between border-b bg-gray-50 px-4 py-2 text-xs text-gray-500">
+                  <span className="flex items-center gap-2">
+                    <ExternalLink size={14} />
+                    Simulador SulAmerica
+                  </span>
+                  <a
+                    href={SULAMERICA_SIMULATOR_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-600 transition hover:border-[#b58c2a]/40 hover:text-[#b58c2a]"
+                  >
+                    Abrir em nova janela
+                    <ExternalLink size={13} />
+                  </a>
+                </div>
+                <iframe
+                  src={SULAMERICA_SIMULATOR_URL}
+                  title="Simulador SulAmerica"
+                  className="h-full w-full flex-1 border-none"
+                  allow="geolocation; microphone; camera; payment; encrypted-media"
+                />
+              </div>
             ) : showClientArea ? (
               <div className="flex-1 overflow-y-auto px-4 pb-4 pt-2 sm:px-6 sm:pb-6 sm:pt-3 md:px-8 md:pb-8 md:pt-4">
                 <ClientRegistrationMultipage />
@@ -952,6 +996,65 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
           </div>
         </div>
       </div>
+
+      {showSimulatorChooser ? (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-xl overflow-hidden rounded-[28px] border border-white/70 bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#b58c2a]">
+                  Simuladores
+                </p>
+                <h2 className="mt-1 text-2xl font-black text-[#0c1826]">Escolha seu Simulador</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSimulatorChooser(false)}
+                aria-label="Fechar"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="grid gap-3 p-5">
+              <a
+                href="#simulador-online"
+                onClick={(event) => {
+                  event.preventDefault();
+                  void enterSimulator();
+                }}
+                className="group flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-left transition hover:border-[#d4af37]/70 hover:bg-[#fffaf0]"
+              >
+                <span>
+                  <span className="block text-base font-black text-[#0c1826]">Simulador Online</span>
+                  <span className="mt-1 block text-sm font-medium text-slate-500">
+                    Abrir dentro da propria aplicacao.
+                  </span>
+                </span>
+                <ExternalLink size={20} className="text-[#b58c2a] transition group-hover:translate-x-0.5" />
+              </a>
+
+              <a
+                href={SULAMERICA_SIMULATOR_URL}
+                onClick={(event) => {
+                  event.preventDefault();
+                  enterSulamericaSimulator();
+                }}
+                className="group flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-left transition hover:border-[#d4af37]/70 hover:bg-[#fffaf0]"
+              >
+                <span>
+                  <span className="block text-base font-black text-[#0c1826]">Simulador SulAmerica</span>
+                  <span className="mt-1 block text-sm font-medium text-slate-500">
+                    https://os11.sulamerica.com.br/SaudeCotador/LoginVendedor.aspx
+                  </span>
+                </span>
+                <ExternalLink size={20} className="text-[#b58c2a] transition group-hover:translate-x-0.5" />
+              </a>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <style>{`
         .custom-scrollbar::-webkit-scrollbar {
