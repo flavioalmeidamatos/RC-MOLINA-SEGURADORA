@@ -8,7 +8,6 @@ import {
   FolderOpen,
   Home,
   Info,
-  Lightbulb,
   Loader2,
   LogOut,
   Mail,
@@ -219,7 +218,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const startSimulatorAttempt = (browser: SimulatorBrowser) => {
     simulatorIframeLoadedRef.current = false;
     setSimulatorBrowser(browser);
-    setActiveMenu("Simulador");
+    setActiveMenu("Simuladores");
     setSimulatorFrameKey((prev) => prev + 1);
 
     clearSimulatorTimeout();
@@ -245,7 +244,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const enterSimulator = async () => {
     const browser = detectSimulatorBrowser();
     setSimulatorBrowser(browser);
-    setActiveMenu("Simulador");
+    setActiveMenu("Simuladores");
 
     if (usesSimulatorProxy(browser)) {
       startSimulatorAttempt(browser);
@@ -401,12 +400,12 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   };
 
   const handleMenuClick = (title: string) => {
-    if (title === "Simulador") {
+    if (title === "Simuladores") {
       enterSimulator();
       return;
     }
 
-    if (activeMenu === "Simulador") {
+    if (activeMenu === "Simuladores") {
       cleanupSimulatorUi();
     }
 
@@ -414,13 +413,13 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   };
 
   const handleCardClick = (line1: string, line2: string) => {
-    if (line1 === "Simulador") {
+    if (line1 === "Simuladores") {
       enterSimulator();
       return;
     }
 
     if (line1 === "Meus" && line2 === "clientes") {
-      if (activeMenu === "Simulador") {
+      if (activeMenu === "Simuladores") {
         cleanupSimulatorUi();
       }
       setActiveMenu("Meus clientes");
@@ -437,17 +436,17 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     { title: "Home", icon: Home },
     { title: "Meus clientes", icon: Briefcase },
     { title: "Agenda", icon: Calendar },
-    { title: "Simulador", icon: FolderOpen },
+    { title: "Simuladores", icon: FolderOpen },
     { title: "Webmail", icon: Mail },
     { title: "Financeiro", icon: Banknote },
     { title: "Configurações", icon: Wrench },
   ];
 
   const cards = [
-    { line1: "Sugestões", line2: "", icon: Lightbulb },
     { line1: "Meus", line2: "clientes", icon: Briefcase },
     { line1: "Agenda", line2: "", icon: Calendar },
-    { line1: "Simulador", line2: "", icon: FolderOpen },
+    { line1: "Simuladores", line2: "", icon: FolderOpen },
+    { line1: "Webmail", line2: "", icon: Mail },
     { line1: "Financeiro", line2: "", icon: Banknote },
     { line1: "Configurar", line2: "", icon: Wrench },
   ];
@@ -462,7 +461,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     },
   ];
 
-  const showSimulator = activeMenu === "Simulador";
+  const showSimulator = activeMenu === "Simuladores";
   const showClientArea = activeMenu === "Meus clientes";
 
   return (
@@ -523,6 +522,17 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+            {showClientArea ? (
+              <button
+                type="button"
+                onClick={() => handleMenuClick("Home")}
+                className="flex min-h-11 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-slate-600 transition-colors hover:border-[#b58c2a]/40 hover:text-[#b58c2a]"
+              >
+                <Home size={18} />
+                <span className="text-sm font-semibold">Menu Principal</span>
+              </button>
+            ) : null}
+
             <button
               type="button"
               aria-label="WhatsApp"
@@ -598,7 +608,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                         }}
                         className="text-gray-400 hover:text-gray-600"
                       >
-                        Voltar ao dashboard
+                        Menu Principal
                       </button>
 
                       <button
@@ -745,7 +755,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                               }}
                               className="rounded-xl bg-[#0c1826] px-8 py-4 font-bold text-white shadow-lg transition-all hover:bg-[#152a42] active:scale-95"
                             >
-                              Voltar ao dashboard
+                              Menu Principal
                             </button>
                           )}
 
@@ -776,8 +786,8 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
               <Agenda />
             ) : (
               <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
-                <div className="flex flex-col gap-6 lg:flex-row">
-                  <div className="grid flex-1 grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                <div className="flex flex-col gap-6">
+                  <div className="grid flex-1 grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5">
                     {cards.map((card) => {
                       const Icon = card.icon;
 
@@ -810,7 +820,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                     })}
                   </div>
 
-                  <aside className="h-fit w-full max-h-full flex-shrink-0 overflow-hidden rounded-sm border border-gray-100 bg-white shadow-sm lg:w-80">
+                  <aside className="h-fit w-full max-h-full flex-shrink-0 overflow-hidden rounded-sm border border-gray-100 bg-white shadow-sm">
                     <div className="bg-[#0c1826] px-4 py-3 text-center text-xs font-bold uppercase tracking-[0.15em] text-white">
                       Agenda do dia
                     </div>
