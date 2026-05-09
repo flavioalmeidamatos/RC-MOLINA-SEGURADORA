@@ -1010,7 +1010,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                     })}
                   </div>
 
-                  <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+                  <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm max-w-sm">
                     <div className="flex flex-col">
                       {/* Header Section */}
                       <div className="relative overflow-hidden bg-[#0c1826] p-6 text-white">
@@ -1213,22 +1213,16 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
               </button>
             </div>
 
-            <div className="grid gap-3 p-5">
+            <div className="grid grid-cols-2 gap-4 p-6">
               <a
                 href="#simulador-online"
                 onClick={(event) => {
                   event.preventDefault();
                   void enterSimulator();
                 }}
-                className="group flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-left transition hover:border-[#d4af37]/70 hover:bg-[#fffaf0]"
+                className="group relative flex h-32 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:border-[#d4af37]/70 hover:shadow-md"
               >
-                <span>
-                  <span className="block text-base font-black text-[#0c1826]">Simulador Online</span>
-                  <span className="mt-1 block text-sm font-medium text-slate-500">
-                    Abrir dentro da propria aplicacao.
-                  </span>
-                </span>
-                <ExternalLink size={20} className="text-[#b58c2a] transition group-hover:translate-x-0.5" />
+                <img src="/quer.svg" alt="Simulador Quer" className="max-h-16 max-w-[70%] object-contain opacity-90 transition-all duration-300 group-hover:scale-105 group-hover:opacity-100" />
               </a>
 
               <a
@@ -1237,15 +1231,9 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                   event.preventDefault();
                   enterSulamericaSimulator();
                 }}
-                className="group flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-left transition hover:border-[#d4af37]/70 hover:bg-[#fffaf0]"
+                className="group relative flex h-32 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:border-[#d4af37]/70 hover:shadow-md"
               >
-                <span>
-                  <span className="block text-base font-black text-[#0c1826]">Simulador SulAmerica</span>
-                  <span className="mt-1 block text-sm font-medium text-slate-500">
-                    Abrir cotador SulAmerica dentro da propria aplicacao.
-                  </span>
-                </span>
-                <ExternalLink size={20} className="text-[#b58c2a] transition group-hover:translate-x-0.5" />
+                <img src="/sulamerica.svg" alt="Simulador SulAmérica" className="max-h-16 max-w-[70%] object-contain opacity-90 transition-all duration-300 group-hover:scale-105 group-hover:opacity-100" />
               </a>
 
               <a
@@ -1254,15 +1242,9 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                   event.preventDefault();
                   enterAmilSimulator();
                 }}
-                className="group flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-left transition hover:border-[#d4af37]/70 hover:bg-[#fffaf0]"
+                className="group relative flex h-32 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:border-[#d4af37]/70 hover:shadow-md"
               >
-                <span>
-                  <span className="block text-base font-black text-[#0c1826]">Simulador Amil</span>
-                  <span className="mt-1 block text-sm font-medium text-slate-500">
-                    Acessar portal do corretor Amil dentro do app.
-                  </span>
-                </span>
-                <ExternalLink size={20} className="text-[#b58c2a] transition group-hover:translate-x-0.5" />
+                <img src="/amil.svg" alt="Simulador Amil" className="max-h-16 max-w-[70%] object-contain opacity-90 transition-all duration-300 group-hover:scale-105 group-hover:opacity-100" />
               </a>
 
               <a
@@ -1271,15 +1253,9 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                   event.preventDefault();
                   enterMedseniorSimulator();
                 }}
-                className="group flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-left transition hover:border-[#d4af37]/70 hover:bg-[#fffaf0]"
+                className="group relative flex h-32 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:border-[#d4af37]/70 hover:shadow-md"
               >
-                <span>
-                  <span className="block text-base font-black text-[#0c1826]">Simulador Medsenior</span>
-                  <span className="mt-1 block text-sm font-medium text-slate-500">
-                    Acessar Venda Digital Medsenior dentro do app.
-                  </span>
-                </span>
-                <ExternalLink size={20} className="text-[#b58c2a] transition group-hover:translate-x-0.5" />
+                <img src="/medsenior.svg" alt="Simulador MedSênior" className="max-h-16 max-w-[70%] object-contain opacity-90 transition-all duration-300 group-hover:scale-105 group-hover:opacity-100" />
               </a>
             </div>
           </div>

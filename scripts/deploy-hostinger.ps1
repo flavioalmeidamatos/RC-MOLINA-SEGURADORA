@@ -29,8 +29,12 @@ ssh -i $KeyPath $sshTarget "mkdir -p $remoteDeployPath $AppPath/releases $AppPat
 scp -i $KeyPath $archivePath "${sshTarget}:$remoteDeployPath/app.tgz"
 scp -i $KeyPath "scripts/nginx-rc-molina-domain.conf" "${sshTarget}:/etc/nginx/sites-available/rc-molina-domain"
 
-Write-Host "Installing release on VPS..."
+# Save remote script to a local temp file first
+$localScriptPath = Join-Path $env:TEMP "deploy_script.sh"
+$remoteScriptPath = "$remoteDeployPath/execute_deploy.sh"
+
 $remoteScript = @"
+#!/bin/bash
 set -e
 release=$AppPath/releases/`$(date +%Y%m%d%H%M%S)
 mkdir -p "`$release"
@@ -51,8 +55,13 @@ nginx -t
 systemctl reload nginx
 "@
 
-ssh -i $KeyPath $sshTarget $remoteScript
+[System.IO.File]::WriteAllText($localScriptPath, $remoteScript.Replace("`r`n", "`n"))
+
+Write-Host "Installing release on VPS..."
+scp -i $KeyPath $localScriptPath "${sshTarget}:$remoteScriptPath"
+ssh -i $KeyPath $sshTarget "bash $remoteScriptPath"
 
 Remove-Item -LiteralPath $archivePath -Force -ErrorAction SilentlyContinue
+Remove-Item -LiteralPath $localScriptPath -Force -ErrorAction SilentlyContinue
 Write-Host "Deploy finished: http://$DomainName"
 Write-Host "Production URL: https://$DomainName"
