@@ -3,12 +3,17 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Holiday } from "../../../lib/holidays";
 
+import { AniversarianteMes } from "../../dashboard/rc_menu_principal";
+
 interface DayViewProps {
   currentDate: Date;
   holidays: Holiday[];
+  aniversariantesMes?: AniversarianteMes[];
 }
 
-export const DayView: React.FC<DayViewProps> = ({ currentDate, holidays }) => {
+const birthMonthDay = (value: string) => String(value || "").slice(5, 10);
+
+export const DayView: React.FC<DayViewProps> = ({ currentDate, holidays, aniversariantesMes = [] }) => {
   const timeSlots = Array.from({ length: 25 }, (_, i) => {
     const hour = Math.floor(i / 2) + 8;
     const minutes = i % 2 === 0 ? "00" : "30";
@@ -16,19 +21,33 @@ export const DayView: React.FC<DayViewProps> = ({ currentDate, holidays }) => {
   });
   const holiday = holidays.find(h => h.date === format(currentDate, "yyyy-MM-dd"));
   const isWeekend = currentDate.getDay() === 0 || currentDate.getDay() === 6;
+  const dayBirthdays = aniversariantesMes.filter(
+    (cliente) => birthMonthDay(cliente.data_nascimento) === format(currentDate, "MM-dd")
+  );
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-white overflow-hidden">
       {/* Header */}
-      <div className={`border-b border-black py-1 text-center flex flex-col items-center gap-1 ${isWeekend ? "bg-red-50/20" : "bg-gray-50/30"}`}>
-        <div className={`text-sm font-bold uppercase tracking-widest ${isWeekend ? "text-red-600" : "text-black"}`}>
+      <div className={`border-b border-black py-1 text-center flex flex-col items-center gap-1 overflow-y-auto max-h-24 no-scrollbar shrink-0 ${isWeekend ? "bg-red-50/20" : "bg-gray-50/30"}`}>
+        <div className={`text-sm font-bold uppercase tracking-widest shrink-0 ${isWeekend ? "text-red-600" : "text-black"}`}>
           {format(currentDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
         </div>
         {holiday && (
-          <div className="text-[10px] bg-black text-white px-2 py-1 rounded font-bold uppercase mt-1">
+          <div className="text-[10px] bg-black text-white px-2 py-1 rounded font-bold uppercase shrink-0 mt-1">
             FERIADO: {holiday.name}
           </div>
         )}
+        <div className="flex flex-wrap items-center justify-center gap-1 px-2 pb-1 shrink-0">
+          {dayBirthdays.map((cliente) => (
+            <div
+              key={cliente.codigo}
+              className="rounded border border-[#d4af37]/50 bg-[#fff7df] px-2 py-1 text-[10px] font-black leading-tight text-[#7a5a12] shadow-sm shrink-0"
+              title={`Aniversariante: ${cliente.nome_completo}`}
+            >
+              🎉 {cliente.nome_completo}
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Body */}

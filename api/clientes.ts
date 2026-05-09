@@ -305,8 +305,7 @@ export const aniversariantesMesHandler = async (_req: express.Request, res: expr
         status_cliente
       from "RCMOLINASEGUROS"."CLIENTES"
       where data_nascimento is not null
-        and extract(month from data_nascimento) = extract(month from current_date)
-      order by extract(day from data_nascimento), nome_completo
+      order by extract(month from data_nascimento), extract(day from data_nascimento), nome_completo
     `);
 
     res.json(result.rows);

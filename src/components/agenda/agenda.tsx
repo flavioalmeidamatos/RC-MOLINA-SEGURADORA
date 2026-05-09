@@ -55,10 +55,18 @@ export const Agenda: React.FC<AgendaProps> = ({ aniversariantesMes = [] }) => {
               />
             )}
             {activeView === "week" && (
-              <WeekView currentDate={currentDate} holidays={holidays} />
+              <WeekView 
+                currentDate={currentDate} 
+                holidays={holidays} 
+                aniversariantesMes={aniversariantesMes}
+              />
             )}
             {activeView === "day" && (
-              <DayView currentDate={currentDate} holidays={holidays} />
+              <DayView 
+                currentDate={currentDate} 
+                holidays={holidays} 
+                aniversariantesMes={aniversariantesMes}
+              />
             )}
           </div>
         </div>

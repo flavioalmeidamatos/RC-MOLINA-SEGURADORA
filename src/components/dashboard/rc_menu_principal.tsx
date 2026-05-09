@@ -50,6 +50,8 @@ const SULAMERICA_SIMULATOR_URL = "https://os11.sulamerica.com.br/SaudeCotador/Lo
 const SULAMERICA_PROXY_LOGIN_URL = "/sulamerica-proxy/SaudeCotador/LoginVendedor.aspx";
 const AMIL_SIMULATOR_URL = "https://portalcorretor.amil.com.br/portal/web/servicos/usuario/corretor/login";
 const AMIL_PROXY_LOGIN_URL = "/amil-proxy/portal/web/servicos/usuario/corretor/login";
+const MEDSENIOR_SIMULATOR_URL = "https://vendadigital.medsenior.com.br/";
+const MEDSENIOR_PROXY_LOGIN_URL = "/medsenior-proxy/";
 const AMIL_LOGIN = "77915445715";
 const AMIL_PASSWORD = "sqn0y3zqmo";
 const SIMULATOR_FALLBACK_WINDOW_NAME = "simulador_online_fallback_window";
@@ -328,6 +330,12 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     setActiveMenu("Simulador Amil");
   };
 
+  const enterMedseniorSimulator = () => {
+    cleanupSimulatorUi();
+    setShowSimulatorChooser(false);
+    setActiveMenu("Simulador Medsenior");
+  };
+
   const fillAndSubmitAmilLogin = () => {
     const frame = amilIframeRef.current;
     if (!frame) {
@@ -553,7 +561,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       return;
     }
 
-    if (activeMenu === "Simuladores" || activeMenu === "Simulador SulAmerica" || activeMenu === "Simulador Amil") {
+    if (activeMenu === "Simuladores" || activeMenu === "Simulador SulAmerica" || activeMenu === "Simulador Amil" || activeMenu === "Simulador Medsenior") {
       cleanupSimulatorUi();
     }
 
@@ -568,7 +576,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     }
 
     if (line1 === "Meus" && line2 === "clientes") {
-      if (activeMenu === "Simuladores" || activeMenu === "Simulador SulAmerica" || activeMenu === "Simulador Amil") {
+      if (activeMenu === "Simuladores" || activeMenu === "Simulador SulAmerica" || activeMenu === "Simulador Amil" || activeMenu === "Simulador Medsenior") {
         cleanupSimulatorUi();
       }
       setShowSimulatorChooser(false);
@@ -615,6 +623,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const showSimulator = activeMenu === "Simuladores";
   const showSulamericaSimulator = activeMenu === "Simulador SulAmerica";
   const showAmilSimulator = activeMenu === "Simulador Amil";
+  const showMedseniorSimulator = activeMenu === "Simulador Medsenior";
   const showClientArea = activeMenu === "Meus clientes";
   const showAgendaArea = activeMenu === "Agenda";
 
@@ -638,7 +647,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
             const isActive =
               activeMenu === item.title ||
               (item.title === "Simuladores" &&
-                (activeMenu === "Simulador SulAmerica" || activeMenu === "Simulador Amil"));
+                (activeMenu === "Simulador SulAmerica" || activeMenu === "Simulador Amil" || activeMenu === "Simulador Medsenior"));
 
             return (
               <button
@@ -679,7 +688,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-            {showClientArea || showSimulator || showSulamericaSimulator || showAmilSimulator || showAgendaArea ? (
+            {showClientArea || showSimulator || showSulamericaSimulator || showAmilSimulator || showMedseniorSimulator || showAgendaArea ? (
               <button
                 type="button"
                 onClick={() => handleMenuClick("Home")}
@@ -935,6 +944,30 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                   onLoad={fillAndSubmitAmilLogin}
                 />
               </div>
+            ) : showMedseniorSimulator ? (
+              <div className="flex flex-1 flex-col bg-white" style={{ height: "calc(100vh - 120px)" }}>
+                <div className="flex items-center justify-between border-b bg-gray-50 px-4 py-2 text-xs text-gray-500">
+                  <span className="flex items-center gap-2">
+                    <ExternalLink size={14} />
+                    Simulador Medsenior
+                  </span>
+                  <a
+                    href={MEDSENIOR_SIMULATOR_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-600 transition hover:border-[#b58c2a]/40 hover:text-[#b58c2a]"
+                  >
+                    Abrir portal Medsenior
+                    <ExternalLink size={13} />
+                  </a>
+                </div>
+                <iframe
+                  src={MEDSENIOR_PROXY_LOGIN_URL}
+                  title="Simulador Medsenior"
+                  className="h-full w-full flex-1 border-none"
+                  allow="geolocation; microphone; camera; payment; encrypted-media"
+                />
+              </div>
             ) : showClientArea ? (
               <div className="flex-1 overflow-y-auto px-4 pb-4 pt-2 sm:px-6 sm:pb-6 sm:pt-3 md:px-8 md:pb-8 md:pt-4">
                 <ClientRegistrationMultipage />
@@ -1179,6 +1212,23 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                   <span className="block text-base font-black text-[#0c1826]">Simulador Amil</span>
                   <span className="mt-1 block text-sm font-medium text-slate-500">
                     Acessar portal do corretor Amil dentro do app.
+                  </span>
+                </span>
+                <ExternalLink size={20} className="text-[#b58c2a] transition group-hover:translate-x-0.5" />
+              </a>
+
+              <a
+                href={MEDSENIOR_SIMULATOR_URL}
+                onClick={(event) => {
+                  event.preventDefault();
+                  enterMedseniorSimulator();
+                }}
+                className="group flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-left transition hover:border-[#d4af37]/70 hover:bg-[#fffaf0]"
+              >
+                <span>
+                  <span className="block text-base font-black text-[#0c1826]">Simulador Medsenior</span>
+                  <span className="mt-1 block text-sm font-medium text-slate-500">
+                    Acessar Venda Digital Medsenior dentro do app.
                   </span>
                 </span>
                 <ExternalLink size={20} className="text-[#b58c2a] transition group-hover:translate-x-0.5" />

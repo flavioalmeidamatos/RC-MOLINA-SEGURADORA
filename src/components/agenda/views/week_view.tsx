@@ -3,12 +3,17 @@ import { format, startOfWeek, addDays, eachDayOfInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Holiday } from "../../../lib/holidays";
 
+import { AniversarianteMes } from "../../dashboard/rc_menu_principal";
+
 interface WeekViewProps {
   currentDate: Date;
   holidays: Holiday[];
+  aniversariantesMes?: AniversarianteMes[];
 }
 
-export const WeekView: React.FC<WeekViewProps> = ({ currentDate, holidays }) => {
+const birthMonthDay = (value: string) => String(value || "").slice(5, 10);
+
+export const WeekView: React.FC<WeekViewProps> = ({ currentDate, holidays, aniversariantesMes = [] }) => {
   const startDate = startOfWeek(currentDate, { weekStartsOn: 0 });
   const endDate = addDays(startDate, 6);
   const weekDays = eachDayOfInterval({ start: startDate, end: endDate });
@@ -28,25 +33,37 @@ export const WeekView: React.FC<WeekViewProps> = ({ currentDate, holidays }) => 
           {weekDays.map((day) => {
             const isWeekend = day.getDay() === 0 || day.getDay() === 6;
             const holiday = holidays.find(h => h.date === format(day, "yyyy-MM-dd"));
+            const dayBirthdays = aniversariantesMes.filter(
+              (cliente) => birthMonthDay(cliente.data_nascimento) === format(day, "MM-dd")
+            );
             
             return (
               <div 
                 key={day.toString()} 
-                className={`flex flex-col items-center justify-center py-0.5 border-r border-black ${
+                className={`flex flex-col items-center justify-start py-0.5 border-r border-black overflow-y-auto no-scrollbar max-h-24 ${
                   isWeekend ? "bg-red-50/30" : ""
                 }`}
               >
-                <div className={`text-[10px] font-bold uppercase ${isWeekend ? "text-red-600" : "text-black"}`}>
+                <div className={`text-[10px] font-bold uppercase shrink-0 ${isWeekend ? "text-red-600" : "text-black"}`}>
                   {format(day, "eee", { locale: ptBR })}
                 </div>
-                <div className={`text-sm font-black leading-none mt-0.5 ${isWeekend ? "text-red-600" : "text-black"}`}>
+                <div className={`text-sm font-black leading-none mt-0.5 shrink-0 ${isWeekend ? "text-red-600" : "text-black"}`}>
                   {format(day, "d")}
                 </div>
                 {holiday && (
-                  <div className="mt-1 max-w-[90%] truncate rounded bg-black px-1.5 py-0.5 text-[7px] font-bold uppercase text-white">
+                  <div className="mt-1 w-[90%] truncate rounded bg-black px-1.5 py-0.5 text-[7px] font-bold uppercase text-white shrink-0 text-center">
                     {holiday.name}
                   </div>
                 )}
+                {dayBirthdays.map((cliente) => (
+                  <div
+                    key={cliente.codigo}
+                    className="mt-1 w-[90%] truncate rounded border border-[#d4af37]/50 bg-[#fff7df] px-1 py-0.5 text-[8px] font-black leading-tight text-[#7a5a12] shadow-sm shrink-0"
+                    title={`Aniversariante: ${cliente.nome_completo}`}
+                  >
+                    🎉 {cliente.nome_completo}
+                  </div>
+                ))}
               </div>
             );
           })}
