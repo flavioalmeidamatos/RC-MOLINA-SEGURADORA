@@ -175,6 +175,8 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [aniversariantesMes, setAniversariantesMes] = useState<AniversarianteMes[]>([]);
   const [isLoadingAniversariantes, setIsLoadingAniversariantes] = useState(false);
+  const [clientStats, setClientStats] = useState({ total: 0, ativos: 0, inativos: 0 });
+  const [isLoadingClientStats, setIsLoadingClientStats] = useState(false);
 
   const [simulatorMode, setSimulatorMode] = useState<SimulatorMode>("idle");
   const [simulatorFrameKey, setSimulatorFrameKey] = useState(0);
@@ -212,7 +214,22 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       }
     };
 
+    const loadClientStats = async () => {
+      setIsLoadingClientStats(true);
+      try {
+        const response = await fetch("/api/clientes/stats");
+        if (!response.ok) throw new Error("Falha ao carregar estatísticas de clientes.");
+        const data = await response.json();
+        if (!ignore) setClientStats(data);
+      } catch (error) {
+        console.error("Erro ao carregar estatísticas:", error);
+      } finally {
+        if (!ignore) setIsLoadingClientStats(false);
+      }
+    };
+
     void loadAniversariantes();
+    void loadClientStats();
 
     return () => {
       ignore = true;
@@ -356,13 +373,14 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
           const buttons = Array.from(frameDocument.querySelectorAll("button, a"));
           buttons.forEach((btn) => {
-            const text = (btn.textContent || "").toLowerCase().trim();
+            const htmlBtn = btn as HTMLElement;
+            const text = (htmlBtn.textContent || "").toLowerCase().trim();
             if (
               text === "aceitar todos" ||
               text === "aceitar cookies" ||
               text === "concordar e fechar"
             ) {
-              (btn as HTMLElement).click();
+              htmlBtn.click();
             }
           });
         } catch (e) {}
@@ -1028,182 +1046,268 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                     })}
                   </div>
 
-                  <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm max-w-sm">
-                    <div className="flex flex-col">
-                      {/* Header Section */}
-                      <div className="relative overflow-hidden bg-[#0c1826] p-6 text-white">
-                        <div className="absolute -right-10 -top-12 h-40 w-40 rounded-full bg-[#d4af37]/10 blur-3xl" />
-                        <div className="relative flex items-center justify-between">
-                          <div>
-                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#d4af37]/90">
-                              Aniversariantes do mês
-                            </p>
-                            <h2 className="mt-1 text-4xl font-black tracking-tight">{currentMonthName()}</h2>
-                            <p className="mt-2 text-xs font-medium text-white/50">
-                              {isLoadingAniversariantes
-                                ? "Carregando registros..."
-                                : `${aniversariantesMes.filter(c => {
-                                    const d = new Date(c.data_nascimento);
-                                    return !isNaN(d.getTime()) && d.getUTCMonth() === new Date().getMonth();
-                                  }).length} clientes celebram este mês`}
-                            </p>
-                          </div>
-                          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5 text-[#d4af37] ring-1 ring-white/10 backdrop-blur-sm">
-                            <PartyPopper size={32} strokeWidth={1.5} />
+                  <div className="flex flex-col lg:flex-row gap-6">
+                    <section className="flex-1 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm max-w-sm h-[500px]">
+                      <div className="flex flex-col h-full">
+                        {/* Header Section */}
+                        <div className="relative overflow-hidden bg-[#0c1826] p-6 text-white shrink-0">
+                          <div className="absolute -right-10 -top-12 h-40 w-40 rounded-full bg-[#d4af37]/10 blur-3xl" />
+                          <div className="relative flex items-center justify-between">
+                            <div>
+                              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#d4af37]/90">
+                                Aniversariantes do mês
+                              </p>
+                              <h2 className="mt-1 text-4xl font-black tracking-tight">{currentMonthName()}</h2>
+                              <p className="mt-2 text-xs font-medium text-white/50">
+                                {isLoadingAniversariantes
+                                  ? "Carregando registros..."
+                                  : `${aniversariantesMes.filter(c => {
+                                      const d = new Date(c.data_nascimento);
+                                      return !isNaN(d.getTime()) && d.getUTCMonth() === new Date().getMonth();
+                                    }).length} clientes celebram este mês`}
+                              </p>
+                            </div>
+                            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5 text-[#d4af37] ring-1 ring-white/10 backdrop-blur-sm">
+                              <PartyPopper size={32} strokeWidth={1.5} />
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      {/* List Section */}
-                      <div className="custom-scrollbar max-h-[400px] overflow-y-auto bg-slate-50/50 p-4">
-                        {(() => {
-                          const currentMonth = new Date().getMonth();
-                          const filtered = aniversariantesMes
-                            .filter(c => {
-                              const d = new Date(c.data_nascimento);
-                              return !isNaN(d.getTime()) && d.getUTCMonth() === currentMonth;
-                            })
-                            .sort((a, b) => {
-                              const dayA = new Date(a.data_nascimento).getUTCDate();
-                              const dayB = new Date(b.data_nascimento).getUTCDate();
-                              return dayA - dayB;
-                            });
+                        {/* List Section */}
+                        <div className="custom-scrollbar flex-1 overflow-y-auto bg-slate-50/50 p-4">
+                          {(() => {
+                            const currentMonth = new Date().getMonth();
+                            const filtered = aniversariantesMes
+                              .filter(c => {
+                                const d = new Date(c.data_nascimento);
+                                return !isNaN(d.getTime()) && d.getUTCMonth() === currentMonth;
+                              })
+                              .sort((a, b) => {
+                                const dayA = new Date(a.data_nascimento).getUTCDate();
+                                const dayB = new Date(b.data_nascimento).getUTCDate();
+                                return dayA - dayB;
+                              });
 
-                          if (filtered.length === 0) {
-                            return (
-                              <div className="flex flex-col items-center justify-center py-12 text-center">
-                                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-slate-300">
-                                  <PartyPopper size={32} />
+                            if (filtered.length === 0) {
+                              return (
+                                <div className="flex flex-col items-center justify-center py-12 text-center">
+                                  <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-slate-300">
+                                    <PartyPopper size={32} />
+                                  </div>
+                                  <p className="text-sm font-bold text-slate-400">Nenhum aniversariante encontrado</p>
+                                  <p className="mt-1 text-xs text-slate-400/80">para o mês de {currentMonthName().toLowerCase()}.</p>
                                 </div>
-                                <p className="text-sm font-bold text-slate-400">Nenhum aniversariante encontrado</p>
-                                <p className="mt-1 text-xs text-slate-400/80">para o mês de {currentMonthName().toLowerCase()}.</p>
-                              </div>
-                            );
-                          }
+                              );
+                            }
 
-                          return (
-                            <div className="flex flex-col gap-3">
-                              {filtered.map((cliente) => {
-                                const bDate = new Date(cliente.data_nascimento);
-                                const isToday = bDate.getUTCDate() === new Date().getDate() && bDate.getUTCMonth() === currentMonth;
-                                
-                                return (
-                                  <div
-                                    key={cliente.codigo}
-                                    className={`group relative overflow-hidden rounded-2xl border border-white bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#d4af37]/30 hover:shadow-md ${
-                                      isToday ? "ring-2 ring-[#d4af37]/20 bg-[#fffaf0]/50" : ""
-                                    }`}
-                                  >
-                                    {isToday && (
-                                      <div className="absolute right-0 top-0 rounded-bl-xl bg-[#d4af37] px-2 py-1 text-[8px] font-black uppercase tracking-wider text-white animate-pulse">
-                                        Hoje
-                                      </div>
-                                    )}
-                                    <div className="flex items-center gap-4">
-                                      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition-all duration-300 ${
-                                        isToday ? "bg-[#d4af37] text-white shadow-lg shadow-[#d4af37]/20" : "bg-[#d4af37]/10 text-[#a2812a] group-hover:bg-[#d4af37]/20"
-                                      }`}>
-                                        <PartyPopper size={20} />
-                                      </div>
-                                      <div className="min-w-0 flex-1">
-                                        <p className="truncate text-base font-bold text-[#0c1826] transition-colors group-hover:text-[#a2812a]">
-                                          {cliente.nome_completo}
-                                        </p>
-                                        <div className="mt-0.5 flex items-center gap-2 text-xs font-semibold text-slate-500">
-                                          <span className="font-bold text-[#a2812a]">{formatBirthDate(cliente.data_nascimento)}</span>
-                                          {cliente.cidade && (
-                                            <>
-                                              <span className="h-1 w-1 rounded-full bg-slate-300" />
-                                              <span className="truncate">{cliente.cidade}{cliente.uf ? `/${cliente.uf}` : ""}</span>
-                                            </>
-                                          )}
+                            return (
+                              <div className="flex flex-col gap-3">
+                                {filtered.map((cliente) => {
+                                  const bDate = new Date(cliente.data_nascimento);
+                                  const isToday = bDate.getUTCDate() === new Date().getDate() && bDate.getUTCMonth() === currentMonth;
+                                  
+                                  return (
+                                    <div
+                                      key={cliente.codigo}
+                                      className={`group relative overflow-hidden rounded-2xl border border-white bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#d4af37]/30 hover:shadow-md ${
+                                        isToday ? "ring-2 ring-[#d4af37]/20 bg-[#fffaf0]/50" : ""
+                                      }`}
+                                    >
+                                      {isToday && (
+                                        <div className="absolute right-0 top-0 rounded-bl-xl bg-[#d4af37] px-2 py-1 text-[8px] font-black uppercase tracking-wider text-white animate-pulse">
+                                          Hoje
+                                        </div>
+                                      )}
+                                      <div className="flex items-center gap-4">
+                                        <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition-all duration-300 ${
+                                          isToday ? "bg-[#d4af37] text-white shadow-lg shadow-[#d4af37]/20" : "bg-[#d4af37]/10 text-[#a2812a] group-hover:bg-[#d4af37]/20"
+                                        }`}>
+                                          <PartyPopper size={20} />
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                          <p className="truncate text-base font-bold text-[#0c1826] transition-colors group-hover:text-[#a2812a]">
+                                            {cliente.nome_completo}
+                                          </p>
+                                          <div className="mt-0.5 flex items-center gap-2 text-xs font-semibold text-slate-500">
+                                            <span className="font-bold text-[#a2812a]">{formatBirthDate(cliente.data_nascimento)}</span>
+                                            {cliente.cidade && (
+                                              <>
+                                                <span className="h-1 w-1 rounded-full bg-slate-300" />
+                                                <span className="truncate">{cliente.cidade}{cliente.uf ? `/${cliente.uf}` : ""}</span>
+                                              </>
+                                            )}
+                                          </div>
                                         </div>
                                       </div>
                                     </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          );
-                        })()}
+                                  );
+                                })}
+                              </div>
+                            );
+                          })()}
+                        </div>
                       </div>
-                    </div>
-                  </section>
+                    </section>
 
-                  <aside className="h-fit w-full max-h-full flex-shrink-0 overflow-hidden rounded-sm border border-gray-100 bg-white shadow-sm">
-                    <div className="bg-[#0c1826] px-4 py-3 text-center text-xs font-bold uppercase tracking-[0.15em] text-white">
-                      Agenda do dia
-                    </div>
-
-                    <div className="flex flex-col gap-3 border-b border-gray-100 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
-                      <input
-                        type="text"
-                        placeholder="Nova tarefa..."
-                        className="w-full bg-transparent italic text-gray-500 outline-none placeholder-gray-400 sm:w-2/3"
-                      />
-                      <div className="flex items-center gap-1 text-gray-400">
-                        <input
-                          type="text"
-                          placeholder="Hora"
-                          className="w-12 bg-transparent text-center outline-none"
-                        />
-                        <span>:</span>
-                        <input
-                          type="text"
-                          placeholder="Min."
-                          className="w-12 bg-transparent text-center outline-none"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="custom-scrollbar flex-1 overflow-y-auto">
-                      {agendaItems.map((item) => (
-                        <div
-                          key={`${item.name}-${item.time}`}
-                          className={`flex cursor-pointer items-start gap-4 border-b border-gray-100 p-4 transition-colors hover:bg-gray-50 ${
-                            item.highlight ? "text-red-500" : "text-gray-600"
-                          }`}
-                        >
-                          <div className="mt-1 flex flex-col items-center gap-2">
-                            <User
-                              fill="currentColor"
-                              size={14}
-                              className={item.highlight ? "text-red-500" : "text-gray-500"}
-                            />
-                            <Phone
-                              fill="currentColor"
-                              size={14}
-                              className={item.highlight ? "text-red-500" : "text-gray-500"}
-                            />
-                          </div>
-                          <div className="flex-1 space-y-1">
-                            <div
-                              className={`text-sm font-semibold ${
-                                item.highlight ? "text-red-500" : "text-[#555]"
-                              }`}
-                            >
-                              {item.name}
+                    <section className="flex-1 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm max-w-sm h-[500px]">
+                      <div className="flex flex-col h-full">
+                        {/* Header Section */}
+                        <div className="relative overflow-hidden bg-[#0c1826] p-6 text-white shrink-0">
+                          <div className="absolute -right-10 -top-12 h-40 w-40 rounded-full bg-[#d4af37]/10 blur-3xl" />
+                          <div className="relative flex items-center justify-between">
+                            <div>
+                              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#d4af37]/90">
+                                Agenda do dia
+                              </p>
+                              <h2 className="mt-1 text-4xl font-black tracking-tight">{new Date().getDate()} de {currentMonthName()}</h2>
+                              <p className="mt-2 text-xs font-medium text-white/50">
+                                Tarefas programadas
+                              </p>
                             </div>
-                            <div
-                              className={`text-xs ${
-                                item.highlight ? "text-red-500" : "text-gray-500"
-                              }`}
-                            >
-                              {item.phone}
-                            </div>
-                            <div className="flex items-center gap-2 text-xs text-gray-500">
-                              <span className={item.highlight ? "font-medium text-red-400" : ""}>
-                                {item.time}
-                              </span>
-                              <span className={item.highlight ? "text-red-400" : ""}>
-                                {item.status}
-                              </span>
+                            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5 text-[#d4af37] ring-1 ring-white/10 backdrop-blur-sm">
+                              <Calendar size={32} strokeWidth={1.5} />
                             </div>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </aside>
+
+                        {/* Inputs Section */}
+                        <div className="flex flex-col gap-3 border-b border-gray-200 bg-white px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between shrink-0">
+                          <input
+                            type="text"
+                            placeholder="Nova tarefa..."
+                            className="w-full bg-transparent italic text-gray-500 outline-none placeholder-gray-400 sm:w-2/3"
+                          />
+                          <div className="flex items-center gap-1 text-gray-400">
+                            <input
+                              type="text"
+                              placeholder="Hora"
+                              className="w-12 bg-transparent text-center outline-none"
+                            />
+                            <span>:</span>
+                            <input
+                              type="text"
+                              placeholder="Min."
+                              className="w-12 bg-transparent text-center outline-none"
+                            />
+                          </div>
+                        </div>
+
+                        {/* List Section */}
+                        <div className="custom-scrollbar flex-1 overflow-y-auto bg-slate-50/50 p-4">
+                          <div className="flex flex-col gap-3">
+                            {agendaItems.map((item) => (
+                              <div
+                                key={`${item.name}-${item.time}`}
+                                className={`group relative overflow-hidden rounded-2xl border border-white bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md cursor-pointer ${
+                                  item.highlight 
+                                    ? "ring-2 ring-red-500/20 bg-red-50/50 hover:border-red-300" 
+                                    : "hover:border-[#d4af37]/30"
+                                }`}
+                              >
+                                {item.highlight && (
+                                  <div className="absolute right-0 top-0 rounded-bl-xl bg-red-500 px-2 py-1 text-[8px] font-black uppercase tracking-wider text-white animate-pulse">
+                                    Atrasado
+                                  </div>
+                                )}
+                                <div className="flex items-center gap-4">
+                                  <div className={`flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-full transition-all duration-300 ${
+                                    item.highlight 
+                                      ? "bg-red-500 text-white shadow-lg shadow-red-500/20" 
+                                      : "bg-[#d4af37]/10 text-[#a2812a] group-hover:bg-[#d4af37]/20"
+                                  }`}>
+                                    <User size={16} />
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <p className={`truncate text-base font-bold transition-colors ${
+                                      item.highlight ? "text-red-700" : "text-[#0c1826] group-hover:text-[#a2812a]"
+                                    }`}>
+                                      {item.name}
+                                    </p>
+                                    <div className="mt-0.5 flex items-center justify-between text-xs font-semibold text-slate-500">
+                                      <div className="flex items-center gap-1">
+                                        <Phone size={12} className={item.highlight ? "text-red-400" : ""} />
+                                        <span className={item.highlight ? "text-red-600" : "text-slate-500"}>{item.phone}</span>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <span className={`font-bold ${item.highlight ? "text-red-600" : "text-[#a2812a]"}`}>{item.time}</span>
+                                        <span className={item.highlight ? "text-red-500" : "text-slate-400"}>{item.status}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+                    
+                    <section className="flex-1 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm max-w-sm h-[500px]">
+                      <div className="flex flex-col h-full">
+                        {/* Header Section */}
+                        <div className="relative overflow-hidden bg-[#0c1826] p-6 text-white shrink-0">
+                          <div className="absolute -right-10 -top-12 h-40 w-40 rounded-full bg-[#d4af37]/10 blur-3xl" />
+                          <div className="relative flex items-center justify-between">
+                            <div>
+                              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#d4af37]/90">
+                                Clientes da Corretora
+                              </p>
+                              <h2 className="mt-1 text-4xl font-black tracking-tight">{clientStats.total}</h2>
+                              <p className="mt-2 text-xs font-medium text-white/50">
+                                {isLoadingClientStats ? "Calculando clientes..." : "Total de clientes registrados"}
+                              </p>
+                            </div>
+                            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5 text-[#d4af37] ring-1 ring-white/10 backdrop-blur-sm">
+                              <Users size={32} strokeWidth={1.5} />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* List Section */}
+                        <div className="custom-scrollbar flex-1 overflow-y-auto bg-slate-50/50 p-4">
+                          <div className="flex flex-col gap-4">
+                            {/* Ativos */}
+                            <div className="group relative overflow-hidden rounded-2xl border border-white bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#25D366]/30 hover:shadow-md">
+                              <div className="flex items-center gap-4">
+                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#25D366]/10 text-[#128C7E] transition-all duration-300 group-hover:bg-[#25D366]/20">
+                                  <User size={20} />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-base font-bold text-[#0c1826] transition-colors group-hover:text-[#128C7E]">
+                                    Clientes Ativos
+                                  </p>
+                                  <div className="mt-1 flex items-center gap-2 text-sm font-semibold text-slate-500">
+                                    <span className="font-bold text-[#128C7E]">{clientStats.ativos}</span>
+                                    <span className="h-1 w-1 rounded-full bg-slate-300" />
+                                    <span>{clientStats.total > 0 ? Math.round((clientStats.ativos / clientStats.total) * 100) : 0}% do total</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {/* Inativos */}
+                            <div className="group relative overflow-hidden rounded-2xl border border-white bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-red-400/30 hover:shadow-md">
+                              <div className="flex items-center gap-4">
+                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-500 transition-all duration-300 group-hover:bg-red-100">
+                                  <User size={20} className="opacity-60" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-base font-bold text-[#0c1826] transition-colors group-hover:text-red-600">
+                                    Clientes Inativos
+                                  </p>
+                                  <div className="mt-1 flex items-center gap-2 text-sm font-semibold text-slate-500">
+                                    <span className="font-bold text-red-500">{clientStats.inativos}</span>
+                                    <span className="h-1 w-1 rounded-full bg-slate-300" />
+                                    <span>{clientStats.total > 0 ? Math.round((clientStats.inativos / clientStats.total) * 100) : 0}% do total</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+                  </div>
                 </div>
               </div>
             )}

@@ -7,7 +7,7 @@ import { registerLocalAuthRoutes } from './api/_lib/local_auth_routes';
 import { ImportLeadHttpError, importLeadFromSistemaQuer } from './api/_lib/import_lead';
 import importLeadAssetHandler from './api/import-lead-asset';
 import sendLoginCodeHandler from './api/send-login-code';
-import { aniversariantesMesHandler, createClienteHandler, listClientesHandler, nextClienteCodigoHandler, searchClientesHandler, updateClienteHandler, deleteClienteHandler } from './api/clientes';
+import { aniversariantesMesHandler, createClienteHandler, listClientesHandler, nextClienteCodigoHandler, searchClientesHandler, updateClienteHandler, deleteClienteHandler, clientStatsHandler } from './api/clientes';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -402,6 +402,7 @@ async function startServer() {
   app.get('/api/clientes/next-code', nextClienteCodigoHandler);
   app.get('/api/clientes/aniversariantes-mes', aniversariantesMesHandler);
   app.get('/api/clientes/search', searchClientesHandler);
+  app.get('/api/clientes/stats', clientStatsHandler);
   app.put('/api/clientes/:id', updateClienteHandler);
   app.delete('/api/clientes/:id', deleteClienteHandler);
 
