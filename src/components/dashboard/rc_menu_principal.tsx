@@ -1240,7 +1240,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                 }}
                 className="group relative flex h-32 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:border-[#d4af37]/70 hover:shadow-md"
               >
-                <img src="/quer.svg" alt="Simulador Quer" className="max-h-16 max-w-[70%] object-contain opacity-90 transition-all duration-300 group-hover:scale-105 group-hover:opacity-100" />
+                <img src="/quer.svg" alt="Simulador Quer" className="max-h-20 max-w-[85%] object-contain opacity-90 transition-all duration-300 group-hover:scale-105 group-hover:opacity-100" />
               </a>
 
               <a
@@ -1251,7 +1251,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                 }}
                 className="group relative flex h-32 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:border-[#d4af37]/70 hover:shadow-md"
               >
-                <img src="/sulamerica.svg" alt="Simulador SulAmérica" className="max-h-16 max-w-[70%] object-contain opacity-90 transition-all duration-300 group-hover:scale-105 group-hover:opacity-100" />
+                <img src="/sulamerica.svg" alt="Simulador SulAmérica" className="max-h-20 max-w-[85%] object-contain opacity-90 transition-all duration-300 group-hover:scale-105 group-hover:opacity-100" />
               </a>
 
               <a
@@ -1262,7 +1262,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                 }}
                 className="group relative flex h-32 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:border-[#d4af37]/70 hover:shadow-md"
               >
-                <img src="/amil.svg" alt="Simulador Amil" className="max-h-16 max-w-[70%] object-contain opacity-90 transition-all duration-300 group-hover:scale-105 group-hover:opacity-100" />
+                <img src="/amil.svg" alt="Simulador Amil" className="max-h-20 max-w-[85%] object-contain opacity-90 transition-all duration-300 group-hover:scale-105 group-hover:opacity-100" />
               </a>
 
               <a
@@ -1273,7 +1273,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                 }}
                 className="group relative flex h-32 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:border-[#d4af37]/70 hover:shadow-md"
               >
-                <img src="/medsenior.svg" alt="Simulador MedSênior" className="max-h-16 max-w-[70%] object-contain opacity-90 transition-all duration-300 group-hover:scale-105 group-hover:opacity-100" />
+                <img src="/medsenior.svg" alt="Simulador MedSênior" className="max-h-20 max-w-[85%] object-contain opacity-90 transition-all duration-300 group-hover:scale-105 group-hover:opacity-100" />
               </a>
             </div>
           </div>
