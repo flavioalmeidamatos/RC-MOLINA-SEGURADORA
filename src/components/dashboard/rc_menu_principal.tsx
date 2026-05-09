@@ -349,6 +349,24 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
           return;
         }
 
+        // Auto-accept cookies
+        try {
+          const oneTrustBtn = frameDocument.querySelector<HTMLElement>("#onetrust-accept-btn-handler");
+          if (oneTrustBtn) oneTrustBtn.click();
+
+          const buttons = Array.from(frameDocument.querySelectorAll("button, a"));
+          buttons.forEach((btn) => {
+            const text = (btn.textContent || "").toLowerCase().trim();
+            if (
+              text === "aceitar todos" ||
+              text === "aceitar cookies" ||
+              text === "concordar e fechar"
+            ) {
+              (btn as HTMLElement).click();
+            }
+          });
+        } catch (e) {}
+
         const loginInput = frameDocument.querySelector<HTMLInputElement>("#login");
         const senhaInput = frameDocument.querySelector<HTMLInputElement>("#senha");
         const perfilInput = frameDocument.querySelector<HTMLInputElement>("#perfilUsuario");
