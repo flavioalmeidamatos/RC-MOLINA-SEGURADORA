@@ -1023,7 +1023,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                             <p className="mt-3 text-sm text-white/70">
                               {isLoadingAniversariantes
                                 ? "Carregando lista do banco..."
-                                : `${aniversariantesMes.length} cliente(s) com aniversário neste mês.`}
+                                : `${aniversariantesMes.filter(c=> new Date(c.data_nascimento).getMonth()===new Date().getMonth()).length} cliente(s) com aniversário neste mês.`}
                             </p>
                           </div>
                           <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-[#d4af37] ring-1 ring-white/10">
@@ -1033,9 +1033,9 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                       </div>
 
                       <div className="custom-scrollbar max-h-64 overflow-y-auto p-4">
-                        {aniversariantesMes.length > 0 ? (
-                          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                            {aniversariantesMes.map((cliente) => (
+                        {aniversariantesMes.filter(c=> new Date(c.data_nascimento).getMonth()===new Date().getMonth()).length > 0 ? (
+                          <div className="flex flex-col gap-2">
+                            {aniversariantesMes.filter(c=> new Date(c.data_nascimento).getMonth()===new Date().getMonth()).map((cliente) => (
                               <div
                                 key={cliente.codigo}
                                 className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 transition hover:border-[#d4af37]/50 hover:bg-[#fffaf0]"
