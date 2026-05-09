@@ -1011,7 +1011,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                   </div>
 
                   <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
-                    <div className="grid gap-0 lg:grid-cols-[minmax(0,0.72fr)_minmax(0,1fr)]">
+                    <div className="flex flex-col">
                       <div className="relative overflow-hidden bg-[#0c1826] p-6 text-white">
                         <div className="absolute -right-10 -top-12 h-32 w-32 rounded-full bg-[#b58c2a]/20" />
                         <div className="relative flex items-start justify-between gap-4">
