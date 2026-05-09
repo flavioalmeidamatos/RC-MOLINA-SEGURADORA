@@ -33,6 +33,9 @@ const AMIL_LOGIN = '77915445715';
 const AMIL_PASSWORD = 'sqn0y3zqmo';
 const AMIL_BROWSER_USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
+
+const MEDSENIOR_ORIGIN = 'https://vendadigital.medsenior.com.br';
+const MEDSENIOR_PROXY_PREFIX = '/medsenior-proxy';
 const SIMULATOR_BLOCKED_RESPONSE_HEADERS = new Set([
   'content-encoding',
   'content-length',
@@ -154,6 +157,22 @@ const rewriteAmilAppPaths = (content: string) =>
       new RegExp(`(["'])\\\\/(?!amil-proxy\\\\/)(${AMIL_APP_PATHS})(?=\\\\/|\\?|["'])`, 'gi'),
       `$1${AMIL_PROXY_PREFIX_ESCAPED}\\/$2`
     );
+
+const rewriteMedseniorLocation = (location: string) => {
+  if (location.startsWith(MEDSENIOR_ORIGIN)) {
+    return `${MEDSENIOR_PROXY_PREFIX}${location.slice(MEDSENIOR_ORIGIN.length)}`;
+  }
+  if (location.startsWith('/')) {
+    return `${MEDSENIOR_PROXY_PREFIX}${location}`;
+  }
+  return location;
+};
+
+const rewriteMedseniorCookie = (cookie: string) =>
+  cookie
+    .replace(/;\s*domain=[^;]*/gi, '')
+    .replace(/;\s*path=[^;]*/gi, `; Path=${MEDSENIOR_PROXY_PREFIX}`)
+    .replace(/;\s*secure/gi, '');
 
 const sulamericaAutofillScript = `
 <script>
@@ -631,13 +650,77 @@ async function startServer() {
     }
   });
 
+  app.all(`${MEDSENIOR_PROXY_PREFIX}*`, async (req, res) => {
+    const upstreamPath = req.originalUrl.slice(MEDSENIOR_PROXY_PREFIX.length) || '/';
+    const upstreamUrl = new URL(upstreamPath, MEDSENIOR_ORIGIN);
+    const requestHeaders = new Headers();
+
+    for (const [name, value] of Object.entries(req.headers)) {
+      if (!value) continue;
+      const lowerName = name.toLowerCase();
+      if (['host', 'connection', 'content-length', 'accept-encoding'].includes(lowerName)) {
+        continue;
+      }
+      requestHeaders.set(name, Array.isArray(value) ? value.join(',') : value);
+    }
+
+    requestHeaders.set('host', 'vendadigital.medsenior.com.br');
+    requestHeaders.set('origin', MEDSENIOR_ORIGIN);
+    requestHeaders.set('referer', `${MEDSENIOR_ORIGIN}/`);
+
+    try {
+      const bodyBuffer = ['GET', 'HEAD'].includes(req.method) ? undefined : await getRequestBody(req);
+      const upstreamResponse = await fetch(upstreamUrl, {
+        method: req.method,
+        headers: requestHeaders,
+        body: bodyBuffer as unknown as BodyInit,
+        redirect: 'manual',
+      });
+
+      res.status(upstreamResponse.status);
+
+      upstreamResponse.headers.forEach((value, name) => {
+        const lowerName = name.toLowerCase();
+        if (SIMULATOR_BLOCKED_RESPONSE_HEADERS.has(lowerName)) return;
+        if (lowerName === 'location') {
+          res.setHeader('Location', rewriteMedseniorLocation(value));
+          return;
+        }
+        if (lowerName === 'set-cookie') return;
+        res.setHeader(name, value);
+      });
+
+      const setCookies = upstreamResponse.headers.getSetCookie?.() || [];
+      for (const cookie of setCookies) {
+        res.append('Set-Cookie', rewriteMedseniorCookie(cookie));
+      }
+
+      const contentType = upstreamResponse.headers.get('content-type') || '';
+      const responseBuffer = Buffer.from(await upstreamResponse.arrayBuffer());
+
+      if (contentType.includes('text/html')) {
+        let content = responseBuffer.toString('utf8');
+        // Adiciona base href para garantir que recursos relativos funcionem via proxy
+        content = content.replace(/<head([^>]*)>/i, `<head$1><base href="${MEDSENIOR_PROXY_PREFIX}/" />`);
+        res.send(content);
+        return;
+      }
+
+      res.send(responseBuffer);
+    } catch (error) {
+      console.error('ERRO NO PROXY MEDSENIOR:', error);
+      res.status(502).send('Erro ao carregar o proxy Medsenior.');
+    }
+  });
+
   app.use((req, res, next) => {
     const referer = req.headers.referer || '';
     if (
       !req.originalUrl.startsWith('/api') &&
       !req.originalUrl.startsWith(SIMULATOR_PROXY_PREFIX) &&
       !req.originalUrl.startsWith(SULAMERICA_PROXY_PREFIX) &&
-      !req.originalUrl.startsWith(AMIL_PROXY_PREFIX)
+      !req.originalUrl.startsWith(AMIL_PROXY_PREFIX) &&
+      !req.originalUrl.startsWith(MEDSENIOR_PROXY_PREFIX)
     ) {
       if (referer.includes(SIMULATOR_PROXY_PREFIX)) {
         return res.redirect(`${SIMULATOR_PROXY_PREFIX}${req.originalUrl}`);
@@ -647,6 +730,9 @@ async function startServer() {
       }
       if (referer.includes(AMIL_PROXY_PREFIX)) {
         return res.redirect(`${AMIL_PROXY_PREFIX}${req.originalUrl}`);
+      }
+      if (referer.includes(MEDSENIOR_PROXY_PREFIX)) {
+        return res.redirect(`${MEDSENIOR_PROXY_PREFIX}${req.originalUrl}`);
       }
     }
     next();
