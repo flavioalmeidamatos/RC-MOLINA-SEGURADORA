@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { Plus, Search, Calendar, User } from "lucide-react";
 import { CalendarView } from "./agenda";
 
@@ -12,6 +12,59 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
   setActiveView,
 }) => {
   const dateInputRef = useRef<HTMLInputElement>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [phone, setPhone] = useState("");
+  const [birthDate, setBirthDate] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(async () => {
+      if (searchTerm.trim().length >= 2) {
+        setIsLoading(true);
+        try {
+          const response = await fetch(`/api/clientes/search?q=${encodeURIComponent(searchTerm)}`);
+          const data = await response.json();
+          setSuggestions(data);
+          setShowSuggestions(true);
+        } catch (error) {
+          console.error("Erro ao buscar clientes:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      } else {
+        setSuggestions([]);
+        setShowSuggestions(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm]);
+
+  const formatBirthDate = (dateStr: string) => {
+    if (!dateStr) return "";
+    const [year, month, day] = dateStr.split('T')[0].split('-');
+    return `${day}/${month}/${year}`;
+  };
+
+  const handleSelectClient = (client: any) => {
+    setSearchTerm(client.nome_completo);
+    
+    // Find preferred phone or the first one
+    const preferredContact = client.contatos?.find((c: any) => c.preferencial) || client.contatos?.[0];
+    setPhone(preferredContact?.valor || "");
+    
+    setBirthDate(formatBirthDate(client.data_nascimento));
+    setShowSuggestions(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && suggestions.length > 0) {
+      handleSelectClient(suggestions[0]);
+    }
+  };
+
   return (
     <aside className="w-[300px] flex-shrink-0 bg-white border-r border-black overflow-y-auto p-4 custom-scrollbar">
       <div className="flex items-center justify-between mb-6">
@@ -41,31 +94,57 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
       </div>
 
       <div className="space-y-4">
-        <div className="flex gap-1">
+        <div className="flex gap-1 relative">
           <div className="relative flex-1">
             <input 
               type="text" 
               placeholder="Cliente..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onFocus={() => searchTerm.length >= 2 && setShowSuggestions(true)}
               className="w-full pl-3 pr-10 py-2 border border-black rounded text-sm outline-none focus:border-black"
             />
             <div className="absolute right-0 top-0 bottom-0 flex items-center pr-2">
               <User size={14} className="text-black" />
             </div>
+            
+            {showSuggestions && (
+              <div className="absolute z-50 w-full mt-1 bg-white border border-black rounded shadow-xl max-h-60 overflow-y-auto">
+                {isLoading ? (
+                  <div className="p-2 text-sm text-gray-500 italic">Buscando...</div>
+                ) : suggestions.length > 0 ? (
+                  suggestions.map((client) => (
+                    <div 
+                      key={client.id_cliente}
+                      className="p-2 hover:bg-gray-100 cursor-pointer text-sm border-b border-gray-100 last:border-0"
+                      onClick={() => handleSelectClient(client)}
+                    >
+                      <div className="font-bold">{client.nome_completo}</div>
+                      <div className="text-xs text-gray-500">{client.cpf || client.cnpj || client.codigo}</div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-2 text-sm text-gray-500">Nenhum cliente encontrado</div>
+                )}
+              </div>
+            )}
           </div>
-          <button className="p-2 bg-[#00B5AD] text-white rounded shadow-sm hover:bg-[#009d96]">
-            <Search size={16} />
-          </button>
         </div>
 
         <div className="flex gap-2">
           <input 
             type="text" 
             placeholder="(__) ____-____" 
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
             className="flex-1 min-w-0 px-3 py-2 border border-black rounded text-sm italic outline-none focus:border-black"
           />
           <input 
             type="text" 
             placeholder="Nascimento" 
+            value={birthDate}
+            onChange={(e) => setBirthDate(e.target.value)}
             className="w-[120px] min-w-0 px-3 py-2 border border-black rounded text-sm outline-none focus:border-black"
           />
         </div>
@@ -87,11 +166,13 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
         <div className="flex gap-1">
           <input 
             type="text" 
+            placeholder="Data do agendamento"
             defaultValue="03/04/2026" 
             className="flex-1 px-3 py-2 border border-black rounded text-sm outline-none focus:border-black"
           />
           <input 
             type="text" 
+            placeholder="00:00"
             defaultValue="00:00" 
             className="w-[68px] px-2 py-2 border border-black rounded text-sm text-center outline-none focus:border-black"
           />
@@ -105,6 +186,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
 
         <div>
           <select className="w-full px-3 py-2 border border-black rounded text-sm outline-none appearance-none bg-white focus:border-black">
+            <option>Responsável...</option>
             <option>FLAVIO ALMEIDA MATOS</option>
           </select>
         </div>
@@ -127,6 +209,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
 
         <div>
           <select className="w-full px-3 py-2 border border-black rounded text-sm outline-none appearance-none bg-white focus:border-black">
+            <option>Status...</option>
             <option>Agendado</option>
           </select>
         </div>
