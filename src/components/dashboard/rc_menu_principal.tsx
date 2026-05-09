@@ -532,26 +532,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       } catch (_error) {}
     }
 
-    try {
-      const logoutWindow = window.open(
-        SIMULATOR_LOGOUT_URL,
-        "simulador_online_logout_window",
-        "width=100,height=100,left=-9999,top=-9999,resizable=yes,scrollbars=yes"
-      );
-
-      if (logoutWindow) {
-        try {
-          logoutWindow.blur();
-          window.focus();
-        } catch (_blurError) {}
-
-        await wait(1600);
-        try {
-          logoutWindow.close();
-        } catch (_error) {}
-        return;
-      }
-    } catch (_error) {}
 
     try {
       const logoutIframe = document.createElement("iframe");
