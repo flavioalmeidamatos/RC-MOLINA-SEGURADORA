@@ -631,6 +631,27 @@ async function startServer() {
     }
   });
 
+  app.use((req, res, next) => {
+    const referer = req.headers.referer || '';
+    if (
+      !req.originalUrl.startsWith('/api') &&
+      !req.originalUrl.startsWith(SIMULATOR_PROXY_PREFIX) &&
+      !req.originalUrl.startsWith(SULAMERICA_PROXY_PREFIX) &&
+      !req.originalUrl.startsWith(AMIL_PROXY_PREFIX)
+    ) {
+      if (referer.includes(SIMULATOR_PROXY_PREFIX)) {
+        return res.redirect(`${SIMULATOR_PROXY_PREFIX}${req.originalUrl}`);
+      }
+      if (referer.includes(SULAMERICA_PROXY_PREFIX)) {
+        return res.redirect(`${SULAMERICA_PROXY_PREFIX}${req.originalUrl}`);
+      }
+      if (referer.includes(AMIL_PROXY_PREFIX)) {
+        return res.redirect(`${AMIL_PROXY_PREFIX}${req.originalUrl}`);
+      }
+    }
+    next();
+  });
+
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({ server: { middlewareMode: true }, appType: 'spa' });
     app.use(vite.middlewares);
