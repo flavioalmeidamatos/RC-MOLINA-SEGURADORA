@@ -123,7 +123,10 @@ const rewriteSulamericaAppPaths = (content: string) =>
     .replace(
       new RegExp(`(["'])\\\\/(?!sulamerica-proxy\\\\/)(${SULAMERICA_APP_PATHS})(?=\\\\/|\\?|["'])`, 'gi'),
       `$1${SULAMERICA_PROXY_PREFIX_ESCAPED}\\/$2`
-    );
+    )
+    .replace(/\b(top|parent)\.location\b/g, 'location')
+    .replace(/window\.top\./g, 'window.')
+    .replace(/window\.parent\./g, 'window.');
 
 const rewriteAmilLocation = (location: string) => {
   if (location.startsWith(AMIL_ORIGIN)) {
@@ -206,9 +209,47 @@ const sulamericaAutofillScript = `
     }
   }
 
+  function acceptSulamericaPrivacy() {
+    var selectors = [
+      '#btn-aceitar-privacidade',
+      '#onetrust-accept-btn-handler',
+      '.cookie-banner-button',
+      'button.btn-accept-privacy',
+      '#aceitar-cookies',
+      '.lgpd-btn-aceitar',
+      '.aceitar-cookies',
+      '#btn-aceitar-cookies'
+    ];
+    
+    selectors.forEach(function (s) {
+      var el = document.querySelector(s);
+      if (el && typeof el.click === 'function') {
+        el.click();
+      }
+    });
+
+    // Procura por botões que contenham "Aceitar" ou "Concordo" e que pareçam ser de cookies
+    var buttons = document.querySelectorAll('button, a.btn');
+    for (var i = 0; i < buttons.length; i++) {
+      var txt = (buttons[i].innerText || buttons[i].textContent || '').toLowerCase();
+      var isCookieBtn = buttons[i].className.indexOf('cookie') !== -1 || 
+                        buttons[i].id.indexOf('cookie') !== -1 || 
+                        buttons[i].className.indexOf('lgpd') !== -1;
+      
+      if (isCookieBtn && (txt.indexOf('aceitar') !== -1 || txt.indexOf('concordo') !== -1 || txt.indexOf('entendi') !== -1)) {
+        buttons[i].click();
+      }
+    }
+  }
+
   fillSulamericaLogin();
-  [250, 750, 1500, 3000].forEach(function (delay) {
-    window.setTimeout(fillSulamericaLogin, delay);
+  acceptSulamericaPrivacy();
+  
+  [250, 750, 1500, 3000, 5000].forEach(function (delay) {
+    window.setTimeout(function() {
+      fillSulamericaLogin();
+      acceptSulamericaPrivacy();
+    }, delay);
   });
 })();
 </script>`;
