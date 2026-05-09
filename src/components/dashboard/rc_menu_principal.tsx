@@ -962,7 +962,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                   </a>
                 </div>
                 <iframe
-                  src={MEDSENIOR_PROXY_LOGIN_URL}
+                  src={MEDSENIOR_SIMULATOR_URL}
                   title="Simulador Medsenior"
                   className="h-full w-full flex-1 border-none"
                   allow="geolocation; microphone; camera; payment; encrypted-media"
