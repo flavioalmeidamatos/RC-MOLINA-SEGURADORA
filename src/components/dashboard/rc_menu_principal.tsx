@@ -810,6 +810,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                       allowFullScreen
                       onLoad={handleSimulatorIframeLoad}
                       onError={handleSimulatorIframeError}
+                      sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-modals"
                     />
                   </div>
                 ) : simulatorMode === "idle" && (simulatorBrowser === "chrome" || simulatorBrowser === "edge") ? (
@@ -932,6 +933,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                   title="Simulador SulAmerica"
                   className="h-full w-full flex-1 border-none"
                   allow="geolocation; microphone; camera; payment; encrypted-media"
+                  sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-modals"
                 />
               </div>
             ) : showAmilSimulator ? (
@@ -958,6 +960,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                   className="h-full w-full flex-1 border-none"
                   allow="geolocation; microphone; camera; payment; encrypted-media"
                   onLoad={fillAndSubmitAmilLogin}
+                  sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-modals"
                 />
               </div>
             ) : showMedseniorSimulator ? (
@@ -982,6 +985,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                   title="Simulador Medsenior"
                   className="h-full w-full flex-1 border-none"
                   allow="geolocation; microphone; camera; payment; encrypted-media"
+                  sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-modals"
                 />
               </div>
             ) : showClientArea ? (
@@ -1027,7 +1031,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                   </div>
 
                   <div className="flex flex-col lg:flex-row gap-6">
-                    <section className="flex-1 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm max-w-sm h-[500px]">
+                    <section className="flex-1 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm max-w-md h-[500px]">
                       <div className="flex flex-col h-full">
                         {/* Header Section */}
                         <div className="relative overflow-hidden bg-[#0c1826] p-6 text-white shrink-0">
@@ -1129,7 +1133,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                       </div>
                     </section>
 
-                    <section className="flex-1 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm max-w-sm h-[500px]">
+                    <section className="flex-1 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm max-w-md h-[500px]">
                       <div className="flex flex-col h-full">
                         {/* Header Section */}
                         <div className="relative overflow-hidden bg-[#0c1826] p-6 text-white shrink-0">
@@ -1222,7 +1226,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                       </div>
                     </section>
                     
-                    <section className="flex-1 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm max-w-sm h-[500px]">
+                    <section className="flex-1 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm max-w-md h-[500px]">
                       <div className="flex flex-col h-full">
                         {/* Header Section */}
                         <div className="relative overflow-hidden bg-[#0c1826] p-6 text-white shrink-0">
@@ -1263,6 +1267,13 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                   </div>
                                 </div>
                               </div>
+                              {/* Barra de progresso visual */}
+                              <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                                <div 
+                                  className="h-full bg-[#25D366] transition-all duration-1000" 
+                                  style={{ width: `${clientStats.total > 0 ? (clientStats.ativos / clientStats.total) * 100 : 0}%` }}
+                                />
+                              </div>
                             </div>
                             
                             {/* Inativos */}
@@ -1281,6 +1292,13 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                     <span>{clientStats.total > 0 ? Math.round((clientStats.inativos / clientStats.total) * 100) : 0}% do total</span>
                                   </div>
                                 </div>
+                              </div>
+                              {/* Barra de progresso visual */}
+                              <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                                <div 
+                                  className="h-full bg-red-400 transition-all duration-1000" 
+                                  style={{ width: `${clientStats.total > 0 ? (clientStats.inativos / clientStats.total) * 100 : 0}%` }}
+                                />
                               </div>
                             </div>
                           </div>

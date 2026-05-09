@@ -28,7 +28,7 @@ const AMIL_PROXY_PREFIX = '/amil-proxy';
 const AMIL_PROXY_PREFIX_ESCAPED = AMIL_PROXY_PREFIX.replace(/\//g, '\\/');
 const AMIL_LOGIN_PATH = '/portal/web/servicos/usuario/corretor/login';
 const AMIL_APP_PATHS =
-  'portal|web|servicos|usuario|corretor|o|combo|html|image|documents|favicon\\.ico|api|css|js|fonts';
+  'portal|web|servicos|usuario|corretor|o|combo|html|image|documents|favicon\\.ico|api|css|js|fonts|static|assets|lib|vendor|pages|app|shared';
 const AMIL_LOGIN = '77915445715';
 const AMIL_PASSWORD = 'sqn0y3zqmo';
 const AMIL_BROWSER_USER_AGENT =
@@ -156,7 +156,10 @@ const rewriteAmilAppPaths = (content: string) =>
     .replace(
       new RegExp(`(["'])\\\\/(?!amil-proxy\\\\/)(${AMIL_APP_PATHS})(?=\\\\/|\\?|["'])`, 'gi'),
       `$1${AMIL_PROXY_PREFIX_ESCAPED}\\/$2`
-    );
+    )
+    .replace(/\b(top|parent)\.location\b/g, 'location')
+    .replace(/window\.top\./g, 'window.')
+    .replace(/window\.parent\./g, 'window.');
 
 const rewriteMedseniorLocation = (location: string) => {
   if (location.startsWith(MEDSENIOR_ORIGIN)) {
@@ -724,16 +727,16 @@ async function startServer() {
       !req.originalUrl.startsWith(MEDSENIOR_PROXY_PREFIX)
     ) {
       if (referer.includes(SIMULATOR_PROXY_PREFIX)) {
-        return res.redirect(`${SIMULATOR_PROXY_PREFIX}${req.originalUrl}`);
+        return res.redirect(307, `${SIMULATOR_PROXY_PREFIX}${req.originalUrl}`);
       }
       if (referer.includes(SULAMERICA_PROXY_PREFIX)) {
-        return res.redirect(`${SULAMERICA_PROXY_PREFIX}${req.originalUrl}`);
+        return res.redirect(307, `${SULAMERICA_PROXY_PREFIX}${req.originalUrl}`);
       }
       if (referer.includes(AMIL_PROXY_PREFIX)) {
-        return res.redirect(`${AMIL_PROXY_PREFIX}${req.originalUrl}`);
+        return res.redirect(307, `${AMIL_PROXY_PREFIX}${req.originalUrl}`);
       }
       if (referer.includes(MEDSENIOR_PROXY_PREFIX)) {
-        return res.redirect(`${MEDSENIOR_PROXY_PREFIX}${req.originalUrl}`);
+        return res.redirect(307, `${MEDSENIOR_PROXY_PREFIX}${req.originalUrl}`);
       }
     }
     next();
