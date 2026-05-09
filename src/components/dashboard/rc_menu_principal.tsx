@@ -1012,54 +1012,102 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
                   <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
                     <div className="flex flex-col">
+                      {/* Header Section */}
                       <div className="relative overflow-hidden bg-[#0c1826] p-6 text-white">
-                        <div className="absolute -right-10 -top-12 h-32 w-32 rounded-full bg-[#b58c2a]/20" />
-                        <div className="relative flex items-start justify-between gap-4">
+                        <div className="absolute -right-10 -top-12 h-40 w-40 rounded-full bg-[#d4af37]/10 blur-3xl" />
+                        <div className="relative flex items-center justify-between">
                           <div>
-                            <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#d4af37]">
+                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#d4af37]/90">
                               Aniversariantes do mês
                             </p>
-                            <h2 className="mt-2 text-3xl font-black leading-none">{currentMonthName()}</h2>
-                            <p className="mt-3 text-sm text-white/70">
+                            <h2 className="mt-1 text-4xl font-black tracking-tight">{currentMonthName()}</h2>
+                            <p className="mt-2 text-xs font-medium text-white/50">
                               {isLoadingAniversariantes
-                                ? "Carregando lista do banco..."
-                                : `${aniversariantesMes.filter(c=> new Date(c.data_nascimento).getMonth()===new Date().getMonth()).length} cliente(s) com aniversário neste mês.`}
+                                ? "Carregando registros..."
+                                : `${aniversariantesMes.filter(c => {
+                                    const d = new Date(c.data_nascimento);
+                                    return !isNaN(d.getTime()) && d.getUTCMonth() === new Date().getMonth();
+                                  }).length} clientes celebram este mês`}
                             </p>
                           </div>
-                          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-[#d4af37] ring-1 ring-white/10">
-                            <PartyPopper size={28} />
+                          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5 text-[#d4af37] ring-1 ring-white/10 backdrop-blur-sm">
+                            <PartyPopper size={32} strokeWidth={1.5} />
                           </div>
                         </div>
                       </div>
 
-                      <div className="custom-scrollbar max-h-64 overflow-y-auto p-4">
-                        {aniversariantesMes.filter(c=> new Date(c.data_nascimento).getMonth()===new Date().getMonth()).length > 0 ? (
-                          <div className="flex flex-col gap-2">
-                            {aniversariantesMes.filter(c=> new Date(c.data_nascimento).getMonth()===new Date().getMonth()).map((cliente) => (
-                              <div
-                                key={cliente.codigo}
-                                className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 transition hover:border-[#d4af37]/50 hover:bg-[#fffaf0]"
-                              >
-                                <div className="flex items-start gap-3">
-                                  <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#d4af37]/15 text-[#a2812a]">
-                                    <PartyPopper size={18} />
-                                  </div>
-                                  <div className="min-w-0">
-                                    <p className="truncate text-sm font-black text-[#0c1826]">{cliente.nome_completo}</p>
-                                    <p className="mt-1 text-xs font-semibold text-slate-500">
-                                      {formatBirthDate(cliente.data_nascimento)}
-                                      {cliente.cidade ? ` · ${cliente.cidade}${cliente.uf ? `/${cliente.uf}` : ""}` : ""}
-                                    </p>
-                                  </div>
+                      {/* List Section */}
+                      <div className="custom-scrollbar max-h-[400px] overflow-y-auto bg-slate-50/50 p-4">
+                        {(() => {
+                          const currentMonth = new Date().getMonth();
+                          const filtered = aniversariantesMes
+                            .filter(c => {
+                              const d = new Date(c.data_nascimento);
+                              return !isNaN(d.getTime()) && d.getUTCMonth() === currentMonth;
+                            })
+                            .sort((a, b) => {
+                              const dayA = new Date(a.data_nascimento).getUTCDate();
+                              const dayB = new Date(b.data_nascimento).getUTCDate();
+                              return dayA - dayB;
+                            });
+
+                          if (filtered.length === 0) {
+                            return (
+                              <div className="flex flex-col items-center justify-center py-12 text-center">
+                                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-slate-300">
+                                  <PartyPopper size={32} />
                                 </div>
+                                <p className="text-sm font-bold text-slate-400">Nenhum aniversariante encontrado</p>
+                                <p className="mt-1 text-xs text-slate-400/80">para o mês de {currentMonthName().toLowerCase()}.</p>
                               </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="flex min-h-28 items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 text-sm font-semibold text-slate-400">
-                            Nenhum aniversariante encontrado para este mês.
-                          </div>
-                        )}
+                            );
+                          }
+
+                          return (
+                            <div className="flex flex-col gap-3">
+                              {filtered.map((cliente) => {
+                                const bDate = new Date(cliente.data_nascimento);
+                                const isToday = bDate.getUTCDate() === new Date().getDate() && bDate.getUTCMonth() === currentMonth;
+                                
+                                return (
+                                  <div
+                                    key={cliente.codigo}
+                                    className={`group relative overflow-hidden rounded-2xl border border-white bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#d4af37]/30 hover:shadow-md ${
+                                      isToday ? "ring-2 ring-[#d4af37]/20 bg-[#fffaf0]/50" : ""
+                                    }`}
+                                  >
+                                    {isToday && (
+                                      <div className="absolute right-0 top-0 rounded-bl-xl bg-[#d4af37] px-2 py-1 text-[8px] font-black uppercase tracking-wider text-white animate-pulse">
+                                        Hoje
+                                      </div>
+                                    )}
+                                    <div className="flex items-center gap-4">
+                                      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition-all duration-300 ${
+                                        isToday ? "bg-[#d4af37] text-white shadow-lg shadow-[#d4af37]/20" : "bg-[#d4af37]/10 text-[#a2812a] group-hover:bg-[#d4af37]/20"
+                                      }`}>
+                                        <PartyPopper size={20} />
+                                      </div>
+                                      <div className="min-w-0 flex-1">
+                                        <p className="truncate text-base font-bold text-[#0c1826] transition-colors group-hover:text-[#a2812a]">
+                                          {cliente.nome_completo}
+                                        </p>
+                                        <div className="mt-0.5 flex items-center gap-2 text-xs font-semibold text-slate-500">
+                                          <span className="font-bold text-[#a2812a]">{formatBirthDate(cliente.data_nascimento)}</span>
+                                          {cliente.cidade && (
+                                            <>
+                                              <span className="h-1 w-1 rounded-full bg-slate-300" />
+                                              <span className="truncate">{cliente.cidade}{cliente.uf ? `/${cliente.uf}` : ""}</span>
+                                            </>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
                   </section>
