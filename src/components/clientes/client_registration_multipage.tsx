@@ -61,6 +61,7 @@ type ClientFormState = {
   documentacao: string;
   comoConheceu: string;
   produtoComercializado: string;
+  statusNegociacao: string;
   permiteAgendarOnline: boolean;
   status: 'ATIVO' | 'INATIVO';
   codigo: string;
@@ -132,6 +133,7 @@ const initialFormState: ClientFormState = {
   documentacao: '',
     comoConheceu: '0 - Não informado',
   produtoComercializado: '',
+  statusNegociacao: '',
   permiteAgendarOnline: true,
   status: 'ATIVO',
   codigo: '',
@@ -167,6 +169,16 @@ const produtosComercializados = [
   'Seguro Fiança Empresarial',
   'Seguro Residencial',
   'Seguro Veículos',
+];
+
+const statusNegociacaoOptions = [
+  'Duplicada',
+  'Fechada',
+  'Inválida',
+  'Ligar Novamente',
+  'Não Quer',
+  'Negociação',
+  'Renovação',
 ];
 
 const camposTextoMaiusculo = new Set<keyof ClientFormState>([
@@ -467,6 +479,7 @@ type ClienteSearchResult = {
   observacoes_extras: string | null;
   como_conheceu: string | null;
   produto_comercializado: string | null;
+  status_negociacao: string | null;
   documentacao_anotacoes: string | null;
   permite_agendar_online: boolean;
   contatos: Array<{ tipo: string; valor: string; complemento: string | null; observacoes: string | null; preferencial: boolean }> | null;
@@ -501,6 +514,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isProdutoDropdownOpen, setIsProdutoDropdownOpen] = useState(false);
+  const [isStatusNegociacaoDropdownOpen, setIsStatusNegociacaoDropdownOpen] = useState(false);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const carouselRef = useRef<HTMLDivElement | null>(null);
@@ -526,6 +540,17 @@ export const ClientRegistrationMultipage: React.FC = () => {
       produto.toLocaleLowerCase('pt-BR').includes(termo),
     );
   }, [formState.produtoComercializado]);
+  const statusNegociacaoFiltrados = useMemo(() => {
+    const termo = formState.statusNegociacao.trim().toLocaleLowerCase('pt-BR');
+
+    if (!termo) {
+      return statusNegociacaoOptions;
+    }
+
+    return statusNegociacaoOptions.filter((status) =>
+      status.toLocaleLowerCase('pt-BR').includes(termo),
+    );
+  }, [formState.statusNegociacao]);
 
   const shouldShowDocumentCarouselControls =
     uploadedDocuments.length > maxVisibleDocumentsBeforeCarouselControls;
@@ -955,6 +980,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
         observacoes: normalizarTextoMaiusculo(leadData.observacao || ''),
         comoConheceu: '1 - Indicação',
         produtoComercializado: prev.produtoComercializado,
+        statusNegociacao: prev.statusNegociacao,
         permiteAgendarOnline: true,
         status: 'ATIVO',
         codigo: importedCode || prev.codigo,
@@ -1188,6 +1214,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
       documentacao: c.documentacao_anotacoes || '',
       comoConheceu: c.como_conheceu || initialFormState.comoConheceu,
       produtoComercializado: c.produto_comercializado || initialFormState.produtoComercializado,
+      statusNegociacao: c.status_negociacao || initialFormState.statusNegociacao,
       permiteAgendarOnline: c.permite_agendar_online ?? true,
       status: c.status_cliente || 'ATIVO',
       codigo: c.codigo || '',
@@ -1776,7 +1803,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
 
           <div className={sectionCardClassName}>
             <div className="grid gap-3">
-              <div className="grid gap-3 xl:grid-cols-[1fr_1fr_0.8fr]">
+              <div className="grid gap-3 xl:grid-cols-[1fr_1fr_1fr_0.8fr]">
                 <div>
                   <label className="mb-2 block text-sm font-bold text-slate-700">Como nos conheceu?</label>
                   <select
@@ -1832,6 +1859,53 @@ export const ClientRegistrationMultipage: React.FC = () => {
                         ) : (
                           <div className="px-3 py-2 text-sm font-semibold text-slate-400">
                             Nenhum produto encontrado
+                          </div>
+                        )}
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-bold text-slate-700">Status da Negociação</label>
+                  <div className="relative">
+                    <input
+                      className={`${fieldClassName} pr-10`}
+                      value={formState.statusNegociacao}
+                      onFocus={() => setIsStatusNegociacaoDropdownOpen(true)}
+                      onBlur={() => window.setTimeout(() => setIsStatusNegociacaoDropdownOpen(false), 120)}
+                      onChange={(event) => {
+                        handleFieldChange('statusNegociacao', event.target.value);
+                        setIsStatusNegociacaoDropdownOpen(true);
+                      }}
+                      placeholder="Digite para filtrar..."
+                    />
+                    <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+
+                    {isStatusNegociacaoDropdownOpen ? (
+                      <div className="absolute left-0 right-0 z-30 mt-2 max-h-56 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl">
+                        {statusNegociacaoFiltrados.length > 0 ? (
+                          statusNegociacaoFiltrados.map((statusOpcao) => (
+                            <button
+                              key={statusOpcao}
+                              type="button"
+                              onMouseDown={(event) => {
+                                event.preventDefault();
+                                handleFieldChange('statusNegociacao', statusOpcao);
+                                setIsStatusNegociacaoDropdownOpen(false);
+                              }}
+                              className={`w-full rounded-xl px-3 py-2 text-left text-sm font-semibold transition hover:bg-teal-50 hover:text-teal-700 ${
+                                formState.statusNegociacao === statusOpcao
+                                  ? 'bg-teal-50 text-teal-700'
+                                  : 'text-slate-600'
+                              }`}
+                            >
+                              {statusOpcao}
+                            </button>
+                          ))
+                        ) : (
+                          <div className="px-3 py-2 text-sm font-semibold text-slate-400">
+                            Nenhum status encontrado
                           </div>
                         )}
                       </div>
