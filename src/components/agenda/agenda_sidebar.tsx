@@ -18,8 +18,14 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
   const [phone, setPhone] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [justSelected, setJustSelected] = useState(false);
 
   useEffect(() => {
+    if (justSelected) {
+      setJustSelected(false);
+      return;
+    }
+
     const delayDebounceFn = setTimeout(async () => {
       if (searchTerm.trim().length >= 2) {
         setIsLoading(true);
@@ -49,6 +55,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
   };
 
   const handleSelectClient = (client: any) => {
+    setJustSelected(true);
     setSearchTerm(client.nome_completo);
     
     // Find preferred phone or the first one
@@ -57,11 +64,18 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
     
     setBirthDate(formatBirthDate(client.data_nascimento));
     setShowSuggestions(false);
+    setSuggestions([]);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && suggestions.length > 0) {
-      handleSelectClient(suggestions[0]);
+    if (e.key === 'Enter') {
+      if (showSuggestions && suggestions.length > 0) {
+        e.preventDefault();
+        handleSelectClient(suggestions[0]);
+      }
+    }
+    if (e.key === 'Escape') {
+      setShowSuggestions(false);
     }
   };
 
