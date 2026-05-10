@@ -2058,7 +2058,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
               {formState.statusNegociacao === 'Fechada' ? (
                 <div className="border-t border-slate-100 pt-3">
                   <h3 className="mb-3 text-base font-black text-slate-700">Dados do contrato</h3>
-                  <div className="grid gap-3 xl:grid-cols-2">
+                  <div className="grid gap-3 lg:grid-cols-[1.05fr_1fr_1.05fr_0.95fr]">
                     <div>
                       <label className="mb-1 block text-sm font-medium text-slate-600">
                         Valor da proposta<span className="text-red-500">*</span>:
