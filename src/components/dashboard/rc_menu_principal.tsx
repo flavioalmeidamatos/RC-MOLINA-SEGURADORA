@@ -1034,15 +1034,15 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                     <section className="flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm max-w-sm h-[360px]">
                       <div className="flex flex-col h-full">
                         {/* Header Section */}
-                        <div className="relative overflow-hidden bg-[#0c1826] p-4 text-white shrink-0">
+                        <div className="relative overflow-hidden bg-[#0c1826] p-3 text-white shrink-0">
                           <div className="absolute -right-8 -top-10 h-28 w-28 rounded-full bg-[#d4af37]/10 blur-3xl" />
                           <div className="relative flex items-center justify-between">
                             <div>
                               <p className="text-[9px] font-black uppercase tracking-[0.22em] text-[#d4af37]/90">
                                 Aniversariantes do mês
                               </p>
-                              <h2 className="mt-0.5 text-2xl font-black tracking-tight">{currentMonthName()}</h2>
-                              <p className="mt-1 text-[11px] font-medium text-white/50">
+                              <h2 className="mt-0.5 text-xl font-black tracking-tight">{currentMonthName()}</h2>
+                              <p className="mt-0.5 text-[10px] font-medium text-white/50">
                                 {isLoadingAniversariantes
                                   ? "Carregando registros..."
                                   : `${aniversariantesMes.filter(c => {
@@ -1051,14 +1051,14 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                     }).length} clientes celebram este mês`}
                               </p>
                             </div>
-                            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/5 text-[#d4af37] ring-1 ring-white/10 backdrop-blur-sm">
-                              <PartyPopper size={22} strokeWidth={1.5} />
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-[#d4af37] ring-1 ring-white/10 backdrop-blur-sm">
+                              <PartyPopper size={20} strokeWidth={1.5} />
                             </div>
                           </div>
                         </div>
 
                         {/* List Section */}
-                        <div className="custom-scrollbar flex-1 overflow-y-auto bg-slate-50/50 p-2.5">
+                        <div className="custom-scrollbar flex-1 overflow-y-auto bg-slate-50/50 p-2">
                           {(() => {
                             const currentMonth = new Date().getMonth();
                             const filtered = aniversariantesMes
@@ -1085,7 +1085,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                             }
 
                             return (
-                              <div className="flex flex-col gap-2">
+                              <div className="flex flex-col gap-1.5">
                                 {filtered.map((cliente) => {
                                   const bDate = new Date(cliente.data_nascimento);
                                   const isToday = bDate.getUTCDate() === new Date().getDate() && bDate.getUTCMonth() === currentMonth;
@@ -1093,7 +1093,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                   return (
                                     <div
                                       key={cliente.codigo}
-                                      className={`group relative overflow-hidden rounded-xl border border-white bg-white p-3 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#d4af37]/30 hover:shadow-md ${
+                                      className={`group relative overflow-hidden rounded-lg border border-white bg-white px-2.5 py-2 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#d4af37]/30 hover:shadow-md ${
                                         isToday ? "ring-2 ring-[#d4af37]/20 bg-[#fffaf0]/50" : ""
                                       }`}
                                     >
@@ -1102,17 +1102,17 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                           Hoje
                                         </div>
                                       )}
-                                      <div className="flex items-center gap-3">
-                                        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-all duration-300 ${
+                                      <div className="flex items-center gap-2.5">
+                                        <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all duration-300 ${
                                           isToday ? "bg-[#d4af37] text-white shadow-lg shadow-[#d4af37]/20" : "bg-[#d4af37]/10 text-[#a2812a] group-hover:bg-[#d4af37]/20"
                                         }`}>
-                                          <PartyPopper size={16} />
+                                          <PartyPopper size={14} />
                                         </div>
                                         <div className="min-w-0 flex-1">
-                                          <p className="truncate text-sm font-bold text-[#0c1826] transition-colors group-hover:text-[#a2812a]">
+                                          <p className="truncate text-xs font-bold text-[#0c1826] transition-colors group-hover:text-[#a2812a]">
                                             {cliente.nome_completo}
                                           </p>
-                                          <div className="mt-0.5 flex items-center gap-2 text-[11px] font-semibold text-slate-500">
+                                          <div className="mt-0.5 flex items-center gap-1.5 text-[10px] font-semibold text-slate-500">
                                             <span className="font-bold text-[#a2812a]">{formatBirthDate(cliente.data_nascimento)}</span>
                                             {cliente.cidade && (
                                               <>
