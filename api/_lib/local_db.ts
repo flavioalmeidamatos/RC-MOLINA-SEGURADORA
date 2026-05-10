@@ -109,6 +109,7 @@ create table if not exists "RCMOLINASEGUROS"."CLIENTES" (
   uf varchar(2),
   observacoes_extras text,
   como_conheceu varchar(100) default '0 - Não informado',
+  produto_comercializado varchar(100),
   permite_agendar_online boolean default true,
   documentacao_anotacoes text
 );
@@ -141,6 +142,9 @@ alter table "RCMOLINASEGUROS"."CLIENTES"
 
 alter table "RCMOLINASEGUROS"."CLIENTES"
   alter column codigo set default '0000000';
+
+alter table "RCMOLINASEGUROS"."CLIENTES"
+  add column if not exists produto_comercializado varchar(100);
 
 alter table "RCMOLINASEGUROS"."CLIENTES"
   drop column if exists marcacoes;

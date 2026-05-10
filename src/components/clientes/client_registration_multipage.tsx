@@ -60,6 +60,7 @@ type ClientFormState = {
   observacoes: string;
   documentacao: string;
   comoConheceu: string;
+  produtoComercializado: string;
   permiteAgendarOnline: boolean;
   status: 'ATIVO' | 'INATIVO';
   codigo: string;
@@ -130,6 +131,7 @@ const initialFormState: ClientFormState = {
   observacoes: '',
   documentacao: '',
     comoConheceu: '0 - Não informado',
+  produtoComercializado: '',
   permiteAgendarOnline: true,
   status: 'ATIVO',
   codigo: '',
@@ -153,6 +155,19 @@ const initialContacts: ContactRow[] = [
 const maxContactRows = 3;
 
 const estados = ['Selecione...', 'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MG', 'MS', 'MT', 'PA', 'PB', 'PE', 'PI', 'PR', 'RJ', 'RN', 'RO', 'RR', 'RS', 'SC', 'SE', 'SP', 'TO'];
+
+const produtosComercializados = [
+  'Consórcio Residencial',
+  'Consórcio Veículos',
+  'Previdência Privada',
+  'Seguro de Frotas',
+  'Seguro de Vida',
+  'Seguro Empresa',
+  'Seguro Fiança Aluguel',
+  'Seguro Fiança Empresarial',
+  'Seguro Residencial',
+  'Seguro Veículos',
+];
 
 const camposTextoMaiusculo = new Set<keyof ClientFormState>([
   'nome',
@@ -451,6 +466,7 @@ type ClienteSearchResult = {
   uf: string | null;
   observacoes_extras: string | null;
   como_conheceu: string | null;
+  produto_comercializado: string | null;
   documentacao_anotacoes: string | null;
   permite_agendar_online: boolean;
   contatos: Array<{ tipo: string; valor: string; complemento: string | null; observacoes: string | null; preferencial: boolean }> | null;
@@ -926,6 +942,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
         enderecoEstado: normalizarTextoMaiusculo(leadData.estado || ''),
         observacoes: normalizarTextoMaiusculo(leadData.observacao || ''),
         comoConheceu: '1 - Indicação',
+        produtoComercializado: prev.produtoComercializado,
         permiteAgendarOnline: true,
         status: 'ATIVO',
         codigo: importedCode || prev.codigo,
@@ -1158,6 +1175,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
       observacoes: c.observacoes_extras || '',
       documentacao: c.documentacao_anotacoes || '',
       comoConheceu: c.como_conheceu || initialFormState.comoConheceu,
+      produtoComercializado: c.produto_comercializado || initialFormState.produtoComercializado,
       permiteAgendarOnline: c.permite_agendar_online ?? true,
       status: c.status_cliente || 'ATIVO',
       codigo: c.codigo || '',
@@ -1746,7 +1764,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
 
           <div className={sectionCardClassName}>
             <div className="grid gap-3">
-              <div className="grid gap-3 xl:grid-cols-[1fr_0.8fr]">
+              <div className="grid gap-3 xl:grid-cols-[1fr_1fr_0.8fr]">
                 <div>
                   <label className="mb-2 block text-sm font-bold text-slate-700">Como nos conheceu?</label>
                   <select
@@ -1759,6 +1777,22 @@ export const ClientRegistrationMultipage: React.FC = () => {
                     <option>2 - Google</option>
                     <option>3 - Instagram</option>
                     <option>4 - Evento</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-bold text-slate-700">Produto a ser Comercializado</label>
+                  <select
+                    className={fieldClassName}
+                    value={formState.produtoComercializado}
+                    onChange={(event) => handleFieldChange('produtoComercializado', event.target.value)}
+                  >
+                    <option value="">Selecione...</option>
+                    {produtosComercializados.map((produto) => (
+                      <option key={produto} value={produto}>
+                        {produto}
+                      </option>
+                    ))}
                   </select>
                 </div>
 

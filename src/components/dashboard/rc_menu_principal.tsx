@@ -995,9 +995,9 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
             ) : activeMenu === "Agenda" ? (
               <Agenda aniversariantesMes={aniversariantesMes} />
             ) : (
-              <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
-                <div className="flex flex-col gap-6">
-                  <div className="grid flex-1 grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5">
+              <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-5">
+                <div className="flex flex-col gap-3">
+                  <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5 xl:grid-cols-8">
                     {cards.map((card) => {
                       const Icon = card.icon;
 
@@ -1006,21 +1006,21 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                           key={`${card.line1}-${card.line2}`}
                           type="button"
                           onClick={() => handleCardClick(card.line1, card.line2)}
-                          className="group flex h-auto min-h-[112px] overflow-hidden bg-white text-left shadow-sm transition-shadow hover:shadow-md"
+                          className="group flex h-auto min-h-[76px] overflow-hidden bg-white text-left shadow-sm transition-shadow hover:shadow-md"
                         >
-                          <div className="flex w-2/3 flex-col justify-center border-l-4 border-transparent p-5 transition-all group-hover:border-[#b58c2a]">
-                            <span className="text-sm leading-tight text-[#a48641] transition-colors group-hover:text-[#8e733b]">
+                          <div className="flex w-2/3 flex-col justify-center border-l-4 border-transparent p-3 transition-all group-hover:border-[#b58c2a]">
+                            <span className="text-xs leading-tight text-[#a48641] transition-colors group-hover:text-[#8e733b]">
                               {card.line1}
                             </span>
                             {card.line2 ? (
-                              <span className="text-sm font-bold leading-tight text-[#8e733b]">
+                              <span className="text-xs font-bold leading-tight text-[#8e733b]">
                                 {card.line2}
                               </span>
                             ) : null}
                           </div>
                           <div className="flex w-1/3 items-center justify-center bg-[#a2812a] text-white transition-colors group-hover:bg-[#8f7124]">
                             <Icon
-                              size={34}
+                              size={24}
                               strokeWidth={1.5}
                               className="transition-transform duration-300 group-hover:scale-110"
                             />
@@ -1030,19 +1030,19 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                     })}
                   </div>
 
-                  <div className="flex flex-col lg:flex-row gap-6">
-                    <section className="flex-1 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm max-w-md h-[500px]">
+                  <div className="flex flex-col gap-3 lg:flex-row">
+                    <section className="flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm max-w-sm h-[360px]">
                       <div className="flex flex-col h-full">
                         {/* Header Section */}
-                        <div className="relative overflow-hidden bg-[#0c1826] p-6 text-white shrink-0">
-                          <div className="absolute -right-10 -top-12 h-40 w-40 rounded-full bg-[#d4af37]/10 blur-3xl" />
+                        <div className="relative overflow-hidden bg-[#0c1826] p-4 text-white shrink-0">
+                          <div className="absolute -right-8 -top-10 h-28 w-28 rounded-full bg-[#d4af37]/10 blur-3xl" />
                           <div className="relative flex items-center justify-between">
                             <div>
-                              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#d4af37]/90">
+                              <p className="text-[9px] font-black uppercase tracking-[0.22em] text-[#d4af37]/90">
                                 Aniversariantes do mês
                               </p>
-                              <h2 className="mt-1 text-4xl font-black tracking-tight">{currentMonthName()}</h2>
-                              <p className="mt-2 text-xs font-medium text-white/50">
+                              <h2 className="mt-0.5 text-2xl font-black tracking-tight">{currentMonthName()}</h2>
+                              <p className="mt-1 text-[11px] font-medium text-white/50">
                                 {isLoadingAniversariantes
                                   ? "Carregando registros..."
                                   : `${aniversariantesMes.filter(c => {
@@ -1051,14 +1051,14 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                     }).length} clientes celebram este mês`}
                               </p>
                             </div>
-                            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5 text-[#d4af37] ring-1 ring-white/10 backdrop-blur-sm">
-                              <PartyPopper size={32} strokeWidth={1.5} />
+                            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/5 text-[#d4af37] ring-1 ring-white/10 backdrop-blur-sm">
+                              <PartyPopper size={22} strokeWidth={1.5} />
                             </div>
                           </div>
                         </div>
 
                         {/* List Section */}
-                        <div className="custom-scrollbar flex-1 overflow-y-auto bg-slate-50/50 p-4">
+                        <div className="custom-scrollbar flex-1 overflow-y-auto bg-slate-50/50 p-2.5">
                           {(() => {
                             const currentMonth = new Date().getMonth();
                             const filtered = aniversariantesMes
@@ -1074,18 +1074,18 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
                             if (filtered.length === 0) {
                               return (
-                                <div className="flex flex-col items-center justify-center py-12 text-center">
-                                  <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-slate-300">
-                                    <PartyPopper size={32} />
+                                <div className="flex flex-col items-center justify-center py-8 text-center">
+                                  <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 text-slate-300">
+                                    <PartyPopper size={22} />
                                   </div>
-                                  <p className="text-sm font-bold text-slate-400">Nenhum aniversariante encontrado</p>
+                                  <p className="text-xs font-bold text-slate-400">Nenhum aniversariante encontrado</p>
                                   <p className="mt-1 text-xs text-slate-400/80">para o mês de {currentMonthName().toLowerCase()}.</p>
                                 </div>
                               );
                             }
 
                             return (
-                              <div className="flex flex-col gap-3">
+                              <div className="flex flex-col gap-2">
                                 {filtered.map((cliente) => {
                                   const bDate = new Date(cliente.data_nascimento);
                                   const isToday = bDate.getUTCDate() === new Date().getDate() && bDate.getUTCMonth() === currentMonth;
@@ -1093,7 +1093,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                   return (
                                     <div
                                       key={cliente.codigo}
-                                      className={`group relative overflow-hidden rounded-2xl border border-white bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#d4af37]/30 hover:shadow-md ${
+                                      className={`group relative overflow-hidden rounded-xl border border-white bg-white p-3 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#d4af37]/30 hover:shadow-md ${
                                         isToday ? "ring-2 ring-[#d4af37]/20 bg-[#fffaf0]/50" : ""
                                       }`}
                                     >
@@ -1102,17 +1102,17 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                           Hoje
                                         </div>
                                       )}
-                                      <div className="flex items-center gap-4">
-                                        <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition-all duration-300 ${
+                                      <div className="flex items-center gap-3">
+                                        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-all duration-300 ${
                                           isToday ? "bg-[#d4af37] text-white shadow-lg shadow-[#d4af37]/20" : "bg-[#d4af37]/10 text-[#a2812a] group-hover:bg-[#d4af37]/20"
                                         }`}>
-                                          <PartyPopper size={20} />
+                                          <PartyPopper size={16} />
                                         </div>
                                         <div className="min-w-0 flex-1">
-                                          <p className="truncate text-base font-bold text-[#0c1826] transition-colors group-hover:text-[#a2812a]">
+                                          <p className="truncate text-sm font-bold text-[#0c1826] transition-colors group-hover:text-[#a2812a]">
                                             {cliente.nome_completo}
                                           </p>
-                                          <div className="mt-0.5 flex items-center gap-2 text-xs font-semibold text-slate-500">
+                                          <div className="mt-0.5 flex items-center gap-2 text-[11px] font-semibold text-slate-500">
                                             <span className="font-bold text-[#a2812a]">{formatBirthDate(cliente.data_nascimento)}</span>
                                             {cliente.cidade && (
                                               <>
@@ -1133,29 +1133,29 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                       </div>
                     </section>
 
-                    <section className="flex-1 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm max-w-md h-[500px]">
+                    <section className="flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm max-w-sm h-[360px]">
                       <div className="flex flex-col h-full">
                         {/* Header Section */}
-                        <div className="relative overflow-hidden bg-[#0c1826] p-6 text-white shrink-0">
-                          <div className="absolute -right-10 -top-12 h-40 w-40 rounded-full bg-[#d4af37]/10 blur-3xl" />
+                        <div className="relative overflow-hidden bg-[#0c1826] p-4 text-white shrink-0">
+                          <div className="absolute -right-8 -top-10 h-28 w-28 rounded-full bg-[#d4af37]/10 blur-3xl" />
                           <div className="relative flex items-center justify-between">
                             <div>
-                              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#d4af37]/90">
+                              <p className="text-[9px] font-black uppercase tracking-[0.22em] text-[#d4af37]/90">
                                 Agenda do dia
                               </p>
-                              <h2 className="mt-1 text-4xl font-black tracking-tight">{new Date().getDate()} de {currentMonthName()}</h2>
-                              <p className="mt-2 text-xs font-medium text-white/50">
+                              <h2 className="mt-0.5 text-2xl font-black tracking-tight">{new Date().getDate()} de {currentMonthName()}</h2>
+                              <p className="mt-1 text-[11px] font-medium text-white/50">
                                 Tarefas programadas
                               </p>
                             </div>
-                            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5 text-[#d4af37] ring-1 ring-white/10 backdrop-blur-sm">
-                              <Calendar size={32} strokeWidth={1.5} />
+                            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/5 text-[#d4af37] ring-1 ring-white/10 backdrop-blur-sm">
+                              <Calendar size={22} strokeWidth={1.5} />
                             </div>
                           </div>
                         </div>
 
                         {/* Inputs Section */}
-                        <div className="flex flex-col gap-3 border-b border-gray-200 bg-white px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between shrink-0">
+                        <div className="flex flex-col gap-2 border-b border-gray-200 bg-white px-3 py-2 text-xs sm:flex-row sm:items-center sm:justify-between shrink-0">
                           <input
                             type="text"
                             placeholder="Nova tarefa..."
@@ -1165,24 +1165,24 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                             <input
                               type="text"
                               placeholder="Hora"
-                              className="w-12 bg-transparent text-center outline-none"
+                              className="w-10 bg-transparent text-center outline-none"
                             />
                             <span>:</span>
                             <input
                               type="text"
                               placeholder="Min."
-                              className="w-12 bg-transparent text-center outline-none"
+                              className="w-10 bg-transparent text-center outline-none"
                             />
                           </div>
                         </div>
 
                         {/* List Section */}
-                        <div className="custom-scrollbar flex-1 overflow-y-auto bg-slate-50/50 p-4">
-                          <div className="flex flex-col gap-3">
+                        <div className="custom-scrollbar flex-1 overflow-y-auto bg-slate-50/50 p-2.5">
+                          <div className="flex flex-col gap-2">
                             {agendaItems.map((item) => (
                               <div
                                 key={`${item.name}-${item.time}`}
-                                className={`group relative overflow-hidden rounded-2xl border border-white bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md cursor-pointer ${
+                                className={`group relative overflow-hidden rounded-xl border border-white bg-white p-3 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md cursor-pointer ${
                                   item.highlight 
                                     ? "ring-2 ring-red-500/20 bg-red-50/50 hover:border-red-300" 
                                     : "hover:border-[#d4af37]/30"
@@ -1193,23 +1193,23 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                     Atrasado
                                   </div>
                                 )}
-                                <div className="flex items-center gap-4">
-                                  <div className={`flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-full transition-all duration-300 ${
+                                <div className="flex items-center gap-3">
+                                  <div className={`flex h-8 w-8 shrink-0 flex-col items-center justify-center rounded-full transition-all duration-300 ${
                                     item.highlight 
                                       ? "bg-red-500 text-white shadow-lg shadow-red-500/20" 
                                       : "bg-[#d4af37]/10 text-[#a2812a] group-hover:bg-[#d4af37]/20"
                                   }`}>
-                                    <User size={16} />
+                                    <User size={14} />
                                   </div>
                                   <div className="min-w-0 flex-1">
-                                    <p className={`truncate text-base font-bold transition-colors ${
+                                    <p className={`truncate text-sm font-bold transition-colors ${
                                       item.highlight ? "text-red-700" : "text-[#0c1826] group-hover:text-[#a2812a]"
                                     }`}>
                                       {item.name}
                                     </p>
-                                    <div className="mt-0.5 flex items-center justify-between text-xs font-semibold text-slate-500">
+                                    <div className="mt-0.5 flex items-center justify-between text-[11px] font-semibold text-slate-500">
                                       <div className="flex items-center gap-1">
-                                        <Phone size={12} className={item.highlight ? "text-red-400" : ""} />
+                                        <Phone size={11} className={item.highlight ? "text-red-400" : ""} />
                                         <span className={item.highlight ? "text-red-600" : "text-slate-500"}>{item.phone}</span>
                                       </div>
                                       <div className="flex items-center gap-2">
@@ -1226,41 +1226,41 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                       </div>
                     </section>
                     
-                    <section className="flex-1 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm max-w-md h-[500px]">
+                    <section className="flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm max-w-sm h-[360px]">
                       <div className="flex flex-col h-full">
                         {/* Header Section */}
-                        <div className="relative overflow-hidden bg-[#0c1826] p-6 text-white shrink-0">
-                          <div className="absolute -right-10 -top-12 h-40 w-40 rounded-full bg-[#d4af37]/10 blur-3xl" />
+                        <div className="relative overflow-hidden bg-[#0c1826] p-4 text-white shrink-0">
+                          <div className="absolute -right-8 -top-10 h-28 w-28 rounded-full bg-[#d4af37]/10 blur-3xl" />
                           <div className="relative flex items-center justify-between">
                             <div>
-                              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#d4af37]/90">
+                              <p className="text-[9px] font-black uppercase tracking-[0.22em] text-[#d4af37]/90">
                                 Clientes da Corretora
                               </p>
-                              <h2 className="mt-1 text-4xl font-black tracking-tight">{clientStats.total}</h2>
-                              <p className="mt-2 text-xs font-medium text-white/50">
+                              <h2 className="mt-0.5 text-2xl font-black tracking-tight">{clientStats.total}</h2>
+                              <p className="mt-1 text-[11px] font-medium text-white/50">
                                 {isLoadingClientStats ? "Calculando clientes..." : "Total de clientes registrados"}
                               </p>
                             </div>
-                            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5 text-[#d4af37] ring-1 ring-white/10 backdrop-blur-sm">
-                              <Users size={32} strokeWidth={1.5} />
+                            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/5 text-[#d4af37] ring-1 ring-white/10 backdrop-blur-sm">
+                              <Users size={22} strokeWidth={1.5} />
                             </div>
                           </div>
                         </div>
 
                         {/* List Section */}
-                        <div className="custom-scrollbar flex-1 overflow-y-auto bg-slate-50/50 p-4">
-                          <div className="flex flex-col gap-4">
+                        <div className="custom-scrollbar flex-1 overflow-y-auto bg-slate-50/50 p-2.5">
+                          <div className="flex flex-col gap-2">
                             {/* Ativos */}
-                            <div className="group relative overflow-hidden rounded-2xl border border-white bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#25D366]/30 hover:shadow-md">
-                              <div className="flex items-center gap-4">
-                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#25D366]/10 text-[#128C7E] transition-all duration-300 group-hover:bg-[#25D366]/20">
-                                  <User size={20} />
+                            <div className="group relative overflow-hidden rounded-xl border border-white bg-white p-3 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#25D366]/30 hover:shadow-md">
+                              <div className="flex items-center gap-3">
+                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#25D366]/10 text-[#128C7E] transition-all duration-300 group-hover:bg-[#25D366]/20">
+                                  <User size={16} />
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                  <p className="text-base font-bold text-[#0c1826] transition-colors group-hover:text-[#128C7E]">
+                                  <p className="text-sm font-bold text-[#0c1826] transition-colors group-hover:text-[#128C7E]">
                                     Clientes Ativos
                                   </p>
-                                  <div className="mt-1 flex items-center gap-2 text-sm font-semibold text-slate-500">
+                                  <div className="mt-0.5 flex items-center gap-2 text-[11px] font-semibold text-slate-500">
                                     <span className="font-bold text-[#128C7E]">{clientStats.ativos}</span>
                                     <span className="h-1 w-1 rounded-full bg-slate-300" />
                                     <span>{clientStats.total > 0 ? Math.round((clientStats.ativos / clientStats.total) * 100) : 0}% do total</span>
@@ -1268,7 +1268,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                 </div>
                               </div>
                               {/* Barra de progresso visual */}
-                              <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                              <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-slate-100">
                                 <div 
                                   className="h-full bg-[#25D366] transition-all duration-1000" 
                                   style={{ width: `${clientStats.total > 0 ? (clientStats.ativos / clientStats.total) * 100 : 0}%` }}
@@ -1277,16 +1277,16 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                             </div>
                             
                             {/* Inativos */}
-                            <div className="group relative overflow-hidden rounded-2xl border border-white bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-red-400/30 hover:shadow-md">
-                              <div className="flex items-center gap-4">
-                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-500 transition-all duration-300 group-hover:bg-red-100">
-                                  <User size={20} className="opacity-60" />
+                            <div className="group relative overflow-hidden rounded-xl border border-white bg-white p-3 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-red-400/30 hover:shadow-md">
+                              <div className="flex items-center gap-3">
+                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-500 transition-all duration-300 group-hover:bg-red-100">
+                                  <User size={16} className="opacity-60" />
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                  <p className="text-base font-bold text-[#0c1826] transition-colors group-hover:text-red-600">
+                                  <p className="text-sm font-bold text-[#0c1826] transition-colors group-hover:text-red-600">
                                     Clientes Inativos
                                   </p>
-                                  <div className="mt-1 flex items-center gap-2 text-sm font-semibold text-slate-500">
+                                  <div className="mt-0.5 flex items-center gap-2 text-[11px] font-semibold text-slate-500">
                                     <span className="font-bold text-red-500">{clientStats.inativos}</span>
                                     <span className="h-1 w-1 rounded-full bg-slate-300" />
                                     <span>{clientStats.total > 0 ? Math.round((clientStats.inativos / clientStats.total) * 100) : 0}% do total</span>
@@ -1294,7 +1294,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                 </div>
                               </div>
                               {/* Barra de progresso visual */}
-                              <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                              <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-slate-100">
                                 <div 
                                   className="h-full bg-red-400 transition-all duration-1000" 
                                   style={{ width: `${clientStats.total > 0 ? (clientStats.inativos / clientStats.total) * 100 : 0}%` }}
