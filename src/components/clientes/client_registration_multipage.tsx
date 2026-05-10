@@ -80,6 +80,7 @@ type FieldErrorState = {
   dataNascimento: string;
   dataCadastro: string;
   dataAtualizacao: string;
+  dataFechamento: string;
 };
 
 type DocumentFieldId = 'cpf' | 'rg' | 'cnpj' | 'dataNascimento';
@@ -156,6 +157,7 @@ const initialFieldErrors: FieldErrorState = {
   dataNascimento: '',
   dataCadastro: '',
   dataAtualizacao: '',
+  dataFechamento: '',
 };
 
 const initialContacts: ContactRow[] = [
@@ -298,6 +300,17 @@ const formatarDataBancoParaBR = (valor?: string | null): string => {
   const iso = valor.slice(0, 10);
   const match = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   return match ? `${match[3]}/${match[2]}/${match[1]}` : formatarDataBR(valor);
+};
+
+const formatarMoedaBR = (valor: string): string => {
+  const digitos = somenteDigitos(valor);
+  if (!digitos) return '';
+
+  const valorEmReais = Number(digitos) / 100;
+  return `R$ ${valorEmReais.toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 };
 
 const formatarCep = (valor: string): string => {
@@ -667,8 +680,13 @@ export const ClientRegistrationMultipage: React.FC = () => {
     updateFieldError('dataAtualizacao', '');
   };
 
+  const handleValorPropostaChange = (value: string) => {
+    handleFieldChange('valorProposta', formatarMoedaBR(value));
+  };
+
   const handleDataFechamentoChange = (value: string) => {
     handleFieldChange('dataFechamento', formatarDataBR(value));
+    updateFieldError('dataFechamento', '');
   };
 
   const handleCepChange = (value: string) => {
@@ -1069,6 +1087,21 @@ export const ClientRegistrationMultipage: React.FC = () => {
     const areDatesValid =
       validateDateField('dataCadastro', 'Data de cadastro') &&
       validateDateField('dataAtualizacao', 'Data de atualizacao');
+    const isContratoObrigatorio = formState.statusNegociacao === 'Fechada';
+    const areContractFieldsFilled =
+      !isContratoObrigatorio ||
+      Boolean(
+        formState.valorProposta.trim() &&
+          formState.numeroProposta.trim() &&
+          formState.formaPagamento.trim(),
+      );
+    let isDataFechamentoValid = true;
+    if (isContratoObrigatorio) {
+      isDataFechamentoValid = validateDataFechamentoField();
+    } else {
+      updateFieldError('dataFechamento', '');
+    }
+    const isContractValid = areContractFieldsFilled && isDataFechamentoValid;
     contacts.forEach((contact) => validateContactValue(contact.id));
 
     const areContactsValid = contacts.every((contact) => {
@@ -1080,11 +1113,15 @@ export const ClientRegistrationMultipage: React.FC = () => {
       return totalDigitos === minimo;
     });
 
-    if (!areDocumentsValid || !areContactsValid || !areDatesValid) {
-      setFeedback('Corrija os campos destacados antes de salvar.');
+    if (!areDocumentsValid || !areContactsValid || !areDatesValid || !isContractValid) {
+      setFeedback(
+        isContractValid
+          ? 'Corrija os campos destacados antes de salvar.'
+          : 'Preencha os dados do contrato antes de salvar.',
+      );
       if (firstInvalidDocument) {
         focusDocumentField(firstInvalidDocument);
-      } else if (!areDatesValid) {
+      } else if (!areDatesValid || !isContractValid) {
         setActiveTab('endereco');
       }
       return;
@@ -1173,6 +1210,13 @@ export const ClientRegistrationMultipage: React.FC = () => {
     const value = formState[field];
     const isValid = validarDataBR(value);
     updateFieldError(field, isValid ? '' : `${label} deve ser uma data valida.`);
+    return isValid;
+  };
+
+  const validateDataFechamentoField = () => {
+    const value = formState.dataFechamento.trim();
+    const isValid = Boolean(value) && validarDataBR(value);
+    updateFieldError('dataFechamento', isValid ? '' : 'Data de fechamento deve ser uma data valida.');
     return isValid;
   };
 
@@ -2014,7 +2058,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
               {formState.statusNegociacao === 'Fechada' ? (
                 <div className="border-t border-slate-100 pt-3">
                   <h3 className="mb-3 text-base font-black text-slate-700">Dados do contrato</h3>
-                  <div className="grid gap-3 xl:grid-cols-[1fr_1fr_0.9fr]">
+                  <div className="grid gap-3 xl:grid-cols-2">
                     <div>
                       <label className="mb-1 block text-sm font-medium text-slate-600">
                         Valor da proposta<span className="text-red-500">*</span>:
@@ -2022,7 +2066,8 @@ export const ClientRegistrationMultipage: React.FC = () => {
                       <input
                         className={fieldClassName}
                         value={formState.valorProposta}
-                        onChange={(event) => handleFieldChange('valorProposta', event.target.value)}
+                        onChange={(event) => handleValorPropostaChange(event.target.value)}
+                        inputMode="numeric"
                       />
                     </div>
 
@@ -2062,10 +2107,12 @@ export const ClientRegistrationMultipage: React.FC = () => {
                         className={fieldClassName}
                         value={formState.dataFechamento}
                         onChange={(event) => handleDataFechamentoChange(event.target.value)}
+                        onBlur={validateDataFechamentoField}
                         inputMode="numeric"
                         maxLength={10}
                         placeholder="dd/mm/aaaa"
                       />
+                      {fieldErrors.dataFechamento ? <p className={errorMessageClassName}>{fieldErrors.dataFechamento}</p> : null}
                     </div>
                   </div>
                 </div>
