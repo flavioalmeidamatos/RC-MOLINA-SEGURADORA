@@ -211,6 +211,8 @@ const sulamericaAutofillScript = `
 
   function acceptSulamericaPrivacy() {
     var selectors = [
+      '.sula-cookies-save',
+      'input[value="ACEITO"]',
       '#btn-aceitar-privacidade',
       '#onetrust-accept-btn-handler',
       '.cookie-banner-button',
@@ -228,16 +230,19 @@ const sulamericaAutofillScript = `
       }
     });
 
-    // Procura por botões que contenham "Aceitar" ou "Concordo" e que pareçam ser de cookies
-    var buttons = document.querySelectorAll('button, a.btn');
+    // Procura por botões ou inputs que contenham "Aceitar", "Concordo" ou "Aceito"
+    var buttons = document.querySelectorAll('button, a.btn, input[type="button"], input[type="submit"]');
     for (var i = 0; i < buttons.length; i++) {
-      var txt = (buttons[i].innerText || buttons[i].textContent || '').toLowerCase();
-      var isCookieBtn = buttons[i].className.indexOf('cookie') !== -1 || 
-                        buttons[i].id.indexOf('cookie') !== -1 || 
-                        buttons[i].className.indexOf('lgpd') !== -1;
+      var btn = buttons[i];
+      var txt = (btn.innerText || btn.textContent || btn.value || '').toLowerCase();
+      var isCookieBtn = btn.className.indexOf('cookie') !== -1 || 
+                        btn.id.indexOf('cookie') !== -1 || 
+                        btn.className.indexOf('lgpd') !== -1 ||
+                        btn.className.indexOf('sula') !== -1;
       
-      if (isCookieBtn && (txt.indexOf('aceitar') !== -1 || txt.indexOf('concordo') !== -1 || txt.indexOf('entendi') !== -1)) {
-        buttons[i].click();
+      if ((isCookieBtn || txt.indexOf('aceito') !== -1) && 
+          (txt.indexOf('aceitar') !== -1 || txt.indexOf('concordo') !== -1 || txt.indexOf('entendi') !== -1 || txt.indexOf('aceito') !== -1)) {
+        btn.click();
       }
     }
   }
