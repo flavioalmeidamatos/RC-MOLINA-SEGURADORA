@@ -15,7 +15,7 @@ async function fillMissingStatus() {
   const client = await pool.connect();
   try {
     const { rows } = await client.query(
-      `SELECT id_cliente FROM "RCMOLINASEGUROS"."CLIENTES" WHERE status_cliente IS NULL OR TRIM(status_cliente) = '' LIMIT 1000`
+      `SELECT id_cliente FROM "RCMOLINASEGUROS"."CLIENTES" WHERE status_cliente IS NULL OR status_cliente IN ('', 'BLOQUEADO', 'EM_ANALISE') LIMIT 1000`
     );
     if (rows.length === 0) {
       console.log('Nenhum cliente sem status encontrado.');
