@@ -131,7 +131,7 @@ const initialFormState: ClientFormState = {
   observacoes: '',
   documentacao: '',
     comoConheceu: '0 - Não informado',
-  produtoComercializado: '0 - Não informado',
+  produtoComercializado: '',
   permiteAgendarOnline: true,
   status: 'ATIVO',
   codigo: '',
@@ -157,7 +157,6 @@ const maxContactRows = 3;
 const estados = ['Selecione...', 'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MG', 'MS', 'MT', 'PA', 'PB', 'PE', 'PI', 'PR', 'RJ', 'RN', 'RO', 'RR', 'RS', 'SC', 'SE', 'SP', 'TO'];
 
 const produtosComercializados = [
-  '0 - Não informado',
   'Consórcio Residencial',
   'Consórcio Veículos',
   'Previdência Privada',
@@ -519,7 +518,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
   const produtosFiltrados = useMemo(() => {
     const termo = formState.produtoComercializado.trim().toLocaleLowerCase('pt-BR');
 
-    if (!termo || formState.produtoComercializado === initialFormState.produtoComercializado) {
+    if (!termo) {
       return produtosComercializados;
     }
 
