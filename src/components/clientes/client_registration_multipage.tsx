@@ -501,6 +501,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isProdutoDropdownOpen, setIsProdutoDropdownOpen] = useState(false);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const carouselRef = useRef<HTMLDivElement | null>(null);
@@ -515,6 +516,17 @@ export const ClientRegistrationMultipage: React.FC = () => {
   });
 
   const activeTabIndex = tabs.findIndex((tab) => tab.id === activeTab);
+  const produtosFiltrados = useMemo(() => {
+    const termo = formState.produtoComercializado.trim().toLocaleLowerCase('pt-BR');
+
+    if (!termo || formState.produtoComercializado === initialFormState.produtoComercializado) {
+      return produtosComercializados;
+    }
+
+    return produtosComercializados.filter((produto) =>
+      produto.toLocaleLowerCase('pt-BR').includes(termo),
+    );
+  }, [formState.produtoComercializado]);
 
   const shouldShowDocumentCarouselControls =
     uploadedDocuments.length > maxVisibleDocumentsBeforeCarouselControls;
@@ -1783,17 +1795,49 @@ export const ClientRegistrationMultipage: React.FC = () => {
 
                 <div>
                   <label className="mb-2 block text-sm font-bold text-slate-700">Produto a ser Comercializado</label>
-                  <select
-                    className={fieldClassName}
-                    value={formState.produtoComercializado}
-                    onChange={(event) => handleFieldChange('produtoComercializado', event.target.value)}
-                  >
-                    {produtosComercializados.map((produto) => (
-                      <option key={produto}>
-                        {produto}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <input
+                      className={`${fieldClassName} pr-10`}
+                      value={formState.produtoComercializado}
+                      onFocus={() => setIsProdutoDropdownOpen(true)}
+                      onBlur={() => window.setTimeout(() => setIsProdutoDropdownOpen(false), 120)}
+                      onChange={(event) => {
+                        handleFieldChange('produtoComercializado', event.target.value);
+                        setIsProdutoDropdownOpen(true);
+                      }}
+                      placeholder="Digite para filtrar..."
+                    />
+                    <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+
+                    {isProdutoDropdownOpen ? (
+                      <div className="absolute left-0 right-0 z-30 mt-2 max-h-56 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl">
+                        {produtosFiltrados.length > 0 ? (
+                          produtosFiltrados.map((produto) => (
+                            <button
+                              key={produto}
+                              type="button"
+                              onMouseDown={(event) => {
+                                event.preventDefault();
+                                handleFieldChange('produtoComercializado', produto);
+                                setIsProdutoDropdownOpen(false);
+                              }}
+                              className={`w-full rounded-xl px-3 py-2 text-left text-sm font-semibold transition hover:bg-teal-50 hover:text-teal-700 ${
+                                formState.produtoComercializado === produto
+                                  ? 'bg-teal-50 text-teal-700'
+                                  : 'text-slate-600'
+                              }`}
+                            >
+                              {produto}
+                            </button>
+                          ))
+                        ) : (
+                          <div className="px-3 py-2 text-sm font-semibold text-slate-400">
+                            Nenhum produto encontrado
+                          </div>
+                        )}
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
 
                 <div>
