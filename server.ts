@@ -756,23 +756,35 @@ const medseniorAutofillScript = `
   var loginValue = ${JSON.stringify(MEDSENIOR_LOGIN)};
   var senhaValue = ${JSON.stringify(MEDSENIOR_PASSWORD)};
 
-  function fillMedseniorLogin() {
-    var userField = document.querySelector('#usuario');
-    var passwordField = document.querySelector('#password');
-    var submitButton = document.querySelector('button[type="submit"]');
+  function triggerEvents(el) {
+    if (!el) return;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+    el.dispatchEvent(new Event('blur', { bubbles: true }));
+  }
 
-    if (userField) {
+  function fillMedseniorLogin() {
+    var userField = document.querySelector('#usuario') || document.querySelector('input[name="usuario"]');
+    var passwordField = document.querySelector('#password') || document.querySelector('input[name="password"]');
+
+    if (userField && userField.value !== loginValue) {
       userField.value = loginValue;
-      userField.dispatchEvent(new Event('input', { bubbles: true }));
+      userField.setAttribute('autocomplete', 'off');
+      userField.setAttribute('data-lpignore', 'true');
+      triggerEvents(userField);
     }
-    if (passwordField) {
+    if (passwordField && passwordField.value !== senhaValue) {
       passwordField.value = senhaValue;
-      passwordField.dispatchEvent(new Event('input', { bubbles: true }));
+      passwordField.setAttribute('autocomplete', 'off');
+      passwordField.setAttribute('data-lpignore', 'true');
+      triggerEvents(passwordField);
     }
   }
 
+  // Executa imediatamente e em intervalos para lidar com carregamento assíncrono do React/MUI
   fillMedseniorLogin();
-  [250, 750, 1500, 3000].forEach(function (delay) {
+  var intervals = [100, 300, 600, 1000, 2000, 5000];
+  intervals.forEach(function (delay) {
     window.setTimeout(fillMedseniorLogin, delay);
   });
 })();
