@@ -475,7 +475,7 @@ export const clientStatsHandler = async (_req: express.Request, res: express.Res
     const result = await pool.query(`
       SELECT 
         COUNT(*) as total,
-        COUNT(*) FILTER (WHERE status_cliente = 'ATIVO' OR status_cliente IS NULL) as ativos,
+        COUNT(*) FILTER (WHERE status_cliente = 'ATIVO' OR status_cliente IS NULL OR status_cliente = '') as ativos,
         COUNT(*) FILTER (WHERE status_cliente = 'INATIVO') as inativos
       FROM "RCMOLINASEGUROS"."CLIENTES"
     `);
