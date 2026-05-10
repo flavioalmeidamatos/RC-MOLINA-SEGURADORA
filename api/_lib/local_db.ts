@@ -111,6 +111,10 @@ create table if not exists "RCMOLINASEGUROS"."CLIENTES" (
   como_conheceu varchar(100) default '0 - Não informado',
   produto_comercializado varchar(100),
   status_negociacao varchar(100),
+  valor_proposta varchar(100),
+  numero_proposta varchar(100),
+  forma_pagamento varchar(100),
+  data_fechamento date,
   permite_agendar_online boolean default true,
   documentacao_anotacoes text
 );
@@ -149,6 +153,12 @@ alter table "RCMOLINASEGUROS"."CLIENTES"
 
 alter table "RCMOLINASEGUROS"."CLIENTES"
   add column if not exists status_negociacao varchar(100);
+
+alter table "RCMOLINASEGUROS"."CLIENTES"
+  add column if not exists valor_proposta varchar(100),
+  add column if not exists numero_proposta varchar(100),
+  add column if not exists forma_pagamento varchar(100),
+  add column if not exists data_fechamento date;
 
 alter table "RCMOLINASEGUROS"."CLIENTES"
   drop column if exists marcacoes;

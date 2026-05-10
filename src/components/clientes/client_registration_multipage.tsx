@@ -62,6 +62,10 @@ type ClientFormState = {
   comoConheceu: string;
   produtoComercializado: string;
   statusNegociacao: string;
+  valorProposta: string;
+  numeroProposta: string;
+  formaPagamento: string;
+  dataFechamento: string;
   permiteAgendarOnline: boolean;
   status: 'ATIVO' | 'INATIVO';
   codigo: string;
@@ -134,6 +138,10 @@ const initialFormState: ClientFormState = {
     comoConheceu: '0 - Não informado',
   produtoComercializado: '',
   statusNegociacao: '',
+  valorProposta: '',
+  numeroProposta: '',
+  formaPagamento: '',
+  dataFechamento: '',
   permiteAgendarOnline: true,
   status: 'ATIVO',
   codigo: '',
@@ -180,6 +188,8 @@ const statusNegociacaoOptions = [
   'Negociação',
   'Renovação',
 ];
+
+const formasPagamento = ['Selecione...', 'À vista', 'Boleto', 'Cartão de crédito', 'Débito em conta', 'Pix'];
 
 const camposTextoMaiusculo = new Set<keyof ClientFormState>([
   'nome',
@@ -480,6 +490,10 @@ type ClienteSearchResult = {
   como_conheceu: string | null;
   produto_comercializado: string | null;
   status_negociacao: string | null;
+  valor_proposta: string | null;
+  numero_proposta: string | null;
+  forma_pagamento: string | null;
+  data_fechamento: string | null;
   documentacao_anotacoes: string | null;
   permite_agendar_online: boolean;
   contatos: Array<{ tipo: string; valor: string; complemento: string | null; observacoes: string | null; preferencial: boolean }> | null;
@@ -651,6 +665,10 @@ export const ClientRegistrationMultipage: React.FC = () => {
   const handleDataAtualizacaoChange = (value: string) => {
     handleFieldChange('dataAtualizacao', formatarDataBR(value));
     updateFieldError('dataAtualizacao', '');
+  };
+
+  const handleDataFechamentoChange = (value: string) => {
+    handleFieldChange('dataFechamento', formatarDataBR(value));
   };
 
   const handleCepChange = (value: string) => {
@@ -981,6 +999,10 @@ export const ClientRegistrationMultipage: React.FC = () => {
         comoConheceu: '1 - Indicação',
         produtoComercializado: prev.produtoComercializado,
         statusNegociacao: prev.statusNegociacao,
+        valorProposta: prev.valorProposta,
+        numeroProposta: prev.numeroProposta,
+        formaPagamento: prev.formaPagamento,
+        dataFechamento: prev.dataFechamento,
         permiteAgendarOnline: true,
         status: 'ATIVO',
         codigo: importedCode || prev.codigo,
@@ -1215,6 +1237,10 @@ export const ClientRegistrationMultipage: React.FC = () => {
       comoConheceu: c.como_conheceu || initialFormState.comoConheceu,
       produtoComercializado: c.produto_comercializado || initialFormState.produtoComercializado,
       statusNegociacao: c.status_negociacao || initialFormState.statusNegociacao,
+      valorProposta: c.valor_proposta || initialFormState.valorProposta,
+      numeroProposta: c.numero_proposta || initialFormState.numeroProposta,
+      formaPagamento: c.forma_pagamento || initialFormState.formaPagamento,
+      dataFechamento: formatarDataBancoParaBR(c.data_fechamento),
       permiteAgendarOnline: c.permite_agendar_online ?? true,
       status: c.status_cliente || 'ATIVO',
       codigo: c.codigo || '',
@@ -1698,8 +1724,8 @@ export const ClientRegistrationMultipage: React.FC = () => {
 
         <section className={activeTab === 'endereco' ? 'space-y-3' : 'hidden'}>
           <div className={sectionCardClassName}>
-            <div className="grid gap-3 xl:grid-cols-[0.8fr_2.2fr_0.8fr]">
-              <div>
+            <div className="grid gap-3 xl:grid-cols-12">
+              <div className="xl:col-span-2">
                 <label className="mb-2 block text-sm font-bold text-slate-700">CEP</label>
                 <input
                   className={fieldClassName}
@@ -1716,7 +1742,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                 </p>
               </div>
 
-              <div>
+              <div className="xl:col-span-5">
                 <label className="mb-2 block text-sm font-bold text-slate-700">Endereço</label>
                 <input
                   className={fieldClassName}
@@ -1727,7 +1753,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                 />
               </div>
 
-              <div>
+              <div className="xl:col-span-2">
                 <label className="mb-2 block text-sm font-bold text-slate-700">Número</label>
                 <input
                   ref={enderecoNumeroInputRef}
@@ -1738,7 +1764,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                 />
               </div>
 
-              <div>
+              <div className="xl:col-span-3">
                 <label className="mb-2 block text-sm font-bold text-slate-700">Complemento</label>
                 <input
                   className={fieldClassName}
@@ -1748,7 +1774,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                 />
               </div>
 
-              <div className="xl:col-span-2">
+              <div className="xl:col-span-3">
                 <label className="mb-2 block text-sm font-bold text-slate-700">Ponto de referência</label>
                 <input
                   className={fieldClassName}
@@ -1758,7 +1784,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                 />
               </div>
 
-              <div>
+              <div className="xl:col-span-3">
                 <label className="mb-2 block text-sm font-bold text-slate-700">Bairro</label>
                 <input
                   className={fieldClassName}
@@ -1769,7 +1795,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                 />
               </div>
 
-              <div>
+              <div className="xl:col-span-4">
                 <label className="mb-2 block text-sm font-bold text-slate-700">Cidade</label>
                 <input
                   className={fieldClassName}
@@ -1780,7 +1806,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                 />
               </div>
 
-              <div>
+              <div className="xl:col-span-2">
                 <label className="mb-2 block text-sm font-bold text-slate-700">Estado</label>
                 <select
                   className={fieldClassName}
@@ -1984,6 +2010,66 @@ export const ClientRegistrationMultipage: React.FC = () => {
                   {fieldErrors.dataAtualizacao ? <p className={errorMessageClassName}>{fieldErrors.dataAtualizacao}</p> : null}
                 </div>
               </div>
+
+              {formState.statusNegociacao === 'Fechada' ? (
+                <div className="border-t border-slate-100 pt-3">
+                  <h3 className="mb-3 text-base font-black text-slate-700">Dados do contrato</h3>
+                  <div className="grid gap-3 xl:grid-cols-[1fr_1fr_0.9fr]">
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-slate-600">
+                        Valor da proposta<span className="text-red-500">*</span>:
+                      </label>
+                      <input
+                        className={fieldClassName}
+                        value={formState.valorProposta}
+                        onChange={(event) => handleFieldChange('valorProposta', event.target.value)}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-slate-600">
+                        Numero da proposta<span className="text-red-500">*</span>:
+                      </label>
+                      <input
+                        className={fieldClassName}
+                        value={formState.numeroProposta}
+                        onChange={(event) => handleFieldChange('numeroProposta', event.target.value)}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-slate-600">
+                        Forma de pagamento<span className="text-red-500">*</span>:
+                      </label>
+                      <select
+                        className={fieldClassName}
+                        value={formState.formaPagamento}
+                        onChange={(event) => handleFieldChange('formaPagamento', event.target.value)}
+                      >
+                        {formasPagamento.map((forma) => (
+                          <option key={forma} value={forma === 'Selecione...' ? '' : forma}>
+                            {forma}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-slate-600">
+                        Data de fechamento<span className="text-red-500">*</span>:
+                      </label>
+                      <input
+                        className={fieldClassName}
+                        value={formState.dataFechamento}
+                        onChange={(event) => handleDataFechamentoChange(event.target.value)}
+                        inputMode="numeric"
+                        maxLength={10}
+                        placeholder="dd/mm/aaaa"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ) : null}
             </div>
           </div>
         </section>
