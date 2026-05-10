@@ -429,12 +429,14 @@ export const adminUpdateUser = async ({
   email,
   organizacao,
   avatarUrl,
+  senha,
 }: {
   id: string;
   nome: string;
   email: string;
   organizacao?: string | null;
   avatarUrl?: string | null;
+  senha?: string | null;
 }) => {
   await initLocalDatabase();
   await getPool().query(
@@ -442,11 +444,15 @@ export const adminUpdateUser = async ({
      set nome_completo = upper(trim($1)),
          email = lower(trim($2)),
          organizacao = nullif(trim($3), ''),
-         avatar_url = nullif(trim($4), '')
-     where id = $5`,
-    [nome, email, organizacao || '', avatarUrl || '', id],
+         avatar_url = nullif(trim($4), ''),
+         senha_hash = case
+           when nullif($5, '') is not null then crypt($5, gen_salt('bf'))
+           else senha_hash
+         end
+     where id = $6`,
+    [nome, email, organizacao || '', avatarUrl || '', senha || '', id],
   );
-  await registrarAuditoria('ADMIN_UPDATE_USER', { id, email });
+  await registrarAuditoria('ADMIN_UPDATE_USER', { id, email, senha_alterada: Boolean(senha) });
 };
 
 export const adminDeleteUser = async (id: string) => {

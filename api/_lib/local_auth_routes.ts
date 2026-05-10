@@ -198,6 +198,13 @@ export const registerLocalAuthRoutes = (app: express.Express) => {
     requireAdmin(
       asyncRoute(async (req, res) => {
         const currentAvatarUrl = String(req.body?.avatar_url || '');
+        const senha = String(req.body?.senha || '');
+
+        if (senha && !senhaAtendeCriterios(senha)) {
+          res.status(400).json({ error: 'A nova senha deve ter no minimo 8 caracteres, com letra, numero e caractere especial.' });
+          return;
+        }
+
         const avatarUrl =
           (await saveAvatarDataUrl(req.body?.avatar_data_url, req.body?.avatar_file_name)) || currentAvatarUrl;
 
@@ -207,6 +214,7 @@ export const registerLocalAuthRoutes = (app: express.Express) => {
           email: String(req.body?.email || ''),
           organizacao: String(req.body?.organizacao || ''),
           avatarUrl,
+          senha,
         });
         res.json({ ok: true });
       }),

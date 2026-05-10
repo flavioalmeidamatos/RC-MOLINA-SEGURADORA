@@ -9,6 +9,9 @@ import {
 import type { UsuarioPerfil } from '../../lib/local_auth';
 import { validarEmailRFC5322 } from '../../lib/validacoes';
 
+const senhaAtendeCriterios = (senha: string) =>
+    senha.length >= 8 && /[A-Za-z]/.test(senha) && /\d/.test(senha) && /[^A-Za-z0-9\s]/.test(senha);
+
 export const FooterAdmin: React.FC = () => {
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [adminEmail, setAdminEmail] = useState('');
@@ -27,6 +30,7 @@ export const FooterAdmin: React.FC = () => {
     const [formData, setFormData] = useState({
         nome: '',
         email: '',
+        senha: '',
         organizacao: '',
     });
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -90,12 +94,13 @@ export const FooterAdmin: React.FC = () => {
                 setFormData({
                     nome: user.nome_completo || '',
                     email: user.email || '',
+                    senha: '',
                     organizacao: user.organizacao || '',
                 });
                 setAvatarUrl(user.avatar_url);
             }
         } else {
-            setFormData({ nome: '', email: '', organizacao: '' });
+            setFormData({ nome: '', email: '', senha: '', organizacao: '' });
             setAvatarUrl(null);
         }
         setAvatarFile(null);
@@ -126,12 +131,19 @@ export const FooterAdmin: React.FC = () => {
             return;
         }
 
+        if (formData.senha.trim() && !senhaAtendeCriterios(formData.senha.trim())) {
+            setMessage({ text: 'A nova senha deve ter no minimo 8 caracteres, com letra, numero e caractere especial.', type: 'error' });
+            setLoading(false);
+            return;
+        }
+
         try {
             let finalAvatarUrl = avatarUrl;
 
             const { error } = await apiAdminUpdateUser(adminToken, selectedUserId, {
                 nome: formData.nome.toUpperCase(),
                 email: formData.email.trim().toLowerCase(),
+                senha: formData.senha.trim(),
                 organizacao: formData.organizacao.toUpperCase(),
                 avatar_url: finalAvatarUrl,
                 avatar_data_url: avatarFile ? avatarUrl : null,
@@ -141,6 +153,7 @@ export const FooterAdmin: React.FC = () => {
             if (error) throw new Error(error);
 
             setMessage({ text: 'Usuário atualizado com sucesso!', type: 'success' });
+            setFormData((current) => ({ ...current, senha: '' }));
             await fetchUsers(); // refresh the user list
         } catch (error: any) {
             setMessage({ text: 'Erro ao atualizar: ' + error.message, type: 'error' });
@@ -162,7 +175,7 @@ export const FooterAdmin: React.FC = () => {
 
             setMessage({ text: 'Usuário excluído com sucesso!', type: 'success' });
             setSelectedUserId('');
-            setFormData({ nome: '', email: '', organizacao: '' });
+            setFormData({ nome: '', email: '', senha: '', organizacao: '' });
             setAvatarUrl(null);
             await fetchUsers();
         } catch (error: any) {
@@ -347,6 +360,20 @@ export const FooterAdmin: React.FC = () => {
                                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                             className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 focus:outline-none focus:border-[#ccff00] transition"
                                             required
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label htmlFor="edit_senha" className="block text-sm font-bold mb-2">Nova senha</label>
+                                        <input
+                                            id="edit_senha"
+                                            title="Nova senha"
+                                            type="text"
+                                            autoComplete="new-password"
+                                            value={formData.senha}
+                                            onChange={(e) => setFormData({ ...formData, senha: e.target.value })}
+                                            placeholder="Preencha somente para alterar"
+                                            className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 focus:outline-none focus:border-[#ccff00] transition"
                                         />
                                     </div>
 

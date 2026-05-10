@@ -109,6 +109,7 @@ export const apiAdminUpdateUser = async (
     nome: string;
     email: string;
     organizacao?: string;
+    senha?: string;
     avatar_url?: string | null;
     avatar_data_url?: string | null;
     avatar_file_name?: string | null;
