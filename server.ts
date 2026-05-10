@@ -36,6 +36,8 @@ const AMIL_BROWSER_USER_AGENT =
 
 const MEDSENIOR_ORIGIN = 'https://vendadigital.medsenior.com.br';
 const MEDSENIOR_PROXY_PREFIX = '/medsenior-proxy';
+const MEDSENIOR_LOGIN = '77915445715';
+const MEDSENIOR_PASSWORD = 'Benj@min88';
 const SIMULATOR_BLOCKED_RESPONSE_HEADERS = new Set([
   'content-encoding',
   'content-length',
@@ -748,10 +750,46 @@ async function startServer() {
       const contentType = upstreamResponse.headers.get('content-type') || '';
       const responseBuffer = Buffer.from(await upstreamResponse.arrayBuffer());
 
+const medseniorAutofillScript = `
+<script>
+(function () {
+  var loginValue = ${JSON.stringify(MEDSENIOR_LOGIN)};
+  var senhaValue = ${JSON.stringify(MEDSENIOR_PASSWORD)};
+
+  function fillMedseniorLogin() {
+    var userField = document.querySelector('#usuario');
+    var passwordField = document.querySelector('#password');
+    var submitButton = document.querySelector('button[type="submit"]');
+
+    if (userField) {
+      userField.value = loginValue;
+      userField.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    if (passwordField) {
+      passwordField.value = senhaValue;
+      passwordField.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  }
+
+  fillMedseniorLogin();
+  [250, 750, 1500, 3000].forEach(function (delay) {
+    window.setTimeout(fillMedseniorLogin, delay);
+  });
+})();
+</script>`;
+
       if (contentType.includes('text/html')) {
         let content = responseBuffer.toString('utf8');
         // Adiciona base href para garantir que recursos relativos funcionem via proxy
         content = content.replace(/<head([^>]*)>/i, `<head$1><base href="${MEDSENIOR_PROXY_PREFIX}/" />`);
+        
+        // Injeta o script de preenchimento automático
+        if (content.includes('</body>')) {
+          content = content.replace('</body>', `${medseniorAutofillScript}</body>`);
+        } else {
+          content += medseniorAutofillScript;
+        }
+        
         res.send(content);
         return;
       }
