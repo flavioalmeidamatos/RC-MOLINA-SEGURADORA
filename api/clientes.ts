@@ -5,7 +5,7 @@ import path from 'path';
 import { Pool } from 'pg';
 import { initLocalDatabase } from './_lib/local_db';
 
-const getPool = () => {
+export const getPool = () => {
   const databaseUrl = process.env.DATABASE_URL || '';
   return new Pool(
     databaseUrl
