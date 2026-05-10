@@ -215,7 +215,7 @@ export const createClienteHandler = async (req: express.Request, res: express.Re
         data.enderecoEstado || null,
         data.observacoes || null,
         data.comoConheceu || '0 - Nao informado',
-        data.produtoComercializado || null,
+        data.produtoComercializado || '0 - Nao informado',
         resolvePermiteAgendarOnline(data) !== false,
         data.documentacao || null
       ]
@@ -415,7 +415,7 @@ export const updateClienteHandler = async (req: express.Request, res: express.Re
         data.enderecoEstado || null,
         data.observacoes || null,
         data.comoConheceu || '0 - Nao informado',
-        data.produtoComercializado || null,
+        data.produtoComercializado || '0 - Nao informado',
         resolvePermiteAgendarOnline(data) !== false,
         data.documentacao || null,
         id

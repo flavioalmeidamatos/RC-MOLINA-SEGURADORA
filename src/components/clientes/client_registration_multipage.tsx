@@ -131,7 +131,7 @@ const initialFormState: ClientFormState = {
   observacoes: '',
   documentacao: '',
     comoConheceu: '0 - Não informado',
-  produtoComercializado: '',
+  produtoComercializado: '0 - Não informado',
   permiteAgendarOnline: true,
   status: 'ATIVO',
   codigo: '',
@@ -157,6 +157,7 @@ const maxContactRows = 3;
 const estados = ['Selecione...', 'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MG', 'MS', 'MT', 'PA', 'PB', 'PE', 'PI', 'PR', 'RJ', 'RN', 'RO', 'RR', 'RS', 'SC', 'SE', 'SP', 'TO'];
 
 const produtosComercializados = [
+  '0 - Não informado',
   'Consórcio Residencial',
   'Consórcio Veículos',
   'Previdência Privada',
@@ -1787,9 +1788,8 @@ export const ClientRegistrationMultipage: React.FC = () => {
                     value={formState.produtoComercializado}
                     onChange={(event) => handleFieldChange('produtoComercializado', event.target.value)}
                   >
-                    <option value="">Selecione...</option>
                     {produtosComercializados.map((produto) => (
-                      <option key={produto} value={produto}>
+                      <option key={produto}>
                         {produto}
                       </option>
                     ))}
