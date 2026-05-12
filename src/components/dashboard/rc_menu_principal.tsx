@@ -189,6 +189,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
   const [simulatorMode, setSimulatorMode] = useState<SimulatorMode>("idle");
   const [simulatorFrameKey, setSimulatorFrameKey] = useState(0);
+  const [sulamericaFrameKey, setSulamericaFrameKey] = useState(0);
   const [simulatorStatusMessage, setSimulatorStatusMessage] = useState("");
   const [simulatorBrowser, setSimulatorBrowser] = useState<SimulatorBrowser>("other");
   const [showSimulatorChooser, setShowSimulatorChooser] = useState(false);
@@ -393,6 +394,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const enterSulamericaSimulator = () => {
     cleanupSimulatorUi();
     setShowSimulatorChooser(false);
+    setSulamericaFrameKey((prev) => prev + 1);
     setActiveMenu("Simulador SulAmerica");
   };
 
@@ -567,6 +569,23 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     setSimulatorBrowser("other");
   };
 
+  const resetSulamericaProxySession = async () => {
+    try {
+      await fetch("/sulamerica-proxy/__reset__", {
+        method: "POST",
+        credentials: "include",
+        cache: "no-store",
+      });
+    } catch (error) {
+      console.warn("Nao foi possivel resetar a sessao do proxy SulAmerica.", error);
+    } finally {
+      setSulamericaFrameKey((prev) => prev + 1);
+    }
+  };
+
+  const shouldResetSulamericaSession = (nextMenu?: string) =>
+    activeMenu === "Simulador SulAmerica" && nextMenu !== "Simulador SulAmerica";
+
   const clearLocalUiState = () => {
     setShowSimulatorChooser(false);
     cleanupSimulatorUi();
@@ -614,6 +633,9 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
     setIsLoggingOut(true);
     try {
+      if (shouldResetSulamericaSession()) {
+        await resetSulamericaProxySession();
+      }
       await logoutRemoteSimulator();
       clearLocalUiState();
       onLogout?.();
@@ -627,10 +649,18 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     }
   };
 
-  const handleMenuClick = (title: string) => {
+  const handleMenuClick = async (title: string) => {
     if (title === "Simuladores") {
+      if (shouldResetSulamericaSession("Simuladores")) {
+        await resetSulamericaProxySession();
+      }
+      cleanupSimulatorUi();
       openSimulatorChooser();
       return;
+    }
+
+    if (shouldResetSulamericaSession(title)) {
+      await resetSulamericaProxySession();
     }
 
     if (activeMenu === "Simuladores" || activeMenu === "Simulador SulAmerica" || activeMenu === "Simulador Amil" || activeMenu === "Simulador Medsenior") {
@@ -641,13 +671,20 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     setActiveMenu(title);
   };
 
-  const handleCardClick = (line1: string, line2: string) => {
+  const handleCardClick = async (line1: string, line2: string) => {
     if (line1 === "Simuladores") {
+      if (shouldResetSulamericaSession("Simuladores")) {
+        await resetSulamericaProxySession();
+      }
+      cleanupSimulatorUi();
       openSimulatorChooser();
       return;
     }
 
     if (line1 === "Meus" && line2 === "clientes") {
+      if (shouldResetSulamericaSession("Meus clientes")) {
+        await resetSulamericaProxySession();
+      }
       if (activeMenu === "Simuladores" || activeMenu === "Simulador SulAmerica" || activeMenu === "Simulador Amil" || activeMenu === "Simulador Medsenior") {
         cleanupSimulatorUi();
       }
@@ -657,6 +694,9 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     }
 
     if (line1 === "Agenda") {
+      if (shouldResetSulamericaSession("Agenda")) {
+        await resetSulamericaProxySession();
+      }
       setShowSimulatorChooser(false);
       setActiveMenu("Agenda");
       return;
@@ -725,7 +765,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
               <button
                 key={item.title}
                 type="button"
-                onClick={() => handleMenuClick(item.title)}
+                onClick={() => void handleMenuClick(item.title)}
                 className={`flex min-w-max items-center justify-between gap-3 rounded-2xl border-l-4 px-4 py-3 text-left transition-colors lg:w-full lg:rounded-none lg:px-6 ${
                   isActive
                     ? "border-[#b58c2a] bg-[#152a42] text-white"
@@ -763,7 +803,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
             {showClientArea || showSimulator || showSulamericaSimulator || showAmilSimulator || showMedseniorSimulator || showAgendaArea ? (
               <button
                 type="button"
-                onClick={() => handleMenuClick("Home")}
+                onClick={() => void handleMenuClick("Home")}
                 className="flex min-h-11 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-slate-600 transition-colors hover:border-[#b58c2a]/40 hover:text-[#b58c2a]"
               >
                 <Home size={18} />
@@ -781,7 +821,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
             </button>
 
             <button
-              onClick={() => handleMenuClick("Agenda")}
+              onClick={() => void handleMenuClick("Agenda")}
               className={`flex min-h-11 items-center gap-2 transition-colors hover:text-[#b58c2a] ${activeMenu === "Agenda" ? "text-[#b58c2a]" : "text-gray-500"}`}
             >
               <Calendar size={18} />
@@ -985,6 +1025,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                   </a>
                 </div>
                 <iframe
+                  key={sulamericaFrameKey}
                   src={SULAMERICA_PROXY_LOGIN_URL}
                   title="Simulador SulAmerica"
                   className="h-full w-full flex-1 border-none"
@@ -1061,7 +1102,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                         <button
                           key={`${card.line1}-${card.line2}`}
                           type="button"
-                          onClick={() => handleCardClick(card.line1, card.line2)}
+                          onClick={() => void handleCardClick(card.line1, card.line2)}
                           className="group flex h-auto min-h-[76px] overflow-hidden bg-white text-left shadow-sm transition-shadow hover:shadow-md"
                         >
                           <div className="flex w-2/3 flex-col justify-center border-l-4 border-transparent p-3 transition-all group-hover:border-[#b58c2a]">

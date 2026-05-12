@@ -322,6 +322,12 @@ const rewriteSulamericaCookie = (cookie: string) =>
     .replace(/;\s*path=[^;]*/gi, `; Path=${SULAMERICA_PROXY_PREFIX}`)
     .replace(/;\s*secure/gi, '');
 
+const getCookieNames = (cookieHeader: string | undefined) =>
+  String(cookieHeader || '')
+    .split(';')
+    .map((part) => part.trim().split('=')[0]?.trim())
+    .filter((name): name is string => Boolean(name));
+
 const rewriteSulamericaAppPaths = (content: string) =>
   content
     .replace(
@@ -776,6 +782,28 @@ async function startServer() {
 
   app.all(`${SULAMERICA_PROXY_PREFIX}*`, async (req, res) => {
     const upstreamPath = req.originalUrl.slice(SULAMERICA_PROXY_PREFIX.length) || SULAMERICA_LOGIN_PATH;
+
+    if (upstreamPath === '/__reset__') {
+      const cookieNames = getCookieNames(Array.isArray(req.headers.cookie) ? req.headers.cookie.join(';') : req.headers.cookie);
+
+      for (const cookieName of cookieNames) {
+        res.append(
+          'Set-Cookie',
+          `${cookieName}=; Path=${SULAMERICA_PROXY_PREFIX}; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; HttpOnly`
+        );
+        res.append(
+          'Set-Cookie',
+          `${cookieName}=; Path=${SULAMERICA_PROXY_PREFIX}; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0`
+        );
+      }
+
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      res.status(200).send('SulAmerica proxy resetado.');
+      return;
+    }
+
     const upstreamUrl = new URL(upstreamPath, SULAMERICA_ORIGIN);
     const requestHeaders = new Headers();
 
