@@ -13,6 +13,7 @@ interface LoginProps {
 
 export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
   const navigate = useNavigate();
+  const emailInputRef = useRef<HTMLInputElement>(null);
   const passwordInputRef = useRef<HTMLInputElement>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -64,6 +65,14 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
     }
     return () => clearInterval(timer);
   }, [cooldown]);
+
+  useEffect(() => {
+    if (otpStage !== 'verify') {
+      window.setTimeout(() => {
+        emailInputRef.current?.focus();
+      }, 0);
+    }
+  }, [loginMethod, otpStage]);
 
   const handleSetCooldown = () => {
     setCooldown(60);
@@ -247,6 +256,7 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
             <div>
               <label className="mb-2 block text-sm font-bold">E-mail</label>
               <input
+                ref={emailInputRef}
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -324,6 +334,7 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
             <div>
               <label className="mb-2 block text-sm font-bold">E-mail Cadastrado</label>
               <input
+                ref={emailInputRef}
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
