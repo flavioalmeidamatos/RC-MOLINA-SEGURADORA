@@ -17,6 +17,8 @@ const SIMULATOR_PROXY_PREFIX = '/simulador-proxy';
 const SIMULATOR_PROXY_PREFIX_ESCAPED = SIMULATOR_PROXY_PREFIX.replace(/\//g, '\\/');
 const SIMULATOR_APP_PATHS =
   'static|js|files|login|login_check|inicio|logout|simulador|operadoras|cliente|clientes|agenda|admin|io|mig|recuperar-senha|favicon\\.ico';
+const LOCAL_APP_PATHS_TO_KEEP =
+  'api|uploads|simulador-proxy|sulamerica-proxy|amil-proxy|medsenior-proxy|@vite|src|node_modules';
 const SULAMERICA_ORIGIN = 'https://os11.sulamerica.com.br';
 const SULAMERICA_PROXY_PREFIX = '/sulamerica-proxy';
 const SULAMERICA_PROXY_PREFIX_ESCAPED = SULAMERICA_PROXY_PREFIX.replace(/\//g, '\\/');
@@ -110,6 +112,15 @@ const rewriteSimulatorAppPaths = (content: string) =>
     )
     .replace(
       new RegExp(`(["'])\\\\/(?!simulador-proxy\\\\/)(${SIMULATOR_APP_PATHS})(?=\\\\/|\\?|["'])`, 'gi'),
+      `$1${SIMULATOR_PROXY_PREFIX_ESCAPED}\\/$2`
+    )
+    // Some simulator screens request dynamic combo endpoints that are not covered by the static allowlist.
+    .replace(
+      new RegExp(`(["'=:(,]\\s*)/(?!/|${LOCAL_APP_PATHS_TO_KEEP}/)([A-Za-z0-9_-]+)(?=/|\\?|["'])`, 'gi'),
+      `$1${SIMULATOR_PROXY_PREFIX}/$2`
+    )
+    .replace(
+      new RegExp(`(["'])\\\\/(?!${LOCAL_APP_PATHS_TO_KEEP}\\\\/)([A-Za-z0-9_-]+)(?=\\\\/|\\?|["'])`, 'gi'),
       `$1${SIMULATOR_PROXY_PREFIX_ESCAPED}\\/$2`
     );
 
