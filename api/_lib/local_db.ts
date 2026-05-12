@@ -13,6 +13,9 @@ export type UsuarioPerfil = {
   updated_at?: string;
 };
 
+const USERS_VIEWER_FULL_NAME = 'ROSILENE RODRIGUES DE CARVALHO MOLINA';
+const normalizeFullName = (value: string) => value.trim().replace(/\s+/g, ' ').toUpperCase();
+
 let pool: Pool | null = null;
 
 const getPool = () => {
@@ -441,6 +444,30 @@ export const verifyAdminToken = (token: string | undefined) => {
 
   const decoded = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as { email?: string; exp?: number };
   return decoded.email === (process.env.ADMIN_EMAIL || 'admin@rcmolina.com.br').toLowerCase() && Number(decoded.exp) > Date.now();
+};
+
+export const usuariosPodeListarTodos = async ({ id, email }: { id: string; email: string }) => {
+  await initLocalDatabase();
+
+  if (!id.trim() || !email.trim()) {
+    return false;
+  }
+
+  const result = await getPool().query(
+    `select nome_completo, email
+     from "RCMOLINASEGUROS"."USUARIOS"
+     where id = $1
+       and lower(email) = lower(trim($2))
+     limit 1`,
+    [id.trim(), email.trim()],
+  );
+
+  const user = result.rows[0];
+  if (!user) {
+    return false;
+  }
+
+  return normalizeFullName(String(user.nome_completo || '')) === USERS_VIEWER_FULL_NAME;
 };
 
 export const adminListUsers = async () => {

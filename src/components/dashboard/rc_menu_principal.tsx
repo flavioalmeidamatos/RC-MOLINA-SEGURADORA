@@ -22,10 +22,12 @@ import {
 import { useNavigate } from "react-router-dom";
 import { ClientRegistrationMultipage } from "../clientes/client_registration_multipage";
 import { Agenda } from "../agenda/agenda";
+import { apiListVisibleUsers } from "../../lib/local_api";
+import type { LocalAuthSession, UsuarioPerfil } from "../../lib/local_auth";
 
 interface DashboardProps {
-  session?: any;
-  perfil?: any;
+  session?: LocalAuthSession | null;
+  perfil?: UsuarioPerfil | null;
   onLogout?: () => void;
 }
 
@@ -42,6 +44,9 @@ export interface AniversarianteMes {
 type SimulatorMode = "idle" | "loading" | "embedded" | "external";
 type SimulatorBrowser = "chrome" | "edge" | "firefox" | "safari" | "other";
 type SimulatorExternalReason = "manual" | "iframe-error" | "timeout";
+
+const USERS_VIEWER_FULL_NAME = "ROSILENE RODRIGUES DE CARVALHO MOLINA";
+const normalizeFullName = (value: string) => value.trim().replace(/\s+/g, " ").toUpperCase();
 
 const SIMULATOR_ENTRY_URL = "https://app.simuladoronline.com/inicio";
 const SIMULATOR_LOGOUT_URL = "https://app.simuladoronline.com/logout";
@@ -170,6 +175,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     session?.user?.email?.split("@")[0] ||
     "Nome do Usuário";
   const avatarUrl = perfil?.avatar_url || null;
+  const canViewSystemUsers = normalizeFullName(perfil?.nome_completo || "") === USERS_VIEWER_FULL_NAME;
 
   const [activeMenu, setActiveMenu] = useState("Home");
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -177,6 +183,9 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const [isLoadingAniversariantes, setIsLoadingAniversariantes] = useState(false);
   const [clientStats, setClientStats] = useState({ total: 0, ativos: 0, inativos: 0 });
   const [isLoadingClientStats, setIsLoadingClientStats] = useState(false);
+  const [systemUsers, setSystemUsers] = useState<UsuarioPerfil[]>([]);
+  const [isLoadingSystemUsers, setIsLoadingSystemUsers] = useState(false);
+  const [systemUsersError, setSystemUsersError] = useState("");
 
   const [simulatorMode, setSimulatorMode] = useState<SimulatorMode>("idle");
   const [simulatorFrameKey, setSimulatorFrameKey] = useState(0);
@@ -235,6 +244,53 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       ignore = true;
     };
   }, []);
+
+  useEffect(() => {
+    let ignore = false;
+
+    const loadSystemUsers = async () => {
+      if (!canViewSystemUsers || !perfil?.id || !perfil?.email) {
+        setSystemUsers([]);
+        setSystemUsersError("");
+        setIsLoadingSystemUsers(false);
+        return;
+      }
+
+      setIsLoadingSystemUsers(true);
+      setSystemUsersError("");
+
+      try {
+        const { data, error } = await apiListVisibleUsers({ id: perfil.id, email: perfil.email });
+        if (ignore) {
+          return;
+        }
+
+        if (error) {
+          setSystemUsers([]);
+          setSystemUsersError(error);
+          return;
+        }
+
+        setSystemUsers(data || []);
+      } catch (error) {
+        console.error("Erro ao carregar usuarios do sistema:", error);
+        if (!ignore) {
+          setSystemUsers([]);
+          setSystemUsersError("Nao foi possivel carregar os usuarios do sistema.");
+        }
+      } finally {
+        if (!ignore) {
+          setIsLoadingSystemUsers(false);
+        }
+      }
+    };
+
+    void loadSystemUsers();
+
+    return () => {
+      ignore = true;
+    };
+  }, [canViewSystemUsers, perfil?.email, perfil?.id]);
 
   const clearSimulatorTimeout = () => {
     if (simulatorTimeoutRef.current !== null) {
@@ -1306,6 +1362,79 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                       </div>
                     </section>
                   </div>
+
+                  {canViewSystemUsers ? (
+                    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                      <div className="relative overflow-hidden bg-[#0c1826] px-5 py-4 text-white">
+                        <div className="absolute -right-8 -top-10 h-28 w-28 rounded-full bg-[#d4af37]/10 blur-3xl" />
+                        <div className="relative flex items-center justify-between gap-4">
+                          <div>
+                            <p className="text-[9px] font-black uppercase tracking-[0.22em] text-[#d4af37]/90">
+                              Usuarios do banco
+                            </p>
+                            <h2 className="mt-0.5 text-2xl font-black tracking-tight">
+                              {isLoadingSystemUsers ? "Carregando..." : `${systemUsers.length} usuarios`}
+                            </h2>
+                            <p className="mt-1 text-[11px] font-medium text-white/50">
+                              Visualizacao liberada para {USERS_VIEWER_FULL_NAME}
+                            </p>
+                          </div>
+                          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/5 text-[#d4af37] ring-1 ring-white/10 backdrop-blur-sm">
+                            <Users size={22} strokeWidth={1.5} />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="custom-scrollbar max-h-[360px] overflow-y-auto bg-slate-50/50 p-3">
+                        {systemUsersError ? (
+                          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+                            {systemUsersError}
+                          </div>
+                        ) : isLoadingSystemUsers ? (
+                          <div className="space-y-2">
+                            {Array.from({ length: 4 }).map((_, index) => (
+                              <div
+                                key={`system-user-skeleton-${index}`}
+                                className="h-16 animate-pulse rounded-xl border border-slate-200 bg-white"
+                              />
+                            ))}
+                          </div>
+                        ) : systemUsers.length === 0 ? (
+                          <div className="rounded-xl border border-slate-200 bg-white px-4 py-5 text-sm font-semibold text-slate-500">
+                            Nenhum usuario encontrado.
+                          </div>
+                        ) : (
+                          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                            {systemUsers.map((systemUser) => (
+                              <article
+                                key={systemUser.id}
+                                className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm"
+                              >
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="min-w-0">
+                                    <p className="truncate text-sm font-black text-[#0c1826]">
+                                      {systemUser.nome_completo}
+                                    </p>
+                                    <p className="mt-1 truncate text-xs font-semibold text-slate-500">
+                                      {systemUser.email}
+                                    </p>
+                                  </div>
+                                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#d4af37]/10 text-[#a2812a]">
+                                    <Users size={15} />
+                                  </div>
+                                </div>
+                                <div className="mt-3 flex items-center gap-2 text-[11px] font-semibold text-slate-500">
+                                  <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] uppercase tracking-wider text-slate-600">
+                                    {systemUser.organizacao || "Sem organizacao"}
+                                  </span>
+                                </div>
+                              </article>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </section>
+                  ) : null}
                 </div>
               </div>
             )}

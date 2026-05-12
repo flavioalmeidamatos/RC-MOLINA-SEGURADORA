@@ -102,6 +102,16 @@ export const apiAdminListUsers = async (token: string) => {
   return parseJson<UsuarioPerfil[]>(response);
 };
 
+export const apiListVisibleUsers = async (user: Pick<UsuarioPerfil, 'id' | 'email'>) => {
+  const response = await fetch('/api/admin/users', {
+    headers: {
+      'x-user-id': user.id,
+      'x-user-email': user.email,
+    },
+  });
+  return parseJson<UsuarioPerfil[]>(response);
+};
+
 export const apiAdminUpdateUser = async (
   token: string,
   id: string,

@@ -11,6 +11,7 @@ import {
   usuariosCadastrar,
   usuariosEmailExiste,
   usuariosLogin,
+  usuariosPodeListarTodos,
   usuariosPerfil,
   usuariosResetarSenhaComCodigo,
   usuariosVerificarCodigoLogin,
@@ -32,6 +33,7 @@ const asyncRoute =
   };
 
 const getBearerToken = (req: express.Request) => req.headers.authorization;
+const getRequestUserHeader = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] || '' : value || '');
 
 const requireAdmin =
   (handler: express.RequestHandler): express.RequestHandler =>
@@ -186,11 +188,22 @@ export const registerLocalAuthRoutes = (app: express.Express) => {
 
   app.get(
     '/api/admin/users',
-    requireAdmin(
-      asyncRoute(async (_req, res) => {
-        res.json({ data: await adminListUsers() });
-      }),
-    ),
+    asyncRoute(async (req, res) => {
+      const isAdmin = verifyAdminToken(getBearerToken(req));
+      const canViewAsRosilene =
+        !isAdmin &&
+        (await usuariosPodeListarTodos({
+          id: getRequestUserHeader(req.headers['x-user-id']),
+          email: getRequestUserHeader(req.headers['x-user-email']),
+        }));
+
+      if (!isAdmin && !canViewAsRosilene) {
+        res.status(401).json({ error: 'Acesso administrativo invalido.' });
+        return;
+      }
+
+      res.json({ data: await adminListUsers() });
+    }),
   );
 
   app.patch(
