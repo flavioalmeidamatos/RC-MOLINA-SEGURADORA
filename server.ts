@@ -134,7 +134,7 @@ const rewriteSimulatorAppPaths = (content: string) =>
     )
     // Some simulator screens request dynamic combo endpoints that are not covered by the static allowlist.
     .replace(
-      new RegExp(`(["'=:(,]\\s*)/(?!/|${LOCAL_APP_PATHS_TO_KEEP}/)([A-Za-z0-9_-]+)(?=/|\\?|["'])`, 'gi'),
+      new RegExp(`(["'])/(?!/|${LOCAL_APP_PATHS_TO_KEEP}/)([A-Za-z0-9_-]+)(?=/|\\?|["'])`, 'gi'),
       `$1${SIMULATOR_PROXY_PREFIX}/$2`
     )
     .replace(
