@@ -122,6 +122,164 @@ const rewriteSimulatorRequestUrl = (value: string | undefined) => {
   return undefined;
 };
 
+const simulatorRegionRefreshScript = `
+<script>
+(function () {
+  function normalizeText(value) {
+    return String(value || '')
+      .normalize('NFD')
+      .replace(/[\\u0300-\\u036f]/g, '')
+      .replace(/\\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+  }
+
+  function triggerFieldEvents(field) {
+    if (!field) return;
+
+    ['input', 'change'].forEach(function (eventName) {
+      field.dispatchEvent(new Event(eventName, { bubbles: true }));
+    });
+
+    if (window.jQuery) {
+      window.jQuery(field).trigger('input');
+      window.jQuery(field).trigger('change');
+    }
+  }
+
+  function findFieldByLabel(possibleLabels) {
+    var normalizedLabels = possibleLabels.map(normalizeText);
+    var labels = Array.from(document.querySelectorAll('label'));
+
+    for (var i = 0; i < labels.length; i++) {
+      var label = labels[i];
+      var labelText = normalizeText(label.textContent || label.innerText || '');
+      if (!normalizedLabels.some(function (candidate) { return labelText.indexOf(candidate) !== -1; })) {
+        continue;
+      }
+
+      var htmlFor = label.getAttribute('for');
+      if (htmlFor) {
+        var byFor = document.getElementById(htmlFor);
+        if (byFor && byFor.tagName === 'SELECT') {
+          return byFor;
+        }
+      }
+
+      var container = label.parentElement;
+      while (container) {
+        var nestedSelect = container.querySelector('select');
+        if (nestedSelect) {
+          return nestedSelect;
+        }
+        container = container.parentElement;
+      }
+    }
+
+    var allSelects = Array.from(document.querySelectorAll('select'));
+    for (var j = 0; j < allSelects.length; j++) {
+      var select = allSelects[j];
+      var haystack = normalizeText(
+        [
+          select.id,
+          select.name,
+          select.getAttribute('aria-label'),
+          select.getAttribute('placeholder'),
+          select.closest('div, td, th, section, article, form')?.textContent
+        ].join(' ')
+      );
+
+      if (normalizedLabels.some(function (candidate) { return haystack.indexOf(candidate) !== -1; })) {
+        return select;
+      }
+    }
+
+    return null;
+  }
+
+  function markSelectAsRefreshing(select) {
+    if (!select) return;
+
+    var firstOption = select.options && select.options.length ? select.options[0].textContent : '';
+    select.innerHTML = '';
+
+    var option = document.createElement('option');
+    option.value = '';
+    option.textContent = firstOption || '- Aguarde atualizacao -';
+    select.appendChild(option);
+    select.selectedIndex = 0;
+    select.disabled = true;
+  }
+
+  function releaseSelect(select) {
+    if (!select) return;
+    window.setTimeout(function () {
+      select.disabled = false;
+    }, 2400);
+  }
+
+  function getDependentFields() {
+    return [
+      findFieldByLabel(['Operadora']),
+      findFieldByLabel(['Administradora']),
+      findFieldByLabel(['Entidade']),
+      findFieldByLabel(['Profissao', 'Profissão'])
+    ].filter(Boolean);
+  }
+
+  function refreshDependentCombos(regionSelect) {
+    if (!regionSelect) {
+      return;
+    }
+
+    var dependents = getDependentFields();
+    dependents.forEach(markSelectAsRefreshing);
+    dependents.forEach(releaseSelect);
+
+    [0, 250, 800, 1600].forEach(function (delay) {
+      window.setTimeout(function () {
+        if (!document.contains(regionSelect) || !regionSelect.value) {
+          return;
+        }
+
+        regionSelect.dataset.rcRegionSynthetic = '1';
+        triggerFieldEvents(regionSelect);
+        window.setTimeout(function () {
+          delete regionSelect.dataset.rcRegionSynthetic;
+        }, 0);
+      }, delay);
+    });
+  }
+
+  function bindRegionRefresh() {
+    var regionSelect = findFieldByLabel(['Regiao', 'Região']);
+    if (!regionSelect || regionSelect.dataset.rcRegionRefreshBound === '1') {
+      return;
+    }
+
+    regionSelect.dataset.rcRegionRefreshBound = '1';
+    regionSelect.addEventListener('change', function () {
+      if (regionSelect.dataset.rcRegionSynthetic === '1') {
+        return;
+      }
+      refreshDependentCombos(regionSelect);
+    });
+
+    if (regionSelect.value) {
+      window.setTimeout(function () {
+        refreshDependentCombos(regionSelect);
+      }, 500);
+    }
+  }
+
+  bindRegionRefresh();
+  var observer = new MutationObserver(function () {
+    bindRegionRefresh();
+  });
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+})();
+</script>`;
+
 const rewriteSimulatorAppPaths = (content: string) =>
   content
     .replace(
@@ -470,6 +628,10 @@ const rewriteSimulatorText = (content: string, contentType: string) => {
         /<input([^>]*id=["']login_senha["'][^>]*?)\s*\/?>/i,
         '<input$1 value="123" autocomplete="off" data-lpignore="true">'
       );
+
+    rewritten = rewritten.includes('</body>')
+      ? rewritten.replace('</body>', `${simulatorRegionRefreshScript}</body>`)
+      : `${rewritten}${simulatorRegionRefreshScript}`;
   }
 
   if (contentType.includes('text/css') || contentType.includes('javascript')) {
