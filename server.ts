@@ -85,6 +85,24 @@ const rewriteSimulatorCookie = (cookie: string) =>
     .replace(/;\s*path=[^;]*/gi, `; Path=${SIMULATOR_PROXY_PREFIX}`)
     .replace(/;\s*secure/gi, '');
 
+const normalizeSimulatorUpstreamPath = (value: string | undefined) => {
+  let normalized = value || '/login/4602';
+
+  while (true) {
+    const next = normalized
+      .replace(new RegExp(`^//${SIMULATOR_PROXY_PREFIX.slice(1)}(?=/|\\?|$)`), '')
+      .replace(new RegExp(`^${SIMULATOR_PROXY_PREFIX}(?=/|\\?|$)`), '');
+
+    if (next === normalized) {
+      break;
+    }
+
+    normalized = next || '/';
+  }
+
+  return normalized;
+};
+
 const rewriteSimulatorRequestUrl = (value: string | undefined) => {
   if (!value) {
     return undefined;
@@ -93,11 +111,11 @@ const rewriteSimulatorRequestUrl = (value: string | undefined) => {
   try {
     const parsedUrl = new URL(value);
     if (parsedUrl.pathname.startsWith(SIMULATOR_PROXY_PREFIX)) {
-      return `${SIMULATOR_ORIGIN}${parsedUrl.pathname.slice(SIMULATOR_PROXY_PREFIX.length)}${parsedUrl.search}`;
+      return `${SIMULATOR_ORIGIN}${normalizeSimulatorUpstreamPath(parsedUrl.pathname)}${parsedUrl.search}`;
     }
   } catch {
     if (value.startsWith(SIMULATOR_PROXY_PREFIX)) {
-      return `${SIMULATOR_ORIGIN}${value.slice(SIMULATOR_PROXY_PREFIX.length)}`;
+      return `${SIMULATOR_ORIGIN}${normalizeSimulatorUpstreamPath(value)}`;
     }
   }
 
@@ -458,6 +476,10 @@ const rewriteSimulatorText = (content: string, contentType: string) => {
     rewritten = rewritten
       .replace(/url\((['"]?)\/(?!\/)/gi, `url($1${SIMULATOR_PROXY_PREFIX}/`)
       .replace(
+        /return url\.match\(\/https\?\|www\/\)\?url:\(window\.BASE_URL\|\|""\)\+url/g,
+        'return url.match(/https?|www/)?url:(url.charAt(0)==="/"?url:(window.BASE_URL||"")+url)'
+      )
+      .replace(
         new RegExp(`(["'])/(?!simulador-proxy/)(${SIMULATOR_APP_PATHS})/`, 'gi'),
         `$1${SIMULATOR_PROXY_PREFIX}/$2/`
       );
@@ -516,7 +538,7 @@ async function startServer() {
   });
 
   app.all(`${SIMULATOR_PROXY_PREFIX}*`, async (req, res) => {
-    const upstreamPath = req.originalUrl.slice(SIMULATOR_PROXY_PREFIX.length) || '/login/4602';
+    const upstreamPath = normalizeSimulatorUpstreamPath(req.originalUrl.slice(SIMULATOR_PROXY_PREFIX.length));
     const upstreamUrl = new URL(upstreamPath, SIMULATOR_ORIGIN);
     const requestHeaders = new Headers();
 
