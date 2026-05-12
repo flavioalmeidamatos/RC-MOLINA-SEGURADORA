@@ -83,6 +83,25 @@ const rewriteSimulatorCookie = (cookie: string) =>
     .replace(/;\s*path=[^;]*/gi, `; Path=${SIMULATOR_PROXY_PREFIX}`)
     .replace(/;\s*secure/gi, '');
 
+const rewriteSimulatorRequestUrl = (value: string | undefined) => {
+  if (!value) {
+    return undefined;
+  }
+
+  try {
+    const parsedUrl = new URL(value);
+    if (parsedUrl.pathname.startsWith(SIMULATOR_PROXY_PREFIX)) {
+      return `${SIMULATOR_ORIGIN}${parsedUrl.pathname.slice(SIMULATOR_PROXY_PREFIX.length)}${parsedUrl.search}`;
+    }
+  } catch {
+    if (value.startsWith(SIMULATOR_PROXY_PREFIX)) {
+      return `${SIMULATOR_ORIGIN}${value.slice(SIMULATOR_PROXY_PREFIX.length)}`;
+    }
+  }
+
+  return undefined;
+};
+
 const rewriteSimulatorAppPaths = (content: string) =>
   content
     .replace(
@@ -501,9 +520,14 @@ async function startServer() {
       requestHeaders.set(name, Array.isArray(value) ? value.join(',') : value);
     }
 
+    const upstreamReferer =
+      rewriteSimulatorRequestUrl(
+        Array.isArray(req.headers.referer) ? req.headers.referer[0] : req.headers.referer
+      ) || `${SIMULATOR_ORIGIN}/login/4602`;
+
     requestHeaders.set('host', 'app.simuladoronline.com');
     requestHeaders.set('origin', SIMULATOR_ORIGIN);
-    requestHeaders.set('referer', `${SIMULATOR_ORIGIN}/login/4602`);
+    requestHeaders.set('referer', upstreamReferer);
 
     try {
       const bodyBuffer = ['GET', 'HEAD'].includes(req.method) ? undefined : await getRequestBody(req);
