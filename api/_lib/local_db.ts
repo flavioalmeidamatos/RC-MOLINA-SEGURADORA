@@ -116,7 +116,8 @@ create table if not exists "RCMOLINASEGUROS"."CLIENTES" (
   forma_pagamento varchar(100),
   data_fechamento date,
   permite_agendar_online boolean default true,
-  documentacao_anotacoes text
+  documentacao_anotacoes text,
+  updated_at timestamptz not null default timezone('utc', now())
 );
 
 create table if not exists "RCMOLINASEGUROS"."CLIENTES_CONTATOS" (
@@ -141,6 +142,10 @@ create table if not exists "RCMOLINASEGUROS"."CLIENTES_ANEXOS" (
 );
 
 drop trigger if exists trg_clientes_touch_updated_at on "RCMOLINASEGUROS"."CLIENTES";
+create trigger trg_clientes_touch_updated_at
+before update on "RCMOLINASEGUROS"."CLIENTES"
+for each row
+execute function "RCMOLINASEGUROS".touch_updated_at();
 alter table "RCMOLINASEGUROS"."CLIENTES"
   alter column data_atualizacao type date using data_atualizacao::date,
   alter column data_atualizacao set default current_date;
@@ -159,6 +164,9 @@ alter table "RCMOLINASEGUROS"."CLIENTES"
   add column if not exists numero_proposta varchar(100),
   add column if not exists forma_pagamento varchar(100),
   add column if not exists data_fechamento date;
+
+alter table "RCMOLINASEGUROS"."CLIENTES"
+  add column if not exists updated_at timestamptz not null default timezone('utc', now());
 
 alter table "RCMOLINASEGUROS"."CLIENTES"
   drop column if exists marcacoes;
