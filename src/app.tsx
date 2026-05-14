@@ -116,6 +116,86 @@ export default function App() {
             )
           }
         />
+        <Route
+          path="/email"
+          element={
+            session ? (
+              <SCR_MENUPRINCIPAL session={session} perfil={perfil} onLogout={handleLogout} forcedMenu="Webmail" />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+        <Route
+          path="/email/inbox"
+          element={
+            session ? (
+              <SCR_MENUPRINCIPAL session={session} perfil={perfil} onLogout={handleLogout} forcedMenu="Webmail" />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+        <Route
+          path="/email/sent"
+          element={
+            session ? (
+              <SCR_MENUPRINCIPAL session={session} perfil={perfil} onLogout={handleLogout} forcedMenu="Webmail" />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+        <Route
+          path="/email/trash"
+          element={
+            session ? (
+              <SCR_MENUPRINCIPAL session={session} perfil={perfil} onLogout={handleLogout} forcedMenu="Webmail" />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+        <Route
+          path="/email/drafts"
+          element={
+            session ? (
+              <SCR_MENUPRINCIPAL session={session} perfil={perfil} onLogout={handleLogout} forcedMenu="Webmail" />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+        <Route
+          path="/email/compose"
+          element={
+            session ? (
+              <SCR_MENUPRINCIPAL session={session} perfil={perfil} onLogout={handleLogout} forcedMenu="Webmail" />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+        <Route
+          path="/email/settings"
+          element={
+            session ? (
+              <SCR_MENUPRINCIPAL session={session} perfil={perfil} onLogout={handleLogout} forcedMenu="Webmail" />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+        <Route
+          path="/email/thread/:id"
+          element={
+            session ? (
+              <SCR_MENUPRINCIPAL session={session} perfil={perfil} onLogout={handleLogout} forcedMenu="Webmail" />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
         <Route path="/" element={<Navigate to={session ? '/dashboard' : '/login'} replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

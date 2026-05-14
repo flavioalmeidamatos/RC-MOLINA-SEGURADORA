@@ -23,5 +23,10 @@
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "types": ["vite/client", "node"]
-  }
+  },
+  "exclude": [
+    "_backup_pre_merge",
+    "dist",
+    "gmail-app-original"
+  ]
 }

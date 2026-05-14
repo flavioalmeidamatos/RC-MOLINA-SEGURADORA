@@ -17,6 +17,8 @@ tar -czf $archivePath `
   --exclude=.git `
   --exclude=node_modules `
   --exclude=dist `
+  --exclude=gmail-app-original `
+  --exclude=_backup_pre_merge `
   --exclude=.env `
   --exclude=.env.local `
   --exclude=.env.*.local `

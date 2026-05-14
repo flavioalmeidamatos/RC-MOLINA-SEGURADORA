@@ -25,10 +25,15 @@ import { Agenda } from "../agenda/agenda";
 import { apiListVisibleUsers } from "../../lib/local_api";
 import type { LocalAuthSession, UsuarioPerfil } from "../../lib/local_auth";
 
+const RCWebmail = React.lazy(async () => ({
+  default: (await import("../webmail/rc_webmail")).RCWebmail,
+}));
+
 interface DashboardProps {
   session?: LocalAuthSession | null;
   perfil?: UsuarioPerfil | null;
   onLogout?: () => void;
+  forcedMenu?: string | null;
 }
 
 export interface AniversarianteMes {
@@ -168,6 +173,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   session,
   perfil,
   onLogout,
+  forcedMenu,
 }) => {
   const navigate = useNavigate();
   const userName =
@@ -177,7 +183,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const avatarUrl = perfil?.avatar_url || null;
   const canViewSystemUsers = normalizeFullName(perfil?.nome_completo || "") === USERS_VIEWER_FULL_NAME;
 
-  const [activeMenu, setActiveMenu] = useState("Home");
+  const [activeMenu, setActiveMenu] = useState(forcedMenu || "Home");
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [aniversariantesMes, setAniversariantesMes] = useState<AniversarianteMes[]>([]);
   const [isLoadingAniversariantes, setIsLoadingAniversariantes] = useState(false);
@@ -205,6 +211,13 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     login: "Rosilene Rodrigues",
     senha: "123",
   });
+
+  useEffect(() => {
+    if (forcedMenu) {
+      setActiveMenu(forcedMenu);
+      setShowSimulatorChooser(false);
+    }
+  }, [forcedMenu]);
 
   useEffect(() => {
     let ignore = false;
@@ -701,6 +714,15 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       setActiveMenu("Agenda");
       return;
     }
+
+    if (line1 === "Webmail") {
+      if (shouldResetSulamericaSession("Webmail")) {
+        await resetSulamericaProxySession();
+      }
+      setShowSimulatorChooser(false);
+      setActiveMenu("Webmail");
+      return;
+    }
   };
 
   const menuItems = [
@@ -738,6 +760,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const showMedseniorSimulator = activeMenu === "Simulador Medsenior";
   const showClientArea = activeMenu === "Meus clientes";
   const showAgendaArea = activeMenu === "Agenda";
+  const showWebmailArea = activeMenu === "Webmail";
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-[#F0F4F8] font-sans lg:h-screen lg:flex-row lg:overflow-hidden">
@@ -800,7 +823,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-            {showClientArea || showSimulator || showSulamericaSimulator || showAmilSimulator || showMedseniorSimulator || showAgendaArea ? (
+            {showClientArea || showSimulator || showSulamericaSimulator || showAmilSimulator || showMedseniorSimulator || showAgendaArea || showWebmailArea ? (
               <button
                 type="button"
                 onClick={() => void handleMenuClick("Home")}
@@ -1089,6 +1112,22 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
               <div className="flex-1 overflow-y-auto px-4 pb-4 pt-2 sm:px-6 sm:pb-6 sm:pt-3 md:px-8 md:pb-8 md:pt-4">
                 <ClientRegistrationMultipage />
               </div>
+            ) : showWebmailArea ? (
+              <React.Suspense
+                fallback={
+                  <div className="flex flex-1 items-center justify-center bg-white">
+                    <div className="flex items-center gap-3 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 shadow-sm">
+                      <Loader2 size={18} className="animate-spin text-[#b58c2a]" />
+                      Carregando Webmail...
+                    </div>
+                  </div>
+                }
+              >
+                <RCWebmail
+                  userId={perfil?.id || session?.user?.id || null}
+                  userEmail={perfil?.email || session?.user?.email || null}
+                />
+              </React.Suspense>
             ) : activeMenu === "Agenda" ? (
               <Agenda aniversariantesMes={aniversariantesMes} />
             ) : (

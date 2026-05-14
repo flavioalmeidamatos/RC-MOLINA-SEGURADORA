@@ -44,6 +44,13 @@ Provision or repair the local database with:
 
 `bash scripts/provision-hostinger-db.sh <db-password> <auth-secret> <admin-initial-password> [resend-api-key] [resend-from-email]`
 
+For the Gmail/Webmail module in production:
+
+- Keep `APP_URL=https://rcmolinaseguros.resolveplanilhas.com.br` in `/var/www/rc-molina/shared/.env.local`.
+- Register `https://rcmolinaseguros.resolveplanilhas.com.br/api/gmail/callback` in Google Cloud as an authorized redirect URI.
+- The provision script now rewrites `PUBLIC_BASE_URL`, `GMAIL_PUBLIC_BASE_URL`, `GOOGLE_REDIRECT_URI` and `GMAIL_GOOGLE_REDIRECT_URI` from `APP_URL`.
+- Existing Gmail credentials in the shared `.env.local` are preserved during reprovisioning.
+
 Create a production backup on the VPS with:
 
 `bash scripts/backup-hostinger-db.sh`

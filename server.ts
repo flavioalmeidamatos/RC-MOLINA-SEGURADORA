@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
 import dotenv from 'dotenv';
 import { registerLocalAuthRoutes } from './api/_lib/local_auth_routes';
+import { gmailRouter } from './api/_lib/gmail_routes.js';
 import { ImportLeadHttpError, importLeadFromSistemaQuer } from './api/_lib/import_lead';
 import importLeadAssetHandler from './api/import-lead-asset';
 import sendLoginCodeHandler from './api/send-login-code';
@@ -665,6 +666,7 @@ async function startServer() {
   app.use('/uploads', express.static(uploadDir));
 
   registerLocalAuthRoutes(app);
+  app.use('/api', gmailRouter);
 
   app.post('/api/send-login-code', sendLoginCodeHandler);
 
