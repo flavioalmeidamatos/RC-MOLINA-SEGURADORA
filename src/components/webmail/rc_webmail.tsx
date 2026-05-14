@@ -793,8 +793,8 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
             </div>
             <h3 className="mt-5 text-2xl font-black text-[#0c1826]">Conecte o Gmail da corretora</h3>
             <p className="mt-3 text-sm leading-6 text-slate-500">
-              O botao Webmail agora usa a estrutura principal da RC Molina Seguros. A pasta `gmail-app-original/`
-              segue apenas como referencia e nao foi alterada.
+              O Webmail agora roda integralmente dentro da estrutura principal da RC Molina Seguros, sem depender
+              da aplicacao legada separada.
             </p>
             <div className="mt-6 flex justify-center">
               <button

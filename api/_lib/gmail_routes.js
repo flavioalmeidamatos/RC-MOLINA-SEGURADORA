@@ -30,6 +30,7 @@ const upload = multer({
 });
 
 const MAX_TRANSMISSION_BYTES = 25 * 1024 * 1024;
+const OUTBOX_STATUS_FILTER = "('pending', 'failed', 'sending')";
 export const gmailRouter = express.Router();
 
 function asyncRoute(handler) {
@@ -40,6 +41,16 @@ function asyncRoute(handler) {
       next(error);
     }
   };
+}
+
+function registerRoute(method, paths, ...stack) {
+  const routePaths = Array.isArray(paths) ? paths : [paths];
+  const handlers = [...stack];
+  const finalHandler = handlers.pop();
+
+  for (const routePath of routePaths) {
+    gmailRouter[method](routePath, ...handlers, asyncRoute(finalHandler));
+  }
 }
 
 function accountEmailFrom(req) {
@@ -65,6 +76,32 @@ function requestActorFrom(req) {
       req.query?.userEmail ||
       '',
     ).trim().toLowerCase() || null,
+  };
+}
+
+function requireAccountEmail(req) {
+  const accountEmail = String(accountEmailFrom(req) || '');
+  if (!accountEmail) {
+    const error = new Error('Email nao especificado.');
+    error.status = 400;
+    throw error;
+  }
+
+  return accountEmail;
+}
+
+function requireOauthCallbackParams(req) {
+  const { code, state } = req.query;
+
+  if (!code || !state) {
+    const error = new Error('Callback OAuth sem code ou state.');
+    error.status = 400;
+    throw error;
+  }
+
+  return {
+    code: String(code),
+    state: String(state),
   };
 }
 
@@ -189,148 +226,9 @@ function assertTransmissionCapacity(payload, files = []) {
   throw error;
 }
 
-gmailRouter.get('/email/auth/google', asyncRoute(async (req, res) => {
-  const requestedEmail = String(req.query.email || gmailConfig.google.allowedAccount || '');
-  const url = await getAuthUrl(requestedEmail, requestActorFrom(req));
-  res.json({ url });
-}));
-
-gmailRouter.get('/gmail/auth/url', asyncRoute(async (req, res) => {
-  const requestedEmail = String(req.query.email || gmailConfig.google.allowedAccount || '');
-  const url = await getAuthUrl(requestedEmail, requestActorFrom(req));
-  res.json({ url });
-}));
-
-gmailRouter.get('/auth/google/callback', asyncRoute(async (req, res) => {
-  const { code, state } = req.query;
-
-  if (!code || !state) {
-    const error = new Error('Callback OAuth sem code ou state.');
-    error.status = 400;
-    throw error;
-  }
-
-  const email = await exchangeCodeForAccount(String(code), String(state));
-  res.redirect(`/email/inbox?webmail=connected&account=${encodeURIComponent(email)}`);
-}));
-
-gmailRouter.get('/gmail/callback', asyncRoute(async (req, res) => {
-  const { code, state } = req.query;
-
-  if (!code || !state) {
-    const error = new Error('Callback OAuth sem code ou state.');
-    error.status = 400;
-    throw error;
-  }
-
-  const email = await exchangeCodeForAccount(String(code), String(state));
-  res.redirect(`/email/inbox?webmail=connected&account=${encodeURIComponent(email)}`);
-}));
-
-gmailRouter.get('/email/auth/status', asyncRoute(async (req, res) => {
-  res.json(await getAccountStatus(String(accountEmailFrom(req) || ''), requestActorFrom(req)));
-}));
-
-gmailRouter.get('/gmail/status', asyncRoute(async (req, res) => {
-  res.json(await getAccountStatus(String(accountEmailFrom(req) || ''), requestActorFrom(req)));
-}));
-
-gmailRouter.post('/email/auth/disconnect', asyncRoute(async (req, res) => {
-  const accountEmail = String(accountEmailFrom(req) || '');
-  if (!accountEmail) {
-    return res.status(400).json({ error: 'Email nao especificado.' });
-  }
-
-  res.json(await disconnectAccount(accountEmail, requestActorFrom(req)));
-}));
-
-gmailRouter.post('/gmail/disconnect', asyncRoute(async (req, res) => {
-  const accountEmail = String(accountEmailFrom(req) || '');
-  if (!accountEmail) {
-    return res.status(400).json({ error: 'Email nao especificado.' });
-  }
-
-  res.json(await disconnectAccount(accountEmail, requestActorFrom(req)));
-}));
-
-gmailRouter.get('/email/accounts', asyncRoute(async (req, res) => {
-  res.json({ accounts: await listAccounts(requestActorFrom(req)) });
-}));
-
-gmailRouter.get('/gmail/accounts', asyncRoute(async (req, res) => {
-  res.json({ accounts: await listAccounts(requestActorFrom(req)) });
-}));
-
-gmailRouter.get('/email/logs', asyncRoute(async (req, res) => {
-  const accountEmail = String(accountEmailFrom(req) || '');
-  const actor = requestActorFrom(req);
-  const result = await query(
-    actor.userId
-      ? 'select * from email_logs where account_email = $1 and user_id = $2 order by created_at desc limit 50'
-      : 'select * from email_logs where account_email = $1 order by created_at desc limit 50',
-    actor.userId ? [accountEmail, actor.userId] : [accountEmail],
-  );
-  res.json({ logs: result.rows });
-}));
-
-gmailRouter.get('/gmail/logs', asyncRoute(async (req, res) => {
-  const accountEmail = String(accountEmailFrom(req) || '');
-  const actor = requestActorFrom(req);
-  const result = await query(
-    actor.userId
-      ? 'select * from email_logs where account_email = $1 and user_id = $2 order by created_at desc limit 50'
-      : 'select * from email_logs where account_email = $1 order by created_at desc limit 50',
-    actor.userId ? [accountEmail, actor.userId] : [accountEmail],
-  );
-  res.json({ logs: result.rows });
-}));
-
-gmailRouter.get('/email/inbox', asyncRoute(async (req, res) => {
-  res.json(await listMessages(String(accountEmailFrom(req) || ''), {
-    folder: 'inbox',
-    maxResults: req.query.maxResults || 25,
-    pageToken: req.query.pageToken,
-    from: req.query.from,
-    subject: req.query.subject,
-    status: req.query.status || (req.query.unread === 'true' ? 'unread' : undefined),
-    content: req.query.content,
-    after: req.query.after,
-    before: req.query.before,
-    hasAttachment: req.query.hasAttachment,
-  }, requestActorFrom(req)));
-}));
-
-gmailRouter.get('/email/sent', asyncRoute(async (req, res) => {
-  res.json(await listMessages(String(accountEmailFrom(req) || ''), {
-    folder: 'sent',
-    maxResults: req.query.maxResults || 25,
-    pageToken: req.query.pageToken,
-    from: req.query.from,
-    subject: req.query.subject,
-    content: req.query.content,
-    after: req.query.after,
-    before: req.query.before,
-    hasAttachment: req.query.hasAttachment,
-  }, requestActorFrom(req)));
-}));
-
-gmailRouter.get('/email/trash', asyncRoute(async (req, res) => {
-  res.json(await listMessages(String(accountEmailFrom(req) || ''), {
-    folder: 'trash',
-    maxResults: req.query.maxResults || 25,
-    pageToken: req.query.pageToken,
-    from: req.query.from,
-    subject: req.query.subject,
-    content: req.query.content,
-    after: req.query.after,
-    before: req.query.before,
-    hasAttachment: req.query.hasAttachment,
-  }, requestActorFrom(req)));
-}));
-
-gmailRouter.get('/email/search', asyncRoute(async (req, res) => {
-  res.json(await listMessages(String(accountEmailFrom(req) || ''), {
-    folder: 'inbox',
+function listMessagesOptions(req, folder) {
+  return {
+    folder,
     maxResults: req.query.maxResults || 25,
     pageToken: req.query.pageToken,
     from: req.query.from,
@@ -340,371 +238,312 @@ gmailRouter.get('/email/search', asyncRoute(async (req, res) => {
     before: req.query.before,
     status: req.query.status,
     hasAttachment: req.query.hasAttachment,
-  }, requestActorFrom(req)));
-}));
+  };
+}
 
-gmailRouter.get('/gmail/messages', asyncRoute(async (req, res) => {
+function folderFromQuery(req) {
   const folder = String(req.query.folder || 'inbox');
-  const normalizedFolder = ['inbox', 'sent', 'trash'].includes(folder) ? folder : 'inbox';
-  res.json(await listMessages(String(accountEmailFrom(req) || ''), {
-    folder: normalizedFolder,
-    maxResults: req.query.maxResults || 25,
-    pageToken: req.query.pageToken,
-    from: req.query.from,
-    subject: req.query.subject,
-    content: req.query.q || req.query.content,
-    after: req.query.after,
-    before: req.query.before,
-    status: req.query.status,
-    hasAttachment: req.query.hasAttachment,
+  return ['inbox', 'sent', 'trash'].includes(folder) ? folder : 'inbox';
+}
+
+async function listEmailLogs(accountEmail, actor) {
+  const result = await query(
+    actor.userId
+      ? 'select * from email_logs where account_email = $1 and user_id = $2 order by created_at desc limit 50'
+      : 'select * from email_logs where account_email = $1 order by created_at desc limit 50',
+    actor.userId ? [accountEmail, actor.userId] : [accountEmail],
+  );
+
+  return result.rows;
+}
+
+async function listOutboxMessages(accountEmail, actor) {
+  const result = await query(
+    actor.userId
+      ? `select o.*,
+                (select count(*) from email_outbox_attachments a where a.outbox_id = o.id)::int as attachment_count
+           from email_outbox o
+           join gmail_accounts g on g.email = o.account_email
+          where o.account_email = $1
+            and g.user_id = $2
+            and o.status in ${OUTBOX_STATUS_FILTER}
+          order by o.created_at desc`
+      : `select o.*,
+                (select count(*) from email_outbox_attachments a where a.outbox_id = o.id)::int as attachment_count
+           from email_outbox o
+          where account_email = $1
+            and status in ${OUTBOX_STATUS_FILTER}
+          order by created_at desc`,
+    actor.userId ? [accountEmail, actor.userId] : [accountEmail],
+  );
+
+  return result.rows;
+}
+
+async function createOutboxMessage(req) {
+  const accountEmail = requireAccountEmail(req);
+  const actor = requestActorFrom(req);
+  assertValidRecipients(req.body, { requireTo: true });
+
+  const payload = mailPayloadFromBody(req.body);
+  const files = normalizeUploadedFiles(req.files || []);
+  assertTransmissionCapacity(payload, files);
+
+  const outboxResult = await query(
+    `insert into email_outbox (
+       account_email, to_recipients, cc_recipients, bcc_recipients, subject, body_text, body_html
+     )
+     values ($1, $2, $3, $4, $5, $6, $7)
+     returning *`,
+    [accountEmail, payload.to, payload.cc, payload.bcc, payload.subject, payload.text, payload.html],
+  );
+
+  const outboxMessage = outboxResult.rows[0];
+
+  for (const file of files) {
+    await query(
+      `insert into email_outbox_attachments (
+         outbox_id, filename, mime_type, content, size_bytes
+       )
+       values ($1, $2, $3, $4, $5)`,
+      [outboxMessage.id, file.originalname, file.mimetype, file.buffer, file.size],
+    );
+  }
+
+  await logEvent(accountEmail, 'send', 'Mensagem adicionada a caixa de saida local', {
+    outboxId: outboxMessage.id,
+    attachmentCount: files.length,
+  }, 'info', actor.userId);
+
+  return {
+    ...outboxMessage,
+    attachment_count: files.length,
+  };
+}
+
+async function sendOutboxMessage(req) {
+  const accountEmail = requireAccountEmail(req);
+  const actor = requestActorFrom(req);
+  const itemResult = await query(
+    'select * from email_outbox where id = $1 and account_email = $2',
+    [req.params.id, accountEmail],
+  );
+
+  if (itemResult.rowCount === 0) {
+    return { status: 404, body: { error: 'Mensagem nao encontrada na caixa de saida.' } };
+  }
+
+  const item = itemResult.rows[0];
+  if (!['pending', 'failed'].includes(item.status)) {
+    return {
+      status: 400,
+      body: { error: `Mensagem nao pode ser enviada com status: ${item.status}` },
+    };
+  }
+
+  const attachmentsResult = await query(
+    `select filename as originalname, mime_type as mimetype, content as buffer, size_bytes as size
+       from email_outbox_attachments
+      where outbox_id = $1`,
+    [req.params.id],
+  );
+
+  const files = normalizeUploadedFiles(attachmentsResult.rows);
+
+  await query(
+    "update email_outbox set status = 'sending', updated_at = now() where id = $1",
+    [req.params.id],
+  );
+
+  try {
+    const sent = await sendMessage(accountEmail, {
+      to: item.to_recipients,
+      cc: item.cc_recipients,
+      bcc: item.bcc_recipients,
+      subject: item.subject,
+      text: item.body_text,
+      html: item.body_html,
+    }, files, actor);
+
+    const updated = await query(
+      `update email_outbox
+          set status = 'sent',
+              gmail_message_id = $1,
+              sent_at = now(),
+              updated_at = now(),
+              error_message = null
+        where id = $2
+    returning *`,
+      [sent.id, req.params.id],
+    );
+
+    return { status: 200, body: { outboxMessage: updated.rows[0] } };
+  } catch (error) {
+    await query(
+      `update email_outbox
+          set status = 'failed',
+              error_message = $1,
+              updated_at = now()
+        where id = $2`,
+      [error.message, req.params.id],
+    );
+    throw error;
+  }
+}
+
+async function sendDraft(req) {
+  const gmail = await getAuthedGmail(requireAccountEmail(req), requestActorFrom(req));
+  const result = await gmail.users.drafts.send({
+    userId: 'me',
+    requestBody: { id: req.params.id },
+  });
+
+  return { message: result.data };
+}
+
+async function deleteDraft(req) {
+  const gmail = await getAuthedGmail(requireAccountEmail(req), requestActorFrom(req));
+  await gmail.users.drafts.delete({ userId: 'me', id: req.params.id });
+  return { success: true };
+}
+
+async function modifyMessageResponse(req, action) {
+  return {
+    message: await modifyMessage(requireAccountEmail(req), req.params.id, action, requestActorFrom(req)),
+  };
+}
+
+registerRoute('get', ['/email/auth/google', '/gmail/auth/url'], async (req, res) => {
+  const requestedEmail = String(req.query.email || gmailConfig.google.allowedAccount || '');
+  res.json({ url: await getAuthUrl(requestedEmail, requestActorFrom(req)) });
+});
+
+registerRoute('get', ['/auth/google/callback', '/gmail/callback'], async (req, res) => {
+  const { code, state } = requireOauthCallbackParams(req);
+  const email = await exchangeCodeForAccount(code, state);
+  res.redirect(`/email/inbox?webmail=connected&account=${encodeURIComponent(email)}`);
+});
+
+registerRoute('get', ['/email/auth/status', '/gmail/status'], async (req, res) => {
+  res.json(await getAccountStatus(String(accountEmailFrom(req) || ''), requestActorFrom(req)));
+});
+
+registerRoute('post', ['/email/auth/disconnect', '/gmail/disconnect'], async (req, res) => {
+  res.json(await disconnectAccount(requireAccountEmail(req), requestActorFrom(req)));
+});
+
+registerRoute('get', ['/email/accounts', '/gmail/accounts'], async (req, res) => {
+  res.json({ accounts: await listAccounts(requestActorFrom(req)) });
+});
+
+registerRoute('get', ['/email/logs', '/gmail/logs'], async (req, res) => {
+  const accountEmail = requireAccountEmail(req);
+  const actor = requestActorFrom(req);
+  res.json({ logs: await listEmailLogs(accountEmail, actor) });
+});
+
+registerRoute('get', '/email/inbox', async (req, res) => {
+  res.json(await listMessages(requireAccountEmail(req), {
+    ...listMessagesOptions(req, 'inbox'),
+    content: req.query.content,
+    status: req.query.status || (req.query.unread === 'true' ? 'unread' : undefined),
   }, requestActorFrom(req)));
-}));
+});
 
-gmailRouter.get('/email/outbox', asyncRoute(async (req, res) => {
-  const accountEmail = String(accountEmailFrom(req) || '');
+registerRoute('get', '/email/sent', async (req, res) => {
+  res.json(await listMessages(requireAccountEmail(req), {
+    ...listMessagesOptions(req, 'sent'),
+    content: req.query.content,
+  }, requestActorFrom(req)));
+});
+
+registerRoute('get', '/email/trash', async (req, res) => {
+  res.json(await listMessages(requireAccountEmail(req), {
+    ...listMessagesOptions(req, 'trash'),
+    content: req.query.content,
+  }, requestActorFrom(req)));
+});
+
+registerRoute('get', '/email/search', async (req, res) => {
+  res.json(await listMessages(requireAccountEmail(req), {
+    ...listMessagesOptions(req, 'inbox'),
+    content: req.query.q || req.query.content,
+  }, requestActorFrom(req)));
+});
+
+registerRoute('get', '/gmail/messages', async (req, res) => {
+  res.json(await listMessages(requireAccountEmail(req), listMessagesOptions(req, folderFromQuery(req)), requestActorFrom(req)));
+});
+
+registerRoute('get', ['/email/outbox', '/gmail/outbox'], async (req, res) => {
+  const accountEmail = requireAccountEmail(req);
   const actor = requestActorFrom(req);
-  const result = await query(
-    actor.userId
-      ? `select o.*,
-                (select count(*) from email_outbox_attachments a where a.outbox_id = o.id)::int as attachment_count
-           from email_outbox o
-           join gmail_accounts g on g.email = o.account_email
-          where o.account_email = $1
-            and g.user_id = $2
-            and o.status in ('pending', 'failed', 'sending')
-          order by o.created_at desc`
-      : `select o.*,
-                (select count(*) from email_outbox_attachments a where a.outbox_id = o.id)::int as attachment_count
-           from email_outbox o
-          where account_email = $1
-            and status in ('pending', 'failed', 'sending')
-          order by created_at desc`,
-    actor.userId ? [accountEmail, actor.userId] : [accountEmail],
-  );
-  res.json({ outbox: result.rows });
-}));
+  res.json({ outbox: await listOutboxMessages(accountEmail, actor) });
+});
 
-gmailRouter.get('/gmail/outbox', asyncRoute(async (req, res) => {
-  const accountEmail = String(accountEmailFrom(req) || '');
-  const actor = requestActorFrom(req);
-  const result = await query(
-    actor.userId
-      ? `select o.*,
-                (select count(*) from email_outbox_attachments a where a.outbox_id = o.id)::int as attachment_count
-           from email_outbox o
-           join gmail_accounts g on g.email = o.account_email
-          where o.account_email = $1
-            and g.user_id = $2
-            and o.status in ('pending', 'failed', 'sending')
-          order by o.created_at desc`
-      : `select o.*,
-                (select count(*) from email_outbox_attachments a where a.outbox_id = o.id)::int as attachment_count
-           from email_outbox o
-          where account_email = $1
-            and status in ('pending', 'failed', 'sending')
-          order by created_at desc`,
-    actor.userId ? [accountEmail, actor.userId] : [accountEmail],
-  );
-  res.json({ outbox: result.rows });
-}));
+registerRoute('post', ['/email/outbox', '/gmail/outbox'], upload.array('attachments'), async (req, res) => {
+  res.status(201).json({ outboxMessage: await createOutboxMessage(req) });
+});
 
-gmailRouter.post('/email/outbox', upload.array('attachments'), asyncRoute(async (req, res) => {
-  const accountEmail = String(accountEmailFrom(req) || '');
-  const actor = requestActorFrom(req);
-  assertValidRecipients(req.body, { requireTo: true });
-  const payload = mailPayloadFromBody(req.body);
-  const files = normalizeUploadedFiles(req.files || []);
-  assertTransmissionCapacity(payload, files);
+registerRoute('post', ['/email/outbox/:id/send', '/gmail/outbox/:id/send'], async (req, res) => {
+  const result = await sendOutboxMessage(req);
+  res.status(result.status).json(result.body);
+});
 
-  const outboxResult = await query(
-    `insert into email_outbox (
-       account_email, to_recipients, cc_recipients, bcc_recipients, subject, body_text, body_html
-     )
-     values ($1, $2, $3, $4, $5, $6, $7)
-     returning *`,
-    [accountEmail, payload.to, payload.cc, payload.bcc, payload.subject, payload.text, payload.html],
-  );
-
-  const outboxMessage = outboxResult.rows[0];
-
-  for (const file of files) {
-    await query(
-      `insert into email_outbox_attachments (
-         outbox_id, filename, mime_type, content, size_bytes
-       )
-       values ($1, $2, $3, $4, $5)`,
-      [outboxMessage.id, file.originalname, file.mimetype, file.buffer, file.size],
-    );
-  }
-
-  await logEvent(accountEmail, 'send', 'Mensagem adicionada a caixa de saida local', {
-    outboxId: outboxMessage.id,
-    attachmentCount: files.length,
-  }, 'info', actor.userId);
-
-  res.status(201).json({
-    outboxMessage: {
-      ...outboxMessage,
-      attachment_count: files.length,
-    },
-  });
-}));
-
-gmailRouter.post('/gmail/outbox', upload.array('attachments'), asyncRoute(async (req, res) => {
-  const accountEmail = String(accountEmailFrom(req) || '');
-  const actor = requestActorFrom(req);
-  assertValidRecipients(req.body, { requireTo: true });
-  const payload = mailPayloadFromBody(req.body);
-  const files = normalizeUploadedFiles(req.files || []);
-  assertTransmissionCapacity(payload, files);
-
-  const outboxResult = await query(
-    `insert into email_outbox (
-       account_email, to_recipients, cc_recipients, bcc_recipients, subject, body_text, body_html
-     )
-     values ($1, $2, $3, $4, $5, $6, $7)
-     returning *`,
-    [accountEmail, payload.to, payload.cc, payload.bcc, payload.subject, payload.text, payload.html],
-  );
-
-  const outboxMessage = outboxResult.rows[0];
-
-  for (const file of files) {
-    await query(
-      `insert into email_outbox_attachments (
-         outbox_id, filename, mime_type, content, size_bytes
-       )
-       values ($1, $2, $3, $4, $5)`,
-      [outboxMessage.id, file.originalname, file.mimetype, file.buffer, file.size],
-    );
-  }
-
-  await logEvent(accountEmail, 'send', 'Mensagem adicionada a caixa de saida local', {
-    outboxId: outboxMessage.id,
-    attachmentCount: files.length,
-  }, 'info', actor.userId);
-
-  res.status(201).json({
-    outboxMessage: {
-      ...outboxMessage,
-      attachment_count: files.length,
-    },
-  });
-}));
-
-gmailRouter.post('/email/outbox/:id/send', asyncRoute(async (req, res) => {
-  const accountEmail = String(accountEmailFrom(req) || '');
-  const actor = requestActorFrom(req);
-  const itemResult = await query(
-    `select * from email_outbox where id = $1 and account_email = $2`,
-    [req.params.id, accountEmail],
-  );
-
-  if (itemResult.rowCount === 0) {
-    return res.status(404).json({ error: 'Mensagem nao encontrada na caixa de saida.' });
-  }
-
-  const item = itemResult.rows[0];
-  if (!['pending', 'failed'].includes(item.status)) {
-    return res.status(400).json({
-      error: `Mensagem nao pode ser enviada com status: ${item.status}`,
-    });
-  }
-
-  const attachmentsResult = await query(
-    `select filename as originalname, mime_type as mimetype, content as buffer, size_bytes as size
-       from email_outbox_attachments
-      where outbox_id = $1`,
-    [req.params.id],
-  );
-
-  const files = normalizeUploadedFiles(attachmentsResult.rows);
-
-  await query(
-    `update email_outbox set status = 'sending', updated_at = now() where id = $1`,
-    [req.params.id],
-  );
-
-  try {
-    const sent = await sendMessage(accountEmail, {
-      to: item.to_recipients,
-      cc: item.cc_recipients,
-      bcc: item.bcc_recipients,
-      subject: item.subject,
-      text: item.body_text,
-      html: item.body_html,
-    }, files, actor);
-
-    const updated = await query(
-      `update email_outbox
-          set status = 'sent',
-              gmail_message_id = $1,
-              sent_at = now(),
-              updated_at = now(),
-              error_message = null
-        where id = $2
-    returning *`,
-      [sent.id, req.params.id],
-    );
-
-    res.json({ outboxMessage: updated.rows[0] });
-  } catch (error) {
-    await query(
-      `update email_outbox
-          set status = 'failed',
-              error_message = $1,
-              updated_at = now()
-        where id = $2`,
-      [error.message, req.params.id],
-    );
-    throw error;
-  }
-}));
-
-gmailRouter.post('/gmail/outbox/:id/send', asyncRoute(async (req, res) => {
-  const accountEmail = String(accountEmailFrom(req) || '');
-  const actor = requestActorFrom(req);
-  const itemResult = await query(
-    `select * from email_outbox where id = $1 and account_email = $2`,
-    [req.params.id, accountEmail],
-  );
-
-  if (itemResult.rowCount === 0) {
-    return res.status(404).json({ error: 'Mensagem nao encontrada na caixa de saida.' });
-  }
-
-  const item = itemResult.rows[0];
-  if (!['pending', 'failed'].includes(item.status)) {
-    return res.status(400).json({
-      error: `Mensagem nao pode ser enviada com status: ${item.status}`,
-    });
-  }
-
-  const attachmentsResult = await query(
-    `select filename as originalname, mime_type as mimetype, content as buffer, size_bytes as size
-       from email_outbox_attachments
-      where outbox_id = $1`,
-    [req.params.id],
-  );
-
-  const files = normalizeUploadedFiles(attachmentsResult.rows);
-
-  await query(
-    `update email_outbox set status = 'sending', updated_at = now() where id = $1`,
-    [req.params.id],
-  );
-
-  try {
-    const sent = await sendMessage(accountEmail, {
-      to: item.to_recipients,
-      cc: item.cc_recipients,
-      bcc: item.bcc_recipients,
-      subject: item.subject,
-      text: item.body_text,
-      html: item.body_html,
-    }, files, actor);
-
-    const updated = await query(
-      `update email_outbox
-          set status = 'sent',
-              gmail_message_id = $1,
-              sent_at = now(),
-              updated_at = now(),
-              error_message = null
-        where id = $2
-    returning *`,
-      [sent.id, req.params.id],
-    );
-
-    res.json({ outboxMessage: updated.rows[0] });
-  } catch (error) {
-    await query(
-      `update email_outbox
-          set status = 'failed',
-              error_message = $1,
-              updated_at = now()
-        where id = $2`,
-      [error.message, req.params.id],
-    );
-    throw error;
-  }
-}));
-
-gmailRouter.delete('/email/outbox/:id', asyncRoute(async (req, res) => {
-  const accountEmail = String(accountEmailFrom(req) || '');
+registerRoute('delete', ['/email/outbox/:id', '/gmail/outbox/:id'], async (req, res) => {
   await query('delete from email_outbox where id = $1 and account_email = $2', [
     req.params.id,
-    accountEmail,
+    requireAccountEmail(req),
   ]);
   res.json({ success: true });
-}));
+});
 
-gmailRouter.delete('/gmail/outbox/:id', asyncRoute(async (req, res) => {
-  const accountEmail = String(accountEmailFrom(req) || '');
-  await query('delete from email_outbox where id = $1 and account_email = $2', [
-    req.params.id,
-    accountEmail,
-  ]);
-  res.json({ success: true });
-}));
-
-gmailRouter.get('/email/messages/:id', asyncRoute(async (req, res) => {
+registerRoute('get', ['/email/messages/:id', '/gmail/messages/:id'], async (req, res) => {
   res.json({
-    message: await getMessage(String(accountEmailFrom(req) || ''), req.params.id, requestActorFrom(req)),
+    message: await getMessage(requireAccountEmail(req), req.params.id, requestActorFrom(req)),
   });
-}));
+});
 
-gmailRouter.get('/gmail/messages/:id', asyncRoute(async (req, res) => {
-  res.json({
-    message: await getMessage(String(accountEmailFrom(req) || ''), req.params.id, requestActorFrom(req)),
-  });
-}));
-
-gmailRouter.post('/email/send', upload.none(), asyncRoute(async (req, res) => {
-  const accountEmail = String(accountEmailFrom(req) || '');
+registerRoute('post', '/email/send', upload.none(), async (req, res) => {
+  const accountEmail = requireAccountEmail(req);
   assertValidRecipients(req.body, { requireTo: true });
   const payload = mailPayloadFromBody(req.body);
   assertTransmissionCapacity(payload, []);
-  const result = await sendMessage(accountEmail, payload, [], requestActorFrom(req));
-  res.status(201).json({ message: result });
-}));
+  res.status(201).json({
+    message: await sendMessage(accountEmail, payload, [], requestActorFrom(req)),
+  });
+});
 
-gmailRouter.post('/email/send-with-attachments', upload.array('attachments'), asyncRoute(async (req, res) => {
-  const accountEmail = String(accountEmailFrom(req) || '');
+registerRoute('post', '/email/send-with-attachments', upload.array('attachments'), async (req, res) => {
+  const accountEmail = requireAccountEmail(req);
   assertValidRecipients(req.body, { requireTo: true });
   const payload = mailPayloadFromBody(req.body);
   const files = normalizeUploadedFiles(req.files || []);
   assertTransmissionCapacity(payload, files);
-  const result = await sendMessage(accountEmail, payload, files, requestActorFrom(req));
-  res.status(201).json({ message: result });
-}));
+  res.status(201).json({
+    message: await sendMessage(accountEmail, payload, files, requestActorFrom(req)),
+  });
+});
 
-gmailRouter.post('/gmail/send', upload.array('attachments'), asyncRoute(async (req, res) => {
-  const accountEmail = String(accountEmailFrom(req) || '');
+registerRoute('post', '/gmail/send', upload.array('attachments'), async (req, res) => {
+  const accountEmail = requireAccountEmail(req);
   assertValidRecipients(req.body, { requireTo: true });
   const payload = mailPayloadFromBody(req.body);
   const files = normalizeUploadedFiles(req.files || []);
   assertTransmissionCapacity(payload, files);
-  const result = await sendMessage(accountEmail, payload, files, requestActorFrom(req));
-  res.status(201).json({ message: result });
-}));
+  res.status(201).json({
+    message: await sendMessage(accountEmail, payload, files, requestActorFrom(req)),
+  });
+});
 
-gmailRouter.get('/email/messages/:messageId/attachments', asyncRoute(async (req, res) => {
-  const accountEmail = String(accountEmailFrom(req) || '');
-  const message = await getMessage(accountEmail, req.params.messageId, requestActorFrom(req));
+registerRoute('get', ['/email/messages/:messageId/attachments', '/gmail/messages/:messageId/attachments'], async (req, res) => {
+  const message = await getMessage(requireAccountEmail(req), req.params.messageId, requestActorFrom(req));
   res.json({ attachments: message.attachments });
-}));
+});
 
-gmailRouter.get('/gmail/messages/:messageId/attachments', asyncRoute(async (req, res) => {
-  const accountEmail = String(accountEmailFrom(req) || '');
-  const message = await getMessage(accountEmail, req.params.messageId, requestActorFrom(req));
-  res.json({ attachments: message.attachments });
-}));
-
-gmailRouter.get('/email/messages/:messageId/attachments/:attachmentId', asyncRoute(async (req, res) => {
-  const accountEmail = String(accountEmailFrom(req) || '');
+registerRoute('get', ['/email/messages/:messageId/attachments/:attachmentId', '/gmail/messages/:messageId/attachments/:attachmentId'], async (req, res) => {
   const buffer = await downloadAttachment(
-    accountEmail,
+    requireAccountEmail(req),
     req.params.messageId,
     req.params.attachmentId,
     requestActorFrom(req),
@@ -722,174 +561,97 @@ gmailRouter.get('/email/messages/:messageId/attachments/:attachmentId', asyncRou
     `${disposition}; filename="${fallbackFilename}"; filename*=UTF-8''${encodedFilename}`,
   );
   res.send(buffer);
-}));
+});
 
-gmailRouter.get('/gmail/messages/:messageId/attachments/:attachmentId', asyncRoute(async (req, res) => {
-  const accountEmail = String(accountEmailFrom(req) || '');
-  const buffer = await downloadAttachment(
-    accountEmail,
-    req.params.messageId,
-    req.params.attachmentId,
-    requestActorFrom(req),
-  );
-
-  const filename = normalizeUtf8Text(req.query.filename || 'attachment');
-  const mimeType = req.query.mimeType || 'application/octet-stream';
-  const disposition = req.query.inline === 'true' ? 'inline' : 'attachment';
-  const fallbackFilename = asciiFilenameFallback(filename);
-  const encodedFilename = encodeHeaderParameter(String(filename));
-
-  res.setHeader('Content-Type', mimeType);
-  res.setHeader(
-    'Content-Disposition',
-    `${disposition}; filename="${fallbackFilename}"; filename*=UTF-8''${encodedFilename}`,
-  );
-  res.send(buffer);
-}));
-
-gmailRouter.get('/email/drafts', asyncRoute(async (req, res) => {
+registerRoute('get', ['/email/drafts', '/gmail/drafts'], async (req, res) => {
   res.json(await listDrafts(
-    String(accountEmailFrom(req) || ''),
+    requireAccountEmail(req),
     { maxResults: req.query.maxResults || 25 },
     requestActorFrom(req),
   ));
-}));
+});
 
-gmailRouter.get('/gmail/drafts', asyncRoute(async (req, res) => {
-  res.json(await listDrafts(
-    String(accountEmailFrom(req) || ''),
-    { maxResults: req.query.maxResults || 25 },
-    requestActorFrom(req),
-  ));
-}));
-
-gmailRouter.post('/email/drafts', upload.array('attachments'), asyncRoute(async (req, res) => {
-  const accountEmail = String(accountEmailFrom(req) || '');
+registerRoute('post', '/email/drafts', upload.array('attachments'), async (req, res) => {
+  const accountEmail = requireAccountEmail(req);
   assertValidRecipients(req.body);
   const payload = mailPayloadFromBody(req.body);
   const files = normalizeUploadedFiles(req.files || []);
   assertTransmissionCapacity(payload, files);
-  const result = await createDraft(accountEmail, payload, files, requestActorFrom(req));
-  res.status(201).json({ draft: result });
-}));
+  res.status(201).json({
+    draft: await createDraft(accountEmail, payload, files, requestActorFrom(req)),
+  });
+});
 
-gmailRouter.post('/gmail/draft', upload.array('attachments'), asyncRoute(async (req, res) => {
-  const accountEmail = String(accountEmailFrom(req) || '');
+registerRoute('post', '/gmail/draft', upload.array('attachments'), async (req, res) => {
+  const accountEmail = requireAccountEmail(req);
   assertValidRecipients(req.body);
   const payload = mailPayloadFromBody(req.body);
   const files = normalizeUploadedFiles(req.files || []);
   assertTransmissionCapacity(payload, files);
-  const result = await createDraft(accountEmail, payload, files, requestActorFrom(req));
-  res.status(201).json({ draft: result });
-}));
-
-gmailRouter.post('/email/drafts/:id/send', asyncRoute(async (req, res) => {
-  const gmail = await getAuthedGmail(String(accountEmailFrom(req) || ''), requestActorFrom(req));
-  const result = await gmail.users.drafts.send({
-    userId: 'me',
-    requestBody: { id: req.params.id },
+  res.status(201).json({
+    draft: await createDraft(accountEmail, payload, files, requestActorFrom(req)),
   });
-  res.json({ message: result.data });
-}));
+});
 
-gmailRouter.delete('/email/drafts/:id', asyncRoute(async (req, res) => {
-  const gmail = await getAuthedGmail(String(accountEmailFrom(req) || ''), requestActorFrom(req));
-  await gmail.users.drafts.delete({ userId: 'me', id: req.params.id });
-  res.json({ success: true });
-}));
+registerRoute('post', ['/email/drafts/:id/send', '/gmail/drafts/:id/send'], async (req, res) => {
+  res.json(await sendDraft(req));
+});
 
-gmailRouter.post('/gmail/drafts/:id/send', asyncRoute(async (req, res) => {
-  const gmail = await getAuthedGmail(String(accountEmailFrom(req) || ''), requestActorFrom(req));
-  const result = await gmail.users.drafts.send({
-    userId: 'me',
-    requestBody: { id: req.params.id },
-  });
-  res.json({ message: result.data });
-}));
+registerRoute('delete', ['/email/drafts/:id', '/gmail/drafts/:id'], async (req, res) => {
+  res.json(await deleteDraft(req));
+});
 
-gmailRouter.delete('/gmail/drafts/:id', asyncRoute(async (req, res) => {
-  const gmail = await getAuthedGmail(String(accountEmailFrom(req) || ''), requestActorFrom(req));
-  await gmail.users.drafts.delete({ userId: 'me', id: req.params.id });
-  res.json({ success: true });
-}));
+registerRoute('patch', '/email/messages/:id/read', async (req, res) => {
+  res.json(await modifyMessageResponse(req, 'mark_read'));
+});
 
-gmailRouter.patch('/email/messages/:id/read', asyncRoute(async (req, res) => {
-  res.json({
-    message: await modifyMessage(String(accountEmailFrom(req) || ''), req.params.id, 'mark_read', requestActorFrom(req)),
-  });
-}));
+registerRoute('post', '/gmail/messages/:id/read', async (req, res) => {
+  res.json(await modifyMessageResponse(req, 'mark_read'));
+});
 
-gmailRouter.post('/gmail/messages/:id/read', asyncRoute(async (req, res) => {
-  res.json({
-    message: await modifyMessage(String(accountEmailFrom(req) || ''), req.params.id, 'mark_read', requestActorFrom(req)),
-  });
-}));
+registerRoute('patch', '/email/messages/:id/unread', async (req, res) => {
+  res.json(await modifyMessageResponse(req, 'mark_unread'));
+});
 
-gmailRouter.patch('/email/messages/:id/unread', asyncRoute(async (req, res) => {
-  res.json({
-    message: await modifyMessage(String(accountEmailFrom(req) || ''), req.params.id, 'mark_unread', requestActorFrom(req)),
-  });
-}));
+registerRoute('post', '/gmail/messages/:id/unread', async (req, res) => {
+  res.json(await modifyMessageResponse(req, 'mark_unread'));
+});
 
-gmailRouter.post('/gmail/messages/:id/unread', asyncRoute(async (req, res) => {
-  res.json({
-    message: await modifyMessage(String(accountEmailFrom(req) || ''), req.params.id, 'mark_unread', requestActorFrom(req)),
-  });
-}));
+registerRoute('patch', '/email/messages/:id/archive', async (req, res) => {
+  res.json(await modifyMessageResponse(req, 'archive'));
+});
 
-gmailRouter.patch('/email/messages/:id/archive', asyncRoute(async (req, res) => {
-  res.json({
-    message: await modifyMessage(String(accountEmailFrom(req) || ''), req.params.id, 'archive', requestActorFrom(req)),
-  });
-}));
+registerRoute('patch', '/email/messages/:id/trash', async (req, res) => {
+  res.json(await modifyMessageResponse(req, 'trash'));
+});
 
-gmailRouter.patch('/email/messages/:id/trash', asyncRoute(async (req, res) => {
-  res.json({
-    message: await modifyMessage(String(accountEmailFrom(req) || ''), req.params.id, 'trash', requestActorFrom(req)),
-  });
-}));
+registerRoute('patch', '/email/messages/:id/restore', async (req, res) => {
+  res.json(await modifyMessageResponse(req, 'restore'));
+});
 
-gmailRouter.patch('/email/messages/:id/restore', asyncRoute(async (req, res) => {
-  res.json({
-    message: await modifyMessage(String(accountEmailFrom(req) || ''), req.params.id, 'restore', requestActorFrom(req)),
-  });
-}));
+registerRoute('post', ['/email/trash/empty', '/gmail/trash/empty'], async (req, res) => {
+  res.json(await emptyTrash(requireAccountEmail(req), requestActorFrom(req)));
+});
 
-gmailRouter.post('/email/trash/empty', asyncRoute(async (req, res) => {
-  res.json(await emptyTrash(String(accountEmailFrom(req) || ''), requestActorFrom(req)));
-}));
+registerRoute('delete', '/gmail/messages/:id', async (req, res) => {
+  res.json(await modifyMessageResponse(req, 'trash'));
+});
 
-gmailRouter.post('/gmail/trash/empty', asyncRoute(async (req, res) => {
-  res.json(await emptyTrash(String(accountEmailFrom(req) || ''), requestActorFrom(req)));
-}));
+registerRoute('post', '/gmail/messages/:id/archive', async (req, res) => {
+  res.json(await modifyMessageResponse(req, 'archive'));
+});
 
-gmailRouter.delete('/gmail/messages/:id', asyncRoute(async (req, res) => {
-  res.json({
-    message: await modifyMessage(String(accountEmailFrom(req) || ''), req.params.id, 'trash', requestActorFrom(req)),
-  });
-}));
+registerRoute('post', '/gmail/messages/:id/trash', async (req, res) => {
+  res.json(await modifyMessageResponse(req, 'trash'));
+});
 
-gmailRouter.post('/gmail/messages/:id/archive', asyncRoute(async (req, res) => {
-  res.json({
-    message: await modifyMessage(String(accountEmailFrom(req) || ''), req.params.id, 'archive', requestActorFrom(req)),
-  });
-}));
+registerRoute('post', '/gmail/messages/:id/restore', async (req, res) => {
+  res.json(await modifyMessageResponse(req, 'restore'));
+});
 
-gmailRouter.post('/gmail/messages/:id/trash', asyncRoute(async (req, res) => {
-  res.json({
-    message: await modifyMessage(String(accountEmailFrom(req) || ''), req.params.id, 'trash', requestActorFrom(req)),
-  });
-}));
-
-gmailRouter.post('/gmail/messages/:id/restore', asyncRoute(async (req, res) => {
-  res.json({
-    message: await modifyMessage(String(accountEmailFrom(req) || ''), req.params.id, 'restore', requestActorFrom(req)),
-  });
-}));
-
-gmailRouter.post('/email/sync/recent', asyncRoute(async (_req, res) => {
+registerRoute('post', '/email/sync/recent', async (_req, res) => {
   res.json({ success: true, message: 'Sync not implemented yet.' });
-}));
+});
 
 gmailRouter.use(async (error, req, res, _next) => {
   const accountEmail = req.body?.accountEmail || req.query?.accountEmail || null;

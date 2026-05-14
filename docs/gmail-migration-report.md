@@ -4,8 +4,7 @@ Data: migracao realizada dentro da estrutura principal `RC-MOLINA-SEGURADORA`
 
 ## Regras atendidas
 
-- A pasta `gmail-app-original/` foi usada somente como referencia tecnica.
-- Nenhum arquivo dentro de `gmail-app-original/` foi alterado, apagado ou movido.
+- O codigo legado foi usado como referencia tecnica durante a incorporacao e depois removido do workspace.
 - Nenhuma credencial existente foi sobrescrita.
 - A integracao final foi criada no app principal, em novas rotas/modulos do backend e novos componentes do frontend.
 
@@ -55,7 +54,7 @@ Data: migracao realizada dentro da estrutura principal `RC-MOLINA-SEGURADORA`
 - Script criado: `scripts/migrate-gmail-supabase-to-rcm.mjs`
 - Comando: `npm run migrate:gmail-supabase`
 - Dry-run executado nesta sessao: falhou por conectividade/DNS da origem Supabase configurada.
-- Relatorio dessa tentativa: `_backup_pre_merge/gmail_db_migration/2026-05-13T21-18-32-960Z/MIGRATION_REPORT.md`
+- Relatorios futuros desse script passam a ser gravados em `docs/_generated/gmail_db_migration/`.
 
 ## Configuracao manual pendente
 

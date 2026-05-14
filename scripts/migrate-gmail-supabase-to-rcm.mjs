@@ -331,7 +331,7 @@ async function fetchSupabaseRows({ baseUrl, apiKey, table, pageSize = 1000 }) {
 
 async function ensureBackupDir() {
   const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const dir = path.join(projectRoot, '_backup_pre_merge', 'gmail_db_migration', stamp);
+  const dir = path.join(projectRoot, 'docs', '_generated', 'gmail_db_migration', stamp);
   await fs.mkdir(dir, { recursive: true });
   return dir;
 }
