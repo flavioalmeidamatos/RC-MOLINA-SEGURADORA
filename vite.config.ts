@@ -11,6 +11,66 @@ export default defineConfig(() => {
         '@': path.resolve(__dirname, '.'),
       },
     },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            const normalizedId = id.replace(/\\/g, '/');
+
+            if (!normalizedId.includes('node_modules') && !normalizedId.includes('/src/components/webmail/')) {
+              return undefined;
+            }
+
+            if (normalizedId.includes('@tinymce/tinymce-react')) {
+              return 'tinymce-react';
+            }
+
+            if (normalizedId.includes('/tinymce/plugins/')) {
+              const pluginName = normalizedId.split('/tinymce/plugins/')[1]?.split('/')[0] || '';
+              if (['advlist', 'anchor', 'autolink', 'charmap', 'code', 'fullscreen', 'help'].includes(pluginName)) {
+                return 'tinymce-plugins-a';
+              }
+
+              return 'tinymce-plugins-b';
+            }
+
+            if (normalizedId.includes('/tinymce/themes/')) {
+              return 'tinymce-theme';
+            }
+
+            if (normalizedId.includes('/tinymce/icons/')) {
+              return 'tinymce-icons';
+            }
+
+            if (normalizedId.includes('/tinymce/models/')) {
+              return 'tinymce-model';
+            }
+
+            if (normalizedId.includes('/tinymce/')) {
+              return 'tinymce-runtime';
+            }
+
+            if (normalizedId.includes('/src/components/webmail/email_rich_text_editor')) {
+              return 'webmail-editor';
+            }
+
+            if (normalizedId.includes('/src/components/webmail/rc_webmail') || normalizedId.includes('/src/lib/gmail_api')) {
+              return 'webmail-shell';
+            }
+
+            if (normalizedId.includes('react-router-dom') || normalizedId.includes('react-dom') || normalizedId.includes('react')) {
+              return 'react-vendor';
+            }
+
+            if (normalizedId.includes('lucide-react') || normalizedId.includes('motion')) {
+              return 'ui-vendor';
+            }
+
+            return undefined;
+          },
+        },
+      },
+    },
     server: {
       hmr: true,
       watch: {

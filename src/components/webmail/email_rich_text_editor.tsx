@@ -24,7 +24,7 @@ import 'tinymce/plugins/wordcount';
 import 'tinymce/skins/ui/oxide-dark/skin.css';
 import 'tinymce/skins/content/dark/content.css';
 
-type EmailRichTextEditorProps = {
+export type EmailRichTextEditorProps = {
   value: string;
   onChange: (html: string) => void;
   disabled?: boolean;

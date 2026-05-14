@@ -17,9 +17,9 @@ import {
   Unplug,
   X,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState, type ComponentType } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { EmailRichTextEditor } from './email_rich_text_editor';
+import type { EmailRichTextEditorProps } from './email_rich_text_editor';
 import {
   ApiError,
   type Account,
@@ -35,6 +35,10 @@ import {
 
 const DEFAULT_ACCOUNT = 'rcmolina.invest.segurosaude@gmail.com';
 const MAX_TRANSMISSION_BYTES = 25 * 1024 * 1024;
+const EmailRichTextEditor = lazy(async () => {
+  const module = await import('./email_rich_text_editor');
+  return { default: module.EmailRichTextEditor };
+}) as ComponentType<EmailRichTextEditorProps>;
 
 type ComposeState = {
   to: string;
@@ -1356,14 +1360,22 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
               </div>
 
               <div className="mt-5">
-                <EmailRichTextEditor
-                  disabled={busy}
-                  value={compose.bodyHtml}
-                  onChange={(html) => patchCompose({ bodyHtml: html })}
-                  validateFiles={validateComposeFiles}
-                  onValidationError={(message) => setError(message)}
-                  onFilesAdded={(files) => addFiles(files)}
-                />
+                <Suspense
+                  fallback={
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm font-semibold text-slate-500">
+                      Carregando editor de e-mail...
+                    </div>
+                  }
+                >
+                  <EmailRichTextEditor
+                    disabled={busy}
+                    value={compose.bodyHtml}
+                    onChange={(html) => patchCompose({ bodyHtml: html })}
+                    validateFiles={validateComposeFiles}
+                    onValidationError={(message) => setError(message)}
+                    onFilesAdded={(files) => addFiles(files)}
+                  />
+                </Suspense>
               </div>
 
               <div className="mt-5 flex flex-wrap items-center gap-3">
