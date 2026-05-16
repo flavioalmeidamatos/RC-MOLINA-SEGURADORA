@@ -8,7 +8,6 @@
     "start": "tsx server.ts",
     "start:prod": "node --import tsx -e \"process.env.NODE_ENV='production'; import('./server.ts')\"",
     "deploy:hostinger": "powershell -ExecutionPolicy Bypass -File scripts/deploy-hostinger.ps1",
-    "migrate:gmail-supabase": "node scripts/migrate-gmail-supabase-to-rcm.mjs",
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist",

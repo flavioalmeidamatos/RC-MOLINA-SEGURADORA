@@ -1,4 +1,5 @@
 import {
+  AlertCircle,
   Archive,
   CheckCircle2,
   Download,
@@ -522,22 +523,29 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
 
     if (result) {
       setSelectedMessage(null);
-      navigate('/email/sent');
+    navigate('/email/sent');
     }
   }
 
   async function deleteDraftHandler() {
-    if (!selectedDraft) return;
+    const draftToDelete = drafts.find((d) => d.id === selectedMessage?.id) || 
+                         (selectedMessage as any)?.draftId ? { draftId: (selectedMessage as any).draftId } : null;
 
-    const result = await run(
-      () => gmailApi.deleteDraft(accountEmail, selectedDraft.draftId),
-      'Rascunho excluido',
-    );
+    if (!draftToDelete) {
+      setError('Nao foi possivel localizar o ID do rascunho para exclusao.');
+      return;
+    }
 
+    const draftId = (draftToDelete as any).draftId;
+    if (!draftId) {
+      setError('ID do rascunho invalido.');
+      return;
+    }
+
+    const result = await run(() => gmailApi.deleteDraft(accountEmail, draftId), 'Rascunho excluido');
     if (result) {
       setSelectedMessage(null);
-      navigate('/email/drafts');
-      await reloadWorkspace('Rascunho excluido');
+      void loadMessages('drafts');
     }
   }
 
@@ -591,6 +599,23 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
     if (!emails.trim()) return true;
     return emails.split(',').every(email => isValidEmail(email.trim()));
   }
+
+  const validateFieldNavigation = (e: React.KeyboardEvent<HTMLInputElement>, field: string, value: string) => {
+    const isNavigationKey = e.key === 'Tab' || e.key === 'Enter' || e.key === 'ArrowRight';
+    
+    if (isNavigationKey) {
+      if (e.key === 'ArrowRight' && e.currentTarget.selectionStart !== value.length) {
+        return;
+      }
+
+      if (['to', 'cc', 'bcc'].includes(field)) {
+        if (value.trim() && !validateEmails(value)) {
+          const label = field === 'to' ? 'Para' : field === 'cc' ? 'Cc' : 'Cco';
+          setError(`O formato de e-mail no campo '${label}' é inválido.`);
+        }
+      }
+    }
+  };
 
   async function submitCompose(mode: 'send' | 'queue' | 'draft') {
     if (mode !== 'draft') {
@@ -728,98 +753,81 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
     }
   }, [activeSection, activeThreadId, messageItems, selectedMessage?.id]);
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (activeSection === 'settings' || !messageItems.length) return;
+      if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+
+      event.preventDefault();
+      const currentIndex = messageItems.findIndex((m) => m.id === selectedMessage?.id);
+      let nextIndex = -1;
+
+      if (event.key === 'ArrowUp') {
+        nextIndex = currentIndex > 0 ? currentIndex - 1 : messageItems.length - 1;
+      } else {
+        nextIndex = currentIndex < messageItems.length - 1 ? currentIndex + 1 : 0;
+      }
+
+      if (nextIndex !== -1) {
+        const nextMessage = messageItems[nextIndex];
+        void openMessage(nextMessage.id);
+        
+        // Garantir que o item fique visivel
+        const element = document.getElementById(`msg-${nextMessage.id}`);
+        element?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeSection, messageItems, selectedMessage?.id, openMessage]);
+
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pb-4 pt-2 sm:px-6 sm:pb-6 md:px-8 md:pb-8">
-      <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden px-4 pt-2 sm:px-6 md:px-8">
+      <section className="rounded-[28px] border border-slate-200 bg-white px-5 py-3 shadow-sm">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#b58c2a]">
-              Webmail RC Molina
-            </p>
-            <h2 className="mt-1 text-2xl font-black text-[#0c1826]">Gmail integrado</h2>
-            <p className="mt-2 text-sm text-slate-500">
-              Conecte a conta autorizada, acompanhe a caixa de entrada e envie e-mails sem sair da RC Molina Seguros.
-            </p>
+            <h2 className="text-xl font-black text-[#0c1826]">Gmail integrado</h2>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <select
-              value={accountEmail}
-              onChange={(event) => setAccountEmail(event.target.value)}
-              className="min-h-11 rounded-full border border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-700 focus:border-[#b58c2a] focus:ring-1 focus:ring-[#b58c2a]"
-            >
-              {accounts.length > 0 ? (
-                accounts.map((account) => (
-                  <option key={account.email} value={account.email}>
-                    {account.email}
-                  </option>
-                ))
-              ) : (
-                <option value={accountEmail}>{accountEmail}</option>
-              )}
-            </select>
-
             <button
-              type="button"
-              onClick={() => void connectAccount()}
-              disabled={busy}
-              className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#0c1826] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#16283c] focus:outline-none focus:ring-2 focus:ring-[#b58c2a]/50 disabled:opacity-60"
+              onClick={() => openComposeModal()}
+              className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#b58c2a] px-6 py-2 text-sm font-bold text-white shadow-md shadow-[#b58c2a]/20 transition-all hover:bg-[#a17c1f] hover:shadow-lg active:scale-95"
             >
-              {busy ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} />}
-              {selectedAccount ? 'Reconectar Gmail' : 'Conectar Gmail'}
+              <MailPlus size={18} />
+              Novo E-mail
             </button>
-
-            {selectedAccount ? (
-              <button
-                type="button"
-                onClick={() => void disconnectAccountHandler()}
-                disabled={busy}
-                className="inline-flex min-h-11 items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-slate-600 transition hover:border-red-200 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-200"
-              >
-                <Unplug size={16} />
-                Desconectar
-              </button>
-            ) : null}
-
             <button
-              type="button"
               onClick={() => void (activeSection === 'settings' ? loadConnectionStatus() : reloadWorkspace('Dados atualizados'))}
               disabled={busy || !selectedAccount}
-              className="inline-flex min-h-11 items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-slate-600 transition hover:border-[#b58c2a]/40 hover:text-[#b58c2a] focus:outline-none focus:ring-2 focus:ring-[#b58c2a]/20"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition-all hover:border-[#b58c2a]/40 hover:bg-[#fffaf0] hover:text-[#b58c2a] disabled:opacity-50"
+              title="Sincronizar agora"
             >
-              <RefreshCcw size={16} />
-              Atualizar
+              <RefreshCcw size={18} className={(loadingMessages || busy) ? 'animate-spin' : ''} />
             </button>
-
             <button
-              type="button"
-              onClick={openComposeModal}
-              disabled={!selectedAccount}
-              className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#b58c2a] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#a17c1f] focus:outline-none focus:ring-2 focus:ring-[#b58c2a]/50 disabled:opacity-60"
+              onClick={() => openSettings()}
+              className={`inline-flex h-11 w-11 items-center justify-center rounded-full border transition-all ${
+                activeSection === 'settings'
+                  ? 'border-[#b58c2a] bg-[#fffaf0] text-[#b58c2a]'
+                  : 'border-slate-200 bg-white text-slate-500 hover:border-[#b58c2a]/40 hover:bg-[#fffaf0] hover:text-[#b58c2a]'
+              }`}
+              title="Configuracoes"
             >
-              <MailPlus size={16} />
-              Novo e-mail
+              <Settings2 size={18} />
             </button>
           </div>
         </div>
 
-        {activePermissionIssue ? (
-          <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
+        {activePermissionIssue && (
+          <div className="mt-4 flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900 shadow-sm">
+            <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+              <AlertCircle size={14} />
+            </div>
             {activePermissionIssue.message}
           </div>
-        ) : null}
-
-        {status ? (
-          <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
-            {status}
-          </div>
-        ) : null}
-
-        {error ? (
-          <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
-            {error}
-          </div>
-        ) : null}
+        )}
       </section>
 
       {!selectedAccount ? (
@@ -846,8 +854,8 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
           </div>
         </section>
       ) : (
-        <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[280px_minmax(340px,420px)_minmax(0,1fr)]">
-          <aside className="flex min-h-0 flex-col gap-4">
+        <div className="grid h-[calc(100vh-180px)] min-h-0 flex-1 gap-4 xl:grid-cols-[280px_minmax(340px,420px)_minmax(0,1fr)]">
+          <aside className="flex min-h-0 flex-col gap-4 overflow-y-auto pr-1 custom-scrollbar">
             <section className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm">
               <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Caixas</p>
               <div className="mt-3 space-y-2">
@@ -860,15 +868,15 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
                       key={item.id}
                       type="button"
                       onClick={() => openFolder(item.id)}
-                      className={`flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left transition ${
+                      className={`flex w-full items-center justify-between rounded-2xl px-4 py-2 text-left transition ${
                         active
                           ? 'bg-black text-white'
                           : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
                       }`}
                     >
                       <span className="flex items-center gap-3">
-                        <Icon size={17} className={active ? 'text-[#d4af37]' : 'text-slate-400'} />
-                        <span className="font-semibold">{item.label}</span>
+                        <Icon size={15} className={active ? 'text-[#d4af37]' : 'text-slate-400'} />
+                        <span className="text-xs font-bold">{item.label}</span>
                       </span>
                     </button>
                   );
@@ -876,7 +884,7 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
                 <button
                   type="button"
                   onClick={openSettings}
-                  className={`flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left transition ${
+                  className={`flex w-full items-center justify-between rounded-2xl px-4 py-2 text-left transition ${
                     activeSection === 'settings'
                       ? 'bg-black text-white'
                       : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
@@ -884,10 +892,10 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
                 >
                   <span className="flex items-center gap-3">
                     <Settings2
-                      size={17}
+                      size={15}
                       className={activeSection === 'settings' ? 'text-[#d4af37]' : 'text-slate-400'}
                     />
-                    <span className="font-semibold">{settingsItem.label}</span>
+                    <span className="text-xs font-bold">{settingsItem.label}</span>
                   </span>
                 </button>
               </div>
@@ -928,44 +936,44 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
                   value={filters.from}
                   onChange={(event) => setFilters({ ...filters, from: event.target.value })}
                   placeholder="Remetente"
-                  className="min-h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:border-[#b58c2a] focus:ring-1 focus:ring-[#b58c2a]"
+                  className="min-h-10 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-xs text-slate-700 focus:border-[#b58c2a] focus:ring-1 focus:ring-[#b58c2a]"
                 />
                 <input
                   value={filters.subject}
                   onChange={(event) => setFilters({ ...filters, subject: event.target.value })}
                   placeholder="Assunto"
-                  className="min-h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:border-[#b58c2a] focus:ring-1 focus:ring-[#b58c2a]"
+                  className="min-h-10 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-xs text-slate-700 focus:border-[#b58c2a] focus:ring-1 focus:ring-[#b58c2a]"
                 />
                 <input
                   value={filters.content}
                   onChange={(event) => setFilters({ ...filters, content: event.target.value })}
                   placeholder="Conteudo"
-                  className="min-h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:border-[#b58c2a] focus:ring-1 focus:ring-[#b58c2a]"
+                  className="min-h-10 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-xs text-slate-700 focus:border-[#b58c2a] focus:ring-1 focus:ring-[#b58c2a]"
                 />
                 <div className="grid grid-cols-2 gap-2">
                   <input
                     type="date"
                     value={filters.after}
                     onChange={(event) => setFilters({ ...filters, after: event.target.value })}
-                    className="min-h-11 rounded-2xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700 focus:border-[#b58c2a] focus:ring-1 focus:ring-[#b58c2a]"
+                    className="min-h-10 rounded-2xl border border-slate-200 bg-slate-50 px-3 text-xs text-slate-700 focus:border-[#b58c2a] focus:ring-1 focus:ring-[#b58c2a]"
                   />
                   <input
                     type="date"
                     value={filters.before}
                     onChange={(event) => setFilters({ ...filters, before: event.target.value })}
-                    className="min-h-11 rounded-2xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700 focus:border-[#b58c2a] focus:ring-1 focus:ring-[#b58c2a]"
+                    className="min-h-10 rounded-2xl border border-slate-200 bg-slate-50 px-3 text-xs text-slate-700 focus:border-[#b58c2a] focus:ring-1 focus:ring-[#b58c2a]"
                   />
                 </div>
                 <select
                   value={filters.status}
                   onChange={(event) => setFilters({ ...filters, status: event.target.value })}
-                  className="min-h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:border-[#b58c2a] focus:ring-1 focus:ring-[#b58c2a]"
+                  className="min-h-10 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-xs text-slate-700 focus:border-[#b58c2a] focus:ring-1 focus:ring-[#b58c2a]"
                 >
                   <option value="">Status</option>
                   <option value="unread">Nao lidas</option>
                   <option value="read">Lidas</option>
                 </select>
-                <label className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600">
+                <label className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-[13px] font-semibold text-slate-600">
                   <input
                     type="checkbox"
                     checked={filters.hasAttachment}
@@ -976,7 +984,7 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
                 <button
                   type="button"
                   onClick={() => void loadMessages()}
-                  className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#0c1826] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#16283c] focus:outline-none focus:ring-2 focus:ring-[#b58c2a]/50"
+                  className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-2xl bg-[#0c1826] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#16283c] focus:outline-none focus:ring-2 focus:ring-[#b58c2a]/50"
                 >
                   <Search size={16} />
                   Buscar
@@ -985,74 +993,13 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
               )}
             </section>
 
-            <section className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm">
-              <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Fila local</p>
-              <div className="mt-3 space-y-3">
-                {outbox.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-5 text-sm font-semibold text-slate-400">
-                    Nenhuma mensagem pendente.
-                  </div>
-                ) : (
-                  outbox.slice(0, 4).map((item) => (
-                    <div key={item.id} className="rounded-2xl border border-slate-200 p-3">
-                      <p className="truncate text-sm font-black text-[#0c1826]">{item.subject || '(sem assunto)'}</p>
-                      <p className="mt-1 text-xs text-slate-500">
-                        {item.to_recipients.join(', ') || 'Sem destinatario'}
-                      </p>
-                      <div className="mt-3 flex items-center justify-between gap-2">
-                        <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
-                          {item.status}
-                        </span>
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() => void sendOutboxMessage(item.id)}
-                            className="rounded-full border border-slate-200 px-3 py-1 text-xs font-bold text-slate-600 transition hover:border-[#b58c2a]/40 hover:text-[#b58c2a]"
-                          >
-                            Enviar
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => void deleteOutboxMessage(item.id)}
-                            className="rounded-full border border-slate-200 px-3 py-1 text-xs font-bold text-slate-600 transition hover:border-red-200 hover:text-red-600"
-                          >
-                            Excluir
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </section>
+            </aside>
 
-            <section className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm">
-              <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Logs recentes</p>
-              <div className="mt-3 space-y-3">
-                {logs.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-5 text-sm font-semibold text-slate-400">
-                    Nenhum log recente.
-                  </div>
-                ) : (
-                  logs.slice(0, 4).map((log) => (
-                    <div key={log.id} className="rounded-2xl border border-slate-200 p-3">
-                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#b58c2a]">
-                        {log.event_type}
-                      </p>
-                      <p className="mt-2 text-sm font-semibold text-[#0c1826]">{log.message}</p>
-                      <p className="mt-1 text-xs text-slate-500">{formatDateTime(log.created_at)}</p>
-                    </div>
-                  ))
-                )}
-              </div>
-            </section>
-          </aside>
-
-          <section className="flex min-h-[420px] flex-col rounded-[28px] border border-slate-200 bg-white shadow-sm">
+          <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-t-[28px] rounded-b-none border border-slate-200 border-b-0 bg-white shadow-sm">
             <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
               <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Mensagens</p>
-                <h3 className="mt-1 text-lg font-black text-[#0c1826]">
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Mensagens</p>
+                <h3 className="mt-0.5 text-base font-black text-[#0c1826]">
                   {currentSectionLabel}
                 </h3>
               </div>
@@ -1069,42 +1016,44 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
             </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
-              {activeSection === 'settings' ? (
-                <div className="space-y-4 px-2 py-2">
-                  <article className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                    <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Status OAuth</p>
-                    <h4 className="mt-2 text-xl font-black text-[#0c1826]">
+            {activeSection === 'settings' ? (
+              <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+                <div className="grid gap-3">
+                  <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Status OAuth</p>
+                    <h4 className="mt-1 text-lg font-black text-[#0c1826]">
                       {connectionStatus?.connected ? 'Conta conectada' : 'Conta desconectada'}
                     </h4>
-                    <p className="mt-2 text-sm text-slate-500">
+                    <p className="mt-1 text-xs text-slate-500">
                       Conta: {connectionStatus?.email || accountEmail}
                     </p>
-                    <p className="mt-1 text-sm text-slate-500">
+                    <p className="mt-1 text-xs text-slate-500">
                       Usuario RC Molina: {userEmail || 'nao identificado'} {userId ? `(${userId})` : ''}
                     </p>
-                    <p className="mt-1 text-sm text-slate-500">
+                    <p className="mt-1 text-xs text-slate-500">
                       Estado atual: {connectionStatus?.status || 'sem vinculo registrado'}
                     </p>
                   </article>
 
-                  <article className="rounded-2xl border border-slate-200 bg-white p-5">
-                    <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Escopos e reconexao</p>
+                  <article className="rounded-2xl border border-slate-200 bg-white p-4">
+                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Escopos e reconexao</p>
                     {(connectionStatus?.missingScopes || []).length > 0 ? (
-                      <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
+                      <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">
                         Faltam permissoes: {(connectionStatus?.missingScopes || []).join(', ')}
                       </div>
                     ) : (
-                      <div className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
+                      <div className="mt-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
                         Os escopos principais do Gmail estao completos.
                       </div>
                     )}
                     {(connectionStatus?.missingTrashScopes || []).length > 0 ? (
-                      <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
+                      <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">
                         Escopo para limpar lixeira pendente: {(connectionStatus?.missingTrashScopes || []).join(', ')}
                       </div>
                     ) : null}
                   </article>
                 </div>
+              </div>
               ) : loadingMessages ? (
                 <div className="flex h-full items-center justify-center">
                   <Loader2 size={24} className="animate-spin text-[#b58c2a]" />
@@ -1118,9 +1067,10 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
                   {messageItems.map((message) => (
                     <button
                       key={message.id}
+                      id={`msg-${message.id}`}
                       type="button"
                       onClick={() => void openMessage(message.id)}
-                      className={`flex w-full flex-col rounded-2xl border px-4 py-3 text-left transition ${
+                      className={`flex w-full flex-col rounded-2xl border px-3 py-2.5 text-left transition ${
                         selectedMessage?.id === message.id
                           ? 'border-[#b58c2a]/50 bg-[#fffaf0]'
                           : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
@@ -1128,10 +1078,10 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className={`truncate text-sm font-black ${message.unread ? 'text-[#0c1826]' : 'text-slate-700'}`}>
+                          <p className={`truncate text-xs font-black ${message.unread ? 'text-[#0c1826]' : 'text-slate-700'}`}>
                             {compactSender(message.from || message.to)}
                           </p>
-                          <p className="mt-1 truncate text-sm font-semibold text-slate-500">
+                          <p className="mt-0.5 truncate text-xs font-semibold text-slate-500">
                             {message.subject || '(sem assunto)'}
                           </p>
                         </div>
@@ -1152,53 +1102,97 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
             </div>
           </section>
 
-          <section className="flex min-h-[420px] flex-col rounded-[28px] border border-slate-200 bg-white shadow-sm">
+          <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-t-[28px] rounded-b-none border border-slate-200 border-b-0 bg-white shadow-sm">
             {activeSection === 'settings' ? (
-              <div className="flex h-full flex-col justify-between px-6 py-5">
-                <div>
-                  <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Conexao Gmail</p>
-                  <h3 className="mt-2 text-2xl font-black text-[#0c1826]">
+              <div className="flex min-h-0 flex-1 flex-col justify-between px-5 py-4">
+                <div className="min-h-0 flex-1 overflow-y-auto">
+                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Conexao Gmail</p>
+                  <h3 className="mt-1 text-lg font-black text-[#0c1826]">
                     Painel de configuracoes do Webmail
                   </h3>
-                  <p className="mt-3 text-sm leading-6 text-slate-500">
-                    Esta area usa a autenticacao principal da RC Molina Seguros e nao cria login paralelo.
+                  <p className="mt-2 text-[12px] leading-5 text-slate-500">
+                    Esta area usa a autenticacao principal da RC Molina Seguros.
                   </p>
                 </div>
 
-                <div className="grid gap-4">
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                    <p className="text-sm font-semibold text-slate-500">Conta vinculada</p>
-                    <p className="mt-2 text-lg font-black text-[#0c1826]">
+                <div className="grid gap-3">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-xs font-semibold text-slate-500">Conta vinculada</p>
+                    <p className="mt-1 text-base font-black text-[#0c1826]">
                       {connectionStatus?.email || selectedAccount?.email || accountEmail}
                     </p>
-                    <p className="mt-2 text-sm text-slate-500">
+                    <p className="mt-1 text-xs text-slate-500">
                       Usuario autenticado: {userEmail || 'nao identificado'}
                     </p>
                   </div>
 
-                  <div className="rounded-2xl border border-slate-200 bg-white p-5">
-                    <p className="text-sm font-semibold text-slate-500">Acoes</p>
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={() => void connectAccount()}
-                        disabled={busy}
-                        className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#0c1826] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#16283c] disabled:opacity-60"
-                      >
-                        <Mail size={16} />
-                        {selectedAccount ? 'Reconectar Gmail' : 'Conectar Gmail'}
-                      </button>
-                      {selectedAccount ? (
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                    <p className="text-xs font-semibold text-slate-500">Configuracoes de Conta</p>
+                    <div className="mt-3 space-y-3">
+                      <div>
+                        <p className="mb-1 text-[10px] font-bold text-slate-400 uppercase">Selecionar Conta</p>
+                        <select
+                          value={accountEmail}
+                          onChange={(event) => setAccountEmail(event.target.value)}
+                          className="w-full min-h-10 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-xs font-semibold text-slate-700 focus:border-[#b58c2a] focus:ring-1 focus:ring-[#b58c2a]"
+                        >
+                          {accounts.length > 0 ? (
+                            accounts.map((account) => (
+                              <option key={account.email} value={account.email}>
+                                {account.email}
+                              </option>
+                            ))
+                          ) : (
+                            <option value={DEFAULT_ACCOUNT}>{DEFAULT_ACCOUNT}</option>
+                          )}
+                        </select>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2 pt-2">
                         <button
                           type="button"
-                          onClick={() => void disconnectAccountHandler()}
+                          onClick={() => void connectAccount()}
                           disabled={busy}
-                          className="inline-flex min-h-11 items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-slate-600 transition hover:border-red-200 hover:text-red-600"
+                          className="inline-flex min-h-10 items-center gap-2 rounded-full bg-[#0c1826] px-5 py-2 text-xs font-semibold text-white transition hover:bg-[#16283c] disabled:opacity-60"
                         >
-                          <Unplug size={16} />
-                          Desconectar
+                          <Mail size={16} />
+                          {selectedAccount ? 'Reconectar Gmail' : 'Conectar Gmail'}
                         </button>
-                      ) : null}
+                        {selectedAccount ? (
+                          <button
+                            type="button"
+                            onClick={() => void disconnectAccountHandler()}
+                            disabled={busy}
+                            className="inline-flex min-h-10 items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2 text-xs font-semibold text-slate-600 transition hover:border-red-200 hover:text-red-600"
+                          >
+                            <Unplug size={16} />
+                            Desconectar
+                          </button>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                    <p className="text-xs font-semibold text-slate-500">Mensagens (Logs)</p>
+                    <div className="mt-3 space-y-2">
+                      {logs.length === 0 ? (
+                        <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-5 text-sm font-semibold text-slate-400">
+                          Nenhum registro de log encontrado.
+                        </div>
+                      ) : (
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          {logs.slice(0, 10).map((log) => (
+                            <div key={log.id} className="rounded-xl border border-slate-200 p-3 transition hover:bg-slate-50">
+                              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#b58c2a]">
+                                {log.event_type}
+                              </p>
+                              <p className="mt-1 text-[13px] font-semibold text-[#0c1826] leading-relaxed">{log.message}</p>
+                              <p className="mt-1 text-[10px] font-bold text-slate-400">{formatDateTime(log.created_at)}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1347,7 +1341,7 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
 
       {showComposeModal ? (
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm">
-          <div className="flex max-h-[92vh] w-full max-w-[1280px] flex-col overflow-hidden rounded-[30px] border border-white/60 bg-white shadow-2xl">
+          <div className="flex max-h-[92vh] w-full max-w-[1400px] flex-col overflow-hidden rounded-[30px] border border-white/60 bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
               <div>
                 <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#b58c2a]">
@@ -1365,30 +1359,44 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
             </div>
 
             <div className="min-h-0 overflow-y-auto p-6">
+              {error && (
+                <div className="mb-6 flex items-center gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 shadow-sm animate-in fade-in slide-in-from-top-1">
+                  <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600">
+                    <AlertCircle size={14} />
+                  </div>
+                  {error}
+                </div>
+              )}
               <div className="grid gap-3 md:grid-cols-2">
                 <input
                   value={compose.to}
                   onChange={(event) => patchCompose({ to: event.target.value })}
+                  onKeyDown={(e) => validateFieldNavigation(e, 'to', compose.to)}
+                  onBlur={() => !validateEmails(compose.to) && setError('O formato de e-mail no campo \'Para\' é inválido.')}
                   placeholder="Para"
-                  className="min-h-11 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700"
+                  className="min-h-11 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:border-[#b58c2a] focus:ring-1 focus:ring-[#b58c2a]"
                 />
                 <input
                   value={compose.cc}
                   onChange={(event) => patchCompose({ cc: event.target.value })}
+                  onKeyDown={(e) => validateFieldNavigation(e, 'cc', compose.cc)}
+                  onBlur={() => !validateEmails(compose.cc) && setError('O formato de e-mail no campo \'Cc\' é inválido.')}
                   placeholder="Cc"
-                  className="min-h-11 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700"
+                  className="min-h-11 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:border-[#b58c2a] focus:ring-1 focus:ring-[#b58c2a]"
                 />
                 <input
                   value={compose.bcc}
                   onChange={(event) => patchCompose({ bcc: event.target.value })}
+                  onKeyDown={(e) => validateFieldNavigation(e, 'bcc', compose.bcc)}
+                  onBlur={() => !validateEmails(compose.bcc) && setError('O formato de e-mail no campo \'Cco\' é inválido.')}
                   placeholder="Cco"
-                  className="min-h-11 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700"
+                  className="min-h-11 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:border-[#b58c2a] focus:ring-1 focus:ring-[#b58c2a]"
                 />
                 <input
                   value={compose.subject}
                   onChange={(event) => patchCompose({ subject: event.target.value })}
                   placeholder="Assunto"
-                  className="min-h-11 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700"
+                  className="min-h-11 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:border-[#b58c2a] focus:ring-1 focus:ring-[#b58c2a]"
                 />
               </div>
 
@@ -1460,22 +1468,13 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
-                    onClick={() => void submitCompose('draft')}
-                    disabled={busy}
-                    className="inline-flex min-h-11 items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-slate-600 transition hover:border-[#b58c2a]/40 hover:text-[#b58c2a]"
-                  >
-                    <FileText size={16} />
-                    Salvar rascunho
-                  </button>
-                  <button
-                    type="button"
                     onClick={() => void submitCompose('queue')}
                     disabled={busy}
                     className="inline-flex min-h-11 items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-slate-600 transition hover:border-[#b58c2a]/40 hover:text-[#b58c2a]"
-                >
-                  <Archive size={16} />
-                  Enviar depois
-                </button>
+                  >
+                    <Archive size={16} />
+                    Enviar depois
+                  </button>
                 <button
                   type="button"
                   onClick={() => void submitCompose('send')}

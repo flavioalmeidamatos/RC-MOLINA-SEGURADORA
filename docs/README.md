@@ -55,11 +55,9 @@ Create a production backup on the VPS with:
 
 `bash scripts/backup-hostinger-db.sh`
 
-Current migration status:
+Current state:
 
-- The application no longer uses Supabase SDK/configuration.
-- The production database schema is local on the Hostinger VPS.
-- A bootstrap admin user is created automatically if `ADMIN_INITIAL_PASSWORD` is configured and the admin e-mail does not exist.
-- Historical Supabase `USUARIOS`, `CODIGOS_LOGIN` and avatar files were migrated to the Hostinger VPS on 2026-05-03.
-- Supabase `AUDITORIA` had no rows at migration time.
-- Runtime API endpoints are served by `server.ts`; old serverless handlers are not part of the production deploy path.
+- The application is 100% standalone and does not depend on external BaaS (like Supabase).
+- The production database is local PostgreSQL on the Hostinger VPS.
+- A bootstrap admin user is created automatically if `ADMIN_INITIAL_PASSWORD` is configured.
+- Runtime API endpoints are served by `server.ts`.
