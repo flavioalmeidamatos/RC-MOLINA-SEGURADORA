@@ -582,10 +582,43 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
     patchCompose({ files: [...compose.files, ...files] });
   }
 
+  function isValidEmail(email: string) {
+    const regex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+    return regex.test(email.trim());
+  }
+
+  function validateEmails(emails: string) {
+    if (!emails.trim()) return true;
+    return emails.split(',').every(email => isValidEmail(email.trim()));
+  }
+
   async function submitCompose(mode: 'send' | 'queue' | 'draft') {
-    if (mode !== 'draft' && !compose.to.trim()) {
-      setError('Informe pelo menos um destinatario em Para.');
-      return;
+    if (mode !== 'draft') {
+      if (!compose.to.trim()) {
+        setError('O campo "Para" e obrigatorio.');
+        return;
+      }
+      if (!compose.subject.trim()) {
+        setError('O campo "Assunto" e obrigatorio.');
+        return;
+      }
+      if (!htmlToPlainText(compose.bodyHtml).trim()) {
+        setError('O "Corpo do email" e obrigatorio.');
+        return;
+      }
+
+      if (!validateEmails(compose.to)) {
+        setError('Um ou mais e-mails no campo "Para" sao invalidos.');
+        return;
+      }
+      if (!validateEmails(compose.cc)) {
+        setError('Um ou mais e-mails no campo "Cc" sao invalidos.');
+        return;
+      }
+      if (!validateEmails(compose.bcc)) {
+        setError('Um ou mais e-mails no campo "Cco" sao invalidos.');
+        return;
+      }
     }
 
     const limitMessage = buildTransmissionLimitMessage(compose);
@@ -703,7 +736,7 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
             <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#b58c2a]">
               Webmail RC Molina
             </p>
-            <h2 className="mt-1 text-2xl font-black text-[#0c1826]">Gmail integrado ao dashboard</h2>
+            <h2 className="mt-1 text-2xl font-black text-[#0c1826]">Gmail integrado</h2>
             <p className="mt-2 text-sm text-slate-500">
               Conecte a conta autorizada, acompanhe a caixa de entrada e envie e-mails sem sair da RC Molina Seguros.
             </p>
@@ -713,7 +746,7 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
             <select
               value={accountEmail}
               onChange={(event) => setAccountEmail(event.target.value)}
-              className="min-h-11 rounded-full border border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-700"
+              className="min-h-11 rounded-full border border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-700 focus:border-[#b58c2a] focus:ring-1 focus:ring-[#b58c2a]"
             >
               {accounts.length > 0 ? (
                 accounts.map((account) => (
@@ -730,7 +763,7 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
               type="button"
               onClick={() => void connectAccount()}
               disabled={busy}
-              className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#0c1826] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#16283c] disabled:opacity-60"
+              className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#0c1826] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#16283c] focus:outline-none focus:ring-2 focus:ring-[#b58c2a]/50 disabled:opacity-60"
             >
               {busy ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} />}
               {selectedAccount ? 'Reconectar Gmail' : 'Conectar Gmail'}
@@ -741,7 +774,7 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
                 type="button"
                 onClick={() => void disconnectAccountHandler()}
                 disabled={busy}
-                className="inline-flex min-h-11 items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-slate-600 transition hover:border-red-200 hover:text-red-600"
+                className="inline-flex min-h-11 items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-slate-600 transition hover:border-red-200 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-200"
               >
                 <Unplug size={16} />
                 Desconectar
@@ -752,7 +785,7 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
               type="button"
               onClick={() => void (activeSection === 'settings' ? loadConnectionStatus() : reloadWorkspace('Dados atualizados'))}
               disabled={busy || !selectedAccount}
-              className="inline-flex min-h-11 items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-slate-600 transition hover:border-[#b58c2a]/40 hover:text-[#b58c2a]"
+              className="inline-flex min-h-11 items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-slate-600 transition hover:border-[#b58c2a]/40 hover:text-[#b58c2a] focus:outline-none focus:ring-2 focus:ring-[#b58c2a]/20"
             >
               <RefreshCcw size={16} />
               Atualizar
@@ -762,7 +795,7 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
               type="button"
               onClick={openComposeModal}
               disabled={!selectedAccount}
-              className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#b58c2a] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#a17c1f] disabled:opacity-60"
+              className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#b58c2a] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#a17c1f] focus:outline-none focus:ring-2 focus:ring-[#b58c2a]/50 disabled:opacity-60"
             >
               <MailPlus size={16} />
               Novo e-mail
@@ -829,7 +862,7 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
                       onClick={() => openFolder(item.id)}
                       className={`flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left transition ${
                         active
-                          ? 'bg-[#0c1826] text-white'
+                          ? 'bg-black text-white'
                           : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
                       }`}
                     >
@@ -845,7 +878,7 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
                   onClick={openSettings}
                   className={`flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left transition ${
                     activeSection === 'settings'
-                      ? 'bg-[#0c1826] text-white'
+                      ? 'bg-black text-white'
                       : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
                   }`}
                 >
@@ -895,38 +928,38 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
                   value={filters.from}
                   onChange={(event) => setFilters({ ...filters, from: event.target.value })}
                   placeholder="Remetente"
-                  className="min-h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700"
+                  className="min-h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:border-[#b58c2a] focus:ring-1 focus:ring-[#b58c2a]"
                 />
                 <input
                   value={filters.subject}
                   onChange={(event) => setFilters({ ...filters, subject: event.target.value })}
                   placeholder="Assunto"
-                  className="min-h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700"
+                  className="min-h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:border-[#b58c2a] focus:ring-1 focus:ring-[#b58c2a]"
                 />
                 <input
                   value={filters.content}
                   onChange={(event) => setFilters({ ...filters, content: event.target.value })}
                   placeholder="Conteudo"
-                  className="min-h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700"
+                  className="min-h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:border-[#b58c2a] focus:ring-1 focus:ring-[#b58c2a]"
                 />
                 <div className="grid grid-cols-2 gap-2">
                   <input
                     type="date"
                     value={filters.after}
                     onChange={(event) => setFilters({ ...filters, after: event.target.value })}
-                    className="min-h-11 rounded-2xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700"
+                    className="min-h-11 rounded-2xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700 focus:border-[#b58c2a] focus:ring-1 focus:ring-[#b58c2a]"
                   />
                   <input
                     type="date"
                     value={filters.before}
                     onChange={(event) => setFilters({ ...filters, before: event.target.value })}
-                    className="min-h-11 rounded-2xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700"
+                    className="min-h-11 rounded-2xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700 focus:border-[#b58c2a] focus:ring-1 focus:ring-[#b58c2a]"
                   />
                 </div>
                 <select
                   value={filters.status}
                   onChange={(event) => setFilters({ ...filters, status: event.target.value })}
-                  className="min-h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700"
+                  className="min-h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:border-[#b58c2a] focus:ring-1 focus:ring-[#b58c2a]"
                 >
                   <option value="">Status</option>
                   <option value="unread">Nao lidas</option>
@@ -943,7 +976,7 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
                 <button
                   type="button"
                   onClick={() => void loadMessages()}
-                  className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#0c1826] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#16283c]"
+                  className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#0c1826] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#16283c] focus:outline-none focus:ring-2 focus:ring-[#b58c2a]/50"
                 >
                   <Search size={16} />
                   Buscar
@@ -1314,7 +1347,7 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
 
       {showComposeModal ? (
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm">
-          <div className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-[30px] border border-white/60 bg-white shadow-2xl">
+          <div className="flex max-h-[92vh] w-full max-w-[1280px] flex-col overflow-hidden rounded-[30px] border border-white/60 bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
               <div>
                 <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#b58c2a]">
