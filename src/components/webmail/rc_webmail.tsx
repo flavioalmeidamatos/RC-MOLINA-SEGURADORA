@@ -1100,7 +1100,7 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
                 <input
                   value={filters.from}
                   onChange={(event) => setFilters({ ...filters, from: event.target.value })}
-                  placeholder="Remetente"
+                  placeholder={activeFolder === 'sent' ? "Destinatário / Contato" : "Remetente"}
                   className="min-h-10 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-xs text-slate-700 focus:border-[#b58c2a] focus:ring-1 focus:ring-[#b58c2a]"
                 />
                 <input

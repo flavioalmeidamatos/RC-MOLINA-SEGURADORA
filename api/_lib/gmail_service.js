@@ -98,7 +98,13 @@ function folderToLabel(folder) {
 function buildSearchQuery(filters = {}, folder = 'inbox') {
   const terms = [];
 
-  if (filters.from) terms.push(`from:${filters.from}`);
+  if (filters.from) {
+    if (folder === 'sent') {
+      terms.push(`(to:${filters.from} OR from:${filters.from})`);
+    } else {
+      terms.push(`from:${filters.from}`);
+    }
+  }
   if (filters.subject) terms.push(`subject:(${filters.subject})`);
   if (filters.content) terms.push(filters.content);
   if (filters.after) terms.push(`after:${String(filters.after).replaceAll('-', '/')}`);
