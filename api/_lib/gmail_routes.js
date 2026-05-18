@@ -403,12 +403,29 @@ async function sendDraft(req) {
 
 async function deleteDraft(req) {
   const gmail = await getAuthedGmail(requireAccountEmail(req), requestActorFrom(req));
-  const draft = await gmail.users.drafts.get({ userId: 'me', id: req.params.id });
-  const messageId = draft.data.message?.id;
+  let draftId = req.params.id;
+  let messageId = null;
+
+  try {
+    const draft = await gmail.users.drafts.get({ userId: 'me', id: draftId });
+    messageId = draft.data.message?.id;
+  } catch (err) {
+    const list = await gmail.users.drafts.list({ userId: 'me' });
+    const draft = (list.data.drafts || []).find((d) => d.message?.id === draftId);
+    if (draft) {
+      draftId = draft.id;
+      messageId = draft.message?.id;
+    }
+  }
+
   if (messageId) {
     await gmail.users.messages.trash({ userId: 'me', id: messageId });
   } else {
-    await gmail.users.drafts.delete({ userId: 'me', id: req.params.id });
+    try {
+      await gmail.users.messages.trash({ userId: 'me', id: req.params.id });
+    } catch (e) {
+      await gmail.users.drafts.delete({ userId: 'me', id: draftId });
+    }
   }
   return { success: true };
 }

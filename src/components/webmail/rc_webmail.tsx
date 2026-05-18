@@ -660,22 +660,14 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
   }
 
   async function deleteDraftHandler() {
-    const fallbackDraftId = (selectedMessage as FullMessage & { draftId?: string } | null)?.draftId;
-    const draftToDelete = drafts.find((draft) => draft.id === activeThreadId)
-      || (fallbackDraftId ? { draftId: fallbackDraftId } : null);
+    const draftId = selectedDraft?.draftId || (selectedMessage as any)?.draftId || selectedMessage?.id || activeThreadId;
 
-    if (!draftToDelete) {
+    if (!draftId) {
       setError('Não foi possível localizar o ID do rascunho para exclusão.');
       return;
     }
 
-    const draftId = (draftToDelete as any).draftId;
-    if (!draftId) {
-      setError('ID do rascunho inválido.');
-      return;
-    }
-
-    const result = await run(() => gmailApi.deleteDraft(accountEmail, draftId), 'Rascunho excluido');
+    const result = await run(() => gmailApi.deleteDraft(accountEmail, draftId), 'Rascunho excluído');
     if (result) {
       setSelectedMessage(null);
       void loadMessages('drafts');
