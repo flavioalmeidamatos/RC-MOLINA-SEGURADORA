@@ -589,7 +589,7 @@ registerRoute('get', ['/email/messages/:messageId/attachments/:attachmentId', '/
 registerRoute('get', ['/email/drafts', '/gmail/drafts'], async (req, res) => {
   res.json(await listDrafts(
     requireAccountEmail(req),
-    { maxResults: req.query.maxResults || 25 },
+    listMessagesOptions(req, 'drafts'),
     requestActorFrom(req),
   ));
 });

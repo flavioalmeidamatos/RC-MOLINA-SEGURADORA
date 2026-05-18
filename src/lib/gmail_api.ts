@@ -179,9 +179,16 @@ export function createGmailApi(actor?: GmailApiActor) {
       actor,
     );
   },
-  async drafts(accountEmail: string) {
+  async drafts(accountEmail: string, filters?: SearchFilters) {
+    let nextFilters = { ...filters };
+
+    if (nextFilters && nextFilters.content) {
+      nextFilters = { ...nextFilters, q: nextFilters.content };
+      delete nextFilters.content;
+    }
+
     return request<{ drafts: DraftSummary[]; nextPageToken: string | null }>(
-      `/gmail/drafts?${params({ accountEmail, userId: actor?.userId || undefined, userEmail: actor?.userEmail || undefined })}`,
+      `/gmail/drafts?${params({ accountEmail, userId: actor?.userId || undefined, userEmail: actor?.userEmail || undefined, ...nextFilters })}`,
       undefined,
       actor,
     );

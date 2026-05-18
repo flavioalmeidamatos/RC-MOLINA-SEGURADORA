@@ -99,7 +99,7 @@ function buildSearchQuery(filters = {}, folder = 'inbox') {
   const terms = [];
 
   if (filters.from) {
-    if (folder === 'sent') {
+    if (folder === 'sent' || folder === 'drafts') {
       terms.push(`(to:${filters.from} OR from:${filters.from} OR ${filters.from})`);
     } else {
       terms.push(`(from:${filters.from} OR ${filters.from})`);
@@ -530,11 +530,14 @@ export async function listMessages(accountEmail, { folder = 'inbox', maxResults 
   };
 }
 
-export async function listDrafts(accountEmail, { maxResults = 25 } = {}, actor = {}) {
+export async function listDrafts(accountEmail, { maxResults = 25, pageToken, ...filters } = {}, actor = {}) {
   const gmail = await getAuthedGmail(accountEmail, actor);
+  const q = buildSearchQuery(filters, 'drafts');
   const list = await gmail.users.drafts.list({
     userId: 'me',
     maxResults: Number(maxResults),
+    pageToken,
+    q: q || undefined,
   });
 
   const drafts = await Promise.all(
