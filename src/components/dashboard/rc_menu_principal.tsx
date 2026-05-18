@@ -218,7 +218,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const [lastInboxUpdateTimestamp, setLastInboxUpdateTimestamp] = useState(0);
   const [inboxNotifications, setInboxNotifications] = useState<MessageSummary[]>([]);
   const knownInboxMessageIdsRef = useRef<Set<string>>(new Set());
-  const isInboxInitializedRef = useRef(false);
+  const initializedAccountsRef = useRef<Set<string>>(new Set());
 
   function compactSender(value: string) {
     return value.replace(/<[^>]+>/g, "").trim() || value;
@@ -236,29 +236,42 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     if (!actorUserId || !actorUserEmail) return;
 
     const gmailApi = createGmailApi({ userId: actorUserId, userEmail: actorUserEmail });
-    const targetAccountEmail = "rcmolina.invest.segurosaude@gmail.com";
 
     const checkNewMessages = async () => {
       try {
-        const result = await gmailApi.messages(targetAccountEmail, "inbox", {});
-        if (result && result.messages) {
-          if (!isInboxInitializedRef.current) {
-            result.messages.forEach((msg) => knownInboxMessageIdsRef.current.add(msg.id));
-            isInboxInitializedRef.current = true;
-            return;
-          }
+        const accountsResult = await gmailApi.accounts();
+        if (!accountsResult || !accountsResult.accounts || accountsResult.accounts.length === 0) {
+          return;
+        }
 
-          const newMails: MessageSummary[] = [];
-          result.messages.forEach((msg) => {
-            if (!knownInboxMessageIdsRef.current.has(msg.id)) {
-              newMails.push(msg);
-              knownInboxMessageIdsRef.current.add(msg.id);
+        for (const account of accountsResult.accounts) {
+          // If the account status is not connected, skip
+          if (account.status !== "connected") continue;
+
+          const result = await gmailApi.messages(account.email, "inbox", {});
+          if (result && result.messages) {
+            const hasBeenInitialized = initializedAccountsRef.current.has(account.email);
+
+            if (!hasBeenInitialized) {
+              // Initialize existing message IDs so we don't notify them
+              result.messages.forEach((msg) => knownInboxMessageIdsRef.current.add(msg.id));
+              initializedAccountsRef.current.add(account.email);
+              continue;
             }
-          });
 
-          if (newMails.length > 0) {
-            setInboxNotifications((prev) => [...prev, ...newMails]);
-            setLastInboxUpdateTimestamp(Date.now());
+            // Subsequent polls
+            const newMails: MessageSummary[] = [];
+            result.messages.forEach((msg) => {
+              if (!knownInboxMessageIdsRef.current.has(msg.id)) {
+                newMails.push(msg);
+                knownInboxMessageIdsRef.current.add(msg.id);
+              }
+            });
+
+            if (newMails.length > 0) {
+              setInboxNotifications((prev) => [...prev, ...newMails]);
+              setLastInboxUpdateTimestamp(Date.now());
+            }
           }
         }
       } catch (err) {
