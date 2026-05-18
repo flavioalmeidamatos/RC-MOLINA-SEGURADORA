@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   Banknote,
   Briefcase,
@@ -279,9 +280,9 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       }
     };
 
-    // Run immediately once, then poll every 60 seconds
+    // Run immediately once, then poll every 15 seconds
     void checkNewMessages();
-    const intervalId = window.setInterval(checkNewMessages, 60000);
+    const intervalId = window.setInterval(checkNewMessages, 15000);
     return () => window.clearInterval(intervalId);
   }, [perfil?.id, perfil?.email, session?.user?.id, session?.user?.email]);
 
@@ -1668,76 +1669,74 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       ) : null}
 
       {/* Floating Notifications Container for New Inbox Messages */}
-      <div className="fixed bottom-5 right-5 z-[140] flex flex-col gap-3 pointer-events-none w-[360px] max-w-[calc(100vw-40px)]">
-        {inboxNotifications.map((notif) => (
-          <div
-            key={notif.id}
-            onClick={() => {
-              // Set the redirect message ID
-              setWebmailRedirectMessageId(notif.id);
-              // Switch menu to Webmail
-              setActiveMenu("Webmail");
-              // Clear notification
-              setInboxNotifications((prev) => prev.filter((n) => n.id !== notif.id));
-            }}
-            className="pointer-events-auto w-full cursor-pointer rounded-xl bg-[#1d1d1f] text-white shadow-[0_12px_40px_rgba(0,0,0,0.5)] border border-neutral-850/35 font-sans transition-all duration-300 transform translate-y-0 scale-100 hover:scale-[1.02] flex flex-col overflow-hidden animate-slide-in"
-          >
-            {/* Title Bar */}
-            <div className="flex items-center justify-between px-4 py-2 bg-[#141416] border-b border-neutral-800">
-              <div className="flex items-center gap-2">
-                {/* Custom blue mail icon */}
-                <div className="bg-[#0078d4] p-1 rounded-md shadow-sm">
-                  <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
+      {createPortal(
+        <div className="fixed bottom-5 right-5 z-[9999] flex flex-col gap-3 pointer-events-none w-[360px] max-w-[calc(100vw-40px)]">
+          {inboxNotifications.map((notif) => (
+            <div
+              key={notif.id}
+              onClick={() => {
+                setWebmailRedirectMessageId(notif.id);
+                setActiveMenu("Webmail");
+                setInboxNotifications((prev) => prev.filter((n) => n.id !== notif.id));
+              }}
+              className="pointer-events-auto w-full cursor-pointer rounded-xl bg-[#1d1d1f] text-white shadow-[0_12px_40px_rgba(0,0,0,0.5)] border border-neutral-850/35 font-sans transition-all duration-300 transform translate-y-0 scale-100 hover:scale-[1.02] flex flex-col overflow-hidden"
+              style={{ animation: 'fade-in 0.3s ease-out forwards' }}
+            >
+              {/* Title Bar */}
+              <div className="flex items-center justify-between px-4 py-2 bg-[#141416] border-b border-neutral-800">
+                <div className="flex items-center gap-2">
+                  <div className="bg-[#0078d4] p-1 rounded-md shadow-sm">
+                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <span className="text-[11px] font-bold text-neutral-300 tracking-wide">RC Webmail</span>
                 </div>
-                <span className="text-[11px] font-bold text-neutral-300 tracking-wide">RC Webmail</span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setInboxNotifications((prev) => prev.filter((n) => n.id !== notif.id));
+                  }}
+                  className="p-1 hover:bg-neutral-800 rounded transition-colors text-neutral-400 hover:text-white"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
-              <button
-                type="button"
+
+              {/* Content Area */}
+              <div className="flex gap-3.5 p-4 items-start bg-[#1c1c1e]">
+                <div className="w-12 h-12 rounded-full bg-neutral-700/60 border border-neutral-600 flex-shrink-0 flex items-center justify-center text-lg font-black text-white shadow-inner select-none">
+                  {senderInitial(notif.from)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-sm font-bold text-white tracking-wide truncate">{compactSender(notif.from)}</h4>
+                  <p className="text-xs font-semibold text-neutral-200 mt-0.5 truncate">{notif.subject || '(Sem assunto)'}</p>
+                  <p className="text-[11px] text-neutral-400 mt-1 line-clamp-3 leading-relaxed break-words font-medium">
+                    {notif.snippet || 'Sem prévia.'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Dismiss bottom bar */}
+              <div
+                className="flex justify-center py-2 bg-[#141416]/80 hover:bg-[#141416] border-t border-neutral-800/40 cursor-pointer transition-colors"
                 onClick={(e) => {
                   e.stopPropagation();
                   setInboxNotifications((prev) => prev.filter((n) => n.id !== notif.id));
                 }}
-                className="p-1 hover:bg-neutral-800 rounded transition-colors text-neutral-400 hover:text-white"
               >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4 text-neutral-400 hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
-              </button>
-            </div>
-
-            {/* Content Area */}
-            <div className="flex gap-3.5 p-4 items-start bg-[#1c1c1e]">
-              {/* User avatar/initial placeholder */}
-              <div className="w-12 h-12 rounded-full bg-neutral-700/60 border border-neutral-600 flex-shrink-0 flex items-center justify-center text-lg font-black text-white shadow-inner select-none">
-                {senderInitial(notif.from)}
-              </div>
-              {/* Text Details */}
-              <div className="flex-1 min-w-0">
-                <h4 className="text-sm font-bold text-white tracking-wide truncate">{compactSender(notif.from)}</h4>
-                <p className="text-xs font-semibold text-neutral-200 mt-0.5 truncate">{notif.subject || '(Sem assunto)'}</p>
-                <p className="text-[11px] text-neutral-400 mt-1 line-clamp-3 leading-relaxed break-words font-medium">
-                  {notif.snippet || 'Sem prévia.'}
-                </p>
               </div>
             </div>
-
-            {/* Dismiss bottom bar */}
-            <div
-              className="flex justify-center py-2 bg-[#141416]/80 hover:bg-[#141416] border-t border-neutral-800/40 cursor-pointer transition-colors"
-              onClick={(e) => {
-                e.stopPropagation();
-                setInboxNotifications((prev) => prev.filter((n) => n.id !== notif.id));
-              }}
-            >
-              <svg className="w-4 h-4 text-neutral-400 hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>,
+        document.body
+      )}
 
       <style>{`
         .custom-scrollbar::-webkit-scrollbar {
