@@ -18,7 +18,16 @@ import {
   Unplug,
   X,
 } from 'lucide-react';
-import { lazy, Suspense, useEffect, useMemo, useState, type ComponentType } from 'react';
+import React, {
+  lazy,
+  Suspense,
+  useEffect,
+  useEffectEvent,
+  useMemo,
+  useRef,
+  useState,
+  type ComponentType,
+} from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import type { EmailRichTextEditorProps } from './email_rich_text_editor';
 import {
@@ -73,7 +82,7 @@ const folderItems: Array<{ id: Folder; label: string; icon: typeof Inbox }> = [
   { id: 'trash', label: 'Lixeira', icon: Trash2 },
 ];
 
-const settingsItem = { id: 'settings' as const, label: 'Configuracoes', icon: Settings2 };
+const settingsItem = { id: 'settings' as const, label: 'Configurações', icon: Settings2 };
 
 function isFolder(value: string | null): value is Folder {
   return value === 'inbox' || value === 'sent' || value === 'trash' || value === 'drafts';
@@ -224,10 +233,10 @@ function buildPreviewHtml(message: FullMessage, accountEmail: string, actor?: RC
 
 function buildReconnectMessage(scopes: string[] = []) {
   if (scopes.length === 0) {
-    return 'Permissoes do Gmail insuficientes. Reconecte a conta.';
+    return 'Permissões do Gmail insuficientes. Reconecte a conta.';
   }
 
-  return `Permissoes do Gmail insuficientes. Reconecte a conta e aceite: ${scopes.join(', ')}.`;
+  return `Permissões do Gmail insuficientes. Reconecte a conta e aceite: ${scopes.join(', ')}.`;
 }
 
 function buildTransmissionLimitMessage(compose: ComposeState) {
@@ -241,7 +250,19 @@ function buildTransmissionLimitMessage(compose: ComposeState) {
   }
 
   const hasVideo = compose.files.some((file) => file.type.startsWith('video/'));
-  return `${hasVideo ? 'O video selecionado' : 'O conteudo do e-mail'} excede o limite de ${formatBytes(MAX_TRANSMISSION_BYTES)}.`;
+  return `${hasVideo ? 'O vídeo selecionado' : 'O conteúdo do e-mail'} excede o limite de ${formatBytes(MAX_TRANSMISSION_BYTES)}.`;
+}
+
+function isEditableKeyboardTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  if (target.isContentEditable) {
+    return true;
+  }
+
+  return Boolean(target.closest('input, textarea, select, [contenteditable="true"], .tox, [role="dialog"]'));
 }
 
 type RCWebmailProps = {
@@ -263,10 +284,11 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
   const composeRouteOpen = isComposeRoute(location.pathname);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [accountEmail, setAccountEmail] = useState(DEFAULT_ACCOUNT);
-  const [folder, setFolder] = useState<Folder>(activeFolder);
+
   const [messages, setMessages] = useState<MessageSummary[]>([]);
   const [drafts, setDrafts] = useState<DraftSummary[]>([]);
   const [selectedMessage, setSelectedMessage] = useState<FullMessage | null>(null);
+  const [activeMessageId, setActiveMessageId] = useState<string | null>(activeThreadId);
   const [connectionStatus, setConnectionStatus] = useState<GmailConnectionStatus | null>(null);
   const [outbox, setOutbox] = useState<OutboxMessage[]>([]);
   const [logs, setLogs] = useState<EmailLog[]>([]);
@@ -284,16 +306,21 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
   const [showEmptyTrashConfirm, setShowEmptyTrashConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [loadingMessageDetail, setLoadingMessageDetail] = useState(false);
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<{to?: string, cc?: string, bcc?: string}>({});
   const [permissionIssue, setPermissionIssue] = useState<PermissionIssue>(null);
+  const messageCacheRef = useRef(new Map<string, FullMessage>());
+  const messageRequestTokenRef = useRef(0);
 
   const selectedAccount = accounts.find((account) => account.email === accountEmail) || null;
-  const selectedDraft = drafts.find((draft) => draft.id === selectedMessage?.id) || null;
-  const messageItems = folder === 'drafts' ? drafts : messages;
+  const selectedMessageId = activeThreadId || activeMessageId || selectedMessage?.id || null;
+  const selectedDraft = drafts.find((draft) => draft.id === selectedMessageId) || null;
+  const messageItems = activeFolder === 'drafts' ? drafts : messages;
   const currentSectionLabel = activeSection === 'settings'
     ? settingsItem.label
-    : folderItems.find((item) => item.id === folder)?.label || 'Entrada';
+    : folderItems.find((item) => item.id === activeFolder)?.label || 'Entrada';
   const activePermissionIssue = permissionIssue
     || (selectedAccount?.needsReconnect
       ? {
@@ -303,23 +330,57 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
       : null);
   const visibleAttachments = selectedMessage?.attachments.filter((attachment) => !attachment.inline) || [];
 
-  function clearComposeAndReturn(nextFolder: Folder = folder) {
+  function applyApiError(caughtError: unknown, fallbackMessage = 'Erro inesperado', options?: { silent?: boolean }) {
+    const message = caughtError instanceof Error ? caughtError.message : fallbackMessage;
+
+    if (caughtError instanceof ApiError && caughtError.code === 'insufficient_scope') {
+      setPermissionIssue({
+        message,
+        missingScopes: Array.isArray(caughtError.details?.missingScopes)
+          ? caughtError.details?.missingScopes.filter((item): item is string => typeof item === 'string')
+          : [],
+      });
+    }
+
+    if (!options?.silent) {
+      setError(message);
+    }
+
+    return null;
+  }
+
+  function clearComposeAndReturn(nextFolder: Folder = activeFolder) {
+    if (nextFolder !== activeFolder) {
+      setMessages([]);
+      setDrafts([]);
+      setLoadingMessages(true);
+    }
     setCompose(emptyCompose);
     navigate(routeForFolder(nextFolder), { replace: true });
   }
 
   function openComposeModal() {
-    navigate(`/email/compose?folder=${encodeURIComponent(folder)}`);
+    navigate(`/email/compose?folder=${encodeURIComponent(activeFolder)}`);
   }
 
   function openFolder(nextFolder: Folder) {
+    if (nextFolder !== activeFolder) {
+      setMessages([]);
+      setDrafts([]);
+      setLoadingMessages(true);
+    }
     setSelectedMessage(null);
     navigate(routeForFolder(nextFolder));
   }
 
   function openSettings() {
+    if (activeSection !== 'settings') {
+      setMessages([]);
+      setDrafts([]);
+    }
     setSelectedMessage(null);
-    navigate(`/email/settings?folder=${encodeURIComponent(folder)}`);
+    navigate(`/email/settings?folder=${encodeURIComponent(activeFolder || 'inbox')}`);
+    void loadConnectionStatus();
   }
 
   function patchCompose(patch: Partial<ComposeState>) {
@@ -338,23 +399,44 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
       }
       return result;
     } catch (caughtError) {
-      const message = caughtError instanceof Error ? caughtError.message : 'Erro inesperado';
-
-      if (caughtError instanceof ApiError && caughtError.code === 'insufficient_scope') {
-        setPermissionIssue({
-          message,
-          missingScopes: Array.isArray(caughtError.details?.missingScopes)
-            ? caughtError.details?.missingScopes.filter((item): item is string => typeof item === 'string')
-            : [],
-        });
-      }
-
-      setError(message);
-      return null;
+      return applyApiError(caughtError);
     } finally {
       setBusy(false);
     }
   }
+
+  async function fetchMessageDetail(messageId: string, options?: { silent?: boolean }) {
+    try {
+      const result = await gmailApi.message(accountEmail, messageId);
+      setPermissionIssue(null);
+      return result.message;
+    } catch (caughtError) {
+      return applyApiError(caughtError, 'Erro ao carregar a mensagem.', options);
+    }
+  }
+
+  const prefetchAdjacentMessages = useEffectEvent((messageId: string) => {
+    const currentIndex = messageItems.findIndex((message) => message.id === messageId);
+    if (currentIndex === -1) {
+      return;
+    }
+
+    const neighborIds = [messageItems[currentIndex - 1]?.id, messageItems[currentIndex + 1]?.id].filter(
+      (value): value is string => Boolean(value),
+    );
+
+    neighborIds.forEach((neighborId) => {
+      if (messageCacheRef.current.has(neighborId)) {
+        return;
+      }
+
+      void fetchMessageDetail(neighborId, { silent: true }).then((message) => {
+        if (message) {
+          messageCacheRef.current.set(neighborId, message);
+        }
+      });
+    });
+  });
 
   async function loadAccounts() {
     const result = await run(() => gmailApi.accounts());
@@ -370,7 +452,7 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
     }
   }
 
-  async function loadMessages(targetFolder: Folder = folder) {
+  async function loadMessages(targetFolder: Folder = activeFolder) {
     if (!selectedAccount) {
       setMessages([]);
       setDrafts([]);
@@ -431,10 +513,10 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
   async function reloadWorkspace(successMessage?: string) {
     if (!selectedAccount) return;
 
-    const selectedId = selectedMessage?.id;
-    const mailboxRequest = folder === 'drafts'
+    const selectedId = activeThreadId;
+    const mailboxRequest = activeFolder === 'drafts'
       ? gmailApi.drafts(accountEmail).then((mailbox) => ({ ...mailbox, messages: undefined }))
-      : gmailApi.messages(accountEmail, folder, filters).then((mailbox) => ({ ...mailbox, drafts: undefined }));
+      : gmailApi.messages(accountEmail, activeFolder, filters).then((mailbox) => ({ ...mailbox, drafts: undefined }));
 
     const result = await run(async () => {
       const [messageResult, outboxResult, logsResult, detailResult] = await Promise.all([
@@ -448,26 +530,76 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
     }, successMessage);
 
     if (result) {
-      if (folder === 'drafts' && result.messageResult.drafts) {
+      const visibleMessageIds = new Set<string>();
+
+      if (activeFolder === 'drafts' && result.messageResult.drafts) {
         setDrafts(result.messageResult.drafts);
         setMessages([]);
+        result.messageResult.drafts.forEach((draft) => visibleMessageIds.add(draft.id));
       } else if (result.messageResult.messages) {
         setMessages(result.messageResult.messages);
         setDrafts([]);
+        result.messageResult.messages.forEach((message) => visibleMessageIds.add(message.id));
       }
       setOutbox(result.outboxResult.outbox);
       setLogs(result.logsResult.logs);
-      setSelectedMessage(result.detailResult?.message || null);
+
+      const selectedStillVisible = selectedId ? visibleMessageIds.has(selectedId) : false;
+
+      if (result.detailResult?.message && selectedStillVisible) {
+        messageCacheRef.current.set(result.detailResult.message.id, result.detailResult.message);
+        setSelectedMessage(result.detailResult.message);
+      } else {
+        setSelectedMessage(null);
+        if (selectedId) {
+          setActiveMessageId(null);
+          navigate(routeForFolder(activeFolder), { replace: true });
+        }
+      }
     }
   }
 
-  async function openMessage(messageId: string) {
-    navigate(`/email/thread/${messageId}?folder=${encodeURIComponent(folder)}`);
-    const result = await run(() => gmailApi.message(accountEmail, messageId));
-    if (result) {
-      setSelectedMessage(result.message);
+  const openMessage = useEffectEvent(async (
+    messageId: string,
+    options?: { preservePreview?: boolean; skipNavigate?: boolean },
+  ) => {
+    setActiveMessageId(messageId);
+
+    if (!options?.skipNavigate) {
+      navigate(`/email/thread/${messageId}?folder=${encodeURIComponent(activeFolder)}`);
     }
-  }
+
+    const cachedMessage = messageCacheRef.current.get(messageId);
+    if (cachedMessage) {
+      setSelectedMessage(cachedMessage);
+      setLoadingMessageDetail(false);
+      prefetchAdjacentMessages(messageId);
+      return;
+    }
+
+    if (!options?.preservePreview) {
+      setSelectedMessage(null);
+    }
+
+    setLoadingMessageDetail(true);
+    const requestToken = ++messageRequestTokenRef.current;
+    const message = await fetchMessageDetail(messageId);
+
+    if (message) {
+      messageCacheRef.current.set(messageId, message);
+    }
+
+    if (messageRequestTokenRef.current !== requestToken) {
+      return;
+    }
+
+    if (message) {
+      setSelectedMessage(message);
+      prefetchAdjacentMessages(messageId);
+    }
+
+    setLoadingMessageDetail(false);
+  });
 
   async function loadConnectionStatus() {
     if (!selectedAccount) {
@@ -528,17 +660,18 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
   }
 
   async function deleteDraftHandler() {
-    const draftToDelete = drafts.find((d) => d.id === selectedMessage?.id) || 
-                         (selectedMessage as any)?.draftId ? { draftId: (selectedMessage as any).draftId } : null;
+    const fallbackDraftId = (selectedMessage as FullMessage & { draftId?: string } | null)?.draftId;
+    const draftToDelete = drafts.find((draft) => draft.id === activeThreadId)
+      || (fallbackDraftId ? { draftId: fallbackDraftId } : null);
 
     if (!draftToDelete) {
-      setError('Nao foi possivel localizar o ID do rascunho para exclusao.');
+      setError('Não foi possível localizar o ID do rascunho para exclusão.');
       return;
     }
 
     const draftId = (draftToDelete as any).draftId;
     if (!draftId) {
-      setError('ID do rascunho invalido.');
+      setError('ID do rascunho inválido.');
       return;
     }
 
@@ -600,7 +733,7 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
     return emails.split(',').every(email => isValidEmail(email.trim()));
   }
 
-  const validateFieldNavigation = (e: React.KeyboardEvent<HTMLInputElement>, field: string, value: string) => {
+  const validateFieldNavigation = (e: React.KeyboardEvent<HTMLInputElement>, field: 'to' | 'cc' | 'bcc', value: string) => {
     const isNavigationKey = e.key === 'Tab' || e.key === 'Enter' || e.key === 'ArrowRight';
     
     if (isNavigationKey) {
@@ -608,40 +741,55 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
         return;
       }
 
-      if (['to', 'cc', 'bcc'].includes(field)) {
-        if (value.trim() && !validateEmails(value)) {
-          const label = field === 'to' ? 'Para' : field === 'cc' ? 'Cc' : 'Cco';
-          setError(`O formato de e-mail no campo '${label}' é inválido.`);
-        }
+      if (value.trim() && !validateEmails(value)) {
+        e.preventDefault();
+        const label = field === 'to' ? 'Para' : field === 'cc' ? 'Cc' : 'Cco';
+        setFieldErrors(prev => ({ ...prev, [field]: `O formato de e-mail no campo '${label}' é inválido.` }));
+      } else {
+        setFieldErrors(prev => ({ ...prev, [field]: undefined }));
       }
+    }
+  };
+
+  const handleFieldBlur = (e: React.FocusEvent<HTMLInputElement>, field: 'to' | 'cc' | 'bcc', value: string) => {
+    if (value.trim() && !validateEmails(value)) {
+      const label = field === 'to' ? 'Para' : field === 'cc' ? 'Cc' : 'Cco';
+      setFieldErrors(prev => ({ ...prev, [field]: `O formato de e-mail no campo '${label}' é inválido.` }));
+      
+      const target = e.target;
+      window.requestAnimationFrame(() => {
+        target.focus();
+      });
+    } else {
+      setFieldErrors(prev => ({ ...prev, [field]: undefined }));
     }
   };
 
   async function submitCompose(mode: 'send' | 'queue' | 'draft') {
     if (mode !== 'draft') {
       if (!compose.to.trim()) {
-        setError('O campo "Para" e obrigatorio.');
+        setError('O campo "Para" é obrigatório.');
         return;
       }
       if (!compose.subject.trim()) {
-        setError('O campo "Assunto" e obrigatorio.');
+        setError('O campo "Assunto" é obrigatório.');
         return;
       }
       if (!htmlToPlainText(compose.bodyHtml).trim()) {
-        setError('O "Corpo do email" e obrigatorio.');
+        setError('O "Corpo do e-mail" é obrigatório.');
         return;
       }
 
       if (!validateEmails(compose.to)) {
-        setError('Um ou mais e-mails no campo "Para" sao invalidos.');
+        setError('Um ou mais e-mails no campo "Para" são inválidos.');
         return;
       }
       if (!validateEmails(compose.cc)) {
-        setError('Um ou mais e-mails no campo "Cc" sao invalidos.');
+        setError('Um ou mais e-mails no campo "Cc" são inválidos.');
         return;
       }
       if (!validateEmails(compose.bcc)) {
-        setError('Um ou mais e-mails no campo "Cco" sao invalidos.');
+        setError('Um ou mais e-mails no campo "Cco" são inválidos.');
         return;
       }
     }
@@ -676,7 +824,7 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
     );
 
     if (result) {
-      const nextFolder = mode === 'draft' ? 'drafts' : folder;
+      const nextFolder = mode === 'draft' ? 'drafts' : activeFolder;
       clearComposeAndReturn(nextFolder);
       await reloadWorkspace(
         mode === 'send'
@@ -693,12 +841,36 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
   }, []);
 
   useEffect(() => {
-    setFolder(activeFolder);
-    if (activeSection === 'settings') {
+    if (activeThreadId) {
+      setActiveMessageId(activeThreadId);
+    }
+  }, [activeThreadId]);
+
+  useEffect(() => {
+    messageCacheRef.current.clear();
+    messageRequestTokenRef.current += 1;
+    setLoadingMessageDetail(false);
+    if (activeSection === 'settings' || !activeThreadId) {
       setSelectedMessage(null);
-      if (selectedAccount) {
-        void loadConnectionStatus();
-      }
+    }
+  }, [accountEmail, activeFolder, activeSection]);
+
+  useEffect(() => {
+    if (messageItems.length === 0) {
+      setActiveMessageId(null);
+      return;
+    }
+
+    if (selectedMessageId && messageItems.some((message) => message.id === selectedMessageId)) {
+      return;
+    }
+
+    setActiveMessageId(messageItems[0].id);
+  }, [messageItems, selectedMessageId]);
+
+
+  useEffect(() => {
+    if (activeSection === 'settings') {
       return;
     }
 
@@ -743,47 +915,50 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
   }, [error]);
 
   useEffect(() => {
-    if (!activeThreadId || activeSection === 'settings' || messageItems.length === 0 || selectedMessage?.id === activeThreadId) {
+    if (!selectedMessageId || activeSection === 'settings' || messageItems.length === 0 || selectedMessage?.id === selectedMessageId) {
       return;
     }
 
-    const exists = messageItems.some((message) => message.id === activeThreadId);
+    const exists = messageItems.some((message) => message.id === selectedMessageId);
     if (exists) {
-      void openMessage(activeThreadId);
+      void openMessage(selectedMessageId, { preservePreview: true, skipNavigate: true });
     }
-  }, [activeSection, activeThreadId, messageItems, selectedMessage?.id]);
+  }, [activeSection, messageItems, selectedMessage?.id, selectedMessageId]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (activeSection === 'settings' || !messageItems.length) return;
+      if (showComposeModal || activeSection === 'settings' || loadingMessages || !messageItems.length) return;
       if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+      if (isEditableKeyboardTarget(event.target)) return;
 
       event.preventDefault();
-      const currentIndex = messageItems.findIndex((m) => m.id === selectedMessage?.id);
+      const currentId = activeThreadId || activeMessageId || selectedMessage?.id || null;
+      const currentIndex = currentId ? messageItems.findIndex((message) => message.id === currentId) : -1;
       let nextIndex = -1;
 
       if (event.key === 'ArrowUp') {
-        nextIndex = currentIndex > 0 ? currentIndex - 1 : messageItems.length - 1;
+        nextIndex = currentIndex === -1 ? messageItems.length - 1 : currentIndex > 0 ? currentIndex - 1 : messageItems.length - 1;
       } else {
-        nextIndex = currentIndex < messageItems.length - 1 ? currentIndex + 1 : 0;
+        nextIndex = currentIndex === -1 ? 0 : currentIndex < messageItems.length - 1 ? currentIndex + 1 : 0;
       }
 
       if (nextIndex !== -1) {
         const nextMessage = messageItems[nextIndex];
-        void openMessage(nextMessage.id);
-        
-        // Garantir que o item fique visivel
-        const element = document.getElementById(`msg-${nextMessage.id}`);
-        element?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        void openMessage(nextMessage.id, { preservePreview: true });
+        window.requestAnimationFrame(() => {
+          const element = document.getElementById(`msg-${nextMessage.id}`);
+          element?.focus({ preventScroll: true });
+          element?.scrollIntoView({ behavior: 'auto', block: 'nearest' });
+        });
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeSection, messageItems, selectedMessage?.id, openMessage]);
+  }, [activeMessageId, activeSection, activeThreadId, loadingMessages, messageItems, selectedMessage?.id, showComposeModal]);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden px-4 pt-2 sm:px-6 md:px-8">
+    <div className="flex h-[calc(100vh-70px)] flex-col gap-3 overflow-hidden px-4 pb-2 pt-4 sm:px-6 sm:pb-2 md:px-8 md:pt-4 md:pb-2">
       <section className="rounded-[28px] border border-slate-200 bg-white px-5 py-3 shadow-sm">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
@@ -805,17 +980,6 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
               title="Sincronizar agora"
             >
               <RefreshCcw size={18} className={(loadingMessages || busy) ? 'animate-spin' : ''} />
-            </button>
-            <button
-              onClick={() => openSettings()}
-              className={`inline-flex h-11 w-11 items-center justify-center rounded-full border transition-all ${
-                activeSection === 'settings'
-                  ? 'border-[#b58c2a] bg-[#fffaf0] text-[#b58c2a]'
-                  : 'border-slate-200 bg-white text-slate-500 hover:border-[#b58c2a]/40 hover:bg-[#fffaf0] hover:text-[#b58c2a]'
-              }`}
-              title="Configuracoes"
-            >
-              <Settings2 size={18} />
             </button>
           </div>
         </div>
@@ -839,7 +1003,7 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
             <h3 className="mt-5 text-2xl font-black text-[#0c1826]">Conecte o Gmail da corretora</h3>
             <p className="mt-3 text-sm leading-6 text-slate-500">
               O Webmail agora roda integralmente dentro da estrutura principal da RC Molina Seguros, sem depender
-              da aplicacao legada separada.
+              da aplicação legada separada.
             </p>
             <div className="mt-6 flex justify-center">
               <button
@@ -848,7 +1012,7 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
                 className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#b58c2a] px-6 py-2 text-sm font-semibold text-white transition hover:bg-[#a17c1f]"
               >
                 <Mail size={16} />
-                Iniciar conexao OAuth
+                Iniciar conexão OAuth
               </button>
             </div>
           </div>
@@ -861,7 +1025,7 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
               <div className="mt-3 space-y-2">
                 {folderItems.map((item) => {
                   const Icon = item.icon;
-                  const active = activeSection !== 'settings' && folder === item.id;
+                  const active = activeSection !== 'settings' && activeFolder === item.id;
 
                   return (
                     <button
@@ -924,11 +1088,11 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
               </div>
               {activeSection === 'settings' ? (
                 <div className="mt-3 rounded-2xl border border-dashed border-slate-200 px-4 py-5 text-sm font-semibold text-slate-400">
-                  As configuracoes exibem o status OAuth, escopos e o vinculo da conta ao usuario autenticado.
+                  As configurações exibem o status OAuth, escopos e o vinculo da conta ao usuário autenticado.
                 </div>
-              ) : folder === 'drafts' ? (
+              ) : activeFolder === 'drafts' ? (
                 <div className="mt-3 rounded-2xl border border-dashed border-slate-200 px-4 py-5 text-sm font-semibold text-slate-400">
-                  Os rascunhos usam a lista do Gmail. Filtros avancados ficam disponiveis nas caixas de mensagens.
+                  Os rascunhos usam a lista do Gmail. Filtros avançados ficam disponíveis nas caixas de mensagens.
                 </div>
               ) : (
               <div className="mt-3 space-y-3">
@@ -947,7 +1111,7 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
                 <input
                   value={filters.content}
                   onChange={(event) => setFilters({ ...filters, content: event.target.value })}
-                  placeholder="Conteudo"
+                  placeholder="Conteúdo"
                   className="min-h-10 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-xs text-slate-700 focus:border-[#b58c2a] focus:ring-1 focus:ring-[#b58c2a]"
                 />
                 <div className="grid grid-cols-2 gap-2">
@@ -970,7 +1134,7 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
                   className="min-h-10 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-xs text-slate-700 focus:border-[#b58c2a] focus:ring-1 focus:ring-[#b58c2a]"
                 >
                   <option value="">Status</option>
-                  <option value="unread">Nao lidas</option>
+                  <option value="unread">Não lidas</option>
                   <option value="read">Lidas</option>
                 </select>
                 <label className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-[13px] font-semibold text-slate-600">
@@ -995,15 +1159,15 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
 
             </aside>
 
-          <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-t-[28px] rounded-b-none border border-slate-200 border-b-0 bg-white shadow-sm">
-            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+          <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+            <div className="sticky top-0 z-20 flex items-center justify-between border-b border-slate-100 bg-white px-5 py-4">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Mensagens</p>
                 <h3 className="mt-0.5 text-base font-black text-[#0c1826]">
                   {currentSectionLabel}
                 </h3>
               </div>
-              {folder === 'trash' && activeSection !== 'settings' ? (
+              {activeFolder === 'trash' && activeSection !== 'settings' ? (
                 <button
                   type="button"
                   onClick={() => setShowEmptyTrashConfirm(true)}
@@ -1015,9 +1179,9 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
               ) : null}
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
+            <div className="min-h-0 flex-1 overflow-y-auto rounded-[24px] px-3 py-3 custom-scrollbar">
             {activeSection === 'settings' ? (
-              <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+              <div className="h-full overflow-y-auto px-5 py-4 custom-scrollbar">
                 <div className="grid gap-3">
                   <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Status OAuth</p>
@@ -1028,7 +1192,7 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
                       Conta: {connectionStatus?.email || accountEmail}
                     </p>
                     <p className="mt-1 text-xs text-slate-500">
-                      Usuario RC Molina: {userEmail || 'nao identificado'} {userId ? `(${userId})` : ''}
+                      Usuário: {userEmail || 'não identificado'} {userId ? `(${userId})` : ''}
                     </p>
                     <p className="mt-1 text-xs text-slate-500">
                       Estado atual: {connectionStatus?.status || 'sem vinculo registrado'}
@@ -1036,14 +1200,14 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
                   </article>
 
                   <article className="rounded-2xl border border-slate-200 bg-white p-4">
-                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Escopos e reconexao</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Escopos e reconexão</p>
                     {(connectionStatus?.missingScopes || []).length > 0 ? (
                       <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">
-                        Faltam permissoes: {(connectionStatus?.missingScopes || []).join(', ')}
+                        Faltam permissões: {(connectionStatus?.missingScopes || []).join(', ')}
                       </div>
                     ) : (
                       <div className="mt-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
-                        Os escopos principais do Gmail estao completos.
+                        Os escopos principais do Gmail estão completos.
                       </div>
                     )}
                     {(connectionStatus?.missingTrashScopes || []).length > 0 ? (
@@ -1060,7 +1224,7 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
                 </div>
               ) : messageItems.length === 0 ? (
                 <div className="flex h-full items-center justify-center rounded-2xl border border-dashed border-slate-200 text-sm font-semibold text-slate-400">
-                  {folder === 'drafts' ? 'Nenhum rascunho encontrado.' : 'Nenhuma mensagem encontrada.'}
+                  {activeFolder === 'drafts' ? 'Nenhum rascunho encontrado.' : 'Nenhuma mensagem encontrada.'}
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -1070,8 +1234,10 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
                       id={`msg-${message.id}`}
                       type="button"
                       onClick={() => void openMessage(message.id)}
+                      tabIndex={selectedMessageId === message.id ? 0 : -1}
+                      aria-selected={selectedMessageId === message.id}
                       className={`flex w-full flex-col rounded-2xl border px-3 py-2.5 text-left transition ${
-                        selectedMessage?.id === message.id
+                        selectedMessageId === message.id
                           ? 'border-[#b58c2a]/50 bg-[#fffaf0]'
                           : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
                       }`}
@@ -1079,7 +1245,9 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <p className={`truncate text-xs font-black ${message.unread ? 'text-[#0c1826]' : 'text-slate-700'}`}>
-                            {compactSender(message.from || message.to)}
+                            {activeFolder === 'sent' || activeFolder === 'drafts'
+                              ? `Para: ${compactSender(message.to || '') || '(sem destinatário)'}`
+                              : compactSender(message.from || message.to)}
                           </p>
                           <p className="mt-0.5 truncate text-xs font-semibold text-slate-500">
                             {message.subject || '(sem assunto)'}
@@ -1090,7 +1258,7 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
                         </span>
                       </div>
                       <div className="mt-2 flex items-center justify-between gap-3">
-                        <p className="line-clamp-2 text-xs text-slate-500">{message.snippet || 'Sem previa.'}</p>
+                        <p className="line-clamp-2 text-xs text-slate-500">{message.snippet || 'Sem prévia.'}</p>
                         <span className="shrink-0 text-[11px] font-bold text-slate-400">
                           {formatBytes(message.size)}
                         </span>
@@ -1102,16 +1270,20 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
             </div>
           </section>
 
-          <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-t-[28px] rounded-b-none border border-slate-200 border-b-0 bg-white shadow-sm">
+          <section className="relative flex min-h-0 flex-[2] flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
             {activeSection === 'settings' ? (
-              <div className="flex min-h-0 flex-1 flex-col justify-between px-5 py-4">
-                <div className="min-h-0 flex-1 overflow-y-auto">
-                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Conexao Gmail</p>
+              <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                <div className="sticky top-0 z-20 border-b border-slate-100 bg-white px-6 py-5">
+                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Configurações</p>
+                  <h3 className="mt-0.5 text-base font-black text-[#0c1826]">Ajustes da Conta</h3>
+                </div>
+                <div className="min-h-0 flex-1 overflow-y-auto pt-4 px-6 pb-6">
+                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Conexão Gmail</p>
                   <h3 className="mt-1 text-lg font-black text-[#0c1826]">
-                    Painel de configuracoes do Webmail
+                    Painel de configurações do Webmail
                   </h3>
                   <p className="mt-2 text-[12px] leading-5 text-slate-500">
-                    Esta area usa a autenticacao principal da RC Molina Seguros.
+                    Esta área utiliza a autenticação principal da RC Molina Seguros.
                   </p>
                 </div>
 
@@ -1122,12 +1294,12 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
                       {connectionStatus?.email || selectedAccount?.email || accountEmail}
                     </p>
                     <p className="mt-1 text-xs text-slate-500">
-                      Usuario autenticado: {userEmail || 'nao identificado'}
+                      Usuario autenticado: {userEmail || 'não identificado'}
                     </p>
                   </div>
 
                   <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                    <p className="text-xs font-semibold text-slate-500">Configuracoes de Conta</p>
+                    <p className="text-xs font-semibold text-slate-500">Configurações de Conta</p>
                     <div className="mt-3 space-y-3">
                       <div>
                         <p className="mb-1 text-[10px] font-bold text-slate-400 uppercase">Selecionar Conta</p>
@@ -1199,10 +1371,10 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
               </div>
             ) : selectedMessage ? (
               <>
-                <div className="border-b border-slate-100 px-6 py-5">
+                <div className="px-6 py-5">
                   <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-                    <div className="min-w-0">
-                      <h3 className="text-2xl font-black text-[#0c1826]">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="truncate text-xl font-black text-[#0c1826]" title={selectedMessage.subject || '(sem assunto)'}>
                         {selectedMessage.subject || '(sem assunto)'}
                       </h3>
                       <div className="mt-4 flex items-start gap-3">
@@ -1221,13 +1393,13 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap gap-2">
-                      {folder === 'drafts' && selectedDraft ? (
+                    <div className="flex flex-row flex-nowrap items-center gap-2 shrink-0 overflow-x-auto pb-1 custom-scrollbar">
+                      {activeFolder === 'drafts' && selectedDraft ? (
                         <>
                           <button
                             type="button"
                             onClick={() => void sendDraftHandler()}
-                            className="inline-flex min-h-10 items-center gap-2 rounded-full bg-[#b58c2a] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#a17c1f]"
+                            className="inline-flex min-h-10 items-center gap-2 whitespace-nowrap rounded-full bg-[#b58c2a] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#a17c1f]"
                           >
                             <Send size={14} />
                             Enviar rascunho
@@ -1253,13 +1425,13 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
                           </button>
                           <button
                             type="button"
-                            onClick={() => void applyAction('mark_unread', 'Mensagem marcada como nao lida')}
+                            onClick={() => void applyAction('mark_unread', 'Mensagem marcada como não lida')}
                             className="inline-flex min-h-10 items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-xs font-bold text-slate-600 transition hover:border-[#b58c2a]/40 hover:text-[#b58c2a]"
                           >
                             <Mail size={14} />
-                            Nao lida
+                            Não lida
                           </button>
-                          {folder !== 'trash' ? (
+                          {activeFolder !== 'trash' ? (
                             <>
                               <button
                                 type="button"
@@ -1309,21 +1481,34 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
                   </div>
                 ) : null}
 
-                <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+                <div className="min-h-0 flex-1 overflow-y-auto p-2">
                   {selectedMessage.bodyHtml ? (
                     <iframe
-                      title="Conteudo do e-mail"
-                      className="min-h-[420px] w-full rounded-2xl border border-slate-200 bg-white"
+                      title="Conteúdo do e-mail"
+                      className="min-h-[1600px] w-full rounded-[20px] border border-slate-200 bg-white"
                       sandbox=""
                       srcDoc={buildPreviewHtml(selectedMessage, accountEmail, { userId, userEmail })}
                     />
                   ) : (
-                    <pre className="whitespace-pre-wrap rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-700">
+                    <pre className="whitespace-pre-wrap rounded-[20px] border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-700">
                       {selectedMessage.bodyText || 'Mensagem sem conteudo.'}
                     </pre>
                   )}
                 </div>
+                {loadingMessageDetail ? (
+                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-white/70 backdrop-blur-[1px]">
+                    <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm">
+                      <Loader2 size={16} className="animate-spin text-[#b58c2a]" />
+                      Carregando mensagem...
+                    </div>
+                  </div>
+                ) : null}
               </>
+            ) : loadingMessageDetail ? (
+              <div className="flex h-full flex-col items-center justify-center px-8 text-center">
+                <Loader2 size={24} className="animate-spin text-[#b58c2a]" />
+                <p className="mt-4 text-sm font-semibold text-slate-500">Carregando mensagem...</p>
+              </div>
             ) : (
               <div className="flex h-full flex-col items-center justify-center px-8 text-center">
                 <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-slate-100 text-slate-400">
@@ -1331,7 +1516,7 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
                 </div>
                 <h3 className="mt-5 text-xl font-black text-[#0c1826]">Selecione uma mensagem</h3>
                 <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">
-                  A leitura abre no painel da direita com suporte a HTML seguro em iframe, anexos e acoes do Gmail.
+                  A leitura abre no painel da direita com suporte a HTML seguro em iframe, anexos e ações do Gmail.
                 </p>
               </div>
             )}
@@ -1368,30 +1553,48 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
                 </div>
               )}
               <div className="grid gap-3 md:grid-cols-2">
-                <input
-                  value={compose.to}
-                  onChange={(event) => patchCompose({ to: event.target.value })}
-                  onKeyDown={(e) => validateFieldNavigation(e, 'to', compose.to)}
-                  onBlur={() => !validateEmails(compose.to) && setError('O formato de e-mail no campo \'Para\' é inválido.')}
-                  placeholder="Para"
-                  className="min-h-11 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:border-[#b58c2a] focus:ring-1 focus:ring-[#b58c2a]"
-                />
-                <input
-                  value={compose.cc}
-                  onChange={(event) => patchCompose({ cc: event.target.value })}
-                  onKeyDown={(e) => validateFieldNavigation(e, 'cc', compose.cc)}
-                  onBlur={() => !validateEmails(compose.cc) && setError('O formato de e-mail no campo \'Cc\' é inválido.')}
-                  placeholder="Cc"
-                  className="min-h-11 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:border-[#b58c2a] focus:ring-1 focus:ring-[#b58c2a]"
-                />
-                <input
-                  value={compose.bcc}
-                  onChange={(event) => patchCompose({ bcc: event.target.value })}
-                  onKeyDown={(e) => validateFieldNavigation(e, 'bcc', compose.bcc)}
-                  onBlur={() => !validateEmails(compose.bcc) && setError('O formato de e-mail no campo \'Cco\' é inválido.')}
-                  placeholder="Cco"
-                  className="min-h-11 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 focus:border-[#b58c2a] focus:ring-1 focus:ring-[#b58c2a]"
-                />
+                <div>
+                  <input
+                    value={compose.to}
+                    onChange={(event) => {
+                      patchCompose({ to: event.target.value });
+                      if (fieldErrors.to) setFieldErrors(prev => ({ ...prev, to: undefined }));
+                    }}
+                    onKeyDown={(e) => validateFieldNavigation(e, 'to', compose.to)}
+                    onBlur={(e) => handleFieldBlur(e, 'to', compose.to)}
+                    placeholder="Para"
+                    className={`min-h-11 w-full rounded-2xl border bg-slate-50 px-4 text-sm text-slate-700 focus:ring-1 ${fieldErrors.to ? 'border-red-400 focus:border-red-400 focus:ring-red-400' : 'border-slate-200 focus:border-[#b58c2a] focus:ring-[#b58c2a]'}`}
+                  />
+                  {fieldErrors.to && <p className="mt-1 ml-2 text-xs font-semibold text-red-500">{fieldErrors.to}</p>}
+                </div>
+                <div>
+                  <input
+                    value={compose.cc}
+                    onChange={(event) => {
+                      patchCompose({ cc: event.target.value });
+                      if (fieldErrors.cc) setFieldErrors(prev => ({ ...prev, cc: undefined }));
+                    }}
+                    onKeyDown={(e) => validateFieldNavigation(e, 'cc', compose.cc)}
+                    onBlur={(e) => handleFieldBlur(e, 'cc', compose.cc)}
+                    placeholder="Cc"
+                    className={`min-h-11 w-full rounded-2xl border bg-slate-50 px-4 text-sm text-slate-700 focus:ring-1 ${fieldErrors.cc ? 'border-red-400 focus:border-red-400 focus:ring-red-400' : 'border-slate-200 focus:border-[#b58c2a] focus:ring-[#b58c2a]'}`}
+                  />
+                  {fieldErrors.cc && <p className="mt-1 ml-2 text-xs font-semibold text-red-500">{fieldErrors.cc}</p>}
+                </div>
+                <div>
+                  <input
+                    value={compose.bcc}
+                    onChange={(event) => {
+                      patchCompose({ bcc: event.target.value });
+                      if (fieldErrors.bcc) setFieldErrors(prev => ({ ...prev, bcc: undefined }));
+                    }}
+                    onKeyDown={(e) => validateFieldNavigation(e, 'bcc', compose.bcc)}
+                    onBlur={(e) => handleFieldBlur(e, 'bcc', compose.bcc)}
+                    placeholder="Cco"
+                    className={`min-h-11 w-full rounded-2xl border bg-slate-50 px-4 text-sm text-slate-700 focus:ring-1 ${fieldErrors.bcc ? 'border-red-400 focus:border-red-400 focus:ring-red-400' : 'border-slate-200 focus:border-[#b58c2a] focus:ring-[#b58c2a]'}`}
+                  />
+                  {fieldErrors.bcc && <p className="mt-1 ml-2 text-xs font-semibold text-red-500">{fieldErrors.bcc}</p>}
+                </div>
                 <input
                   value={compose.subject}
                   onChange={(event) => patchCompose({ subject: event.target.value })}
@@ -1494,7 +1697,7 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
         <div className="fixed inset-0 z-[125] flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-[28px] border border-white/60 bg-white shadow-2xl">
             <div className="px-6 py-5">
-              <p className="text-[11px] font-black uppercase tracking-[0.22em] text-red-500">Confirmacao</p>
+              <p className="text-[11px] font-black uppercase tracking-[0.22em] text-red-500">Confirmação</p>
               <h3 className="mt-1 text-2xl font-black text-[#0c1826]">Limpar lixeira</h3>
               <p className="mt-3 text-sm leading-6 text-slate-500">
                 Esta acao remove permanentemente todos os e-mails da lixeira da conta conectada.
