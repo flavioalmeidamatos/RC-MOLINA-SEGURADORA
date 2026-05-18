@@ -126,6 +126,7 @@ async function request<T>(path: string, init?: RequestInit, actor?: GmailApiActo
   buildActorHeaders(actor).forEach((value, key) => headers.set(key, value));
 
   const response = await fetch(`${API_BASE}${path}`, {
+    cache: 'no-store',
     ...init,
     headers,
   });
