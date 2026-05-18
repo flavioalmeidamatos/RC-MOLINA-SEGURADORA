@@ -51,6 +51,8 @@ pm2 delete rc-molina >/dev/null 2>&1 || true
 cd "$AppPath/current"
 pm2 start npm --name rc-molina -- run start:prod
 pm2 save
+# Limpar releases antigas mantendo apenas as 5 mais recentes
+cd "$AppPath/releases" && ls -1t | tail -n +6 | xargs -r rm -rf || true
 nginx -t
 systemctl reload nginx
 "@

@@ -166,7 +166,7 @@ function buildRecipientValidationMessage(invalidByField) {
   const invalidFields = Object.entries(invalidByField).map(
     ([field, values]) => `${labels[field] || field}: ${values.join(', ')}`,
   );
-  return `Enderecos de e-mail invalidos. Corrija os campos ${invalidFields.join(' | ')}.`;
+  return `Endereços de e-mail inválidos. Corrija os campos ${invalidFields.join(' | ')}.`;
 }
 
 function assertValidRecipients(body, options = {}) {
@@ -177,7 +177,7 @@ function assertValidRecipients(body, options = {}) {
   });
 
   if (options.requireTo && recipients.recipients.to.length === 0) {
-    const error = new Error('Informe pelo menos um destinatario em Para.');
+    const error = new Error('Informe pelo menos um destinatário em Para.');
     error.status = 400;
     throw error;
   }
@@ -215,7 +215,7 @@ function assertTransmissionCapacity(payload, files = []) {
   const hasVideo = files.some((file) => String(file.mimetype || '').startsWith('video/'));
   const subject = hasVideo ? 'O video selecionado' : 'O conteudo do e-mail';
   const error = new Error(
-    `${subject} excede a capacidade de transmissao. Tamanho estimado: ${formatBytes(estimatedBytes)}. Limite atual: ${formatBytes(MAX_TRANSMISSION_BYTES)}. Reduza o arquivo ou envie um link.`,
+    `${subject} excede a capacidade de transmissão. Tamanho estimado: ${formatBytes(estimatedBytes)}. Limite atual: ${formatBytes(MAX_TRANSMISSION_BYTES)}. Reduza o arquivo ou envie um link.`,
   );
   error.status = 400;
   error.code = 'message_too_large';
@@ -310,7 +310,7 @@ async function createOutboxMessage(req) {
     );
   }
 
-  await logEvent(accountEmail, 'send', 'Mensagem adicionada a caixa de saida local', {
+  await logEvent(accountEmail, 'send', 'Mensagem adicionada à caixa de saída local', {
     outboxId: outboxMessage.id,
     attachmentCount: files.length,
   }, 'info', actor.userId);
@@ -330,7 +330,7 @@ async function sendOutboxMessage(req) {
   );
 
   if (itemResult.rowCount === 0) {
-    return { status: 404, body: { error: 'Mensagem nao encontrada na caixa de saida.' } };
+    return { status: 404, body: { error: 'Mensagem não encontrada na caixa de saída.' } };
   }
 
   const item = itemResult.rows[0];
@@ -403,7 +403,13 @@ async function sendDraft(req) {
 
 async function deleteDraft(req) {
   const gmail = await getAuthedGmail(requireAccountEmail(req), requestActorFrom(req));
-  await gmail.users.drafts.delete({ userId: 'me', id: req.params.id });
+  const draft = await gmail.users.drafts.get({ userId: 'me', id: req.params.id });
+  const messageId = draft.data.message?.id;
+  if (messageId) {
+    await gmail.users.messages.trash({ userId: 'me', id: messageId });
+  } else {
+    await gmail.users.drafts.delete({ userId: 'me', id: req.params.id });
+  }
   return { success: true };
 }
 
@@ -660,7 +666,7 @@ gmailRouter.use(async (error, req, res, _next) => {
   if (error?.code === 'LIMIT_FILE_SIZE') {
     error.status = 400;
     error.code = 'message_too_large';
-    error.message = `O arquivo selecionado excede a capacidade de transmissao. Limite atual: ${Math.round(
+    error.message = `O arquivo selecionado excede a capacidade de transmissão. Limite atual: ${Math.round(
       MAX_TRANSMISSION_BYTES / (1024 * 1024),
     )} MB.`;
     error.details = {

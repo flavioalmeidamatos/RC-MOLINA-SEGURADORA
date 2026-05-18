@@ -95,7 +95,7 @@ function folderToLabel(folder) {
   }[folder] || 'INBOX';
 }
 
-function buildSearchQuery(filters = {}) {
+function buildSearchQuery(filters = {}, folder = 'inbox') {
   const terms = [];
 
   if (filters.from) terms.push(`from:${filters.from}`);
@@ -107,6 +107,9 @@ function buildSearchQuery(filters = {}) {
   if (filters.status === 'read') terms.push('-is:unread');
   if (filters.hasAttachment === true || filters.hasAttachment === 'true') {
     terms.push('has:attachment');
+  }
+  if (folder !== 'trash') {
+    terms.push('-in:trash');
   }
 
   return terms.join(' ');
@@ -491,7 +494,7 @@ export async function getAuthedGmail(accountEmail, actorOrOptions = {}, maybeOpt
 export async function listMessages(accountEmail, { folder = 'inbox', maxResults = 25, pageToken, ...filters }, actor = {}) {
   const gmail = await getAuthedGmail(accountEmail, actor);
   const labelId = folderToLabel(folder);
-  const q = buildSearchQuery(filters);
+  const q = buildSearchQuery(filters, folder);
 
   const list = await gmail.users.messages.list({
     userId: 'me',
@@ -550,7 +553,7 @@ export async function listDrafts(accountEmail, { maxResults = 25 } = {}, actor =
   );
 
   return {
-    drafts: drafts.filter((draft) => draft.gmailMessageId),
+    drafts: drafts.filter((draft) => draft.gmailMessageId && !draft.labelIds?.includes('TRASH')),
     nextPageToken: list.data.nextPageToken || null,
     resultSizeEstimate: list.data.resultSizeEstimate || drafts.length,
   };
@@ -651,7 +654,20 @@ export async function modifyMessage(accountEmail, messageId, action, actor = {})
   if (action === 'trash') {
     result = await gmail.users.messages.trash({ userId: 'me', id: messageId });
   } else if (action === 'restore') {
-    result = await gmail.users.messages.untrash({ userId: 'me', id: messageId });
+    const untrashed = await gmail.users.messages.untrash({ userId: 'me', id: messageId });
+    const labelIds = new Set(untrashed.data.labelIds || []);
+    const hasMailboxPlacement =
+      labelIds.has('INBOX') ||
+      labelIds.has('SENT') ||
+      labelIds.has('DRAFT');
+
+    result = hasMailboxPlacement
+      ? untrashed
+      : await gmail.users.messages.modify({
+          userId: 'me',
+          id: messageId,
+          requestBody: { addLabelIds: ['INBOX'] },
+        });
   } else if (action in map) {
     result = await gmail.users.messages.modify({
       userId: 'me',
