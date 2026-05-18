@@ -459,7 +459,7 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
     }
   }
 
-  async function loadMessages(targetFolder: Folder = activeFolder) {
+  async function loadMessages(targetFolder: Folder = activeFolder, overrideFilters?: typeof filters) {
     if (!selectedAccount) {
       setMessages([]);
       setDrafts([]);
@@ -483,7 +483,7 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
       return;
     }
 
-    const result = await run(() => gmailApi.messages(accountEmail, targetFolder, filters));
+    const result = await run(() => gmailApi.messages(accountEmail, targetFolder, overrideFilters || filters));
     setLoadingMessages(false);
 
     if (result) {
@@ -1069,8 +1069,8 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
                 <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Filtros</p>
                 <button
                   type="button"
-                  onClick={() =>
-                    setFilters({
+                  onClick={() => {
+                    const emptyFilters = {
                       from: '',
                       subject: '',
                       content: '',
@@ -1078,8 +1078,10 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
                       before: '',
                       status: '',
                       hasAttachment: false,
-                    })
-                  }
+                    };
+                    setFilters(emptyFilters);
+                    void loadMessages(activeFolder, emptyFilters);
+                  }}
                   className="text-xs font-bold text-slate-400 transition hover:text-[#b58c2a]"
                 >
                   Limpar
