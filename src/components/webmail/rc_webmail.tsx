@@ -313,6 +313,13 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
   const [permissionIssue, setPermissionIssue] = useState<PermissionIssue>(null);
   const messageCacheRef = useRef(new Map<string, FullMessage>());
   const messageRequestTokenRef = useRef(0);
+  const messageContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (messageContainerRef.current) {
+      messageContainerRef.current.scrollTop = 0;
+    }
+  }, [selectedMessage?.id]);
 
   const selectedAccount = accounts.find((account) => account.email === accountEmail) || null;
   const selectedMessageId = activeThreadId || activeMessageId || selectedMessage?.id || null;
@@ -1473,7 +1480,7 @@ export function RCWebmail({ userId, userEmail }: RCWebmailProps) {
                   </div>
                 ) : null}
 
-                <div className="min-h-0 flex-1 overflow-y-auto p-2">
+                <div ref={messageContainerRef} className="min-h-0 flex-1 overflow-y-auto p-2">
                   {selectedMessage.bodyHtml ? (
                     <iframe
                       title="Conteúdo do e-mail"
