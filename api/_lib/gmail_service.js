@@ -561,16 +561,71 @@ export async function listDrafts(accountEmail, { maxResults = 25 } = {}, actor =
 
 export async function getMessage(accountEmail, messageId, actor = {}) {
   const gmail = await getAuthedGmail(accountEmail, actor);
-  const detail = await gmail.users.messages.get({
-    userId: 'me',
-    id: messageId,
-    format: 'full',
-  });
+  let detail = null;
+  let isDraft = false;
+  let realMessageId = messageId;
+  let draftId = null;
 
-  await hydrateMessagePartBodies(gmail, messageId, detail.data.payload);
-  await hydrateInlineAttachmentBodies(gmail, messageId, detail.data.payload);
+  if (String(messageId).startsWith('r')) {
+    isDraft = true;
+    draftId = messageId;
+  }
+
+  if (isDraft) {
+    try {
+      const draft = await gmail.users.drafts.get({
+        userId: 'me',
+        id: draftId,
+        format: 'full',
+      });
+      detail = { data: draft.data.message };
+      realMessageId = draft.data.message?.id || messageId;
+      detail.data.draftId = draftId;
+    } catch (err) {
+      isDraft = false;
+    }
+  }
+
+  if (!isDraft) {
+    try {
+      detail = await gmail.users.messages.get({
+        userId: 'me',
+        id: messageId,
+        format: 'full',
+      });
+      if (detail.data.labelIds?.includes('DRAFT')) {
+        const list = await gmail.users.drafts.list({ userId: 'me' });
+        const foundDraft = (list.data.drafts || []).find((d) => d.message?.id === messageId);
+        if (foundDraft) {
+          detail.data.draftId = foundDraft.id;
+        }
+      }
+    } catch (err) {
+      const list = await gmail.users.drafts.list({ userId: 'me' });
+      const foundDraft = (list.data.drafts || []).find((d) => d.message?.id === messageId);
+      if (foundDraft) {
+        const draft = await gmail.users.drafts.get({
+          userId: 'me',
+          id: foundDraft.id,
+          format: 'full',
+        });
+        detail = { data: draft.data.message };
+        detail.data.draftId = foundDraft.id;
+        realMessageId = draft.data.message?.id || messageId;
+      } else {
+        throw err;
+      }
+    }
+  }
+
+  await hydrateMessagePartBodies(gmail, realMessageId, detail.data.payload);
+  await hydrateInlineAttachmentBodies(gmail, realMessageId, detail.data.payload);
 
   const parsed = toFullMessage(detail.data);
+  if (detail.data.draftId) {
+    parsed.draftId = detail.data.draftId;
+  }
+
   await saveMessageMetadata(accountEmail, detail.data);
   const normalizedActor = normalizeActor(actor);
   await logEvent(accountEmail, 'read', 'Mensagem visualizada', { messageId }, 'info', normalizedActor.userId);
@@ -579,9 +634,20 @@ export async function getMessage(accountEmail, messageId, actor = {}) {
 
 export async function downloadAttachment(accountEmail, messageId, attachmentId, actor = {}) {
   const gmail = await getAuthedGmail(accountEmail, actor);
+  let realMessageId = messageId;
+
+  if (String(messageId).startsWith('r')) {
+    try {
+      const draft = await gmail.users.drafts.get({ userId: 'me', id: messageId });
+      realMessageId = draft.data.message?.id || messageId;
+    } catch (err) {
+      // ignore
+    }
+  }
+
   const result = await gmail.users.messages.attachments.get({
     userId: 'me',
-    messageId,
+    messageId: realMessageId,
     id: attachmentId,
   });
 
