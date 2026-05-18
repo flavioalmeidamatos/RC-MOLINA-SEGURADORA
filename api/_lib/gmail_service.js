@@ -100,9 +100,9 @@ function buildSearchQuery(filters = {}, folder = 'inbox') {
 
   if (filters.from) {
     if (folder === 'sent') {
-      terms.push(`(to:${filters.from} OR from:${filters.from})`);
+      terms.push(`(to:${filters.from} OR from:${filters.from} OR ${filters.from})`);
     } else {
-      terms.push(`from:${filters.from}`);
+      terms.push(`(from:${filters.from} OR ${filters.from})`);
     }
   }
   if (filters.subject) terms.push(`subject:(${filters.subject})`);
