@@ -1104,6 +1104,7 @@ export function RCWebmail({
               </div>
             </section>
 
+            {activeSection === 'settings' ? null : (
             <section className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm">
               <div className="flex items-center justify-between">
                 <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Filtros</p>
@@ -1127,11 +1128,6 @@ export function RCWebmail({
                   Limpar
                 </button>
               </div>
-              {activeSection === 'settings' ? (
-                <div className="mt-3 rounded-2xl border border-dashed border-slate-200 px-4 py-5 text-sm font-semibold text-slate-400">
-                  As configurações exibem o status OAuth, escopos e o vinculo da conta ao usuário autenticado.
-                </div>
-              ) : (
               <div className="mt-3 space-y-3">
                 <input
                   value={filters.from}
@@ -1191,8 +1187,8 @@ export function RCWebmail({
                   Buscar
                 </button>
               </div>
-              )}
             </section>
+            )}
 
             </aside>
 

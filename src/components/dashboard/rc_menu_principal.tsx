@@ -68,6 +68,7 @@ const AMIL_LOGIN = "77915445715";
 const AMIL_PASSWORD = "sqn0y3zqmo";
 const SIMULATOR_FALLBACK_WINDOW_NAME = "simulador_online_fallback_window";
 const CHROME_SIMULATOR_LOAD_TIMEOUT_MS = 18000;
+const GMAIL_INBOX_POLL_INTERVAL_MS = 5000;
 const BASE_SIMULATOR_IFRAME_ALLOW =
   "geolocation; microphone; camera; midi; vr; accelerometer; gyroscope; payment; ambient-light-sensor; encrypted-media; usb";
 const wait = (ms: number) =>
@@ -220,6 +221,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const [inboxNotifications, setInboxNotifications] = useState<MessageSummary[]>([]);
   const knownInboxMessageIdsRef = useRef<Set<string>>(new Set());
   const initializedAccountsRef = useRef<Set<string>>(new Set());
+  const inboxPollInFlightRef = useRef(false);
 
   function compactSender(value: string) {
     return value.replace(/<[^>]+>/g, "").trim() || value;
@@ -236,9 +238,17 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     const actorUserEmail = perfil?.email || session?.user?.email || null;
     if (!actorUserId || !actorUserEmail) return;
 
+    knownInboxMessageIdsRef.current = new Set();
+    initializedAccountsRef.current = new Set();
+    inboxPollInFlightRef.current = false;
+    setInboxNotifications([]);
+
     const gmailApi = createGmailApi({ userId: actorUserId, userEmail: actorUserEmail });
 
     const checkNewMessages = async () => {
+      if (inboxPollInFlightRef.current) return;
+      inboxPollInFlightRef.current = true;
+
       try {
         const accountsResult = await gmailApi.accounts();
         if (!accountsResult || !accountsResult.accounts || accountsResult.accounts.length === 0) {
@@ -270,20 +280,46 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
             });
 
             if (newMails.length > 0) {
-              setInboxNotifications((prev) => [...prev, ...newMails]);
+              setInboxNotifications((prev) => {
+                const existingIds = new Set(prev.map((item) => item.id));
+                const uniqueNewMails = newMails.filter((item) => !existingIds.has(item.id));
+                return uniqueNewMails.length > 0 ? [...prev, ...uniqueNewMails] : prev;
+              });
               setLastInboxUpdateTimestamp(Date.now());
             }
           }
         }
       } catch (err) {
         console.error("Erro no auto-refresh global:", err);
+      } finally {
+        inboxPollInFlightRef.current = false;
       }
     };
 
-    // Run immediately once, then poll every 15 seconds
+    const handleVisibilityRefresh = () => {
+      if (document.visibilityState === "visible") {
+        void checkNewMessages();
+      }
+    };
+
+    const handleWindowFocus = () => {
+      void checkNewMessages();
+    };
+
+    // Run immediately once, then poll in short intervals.
     void checkNewMessages();
-    const intervalId = window.setInterval(checkNewMessages, 15000);
-    return () => window.clearInterval(intervalId);
+    const intervalId = window.setInterval(() => {
+      void checkNewMessages();
+    }, GMAIL_INBOX_POLL_INTERVAL_MS);
+    document.addEventListener("visibilitychange", handleVisibilityRefresh);
+    window.addEventListener("focus", handleWindowFocus);
+
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", handleVisibilityRefresh);
+      window.removeEventListener("focus", handleWindowFocus);
+      inboxPollInFlightRef.current = false;
+    };
   }, [perfil?.id, perfil?.email, session?.user?.id, session?.user?.email]);
 
   useEffect(() => {

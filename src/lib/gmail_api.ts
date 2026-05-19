@@ -5,6 +5,7 @@ export type Folder = 'inbox' | 'sent' | 'trash' | 'drafts';
 export type Account = {
   email: string;
   scope: string;
+  status?: string;
   expiry_date: string;
   connected_at: string;
   updated_at: string;

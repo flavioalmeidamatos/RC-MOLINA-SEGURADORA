@@ -380,7 +380,7 @@ export async function exchangeCodeForAccount(code, state) {
 
 export async function listAccounts(actor = {}) {
   const normalizedActor = normalizeActor(actor);
-  const result = normalizedActor.userId
+  let result = normalizedActor.userId
     ? await query(
         `select email, user_id, user_email, scope, status, disconnected_at, expiry_date, connected_at, updated_at
          from gmail_accounts
@@ -394,6 +394,20 @@ export async function listAccounts(actor = {}) {
          where refresh_token_enc is not null
          order by connected_at desc`,
       );
+
+  // This application works with a single allowed Gmail account. If the current
+  // actor has no direct binding yet, expose the shared connected account so a
+  // second workstation/session can reuse the existing refresh token.
+  if (result.rowCount === 0 && gmailConfig.google.allowedAccount) {
+    result = await query(
+      `select email, user_id, user_email, scope, status, disconnected_at, expiry_date, connected_at, updated_at
+       from gmail_accounts
+       where refresh_token_enc is not null and lower(email) = $1
+       order by connected_at desc
+       limit 1`,
+      [String(gmailConfig.google.allowedAccount).trim().toLowerCase()],
+    );
+  }
 
   return result.rows.map((account) => {
     const missingScopes = getMissingGmailScopes(account.scope);
