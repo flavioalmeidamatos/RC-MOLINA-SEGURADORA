@@ -641,7 +641,7 @@ export function CampanhasShell({ userId, userEmail }: CampanhasShellProps) {
           </div>
         </section>
 
-        <div className="grid gap-3 lg:grid-cols-[minmax(0,1.5fr)_360px] xl:grid-cols-[minmax(0,1.5fr)_380px]">
+        <div className="grid gap-3 md:grid-cols-[minmax(0,1.5fr)_320px] lg:grid-cols-[minmax(0,1.5fr)_360px] xl:grid-cols-[minmax(0,1.5fr)_380px]">
           <div className="space-y-3">
             <WhatsAppCampaignEditor
               campaignName={campaignName}
