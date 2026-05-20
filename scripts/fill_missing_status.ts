@@ -18,10 +18,10 @@ async function fillMissingStatus() {
       `SELECT id_cliente FROM "RCMOLINASEGUROS"."CLIENTES" WHERE status_cliente IS NULL OR status_cliente IN ('', 'BLOQUEADO', 'EM_ANALISE') LIMIT 1000`
     );
     if (rows.length === 0) {
-      console.log('Nenhum cliente sem status encontrado.');
+      // console.log('Nenhum cliente sem status encontrado.');
       return;
     }
-    console.log(`Encontrados ${rows.length} clientes sem status. Atualizando...`);
+    // console.log(`Encontrados ${rows.length} clientes sem status. Atualizando...`);
     for (const { id_cliente } of rows) {
       const randomStatus = Math.random() < 0.5 ? 'ATIVO' : 'INATIVO';
       await client.query(
@@ -29,7 +29,7 @@ async function fillMissingStatus() {
         [randomStatus, id_cliente]
       );
     }
-    console.log('Atualização concluída.');
+    // console.log('Atualização concluída.');
   } catch (err) {
     console.error('Erro ao atualizar status:', err);
   } finally {

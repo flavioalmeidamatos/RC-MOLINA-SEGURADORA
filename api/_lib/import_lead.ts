@@ -315,7 +315,7 @@ export async function importLeadFromSistemaQuer({
   }
 
   try {
-    console.log('--- Iniciando scraping da lead ---');
+    // console.log('--- Iniciando scraping da lead ---');
 
     const cookieJar = new Map<string, string>();
 
@@ -626,7 +626,7 @@ export async function importLeadFromSistemaQuer({
       leadData.indicacao_id,
     ]);
 
-    console.log('Lead importada com sucesso:', leadData.nome);
+    // console.log('Lead importada com sucesso:', leadData.nome);
     return leadData;
   } catch (error) {
     if (error instanceof ImportLeadHttpError) {

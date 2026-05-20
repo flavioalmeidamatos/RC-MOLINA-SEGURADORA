@@ -13,7 +13,7 @@ async function checkStatus() {
     const { rows } = await client.query(
       `SELECT status_cliente, COUNT(*) FROM "RCMOLINASEGUROS"."CLIENTES" GROUP BY status_cliente`
     );
-    console.log('Status Distribution:');
+    // console.log('Status Distribution:');
     console.table(rows);
   } catch (err) {
     console.error('Error:', err);
