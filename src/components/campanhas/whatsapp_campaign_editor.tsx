@@ -62,17 +62,15 @@ export function WhatsAppCampaignEditor({
   };
 
   return (
-    <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
-      <div className="border-b border-slate-100 bg-slate-50/80 px-4 py-3">
+    <section className="rounded-[28px] border border-slate-200 bg-white shadow-sm">
+      <div className="border-b border-slate-100 bg-slate-50/80 px-4 py-3 rounded-t-[28px]">
         <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#b58c2a]">
           Conteúdo
         </p>
         <h3 className="mt-1 text-lg font-black tracking-tight text-[#0c1826]">
           Editor da campanha
         </h3>
-        <p className="mt-1 text-sm font-medium text-slate-500">
-          Estruture o texto principal e deixe a base pronta para a integração do disparo.
-        </p>
+
       </div>
 
       <div className="space-y-4 p-4">
@@ -104,7 +102,7 @@ export function WhatsAppCampaignEditor({
           <div className="relative rounded-[24px] border border-slate-200 bg-[#fcfcfd] focus-within:border-[#d4af37] focus-within:ring-4 focus-within:ring-[#d4af37]/10 transition">
             
             {/* Formatting Toolbar */}
-            <div className="flex items-center gap-1 border-b border-slate-200 px-3 py-2 bg-white/50 rounded-t-[24px]">
+            <div className="flex flex-wrap items-center gap-1 border-b border-slate-200 px-3 py-2 bg-white/50 rounded-t-[24px]">
               <button
                 type="button"
                 onClick={() => insertFormatting("*")}
@@ -154,9 +152,9 @@ export function WhatsAppCampaignEditor({
                 )}
               </div>
               
-              <div className="ml-auto flex items-center text-xs font-semibold text-slate-400 cursor-default" title="A seção de mídias fica no painel da direita">
-                <ImageIcon size={14} className="mr-1 inline-block" />
-                <span className="hidden sm:inline">Mídias no painel lateral</span>
+              <div className="ml-auto flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500 cursor-default" title="A seção de mídias fica logo abaixo nesta mesma coluna">
+                <ImageIcon size={14} className="text-slate-400" />
+                <span className="hidden sm:inline">Anexar Mídia: Logo abaixo 👇</span>
               </div>
             </div>
 

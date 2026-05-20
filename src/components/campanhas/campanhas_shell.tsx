@@ -598,9 +598,7 @@ export function CampanhasShell({ userId, userEmail }: CampanhasShellProps) {
                 <p className="text-[10px] font-black uppercase tracking-[0.26em] text-[#d4af37]">
                   Campanhas
                 </p>
-                <h2 className="text-xl font-black tracking-tight sm:text-2xl">
-                  Shell de WhatsApp
-                </h2>
+
 
               </div>
 
@@ -641,7 +639,7 @@ export function CampanhasShell({ userId, userEmail }: CampanhasShellProps) {
           </div>
         </section>
 
-        <div className="grid gap-3 md:grid-cols-[minmax(0,1.5fr)_320px] lg:grid-cols-[minmax(0,1.5fr)_360px] xl:grid-cols-[minmax(0,1.5fr)_380px]">
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.5fr)_340px] 2xl:grid-cols-[minmax(0,1.5fr)_380px]">
           <div className="space-y-3">
             <WhatsAppCampaignEditor
               campaignName={campaignName}
@@ -657,6 +655,13 @@ export function CampanhasShell({ userId, userEmail }: CampanhasShellProps) {
               onRemoveRecipient={handleRemoveRecipient}
               validRecipients={recipientSummary.validNumbers.length}
               invalidRecipients={recipientSummary.invalidNumbers.length}
+            />
+
+            <WhatsAppMediaPanel
+              attachments={attachments}
+              isUploading={isUploadingAttachments}
+              onPickFiles={handlePickFiles}
+              onRemoveAttachment={(id) => void handleRemoveAttachment(id)}
             />
           </div>
 
@@ -675,13 +680,6 @@ export function CampanhasShell({ userId, userEmail }: CampanhasShellProps) {
               validRecipients={recipientSummary.validNumbers.length}
               attachments={attachments}
               readyForNextPhase={readyForNextPhase}
-            />
-
-            <WhatsAppMediaPanel
-              attachments={attachments}
-              isUploading={isUploadingAttachments}
-              onPickFiles={handlePickFiles}
-              onRemoveAttachment={(id) => void handleRemoveAttachment(id)}
             />
 
             <WhatsAppOptInPanel
