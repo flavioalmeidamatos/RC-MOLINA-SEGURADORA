@@ -13,7 +13,7 @@ export function WhatsAppOptInPanel({
 }: WhatsAppOptInPanelProps) {
   return (
     <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
-      <div className="border-b border-slate-100 bg-slate-50/80 px-5 py-4">
+      <div className="border-b border-slate-100 bg-slate-50/80 px-4 py-3">
         <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#b58c2a]">
           Compliance
         </p>
@@ -22,8 +22,8 @@ export function WhatsAppOptInPanel({
         </h3>
       </div>
 
-      <div className="space-y-3 p-5">
-        <label className="flex items-start gap-3 rounded-[22px] border border-slate-200 bg-slate-50/80 px-4 py-4">
+      <div className="space-y-3 p-4">
+        <label className="flex items-start gap-3 rounded-[22px] border border-slate-200 bg-slate-50/80 px-4 py-3">
           <input
             type="checkbox"
             checked={optInChecked}
@@ -40,7 +40,7 @@ export function WhatsAppOptInPanel({
           </span>
         </label>
 
-        <label className="flex items-start gap-3 rounded-[22px] border border-slate-200 bg-slate-50/80 px-4 py-4">
+        <label className="flex items-start gap-3 rounded-[22px] border border-slate-200 bg-slate-50/80 px-4 py-3">
           <input
             type="checkbox"
             checked={templateChecked}
@@ -57,7 +57,7 @@ export function WhatsAppOptInPanel({
           </span>
         </label>
 
-        <div className="rounded-[24px] border border-amber-200 bg-amber-50/80 px-4 py-4">
+        <div className="rounded-[24px] border border-amber-200 bg-amber-50/80 px-4 py-3">
           <p className="text-[11px] font-black uppercase tracking-[0.18em] text-amber-700">
             Estado atual
           </p>

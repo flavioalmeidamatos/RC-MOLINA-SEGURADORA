@@ -18,7 +18,7 @@ const eventLabels: Record<CampaignHistoryEntry["eventType"], string> = {
 export function CampaignHistory({ items, isLoading, activeCampaignName }: CampaignHistoryProps) {
   return (
     <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
-      <div className="border-b border-slate-100 bg-slate-50/80 px-5 py-4">
+      <div className="border-b border-slate-100 bg-slate-50/80 px-4 py-3">
         <div className="flex items-center justify-between gap-4">
           <div>
             <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#b58c2a]">
@@ -33,13 +33,13 @@ export function CampaignHistory({ items, isLoading, activeCampaignName }: Campai
         </div>
       </div>
 
-      <div className="space-y-3 p-5">
+      <div className="space-y-3 p-4">
         {!activeCampaignName ? (
-          <div className="rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-4 text-sm font-semibold text-slate-500">
+          <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-500">
             Selecione ou salve uma campanha para consultar a trilha de auditoria.
           </div>
         ) : items.length === 0 ? (
-          <div className="rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-4 text-sm font-semibold text-slate-500">
+          <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-500">
             Nenhum evento registrado ainda para {activeCampaignName}.
           </div>
         ) : (
@@ -49,7 +49,7 @@ export function CampaignHistory({ items, isLoading, activeCampaignName }: Campai
             return (
               <article
                 key={item.id}
-                className={`rounded-[24px] border px-4 py-4 ${
+                className={`rounded-[20px] border px-4 py-3 ${
                   isError ? "border-rose-200 bg-rose-50/60" : "border-slate-200 bg-slate-50/80"
                 }`}
               >

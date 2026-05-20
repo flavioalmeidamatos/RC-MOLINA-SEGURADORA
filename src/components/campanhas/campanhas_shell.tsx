@@ -587,84 +587,62 @@ export function CampanhasShell({ userId, userEmail }: CampanhasShellProps) {
         className="hidden"
       />
 
-      <div className="mx-auto flex w-full max-w-[1540px] flex-col gap-4">
-        <section className="overflow-hidden rounded-[34px] border border-white/70 bg-[#0c1826] text-white shadow-[0_30px_80px_rgba(15,23,42,0.18)]">
-          <div className="relative px-5 py-4 sm:px-6 sm:py-5">
+      <div className="mx-auto flex w-full max-w-[1540px] flex-col gap-3">
+        <section className="overflow-hidden rounded-[20px] border border-white/70 bg-[#0c1826] text-white shadow-sm">
+          <div className="relative px-5 py-3 sm:px-6">
             <div className="absolute -left-12 top-0 h-40 w-40 rounded-full bg-[#d4af37]/10 blur-3xl" />
             <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-emerald-300/10 blur-3xl" />
 
-            <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="relative flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div className="max-w-3xl">
-                <p className="text-[11px] font-black uppercase tracking-[0.26em] text-[#d4af37]">
+                <p className="text-[10px] font-black uppercase tracking-[0.26em] text-[#d4af37]">
                   Campanhas
                 </p>
-                <h2 className="mt-1 text-2xl font-black tracking-tight sm:text-3xl">
-                  Shell de WhatsApp pronto para evolucao
+                <h2 className="text-xl font-black tracking-tight sm:text-2xl">
+                  Shell de WhatsApp
                 </h2>
-                <p className="mt-2 max-w-2xl text-xs font-medium leading-5 text-white/65 sm:text-sm">
-                  Esta fase substitui o placeholder por uma interface modular ja encaixada no dashboard da RC Molina.
-                  Agora o modulo tambem monitora a conexao com o servico externo do WhatsApp e ja consegue disparar
-                  mensagens com anexos persistidos de forma controlada.
-                </p>
+
               </div>
 
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-sm">
-                  <div className="flex items-center gap-2 text-[#d4af37]">
-                    <Megaphone size={15} strokeWidth={1.8} />
-                    <span className="text-[10px] font-black uppercase tracking-[0.18em]">
-                      Shell
-                    </span>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <div className="flex flex-col rounded-xl border border-white/10 bg-white/5 px-3 py-2 backdrop-blur-sm">
+                  <div className="flex items-center gap-1.5 text-[#d4af37]">
+                    <Megaphone size={13} strokeWidth={1.8} />
+                    <span className="text-[9px] font-black uppercase tracking-[0.18em]">Shell</span>
                   </div>
-                  <p className="mt-2 text-lg font-black">Ativo</p>
+                  <p className="text-sm font-black mt-1">Ativo</p>
                 </div>
 
-                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-sm">
-                  <div className="flex items-center gap-2 text-[#d4af37]">
-                    <Users size={15} strokeWidth={1.8} />
-                    <span className="text-[10px] font-black uppercase tracking-[0.18em]">
-                      Validos
-                    </span>
+                <div className="flex flex-col rounded-xl border border-white/10 bg-white/5 px-3 py-2 backdrop-blur-sm">
+                  <div className="flex items-center gap-1.5 text-[#d4af37]">
+                    <Users size={13} strokeWidth={1.8} />
+                    <span className="text-[9px] font-black uppercase tracking-[0.18em]">Validos</span>
                   </div>
-                  <p className="mt-2 text-lg font-black">{recipientSummary.validNumbers.length}</p>
+                  <p className="text-sm font-black mt-1">{recipientSummary.validNumbers.length}</p>
                 </div>
 
-                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-sm">
-                  <div className="flex items-center gap-2 text-[#d4af37]">
-                    <ShieldCheck size={15} strokeWidth={1.8} />
-                    <span className="text-[10px] font-black uppercase tracking-[0.18em]">
-                      Compliance
-                    </span>
+                <div className="flex flex-col rounded-xl border border-white/10 bg-white/5 px-3 py-2 backdrop-blur-sm">
+                  <div className="flex items-center gap-1.5 text-[#d4af37]">
+                    <ShieldCheck size={13} strokeWidth={1.8} />
+                    <span className="text-[9px] font-black uppercase tracking-[0.18em]">Compliance</span>
                   </div>
-                  <p className="mt-2 text-lg font-black">{readyForNextPhase ? "OK" : "Pendente"}</p>
+                  <p className="text-sm font-black mt-1">{readyForNextPhase ? "OK" : "Pendente"}</p>
                 </div>
 
-                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-sm">
-                  <div className="flex items-center gap-2 text-[#d4af37]">
-                    <Sparkles size={15} strokeWidth={1.8} />
-                    <span className="text-[10px] font-black uppercase tracking-[0.18em]">
-                      Proxima
-                    </span>
+                <div className="flex flex-col rounded-xl border border-white/10 bg-white/5 px-3 py-2 backdrop-blur-sm">
+                  <div className="flex items-center gap-1.5 text-[#d4af37]">
+                    <Sparkles size={13} strokeWidth={1.8} />
+                    <span className="text-[9px] font-black uppercase tracking-[0.18em]">Proxima</span>
                   </div>
-                  <p className="mt-2 text-lg font-black">Bridge</p>
+                  <p className="text-sm font-black mt-1">Bridge</p>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        <section className="rounded-[24px] border border-amber-200 bg-amber-50/80 px-4 py-3 text-amber-900 shadow-sm">
-          <p className="text-[11px] font-black uppercase tracking-[0.2em] text-amber-700">
-            Escopo desta fase
-          </p>
-          <p className="mt-1 text-xs font-semibold leading-5">
-            A aplicacao agora persiste anexos no servidor da RC Molina e os envia pela bridge do WhatsApp junto com a
-            mensagem, respeitando politica de formato e tamanho.
-          </p>
-        </section>
-
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_420px]">
-          <div className="space-y-4">
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,1.5fr)_360px] xl:grid-cols-[minmax(0,1.5fr)_380px]">
+          <div className="space-y-3">
             <WhatsAppCampaignEditor
               campaignName={campaignName}
               message={message}
@@ -682,7 +660,7 @@ export function CampanhasShell({ userId, userEmail }: CampanhasShellProps) {
             />
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-3">
             <WhatsAppConnectionStatus
               status={bridgeStatus}
               isLoading={isLoadingBridgeStatus}
