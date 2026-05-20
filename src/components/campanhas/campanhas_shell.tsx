@@ -587,21 +587,21 @@ export function CampanhasShell({ userId, userEmail }: CampanhasShellProps) {
         className="hidden"
       />
 
-      <div className="mx-auto flex w-full max-w-[1540px] flex-col gap-5">
+      <div className="mx-auto flex w-full max-w-[1540px] flex-col gap-4">
         <section className="overflow-hidden rounded-[34px] border border-white/70 bg-[#0c1826] text-white shadow-[0_30px_80px_rgba(15,23,42,0.18)]">
-          <div className="relative px-6 py-6 sm:px-7 sm:py-7">
+          <div className="relative px-5 py-4 sm:px-6 sm:py-5">
             <div className="absolute -left-12 top-0 h-40 w-40 rounded-full bg-[#d4af37]/10 blur-3xl" />
             <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-emerald-300/10 blur-3xl" />
 
-            <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="max-w-3xl">
                 <p className="text-[11px] font-black uppercase tracking-[0.26em] text-[#d4af37]">
                   Campanhas
                 </p>
-                <h2 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">
+                <h2 className="mt-1 text-2xl font-black tracking-tight sm:text-3xl">
                   Shell de WhatsApp pronto para evolucao
                 </h2>
-                <p className="mt-3 max-w-2xl text-sm font-medium leading-6 text-white/65 sm:text-[15px]">
+                <p className="mt-2 max-w-2xl text-xs font-medium leading-5 text-white/65 sm:text-sm">
                   Esta fase substitui o placeholder por uma interface modular ja encaixada no dashboard da RC Molina.
                   Agora o modulo tambem monitora a conexao com o servico externo do WhatsApp e ja consegue disparar
                   mensagens com anexos persistidos de forma controlada.
@@ -653,18 +653,18 @@ export function CampanhasShell({ userId, userEmail }: CampanhasShellProps) {
           </div>
         </section>
 
-        <section className="rounded-[28px] border border-amber-200 bg-amber-50/80 px-5 py-4 text-amber-900 shadow-sm">
+        <section className="rounded-[24px] border border-amber-200 bg-amber-50/80 px-4 py-3 text-amber-900 shadow-sm">
           <p className="text-[11px] font-black uppercase tracking-[0.2em] text-amber-700">
             Escopo desta fase
           </p>
-          <p className="mt-2 text-sm font-semibold leading-6">
+          <p className="mt-1 text-xs font-semibold leading-5">
             A aplicacao agora persiste anexos no servidor da RC Molina e os envia pela bridge do WhatsApp junto com a
             mensagem, respeitando politica de formato e tamanho.
           </p>
         </section>
 
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_420px]">
-          <div className="space-y-5">
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_420px]">
+          <div className="space-y-4">
             <WhatsAppCampaignEditor
               campaignName={campaignName}
               message={message}
@@ -682,7 +682,7 @@ export function CampanhasShell({ userId, userEmail }: CampanhasShellProps) {
             />
           </div>
 
-          <div className="space-y-5">
+          <div className="space-y-4">
             <WhatsAppConnectionStatus
               status={bridgeStatus}
               isLoading={isLoadingBridgeStatus}

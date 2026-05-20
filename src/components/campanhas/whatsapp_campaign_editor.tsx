@@ -13,7 +13,7 @@ export function WhatsAppCampaignEditor({
 }: WhatsAppCampaignEditorProps) {
   return (
     <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
-      <div className="border-b border-slate-100 bg-slate-50/80 px-5 py-4">
+      <div className="border-b border-slate-100 bg-slate-50/80 px-4 py-3">
         <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#b58c2a]">
           Conteúdo
         </p>
@@ -25,7 +25,7 @@ export function WhatsAppCampaignEditor({
         </p>
       </div>
 
-      <div className="space-y-4 p-5">
+      <div className="space-y-4 p-4">
         <div className="space-y-2">
           <label
             htmlFor="campaign-name"
@@ -57,7 +57,7 @@ export function WhatsAppCampaignEditor({
             placeholder={
               "Use este espaço para montar sua mensagem.\n\nDica: *negrito*, _itálico_, ~riscado~ e `monospace` já aparecem no preview."
             }
-            className="min-h-[260px] w-full resize-y rounded-[24px] border border-slate-200 bg-[#fcfcfd] px-4 py-4 text-sm leading-6 text-slate-700 outline-none transition focus:border-[#d4af37] focus:ring-4 focus:ring-[#d4af37]/10"
+            className="min-h-[160px] w-full resize-y rounded-[24px] border border-slate-200 bg-[#fcfcfd] px-4 py-4 text-sm leading-6 text-slate-700 outline-none transition focus:border-[#d4af37] focus:ring-4 focus:ring-[#d4af37]/10"
           />
           <div className="flex items-center justify-between gap-3 text-xs font-semibold text-slate-400">
             <span>Preview local apenas. Nenhum disparo será feito nesta etapa.</span>
@@ -65,34 +65,7 @@ export function WhatsAppCampaignEditor({
           </div>
         </div>
 
-        <div className="grid gap-3 md:grid-cols-3">
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#b58c2a]">
-              Texto
-            </p>
-            <p className="mt-1 text-sm font-semibold text-slate-700">
-              Base pronta para WhatsApp e futuras automações.
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#b58c2a]">
-              Personalização
-            </p>
-            <p className="mt-1 text-sm font-semibold text-slate-700">
-              Estrutura pronta para evoluir para variáveis por cliente.
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#b58c2a]">
-              Próxima fase
-            </p>
-            <p className="mt-1 text-sm font-semibold text-slate-700">
-              Integrar backend, histórico e disparo autenticado.
-            </p>
-          </div>
-        </div>
+        {/* Placeholder cards removed to save vertical space */}
       </div>
     </section>
   );

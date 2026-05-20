@@ -40,7 +40,7 @@ export function WhatsAppConnectionStatus({
 
   return (
     <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
-      <div className="border-b border-slate-100 bg-slate-50/80 px-5 py-4">
+      <div className="border-b border-slate-100 bg-slate-50/80 px-4 py-3">
         <div className="flex items-center justify-between gap-4">
           <div>
             <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#b58c2a]">
@@ -60,8 +60,8 @@ export function WhatsAppConnectionStatus({
         </div>
       </div>
 
-      <div className="space-y-4 p-5">
-        <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 px-4 py-4">
+      <div className="space-y-3 p-4">
+        <div className="rounded-[20px] border border-slate-200 bg-slate-50/80 px-4 py-3">
           <p className="text-sm font-semibold text-slate-700">
             {status?.configured
               ? status.available
@@ -77,7 +77,7 @@ export function WhatsAppConnectionStatus({
         </div>
 
         {status?.user ? (
-          <div className="rounded-[24px] border border-emerald-200 bg-emerald-50/70 px-4 py-4">
+          <div className="rounded-[20px] border border-emerald-200 bg-emerald-50/70 px-4 py-3">
             <div className="flex items-center gap-2 text-emerald-700">
               <Smartphone size={16} strokeWidth={1.9} />
               <span className="text-[11px] font-black uppercase tracking-[0.18em]">Sessão ativa</span>
@@ -88,7 +88,7 @@ export function WhatsAppConnectionStatus({
         ) : null}
 
         {status?.qrAvailable ? (
-          <div className="rounded-[24px] border border-amber-200 bg-amber-50/70 px-4 py-4">
+          <div className="rounded-[20px] border border-amber-200 bg-amber-50/70 px-4 py-3">
             <div className="flex items-center gap-2 text-amber-700">
               <QrCode size={16} strokeWidth={1.9} />
               <span className="text-[11px] font-black uppercase tracking-[0.18em]">QR disponível</span>

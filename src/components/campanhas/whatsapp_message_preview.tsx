@@ -63,7 +63,7 @@ export function WhatsAppMessagePreview({
 
   return (
     <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
-      <div className="border-b border-slate-100 bg-slate-50/80 px-5 py-4">
+      <div className="border-b border-slate-100 bg-slate-50/80 px-4 py-3">
         <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#b58c2a]">
           Preview
         </p>
@@ -72,7 +72,7 @@ export function WhatsAppMessagePreview({
         </h3>
       </div>
 
-      <div className="space-y-4 p-5">
+      <div className="space-y-4 p-4">
         <div className="mx-auto w-full max-w-[320px] rounded-[32px] bg-[#111b21] p-3 shadow-[0_24px_60px_rgba(15,23,42,0.18)]">
           <div className="overflow-hidden rounded-[28px] bg-[#efeae2]">
             <div className="flex items-center justify-between bg-[#202c33] px-4 py-3 text-white">
@@ -85,7 +85,7 @@ export function WhatsAppMessagePreview({
               </div>
             </div>
 
-            <div className="min-h-[360px] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.55),transparent_48%),linear-gradient(180deg,#f4efe6_0%,#e8dfd1_100%)] px-4 py-5">
+            <div className="min-h-[280px] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.55),transparent_48%),linear-gradient(180deg,#f4efe6_0%,#e8dfd1_100%)] px-4 py-4">
               <div className="ml-auto max-w-[88%] rounded-[22px] rounded-tr-md bg-[#dcf8c6] px-4 py-3 text-[13px] leading-6 text-[#0f172a] shadow-sm">
                 <p className="mb-2 text-[11px] font-black uppercase tracking-[0.18em] text-[#5b7c49]">
                   {campaignName.trim() || "Campanha sem nome"}
