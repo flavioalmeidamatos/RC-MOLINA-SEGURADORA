@@ -9,6 +9,9 @@ import { ImportLeadHttpError, importLeadFromSistemaQuer } from './api/_lib/impor
 import importLeadAssetHandler from './api/import-lead-asset';
 import sendLoginCodeHandler from './api/send-login-code';
 import { aniversariantesMesHandler, createClienteHandler, listClientesHandler, nextClienteCodigoHandler, searchClientesHandler, updateClienteHandler, deleteClienteHandler, clientStatsHandler } from './api/clientes';
+import { registerCampanhasRoutes } from './api/campanhas';
+import { registerWhatsAppBridgeRoutes } from './api/whatsapp_bridge';
+import { initializeLocalWhatsAppConnector } from './api/_lib/whatsapp_connector';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -664,11 +667,14 @@ async function startServer() {
 
   app.use(express.json({ limit: '25mb' }));
   app.use('/uploads', express.static(uploadDir));
+  void initializeLocalWhatsAppConnector();
 
   registerLocalAuthRoutes(app);
   app.use('/api', gmailRouter);
 
   app.post('/api/send-login-code', sendLoginCodeHandler);
+  registerCampanhasRoutes(app);
+  registerWhatsAppBridgeRoutes(app);
 
   app.post('/api/clientes', createClienteHandler);
   app.get('/api/clientes', listClientesHandler);

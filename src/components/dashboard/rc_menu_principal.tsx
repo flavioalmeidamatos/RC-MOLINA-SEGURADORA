@@ -24,6 +24,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { ClientRegistrationMultipage } from "../clientes/client_registration_multipage";
 import { Agenda } from "../agenda/agenda";
+import { CampanhasShell } from "../campanhas/campanhas_shell";
 import { apiListVisibleUsers } from "../../lib/local_api";
 import type { LocalAuthSession, UsuarioPerfil } from "../../lib/local_auth";
 import { createGmailApi, type MessageSummary } from "../../lib/gmail_api";
@@ -887,7 +888,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-[#F0F4F8] font-sans lg:h-screen lg:flex-row lg:overflow-hidden">
-      <aside className="w-full flex-shrink-0 bg-[#0c1826] shadow-xl lg:w-52 lg:z-20">
+      <aside className="w-full flex-shrink-0 bg-[#0c1826] shadow-xl lg:w-48 lg:z-20">
         <div className="flex flex-col items-center justify-center bg-gradient-to-b from-[#b58c2a] to-[#806117] px-4 py-6 shadow-inner lg:h-44 lg:pt-4 lg:pb-2">
           <div className="mb-3 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-2 border-white/50 bg-white shadow-md transition-all hover:border-white">
             {avatarUrl ? (
@@ -1255,6 +1256,12 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                 />
               </React.Suspense>
             ) : showCampanhasArea ? (
+              <>
+                <CampanhasShell
+                  userId={perfil?.id || session?.user?.id || null}
+                  userEmail={perfil?.email || session?.user?.email || null}
+                />
+                {/*
               <div className="flex flex-1 items-center justify-center bg-gradient-to-br from-[#f8fafc] to-[#f1f5f9] p-6">
                 <div className="w-full max-w-2xl overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-2xl">
                   <div className="h-2 bg-gradient-to-r from-[#b58c2a] to-[#d4af37]" />
@@ -1285,6 +1292,8 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                   </div>
                 </div>
               </div>
+                */}
+              </>
             ) : activeMenu === "Agenda" ? (
               <Agenda aniversariantesMes={aniversariantesMes} />
             ) : (

@@ -38,7 +38,6 @@ if [ -f "$ENV_PATH" ]; then
 fi
 
 APP_URL="$(read_env_value APP_URL)"
-GEMINI_API_KEY="$(read_env_value GEMINI_API_KEY)"
 GMAIL_DATABASE_URL="$(read_env_value GMAIL_DATABASE_URL)"
 GMAIL_GOOGLE_CLIENT_ID="$(read_env_value GMAIL_GOOGLE_CLIENT_ID)"
 GMAIL_GOOGLE_CLIENT_SECRET="$(read_env_value GMAIL_GOOGLE_CLIENT_SECRET)"
@@ -93,7 +92,6 @@ fi
 
 {
   printf '%s\n' "APP_URL=${APP_URL_VALUE}"
-  printf '%s\n' "GEMINI_API_KEY=${GEMINI_API_KEY:-}"
   printf '%s\n' "DATABASE_URL=${DATABASE_URL_VALUE}"
   printf '%s\n' "UPLOAD_DIR=$SHARED_PATH/uploads"
   printf '%s\n' "ADMIN_EMAIL=admin@rcmolina.com.br"
