@@ -20,22 +20,16 @@ export function WhatsAppRecipientFields({
       <div className="border-b border-slate-100 bg-slate-50/80 px-4 py-3">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#b58c2a]">
+            <h3 className="text-base font-black uppercase tracking-[0.22em] text-[#b58c2a]">
               Destinatários
-            </p>
-            <h3 className="mt-1 text-lg font-black tracking-tight text-[#0c1826]">
-              Base piloto de envio
             </h3>
-            <p className="mt-1 text-sm font-medium text-slate-500">
-              Campos locais para validar UX e estrutura de disparo antes da integração real.
-            </p>
           </div>
 
           <button
             type="button"
             onClick={onAddRecipient}
             disabled={recipients.length >= 10}
-            className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-full border border-slate-200 bg-white px-4 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Adicionar
           </button>
@@ -55,7 +49,7 @@ export function WhatsAppRecipientFields({
                 className="rounded-[20px] border border-slate-200 bg-slate-50/80 p-3"
               >
                 <div className="mb-2 flex items-center justify-between gap-3">
-                  <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
                     Contato {index + 1}
                   </p>
                   <button
@@ -73,7 +67,7 @@ export function WhatsAppRecipientFields({
                   value={recipient}
                   onChange={(event) => onRecipientChange(index, event.target.value)}
                   placeholder="11999999999"
-                  className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold outline-none transition ${
+                  className={`w-full rounded-2xl border px-4 py-3 text-xs font-semibold outline-none transition ${
                     !hasValue
                       ? "border-slate-200 bg-white text-slate-700 focus:border-[#d4af37] focus:ring-4 focus:ring-[#d4af37]/10"
                       : isValid
@@ -82,7 +76,7 @@ export function WhatsAppRecipientFields({
                   }`}
                 />
 
-                <p className="mt-2 text-xs font-semibold text-slate-400">
+                <p className="mt-2 text-[11px] font-semibold text-slate-400">
                   {hasValue
                     ? isValid
                       ? "Número válido para a próxima fase de disparo."
@@ -97,17 +91,17 @@ export function WhatsAppRecipientFields({
         <div className="flex gap-2">
           <div className="flex flex-1 items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#b58c2a]">Total</p>
-            <p className="text-sm font-black text-[#0c1826]">{recipients.length}</p>
+            <p className="text-xs font-black text-[#0c1826]">{recipients.length}</p>
           </div>
 
           <div className="flex flex-1 items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50/70 px-3 py-2">
             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700">Válidos</p>
-            <p className="text-sm font-black text-emerald-800">{validRecipients}</p>
+            <p className="text-xs font-black text-emerald-800">{validRecipients}</p>
           </div>
 
           <div className="flex flex-1 items-center justify-between rounded-xl border border-amber-200 bg-amber-50/70 px-3 py-2">
             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">Ajustar</p>
-            <p className="text-sm font-black text-amber-800">{invalidRecipients}</p>
+            <p className="text-xs font-black text-amber-800">{invalidRecipients}</p>
           </div>
         </div>
       </div>

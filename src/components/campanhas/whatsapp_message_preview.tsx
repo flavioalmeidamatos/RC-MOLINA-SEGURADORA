@@ -41,7 +41,7 @@ function renderInlineTokens(tokens: WhatsAppInlineToken[]): ReactNode[] {
       return (
         <code
           key={`token-${index}`}
-          className="rounded bg-slate-100 px-1 py-0.5 font-mono text-[12px]"
+          className="rounded bg-slate-100 px-1 py-0.5 font-mono text-[11px]"
         >
           {token.value}
         </code>
@@ -64,10 +64,10 @@ export function WhatsAppMessagePreview({
   return (
     <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-100 bg-slate-50/80 px-4 py-3">
-        <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#b58c2a]">
+        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#b58c2a]">
           Preview
         </p>
-        <h3 className="mt-1 text-lg font-black tracking-tight text-[#0c1826]">
+        <h3 className="mt-1 text-base font-black tracking-tight text-[#0c1826]">
           Simulação de mensagem
         </h3>
       </div>
@@ -77,8 +77,8 @@ export function WhatsAppMessagePreview({
           <div className="overflow-hidden rounded-[28px] bg-[#efeae2]">
             <div className="flex items-center justify-between bg-[#202c33] px-4 py-3 text-white">
               <div>
-                <p className="text-sm font-black">Campanhas RC</p>
-                <p className="text-[11px] font-semibold text-white/60">Preview local</p>
+                <p className="text-xs font-black">Campanhas RC</p>
+                <p className="text-[10px] font-semibold text-white/60">Preview local</p>
               </div>
               <div className="rounded-full bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#86efac]">
                 teste
@@ -86,8 +86,8 @@ export function WhatsAppMessagePreview({
             </div>
 
             <div className="min-h-[280px] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.55),transparent_48%),linear-gradient(180deg,#f4efe6_0%,#e8dfd1_100%)] px-4 py-4">
-              <div className="ml-auto max-w-[88%] rounded-[22px] rounded-tr-md bg-[#dcf8c6] px-4 py-3 text-[13px] leading-6 text-[#0f172a] shadow-sm">
-                <p className="mb-2 text-[11px] font-black uppercase tracking-[0.18em] text-[#5b7c49]">
+              <div className="ml-auto max-w-[88%] rounded-[22px] rounded-tr-md bg-[#dcf8c6] px-4 py-3 text-[12px] leading-6 text-[#0f172a] shadow-sm">
+                <p className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#5b7c49]">
                   {campaignName.trim() || "Campanha sem nome"}
                 </p>
 
@@ -108,7 +108,7 @@ export function WhatsAppMessagePreview({
                     <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5b7c49]">
                       Anexos preparados
                     </p>
-                    <p className="mt-1 text-xs font-semibold text-slate-600">
+                    <p className="mt-1 text-[11px] font-semibold text-slate-600">
                       {attachments.length} arquivo(s) pronto(s) para envio.
                     </p>
                   </div>
@@ -128,14 +128,14 @@ export function WhatsAppMessagePreview({
             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#b58c2a]">
               Alcance válido
             </p>
-            <p className="mt-1 text-lg font-black text-[#0c1826]">{validRecipients}</p>
+            <p className="mt-1 text-base font-black text-[#0c1826]">{validRecipients}</p>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#b58c2a]">
               Mídia
             </p>
-            <p className="mt-1 text-lg font-black text-[#0c1826]">{attachments.length}</p>
+            <p className="mt-1 text-base font-black text-[#0c1826]">{attachments.length}</p>
           </div>
 
           <div
@@ -153,7 +153,7 @@ export function WhatsAppMessagePreview({
               Status
             </p>
             <p
-              className={`mt-1 text-sm font-black ${
+              className={`mt-1 text-xs font-black ${
                 readyForNextPhase ? "text-emerald-800" : "text-amber-800"
               }`}
             >

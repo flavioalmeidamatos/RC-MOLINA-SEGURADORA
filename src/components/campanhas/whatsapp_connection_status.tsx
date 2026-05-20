@@ -43,16 +43,16 @@ export function WhatsAppConnectionStatus({
       <div className="border-b border-slate-100 bg-slate-50/80 px-4 py-3">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#b58c2a]">
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#b58c2a]">
               Conexão
             </p>
-            <h3 className="mt-1 text-lg font-black tracking-tight text-[#0c1826]">
+            <h3 className="mt-1 text-base font-black tracking-tight text-[#0c1826]">
               Status do WhatsApp
             </h3>
           </div>
 
           <div
-            className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] ${statusTone[connectionState]}`}
+            className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] ${statusTone[connectionState]}`}
           >
             {connected ? <Wifi size={14} strokeWidth={1.9} /> : <WifiOff size={14} strokeWidth={1.9} />}
             {statusLabel[connectionState]}
@@ -62,7 +62,7 @@ export function WhatsAppConnectionStatus({
 
       <div className="space-y-3 p-4">
         <div className="rounded-[20px] border border-slate-200 bg-slate-50/80 px-4 py-3">
-          <p className="text-sm font-semibold text-slate-700">
+          <p className="text-xs font-semibold text-slate-700">
             {status?.configured
               ? status.available
                 ? "A RC Molina está conectada ao conector local do WhatsApp."
@@ -70,7 +70,7 @@ export function WhatsAppConnectionStatus({
               : "O conector do WhatsApp ainda não foi configurado neste ambiente."}
           </p>
           {status?.error ? (
-            <p className="mt-2 text-xs font-semibold leading-5 text-rose-600">
+            <p className="mt-2 text-[11px] font-semibold leading-5 text-rose-600">
               {status.error}
             </p>
           ) : null}
@@ -80,10 +80,10 @@ export function WhatsAppConnectionStatus({
           <div className="rounded-[20px] border border-emerald-200 bg-emerald-50/70 px-4 py-3">
             <div className="flex items-center gap-2 text-emerald-700">
               <Smartphone size={16} strokeWidth={1.9} />
-              <span className="text-[11px] font-black uppercase tracking-[0.18em]">Sessão ativa</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.18em]">Sessão ativa</span>
             </div>
-            <p className="mt-2 text-sm font-black text-emerald-900">{status.user.pushname}</p>
-            <p className="mt-1 text-xs font-semibold text-emerald-700">{status.user.phone}</p>
+            <p className="mt-2 text-xs font-black text-emerald-900">{status.user.pushname}</p>
+            <p className="mt-1 text-[11px] font-semibold text-emerald-700">{status.user.phone}</p>
           </div>
         ) : null}
 
@@ -91,9 +91,9 @@ export function WhatsAppConnectionStatus({
           <div className="rounded-[20px] border border-amber-200 bg-amber-50/70 px-4 py-3">
             <div className="flex items-center gap-2 text-amber-700">
               <QrCode size={16} strokeWidth={1.9} />
-              <span className="text-[11px] font-black uppercase tracking-[0.18em]">QR disponível</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.18em]">QR disponível</span>
             </div>
-            <p className="mt-2 text-xs font-semibold leading-5 text-amber-900">
+            <p className="mt-2 text-[11px] font-semibold leading-5 text-amber-900">
               Existe um QR pendente. Se precisar concluir a autenticação, acompanhe o terminal do servidor local.
             </p>
           </div>
@@ -104,7 +104,7 @@ export function WhatsAppConnectionStatus({
             type="button"
             onClick={onRefresh}
             disabled={isLoading}
-            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isLoading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCcw size={14} strokeWidth={1.9} />}
             Atualizar
@@ -114,7 +114,7 @@ export function WhatsAppConnectionStatus({
             type="button"
             onClick={onLogout}
             disabled={isLoggingOut || !status?.configured}
-            className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isLoggingOut ? <Loader2 size={14} className="animate-spin" /> : <LogOut size={14} strokeWidth={1.9} />}
             Desconectar

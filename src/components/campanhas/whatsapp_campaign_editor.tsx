@@ -64,20 +64,16 @@ export function WhatsAppCampaignEditor({
   return (
     <section className="rounded-[28px] border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-100 bg-slate-50/80 px-4 py-3 rounded-t-[28px]">
-        <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#b58c2a]">
-          Conteúdo
-        </p>
-        <h3 className="mt-1 text-lg font-black tracking-tight text-[#0c1826]">
+        <h3 className="text-base font-black tracking-tight text-[#0c1826]">
           Editor da campanha
         </h3>
-
       </div>
 
       <div className="space-y-4 p-4">
         <div className="space-y-2">
           <label
             htmlFor="campaign-name"
-            className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500"
+            className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500"
           >
             Nome interno
           </label>
@@ -87,14 +83,14 @@ export function WhatsAppCampaignEditor({
             value={campaignName}
             onChange={(event) => onCampaignNameChange(event.target.value)}
             placeholder="Ex.: Renovação plano familiar"
-            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#d4af37] focus:ring-4 focus:ring-[#d4af37]/10"
+            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-700 outline-none transition focus:border-[#d4af37] focus:ring-4 focus:ring-[#d4af37]/10"
           />
         </div>
 
         <div className="space-y-2">
           <label
             htmlFor="campaign-message"
-            className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500"
+            className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500"
           >
             Mensagem principal
           </label>
@@ -152,7 +148,7 @@ export function WhatsAppCampaignEditor({
                 )}
               </div>
               
-              <div className="ml-auto flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500 cursor-default" title="A seção de mídias fica logo abaixo nesta mesma coluna">
+              <div className="ml-auto flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold text-slate-500 cursor-default" title="A seção de mídias fica logo abaixo nesta mesma coluna">
                 <ImageIcon size={14} className="text-slate-400" />
                 <span className="hidden sm:inline">Anexar Mídia: Logo abaixo 👇</span>
               </div>
@@ -166,11 +162,11 @@ export function WhatsAppCampaignEditor({
               placeholder={
                 "Use este espaço para montar sua mensagem.\n\nUse a barra acima para adicionar emojis ou formatação."
               }
-              className="min-h-[160px] w-full resize-y bg-transparent px-4 py-4 text-sm leading-6 text-slate-700 outline-none rounded-b-[24px]"
+              className="min-h-[160px] w-full resize-y bg-transparent px-4 py-4 text-xs leading-6 text-slate-700 outline-none rounded-b-[24px]"
             />
           </div>
           
-          <div className="flex items-center justify-between gap-3 px-1 text-xs font-semibold text-slate-400">
+          <div className="flex items-center justify-between gap-3 px-1 text-[11px] font-semibold text-slate-400">
             <span>Preview local apenas. Nenhum disparo será feito nesta etapa.</span>
             <span>{message.length} caracteres</span>
           </div>

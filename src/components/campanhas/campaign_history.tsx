@@ -21,10 +21,10 @@ export function CampaignHistory({ items, isLoading, activeCampaignName }: Campai
       <div className="border-b border-slate-100 bg-slate-50/80 px-4 py-3">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#b58c2a]">
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#b58c2a]">
               Auditoria
             </p>
-            <h3 className="mt-1 text-lg font-black tracking-tight text-[#0c1826]">
+            <h3 className="mt-1 text-base font-black tracking-tight text-[#0c1826]">
               Histórico da campanha
             </h3>
           </div>
@@ -35,11 +35,11 @@ export function CampaignHistory({ items, isLoading, activeCampaignName }: Campai
 
       <div className="space-y-3 p-4">
         {!activeCampaignName ? (
-          <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-500">
+          <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold text-slate-500">
             Selecione ou salve uma campanha para consultar a trilha de auditoria.
           </div>
         ) : items.length === 0 ? (
-          <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-500">
+          <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold text-slate-500">
             Nenhum evento registrado ainda para {activeCampaignName}.
           </div>
         ) : (
@@ -55,10 +55,10 @@ export function CampaignHistory({ items, isLoading, activeCampaignName }: Campai
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-sm font-black text-[#0c1826]">
+                    <p className="text-xs font-black text-[#0c1826]">
                       {eventLabels[item.eventType]}
                     </p>
-                    <p className="mt-1 text-xs font-semibold leading-5 text-slate-600">
+                    <p className="mt-1 text-[11px] font-semibold leading-5 text-slate-600">
                       {item.summary}
                     </p>
                   </div>
@@ -72,7 +72,7 @@ export function CampaignHistory({ items, isLoading, activeCampaignName }: Campai
                   </span>
                 </div>
 
-                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-semibold text-slate-500">
+                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] font-semibold text-slate-500">
                   <span className="inline-flex items-center gap-1.5">
                     <Clock3 size={13} strokeWidth={1.9} />
                     {new Date(item.createdAt).toLocaleString("pt-BR")}

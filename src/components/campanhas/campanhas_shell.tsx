@@ -608,7 +608,7 @@ export function CampanhasShell({ userId, userEmail }: CampanhasShellProps) {
                     <Megaphone size={13} strokeWidth={1.8} />
                     <span className="text-[9px] font-black uppercase tracking-[0.18em]">Shell</span>
                   </div>
-                  <p className="text-sm font-black mt-1">Ativo</p>
+                  <p className="text-xs font-black mt-1">Ativo</p>
                 </div>
 
                 <div className="flex flex-col rounded-xl border border-white/10 bg-white/5 px-3 py-2 backdrop-blur-sm">
@@ -616,7 +616,7 @@ export function CampanhasShell({ userId, userEmail }: CampanhasShellProps) {
                     <Users size={13} strokeWidth={1.8} />
                     <span className="text-[9px] font-black uppercase tracking-[0.18em]">Validos</span>
                   </div>
-                  <p className="text-sm font-black mt-1">{recipientSummary.validNumbers.length}</p>
+                  <p className="text-xs font-black mt-1">{recipientSummary.validNumbers.length}</p>
                 </div>
 
                 <div className="flex flex-col rounded-xl border border-white/10 bg-white/5 px-3 py-2 backdrop-blur-sm">
@@ -624,7 +624,7 @@ export function CampanhasShell({ userId, userEmail }: CampanhasShellProps) {
                     <ShieldCheck size={13} strokeWidth={1.8} />
                     <span className="text-[9px] font-black uppercase tracking-[0.18em]">Compliance</span>
                   </div>
-                  <p className="text-sm font-black mt-1">{readyForNextPhase ? "OK" : "Pendente"}</p>
+                  <p className="text-xs font-black mt-1">{readyForNextPhase ? "OK" : "Pendente"}</p>
                 </div>
 
                 <div className="flex flex-col rounded-xl border border-white/10 bg-white/5 px-3 py-2 backdrop-blur-sm">
@@ -632,7 +632,7 @@ export function CampanhasShell({ userId, userEmail }: CampanhasShellProps) {
                     <Sparkles size={13} strokeWidth={1.8} />
                     <span className="text-[9px] font-black uppercase tracking-[0.18em]">Proxima</span>
                   </div>
-                  <p className="text-sm font-black mt-1">Bridge</p>
+                  <p className="text-xs font-black mt-1">Bridge</p>
                 </div>
               </div>
             </div>
@@ -699,10 +699,10 @@ export function CampanhasShell({ userId, userEmail }: CampanhasShellProps) {
               <div className="border-b border-slate-100 bg-slate-50/80 px-5 py-4">
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#b58c2a]">
+                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#b58c2a]">
                       Rascunhos
                     </p>
-                    <h3 className="mt-1 text-lg font-black tracking-tight text-[#0c1826]">
+                    <h3 className="mt-1 text-base font-black tracking-tight text-[#0c1826]">
                       Campanhas salvas
                     </h3>
                   </div>
@@ -715,7 +715,7 @@ export function CampanhasShell({ userId, userEmail }: CampanhasShellProps) {
 
               <div className="space-y-3 p-5">
                 {savedCampaigns.length === 0 ? (
-                  <div className="rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-4 text-sm font-semibold text-slate-500">
+                  <div className="rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-4 text-xs font-semibold text-slate-500">
                     Nenhuma campanha salva no servidor.
                   </div>
                 ) : (
@@ -737,10 +737,10 @@ export function CampanhasShell({ userId, userEmail }: CampanhasShellProps) {
                             onClick={() => handleSelectCampaign(campaign)}
                             className="min-w-0 flex-1 text-left"
                           >
-                            <p className="truncate text-sm font-black text-[#0c1826]">
+                            <p className="truncate text-xs font-black text-[#0c1826]">
                               {campaign.campaignName || "Campanha sem nome"}
                             </p>
-                            <p className="mt-1 text-xs font-semibold text-slate-500">
+                            <p className="mt-1 text-[11px] font-semibold text-slate-500">
                               {campaign.recipients.filter(Boolean).length} contato(s) · atualizado em{" "}
                               {new Date(campaign.updatedAt).toLocaleDateString("pt-BR")}
                             </p>
@@ -772,10 +772,10 @@ export function CampanhasShell({ userId, userEmail }: CampanhasShellProps) {
         <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
           <div className="flex flex-col gap-4 px-5 py-5 md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#b58c2a]">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#b58c2a]">
                 Estado de entrega
               </p>
-              <p className="mt-1 text-sm font-semibold text-slate-600">
+              <p className="mt-1 text-xs font-semibold text-slate-600">
                 {campaignStatus || "Campanhas agora possui shell proprio no dashboard e persistencia basica no servidor."}
               </p>
             </div>
@@ -785,7 +785,7 @@ export function CampanhasShell({ userId, userEmail }: CampanhasShellProps) {
                 type="button"
                 onClick={() => void handleSaveCampaign()}
                 disabled={isSavingCampaign || isUploadingAttachments || !actor}
-                className="inline-flex items-center gap-2 rounded-full bg-[#0c1826] px-5 py-3 text-xs font-black uppercase tracking-[0.18em] text-white transition hover:bg-[#132338] disabled:cursor-not-allowed disabled:bg-slate-300"
+                className="inline-flex items-center gap-2 rounded-full bg-[#0c1826] px-5 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-white transition hover:bg-[#132338] disabled:cursor-not-allowed disabled:bg-slate-300"
               >
                 {isSavingCampaign ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} strokeWidth={1.8} />}
                 {activeCampaignId ? "Atualizar" : "Salvar"}
@@ -793,7 +793,7 @@ export function CampanhasShell({ userId, userEmail }: CampanhasShellProps) {
               <button
                 type="button"
                 onClick={handleReset}
-                className="rounded-full border border-slate-200 bg-white px-5 py-3 text-xs font-black uppercase tracking-[0.18em] text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
+                className="rounded-full border border-slate-200 bg-white px-5 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
               >
                 Limpar shell
               </button>
@@ -807,7 +807,7 @@ export function CampanhasShell({ userId, userEmail }: CampanhasShellProps) {
                   !activeCampaignId ||
                   bridgeStatus?.status !== "connected"
                 }
-                className="inline-flex items-center gap-2 rounded-full bg-[#0c1826] px-5 py-3 text-xs font-black uppercase tracking-[0.18em] text-white transition hover:bg-[#132338] disabled:cursor-not-allowed disabled:bg-slate-300"
+                className="inline-flex items-center gap-2 rounded-full bg-[#0c1826] px-5 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-white transition hover:bg-[#132338] disabled:cursor-not-allowed disabled:bg-slate-300"
               >
                 {isSendingCampaign ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} strokeWidth={1.8} />}
                 Disparar agora
