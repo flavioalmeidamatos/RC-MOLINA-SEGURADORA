@@ -13,6 +13,7 @@ import {
   LogOut,
   Mail,
   MapPin,
+  Megaphone,
   Phone,
   PartyPopper,
   User,
@@ -833,6 +834,15 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       setActiveMenu("Webmail");
       return;
     }
+
+    if (line1 === "Campanhas") {
+      if (shouldResetSulamericaSession("Campanhas")) {
+        await resetSulamericaProxySession();
+      }
+      setShowSimulatorChooser(false);
+      setActiveMenu("Campanhas");
+      return;
+    }
   };
 
   const menuItems = [
@@ -841,6 +851,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     { title: "Agenda", icon: Calendar },
     { title: "Simuladores", icon: FolderOpen },
     { title: "Webmail", icon: Mail },
+    { title: "Campanhas", icon: Megaphone },
     { title: "Financeiro", icon: Banknote },
     { title: "Configurações", icon: Wrench },
   ];
@@ -850,6 +861,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     { line1: "Agenda", line2: "", icon: Calendar },
     { line1: "Simuladores", line2: "", icon: FolderOpen },
     { line1: "Webmail", line2: "", icon: Mail },
+    { line1: "Campanhas", line2: "", icon: Megaphone },
     { line1: "Financeiro", line2: "", icon: Banknote },
     { line1: "Configurar", line2: "", icon: Wrench },
   ];
@@ -871,10 +883,11 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const showClientArea = activeMenu === "Meus clientes";
   const showAgendaArea = activeMenu === "Agenda";
   const showWebmailArea = activeMenu === "Webmail";
+  const showCampanhasArea = activeMenu === "Campanhas";
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-[#F0F4F8] font-sans lg:h-screen lg:flex-row lg:overflow-hidden">
-      <aside className="w-full flex-shrink-0 bg-[#0c1826] shadow-xl lg:w-64 lg:z-20">
+      <aside className="w-full flex-shrink-0 bg-[#0c1826] shadow-xl lg:w-52 lg:z-20">
         <div className="flex flex-col items-center justify-center bg-gradient-to-b from-[#b58c2a] to-[#806117] px-4 py-6 shadow-inner lg:h-44 lg:pt-4 lg:pb-2">
           <div className="mb-3 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-2 border-white/50 bg-white shadow-md transition-all hover:border-white">
             {avatarUrl ? (
@@ -933,7 +946,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-            {showClientArea || showSimulator || showSulamericaSimulator || showAmilSimulator || showMedseniorSimulator || showAgendaArea || showWebmailArea ? (
+            {showClientArea || showSimulator || showSulamericaSimulator || showAmilSimulator || showMedseniorSimulator || showAgendaArea || showWebmailArea || showCampanhasArea ? (
               <button
                 type="button"
                 onClick={() => void handleMenuClick("Home")}
@@ -1241,6 +1254,37 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                   lastInboxUpdateTimestamp={lastInboxUpdateTimestamp}
                 />
               </React.Suspense>
+            ) : showCampanhasArea ? (
+              <div className="flex flex-1 items-center justify-center bg-gradient-to-br from-[#f8fafc] to-[#f1f5f9] p-6">
+                <div className="w-full max-w-2xl overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-2xl">
+                  <div className="h-2 bg-gradient-to-r from-[#b58c2a] to-[#d4af37]" />
+                  <div className="p-10 text-center">
+                    <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-3xl bg-[#b58c2a]/10 text-[#b58c2a] ring-8 ring-[#b58c2a]/5">
+                      <Megaphone size={44} strokeWidth={1.5} />
+                    </div>
+                    <h3 className="mb-4 text-2xl font-black tracking-tight text-[#0c1826]">
+                      Campanhas
+                    </h3>
+                    <p className="mx-auto mb-8 max-w-lg text-base leading-relaxed text-gray-500">
+                      O módulo de campanhas está em desenvolvimento. Em breve você poderá criar e gerenciar campanhas de marketing direto para seus clientes.
+                    </p>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                      <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-left">
+                        <p className="text-xs font-black uppercase tracking-widest text-[#b58c2a]">E-mail Marketing</p>
+                        <p className="mt-1 text-sm text-slate-500">Envio em massa para sua base de clientes</p>
+                      </div>
+                      <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-left">
+                        <p className="text-xs font-black uppercase tracking-widest text-[#b58c2a]">WhatsApp</p>
+                        <p className="mt-1 text-sm text-slate-500">Disparos automáticos via WhatsApp Business</p>
+                      </div>
+                      <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-left">
+                        <p className="text-xs font-black uppercase tracking-widest text-[#b58c2a]">Aniversários</p>
+                        <p className="mt-1 text-sm text-slate-500">Parabéns automático para clientes</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             ) : activeMenu === "Agenda" ? (
               <Agenda aniversariantesMes={aniversariantesMes} />
             ) : (
