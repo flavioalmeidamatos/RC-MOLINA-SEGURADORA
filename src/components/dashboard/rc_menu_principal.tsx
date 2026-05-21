@@ -65,6 +65,7 @@ const SULAMERICA_PROXY_LOGIN_URL = "/sulamerica-proxy/SaudeCotador/LoginVendedor
 const AMIL_SIMULATOR_URL = "https://portalcorretor.amil.com.br/portal/web/servicos/usuario/corretor/login";
 const AMIL_PROXY_LOGIN_URL = "/amil-proxy/portal/web/servicos/usuario/corretor/login";
 const MEDSENIOR_SIMULATOR_URL = "https://vendadigital.medsenior.com.br/";
+const MEDSENIOR_PROXY_LOGIN_URL = "/medsenior-proxy/";
 const AMIL_LOGIN = "77915445715";
 const AMIL_PASSWORD = "sqn0y3zqmo";
 const SIMULATOR_FALLBACK_WINDOW_NAME = "simulador_online_fallback_window";
@@ -1224,7 +1225,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                   </a>
                 </div>
                 <iframe
-                  src={MEDSENIOR_SIMULATOR_URL}
+                  src={MEDSENIOR_PROXY_LOGIN_URL}
                   title="Simulador Medsenior"
                   className="h-full w-full flex-1 border-none bg-white"
                   allow="geolocation; microphone; camera; payment; encrypted-media"

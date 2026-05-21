@@ -1091,10 +1091,30 @@ const medseniorAutofillScript = `
 })();
 </script>`;
 
+const medseniorBootstrapScript = `
+<script>
+(function () {
+  try {
+    var proxyPrefix = ${JSON.stringify(MEDSENIOR_PROXY_PREFIX)};
+    if (window.location.pathname.startsWith(proxyPrefix)) {
+      var nextUrl = '/' + window.location.search + window.location.hash;
+      window.history.replaceState(
+        Object.assign({}, window.history.state || {}, { __rcMedseniorProxy: true }),
+        document.title,
+        nextUrl
+      );
+    }
+  } catch (_bootstrapError) {}
+})();
+</script>`;
+
       if (contentType.includes('text/html')) {
         let content = responseBuffer.toString('utf8');
         // Adiciona base href para garantir que recursos relativos funcionem via proxy
-        content = content.replace(/<head([^>]*)>/i, `<head$1><base href="${MEDSENIOR_PROXY_PREFIX}/" />`);
+        content = content.replace(
+          /<head([^>]*)>/i,
+          `<head$1><base href="${MEDSENIOR_PROXY_PREFIX}/" />${medseniorBootstrapScript}`
+        );
         
         // Injeta o script de preenchimento automático
         if (content.includes('</body>')) {
