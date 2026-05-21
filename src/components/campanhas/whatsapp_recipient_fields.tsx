@@ -19,13 +19,13 @@ export function WhatsAppRecipientFields({
     <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-100 bg-slate-50/80 px-5 py-4">
         <div className="flex items-start justify-between gap-4">
-          <div>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#b58c2a]">
-              Destinatarios
+              Destinatários
             </p>
-            <h3 className="mt-1 text-lg font-black tracking-tight text-[#0c1826]">
+            <p className="text-sm font-semibold text-slate-500">
               Contatos da campanha
-            </h3>
+            </p>
           </div>
 
           <button
@@ -82,9 +82,9 @@ export function WhatsAppRecipientFields({
                 <p className="mt-2 text-xs leading-5 text-slate-500">
                   {hasValue
                     ? isValid
-                      ? "Numero valido para a proxima fase de disparo."
-                      : "Use 11 digitos com DDD."
-                    : "Digite o numero para validar a estrutura local."}
+                      ? "Número válido para a próxima fase de disparo."
+                      : "Use 11 dígitos com DDD."
+                    : "Digite o número para validar a estrutura local."}
                 </p>
               </div>
             );
@@ -98,7 +98,7 @@ export function WhatsAppRecipientFields({
           </div>
 
           <div className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50/70 px-3 py-3">
-            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-emerald-700">Validos</p>
+            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-emerald-700">Válidos</p>
             <p className="text-sm font-black text-emerald-800">{validRecipients}</p>
           </div>
 

@@ -17,7 +17,7 @@ const statusLabel: Record<WhatsAppBridgeStatus["status"], string> = {
   disconnected: "Desconectado",
   connecting: "Conectando",
   qr: "Aguardando QR",
-  logging_in: "Validando sessao",
+  logging_in: "Validando sessão",
   connected: "Conectado",
 };
 
@@ -48,12 +48,12 @@ export function WhatsAppConnectionGateModal({
     connectionState === "qr"
       ? "Escaneie o QR code com o WhatsApp do aparelho que vai operar os disparos."
       : connectionState === "logging_in"
-        ? "A leitura foi recebida. Aguarde a liberacao da sessao para entrar no modulo."
+        ? "A leitura foi recebida. Aguarde a liberação da sessão para entrar no módulo."
         : connectionState === "connecting"
-          ? "Estamos preparando a sessao do WhatsApp antes de liberar a tela principal."
+          ? "Estamos preparando a sessão do WhatsApp antes de liberar a tela principal."
           : connectionState === "disconnected"
-            ? "A sessao ainda nao esta conectada. Aguarde o QR code ou atualize o status."
-            : "Conclua a conexao do WhatsApp para continuar.";
+            ? "A sessão ainda não está conectada. Aguarde o QR code ou atualize o status."
+            : "Conclua a conexão do WhatsApp para continuar.";
 
   return createPortal(
     <div className="fixed inset-0 z-[130] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-md">
@@ -76,34 +76,7 @@ export function WhatsAppConnectionGateModal({
                   Conecte o WhatsApp antes de abrir o painel de campanhas
                 </h2>
                 <p className="mt-3 max-w-lg text-sm leading-7 text-white/72">
-                  A autenticacao fica centralizada nesta etapa. Assim que a sessao for validada, a tela principal do modulo sera liberada automaticamente.
-                </p>
-              </div>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-[24px] border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#f4d67b]">
-                  Etapa 1
-                </p>
-                <p className="mt-2 text-sm font-semibold text-white">
-                  Abra o WhatsApp no celular que sera usado na operacao.
-                </p>
-              </div>
-              <div className="rounded-[24px] border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#f4d67b]">
-                  Etapa 2
-                </p>
-                <p className="mt-2 text-sm font-semibold text-white">
-                  Leia o QR code por WhatsApp Web e aguarde a confirmacao.
-                </p>
-              </div>
-              <div className="rounded-[24px] border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#f4d67b]">
-                  Etapa 3
-                </p>
-                <p className="mt-2 text-sm font-semibold text-white">
-                  Com a sessao ativa, o editor e o preview serao liberados.
+                  A autenticação fica centralizada nesta etapa. Assim que a sessão for validada, a tela principal do módulo será liberada automaticamente.
                 </p>
               </div>
             </div>
@@ -115,7 +88,7 @@ export function WhatsAppConnectionGateModal({
                 </div>
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#f4d67b]">
-                    Libera automaticamente
+                    Liberação automática
                   </p>
                   <p className="mt-2 text-sm leading-7 text-white/74">
                     {statusMessage}
@@ -136,7 +109,7 @@ export function WhatsAppConnectionGateModal({
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#b58c2a]">
-                  Conexao
+                  Conexão
                 </p>
                 <h3 className="mt-1 text-xl font-black tracking-tight text-[#0c1826]">
                   Status do WhatsApp
@@ -185,10 +158,10 @@ export function WhatsAppConnectionGateModal({
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3">
                   <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#b58c2a]">
-                    Sessao
+                    Sessão
                   </p>
                   <p className="mt-2 text-sm font-black text-[#0c1826]">
-                    {status?.user?.pushname || "Aguardando validacao"}
+                    {status?.user?.pushname || "Aguardando validação"}
                   </p>
                   <p className="mt-1 text-[11px] font-semibold text-slate-500">
                     {status?.user?.phone || "Ainda sem aparelho conectado"}
@@ -197,13 +170,13 @@ export function WhatsAppConnectionGateModal({
 
                 <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3">
                   <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#b58c2a]">
-                    Liberacao
+                    Liberação
                   </p>
                   <p className="mt-2 text-sm font-black text-[#0c1826]">
                     {connectionState === "qr" ? "Leitura pendente" : connectionState === "logging_in" ? "Finalizando" : "Em preparo"}
                   </p>
                   <p className="mt-1 text-[11px] font-semibold text-slate-500">
-                    O modulo abre sozinho quando o conector ficar online.
+                    O módulo abre sozinho quando o conector ficar online.
                   </p>
                 </div>
               </div>
@@ -227,7 +200,7 @@ export function WhatsAppConnectionGateModal({
                 className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.18em] text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isLoggingOut ? <Loader2 size={14} className="animate-spin" /> : <LogOut size={14} strokeWidth={1.9} />}
-                Reiniciar sessao
+                Reiniciar sessão
               </button>
             </div>
           </div>

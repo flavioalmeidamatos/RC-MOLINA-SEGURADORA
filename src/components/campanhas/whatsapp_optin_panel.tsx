@@ -17,9 +17,6 @@ export function WhatsAppOptInPanel({
         <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#b58c2a]">
           Conformidade
         </p>
-        <h3 className="mt-1 text-lg font-black tracking-tight text-[#0c1826]">
-          Confirmacoes obrigatorias
-        </h3>
       </div>
 
       <div className="space-y-4 p-5">
@@ -35,7 +32,7 @@ export function WhatsAppOptInPanel({
               Opt-in confirmado
             </span>
             <span className="mt-1.5 block text-sm leading-6 text-slate-600">
-              Confirmo que a base usada nesta campanha possui autorizacao para contato.
+              Confirmo que a base usada nesta campanha possui autorização para contato.
             </span>
           </span>
         </label>
@@ -52,7 +49,7 @@ export function WhatsAppOptInPanel({
               Texto revisado para disparo
             </span>
             <span className="mt-1.5 block text-sm leading-6 text-slate-600">
-              Confirmo que o conteudo sera revisado antes do envio automatizado.
+              Confirmo que o conteúdo será revisado antes do envio automatizado.
             </span>
           </span>
         </label>
@@ -63,8 +60,8 @@ export function WhatsAppOptInPanel({
           </p>
           <p className="mt-2 text-sm font-semibold leading-6 text-amber-900">
             {optInChecked && templateChecked
-              ? "Modulo pronto para seguir com backend, auditoria e disparo."
-              : "Ainda faltam confirmacoes para liberar o disparo."}
+              ? "Módulo pronto para seguir com backend, auditoria e disparo."
+              : "Ainda faltam confirmações para liberar o disparo."}
           </p>
         </div>
       </div>

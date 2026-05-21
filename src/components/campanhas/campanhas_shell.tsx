@@ -675,9 +675,7 @@ export function CampanhasShell({ userId, userEmail }: CampanhasShellProps) {
             <WhatsAppMessagePreview
               campaignName={campaignName}
               message={message}
-              validRecipients={recipientSummary.validNumbers.length}
               attachments={attachments}
-              readyForNextPhase={readyForNextPhase}
             />
 
             <WhatsAppOptInPanel

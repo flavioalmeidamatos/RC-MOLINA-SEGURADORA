@@ -7,9 +7,7 @@ import type { CampaignAttachment, WhatsAppInlineToken } from "../../types/whatsa
 interface WhatsAppMessagePreviewProps {
   campaignName: string;
   message: string;
-  validRecipients: number;
   attachments: CampaignAttachment[];
-  readyForNextPhase: boolean;
 }
 
 function renderInlineTokens(tokens: WhatsAppInlineToken[]): ReactNode[] {
@@ -137,9 +135,7 @@ function renderAttachmentPreview(attachment: CampaignAttachment) {
 export function WhatsAppMessagePreview({
   campaignName,
   message,
-  validRecipients,
   attachments,
-  readyForNextPhase,
 }: WhatsAppMessagePreviewProps) {
   const lines = splitWhatsAppMessageLines(message);
 
@@ -147,17 +143,17 @@ export function WhatsAppMessagePreview({
     <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-100 bg-slate-50/80 px-4 py-3">
         <h3 className="mt-1 text-base font-black tracking-tight text-[#0c1826]">
-          Simulacao da mensagem
+          Simulação da mensagem
         </h3>
       </div>
 
-      <div className="space-y-4 p-4">
+      <div className="p-4">
         <div className="mx-auto w-full max-w-[360px] rounded-[32px] bg-[#111b21] p-3 shadow-[0_24px_60px_rgba(15,23,42,0.18)]">
           <div className="overflow-hidden rounded-[28px] bg-[#efeae2]">
             <div className="flex items-center justify-between bg-[#202c33] px-4 py-3 text-white">
               <div>
                 <p className="text-xs font-black">Campanhas RC</p>
-                <p className="text-[10px] font-semibold text-white/60">Preview local</p>
+                <p className="text-[10px] font-semibold text-white/60">Simulação local</p>
               </div>
               <div className="rounded-full bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#86efac]">
                 teste
@@ -187,7 +183,7 @@ export function WhatsAppMessagePreview({
                     ))}
                   </div>
                 ) : (
-                  <p className="text-slate-500">Escreva a mensagem para ver a simulacao neste balao.</p>
+                  <p className="text-slate-500">Escreva a mensagem para ver a simulação neste balão.</p>
                 )}
 
                 <div className="mt-3 flex items-center justify-end gap-2 text-[10px] font-semibold text-slate-400">
@@ -196,45 +192,6 @@ export function WhatsAppMessagePreview({
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-3">
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#b58c2a]">
-              Alcance valido
-            </p>
-            <p className="mt-1 text-lg font-black text-[#0c1826]">{validRecipients}</p>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#b58c2a]">
-              Midia
-            </p>
-            <p className="mt-1 text-lg font-black text-[#0c1826]">{attachments.length}</p>
-          </div>
-
-          <div
-            className={`rounded-2xl border px-4 py-3 ${
-              readyForNextPhase
-                ? "border-emerald-200 bg-emerald-50/80"
-                : "border-amber-200 bg-amber-50/80"
-            }`}
-          >
-            <p
-              className={`text-[11px] font-black uppercase tracking-[0.18em] ${
-                readyForNextPhase ? "text-emerald-700" : "text-amber-700"
-              }`}
-            >
-              Status
-            </p>
-            <p
-              className={`mt-1 text-sm font-black ${
-                readyForNextPhase ? "text-emerald-800" : "text-amber-800"
-              }`}
-            >
-              {readyForNextPhase ? "Pronto para disparo" : "Modulo em preparo"}
-            </p>
           </div>
         </div>
       </div>
