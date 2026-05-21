@@ -173,6 +173,7 @@ const produtosComercializados = [
   'Consórcio Veículos',
   'Previdência Privada',
   'Seguro de Frotas',
+  'Seguro Saúde',
   'Seguro de Vida',
   'Seguro Empresa',
   'Seguro Fiança Aluguel',
