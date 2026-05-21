@@ -65,7 +65,7 @@ const SULAMERICA_PROXY_LOGIN_URL = "/sulamerica-proxy/SaudeCotador/LoginVendedor
 const AMIL_SIMULATOR_URL = "https://portalcorretor.amil.com.br/portal/web/servicos/usuario/corretor/login";
 const AMIL_PROXY_LOGIN_URL = "/amil-proxy/portal/web/servicos/usuario/corretor/login";
 const MEDSENIOR_SIMULATOR_URL = "https://vendadigital.medsenior.com.br/";
-const MEDSENIOR_PROXY_LOGIN_URL = "/medsenior-proxy/";
+const MEDSENIOR_WINDOW_NAME = "medsenior_portal_window";
 const AMIL_LOGIN = "77915445715";
 const AMIL_PASSWORD = "sqn0y3zqmo";
 const SIMULATOR_FALLBACK_WINDOW_NAME = "simulador_online_fallback_window";
@@ -530,10 +530,25 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     setActiveMenu("Simulador Amil");
   };
 
+  const openMedseniorExternally = () => {
+    const popup = window.open(
+      MEDSENIOR_SIMULATOR_URL,
+      MEDSENIOR_WINDOW_NAME,
+      "width=1280,height=900,resizable=yes,scrollbars=yes"
+    );
+
+    if (!popup) {
+      return;
+    }
+
+    popup.focus();
+  };
+
   const enterMedseniorSimulator = () => {
     cleanupSimulatorUi();
     setShowSimulatorChooser(false);
     setActiveMenu("Simulador Medsenior");
+    openMedseniorExternally();
   };
 
   const fillAndSubmitAmilLogin = () => {
@@ -1224,13 +1239,47 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                     <ExternalLink size={13} />
                   </a>
                 </div>
-                <iframe
-                  src={MEDSENIOR_PROXY_LOGIN_URL}
-                  title="Simulador Medsenior"
-                  className="h-full w-full flex-1 border-none"
-                  allow="geolocation; microphone; camera; payment; encrypted-media"
-                  sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-modals"
-                />
+                <div className="flex flex-1 items-center justify-center bg-gradient-to-br from-slate-50 via-white to-[#f7f1df] p-6">
+                  <div className="w-full max-w-2xl rounded-[32px] border border-slate-200 bg-white/95 p-8 shadow-[0_24px_80px_rgba(15,23,42,0.12)] backdrop-blur">
+                    <div className="space-y-4">
+                      <span className="inline-flex items-center gap-2 rounded-full border border-[#d4af37]/30 bg-[#d4af37]/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.22em] text-[#9a6c00]">
+                        <ExternalLink size={14} />
+                        Acesso Externo
+                      </span>
+                      <div className="space-y-2">
+                        <h2 className="text-3xl font-black tracking-tight text-slate-900">
+                          O portal Medsenior abre em janela propria
+                        </h2>
+                        <p className="max-w-xl text-sm leading-7 text-slate-600">
+                          O site atual do Medsenior usa rotas internas que nao permanecem estaveis dentro do iframe do painel.
+                          Para evitar a tela de pagina nao encontrada, o acesso agora e feito diretamente no portal oficial.
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-3 pt-2">
+                        <button
+                          type="button"
+                          onClick={openMedseniorExternally}
+                          className="inline-flex items-center gap-2 rounded-full bg-[#0c1826] px-5 py-3 text-sm font-black text-white transition hover:bg-[#16283d]"
+                        >
+                          Abrir portal Medsenior
+                          <ExternalLink size={16} />
+                        </button>
+                        <a
+                          href={MEDSENIOR_SIMULATOR_URL}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition hover:border-[#b58c2a]/40 hover:text-[#b58c2a]"
+                        >
+                          Abrir em nova aba
+                          <ExternalLink size={16} />
+                        </a>
+                      </div>
+                      <p className="text-xs font-medium text-slate-400">
+                        Se o navegador bloquear a janela automatica, use o botao acima para abrir manualmente.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             ) : showClientArea ? (
               <div className="flex-1 overflow-y-auto px-4 pb-4 pt-2 sm:px-6 sm:pb-6 sm:pt-3 md:px-8 md:pb-8 md:pt-4">
