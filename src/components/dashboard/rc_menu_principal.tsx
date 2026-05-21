@@ -65,7 +65,7 @@ const SULAMERICA_PROXY_LOGIN_URL = "/sulamerica-proxy/SaudeCotador/LoginVendedor
 const AMIL_SIMULATOR_URL = "https://portalcorretor.amil.com.br/portal/web/servicos/usuario/corretor/login";
 const AMIL_PROXY_LOGIN_URL = "/amil-proxy/portal/web/servicos/usuario/corretor/login";
 const MEDSENIOR_SIMULATOR_URL = "https://vendadigital.medsenior.com.br/";
-const MEDSENIOR_PROXY_LOGIN_URL = "/medsenior-proxy/";
+const KLINI_SIMULATOR_URL = "https://klinisaude.hcommerce.com.br/corretora/login";
 const AMIL_LOGIN = "77915445715";
 const AMIL_PASSWORD = "sqn0y3zqmo";
 const SIMULATOR_FALLBACK_WINDOW_NAME = "simulador_online_fallback_window";
@@ -536,6 +536,12 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     setActiveMenu("Simulador Medsenior");
   };
 
+  const enterKliniSimulator = () => {
+    cleanupSimulatorUi();
+    setShowSimulatorChooser(false);
+    setActiveMenu("Simulador Klini");
+  };
+
   const fillAndSubmitAmilLogin = () => {
     const frame = amilIframeRef.current;
     if (!frame) {
@@ -788,7 +794,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       await resetSulamericaProxySession();
     }
 
-    if (activeMenu === "Simuladores" || activeMenu === "Simulador SulAmerica" || activeMenu === "Simulador Amil" || activeMenu === "Simulador Medsenior") {
+    if (activeMenu === "Simuladores" || activeMenu === "Simulador SulAmerica" || activeMenu === "Simulador Amil" || activeMenu === "Simulador Medsenior" || activeMenu === "Simulador Klini") {
       cleanupSimulatorUi();
     }
 
@@ -810,7 +816,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       if (shouldResetSulamericaSession("Meus clientes")) {
         await resetSulamericaProxySession();
       }
-      if (activeMenu === "Simuladores" || activeMenu === "Simulador SulAmerica" || activeMenu === "Simulador Amil" || activeMenu === "Simulador Medsenior") {
+      if (activeMenu === "Simuladores" || activeMenu === "Simulador SulAmerica" || activeMenu === "Simulador Amil" || activeMenu === "Simulador Medsenior" || activeMenu === "Simulador Klini") {
         cleanupSimulatorUi();
       }
       setShowSimulatorChooser(false);
@@ -881,6 +887,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const showSulamericaSimulator = activeMenu === "Simulador SulAmerica";
   const showAmilSimulator = activeMenu === "Simulador Amil";
   const showMedseniorSimulator = activeMenu === "Simulador Medsenior";
+  const showKliniSimulator = activeMenu === "Simulador Klini";
   const showClientArea = activeMenu === "Meus clientes";
   const showAgendaArea = activeMenu === "Agenda";
   const showWebmailArea = activeMenu === "Webmail";
@@ -906,7 +913,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
             const isActive =
               activeMenu === item.title ||
               (item.title === "Simuladores" &&
-                (activeMenu === "Simulador SulAmerica" || activeMenu === "Simulador Amil" || activeMenu === "Simulador Medsenior"));
+                (activeMenu === "Simulador SulAmerica" || activeMenu === "Simulador Amil" || activeMenu === "Simulador Medsenior" || activeMenu === "Simulador Klini"));
 
             return (
               <button
@@ -947,7 +954,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-            {showClientArea || showSimulator || showSulamericaSimulator || showAmilSimulator || showMedseniorSimulator || showAgendaArea || showWebmailArea || showCampanhasArea ? (
+            {showClientArea || showSimulator || showSulamericaSimulator || showAmilSimulator || showMedseniorSimulator || showKliniSimulator || showAgendaArea || showWebmailArea || showCampanhasArea ? (
               <button
                 type="button"
                 onClick={() => void handleMenuClick("Home")}
@@ -1225,8 +1232,33 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                   </a>
                 </div>
                 <iframe
-                  src={MEDSENIOR_PROXY_LOGIN_URL}
+                  src={MEDSENIOR_SIMULATOR_URL}
                   title="Simulador Medsenior"
+                  className="h-full w-full flex-1 border-none bg-white"
+                  allow="geolocation; microphone; camera; payment; encrypted-media"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                />
+              </div>
+            ) : showKliniSimulator ? (
+              <div className="flex flex-1 flex-col bg-white" style={{ height: "calc(100vh - 120px)" }}>
+                <div className="flex items-center justify-between border-b bg-gray-50 px-4 py-2 text-xs text-gray-500">
+                  <span className="flex items-center gap-2">
+                    <ExternalLink size={14} />
+                    Simulador Klini
+                  </span>
+                  <a
+                    href={KLINI_SIMULATOR_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-600 transition hover:border-[#b58c2a]/40 hover:text-[#b58c2a]"
+                  >
+                    Abrir portal Klini
+                    <ExternalLink size={13} />
+                  </a>
+                </div>
+                <iframe
+                  src={KLINI_SIMULATOR_URL}
+                  title="Simulador Klini"
                   className="h-full w-full flex-1 border-none bg-white"
                   allow="geolocation; microphone; camera; payment; encrypted-media"
                   referrerPolicy="strict-origin-when-cross-origin"
@@ -1751,6 +1783,17 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                 className="group relative flex h-32 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:border-[#d4af37]/70 hover:shadow-md"
               >
                 <img src="/medsenior.svg" alt="Simulador MedSênior" className="max-h-20 max-w-[85%] object-contain opacity-90 transition-all duration-300 group-hover:scale-105 group-hover:opacity-100" />
+              </a>
+
+              <a
+                href={KLINI_SIMULATOR_URL}
+                onClick={(event) => {
+                  event.preventDefault();
+                  enterKliniSimulator();
+                }}
+                className="group relative flex h-32 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:border-[#d4af37]/70 hover:shadow-md"
+              >
+                <img src="/klini.svg" alt="Simulador Klini" className="max-h-20 max-w-[85%] object-contain opacity-90 transition-all duration-300 group-hover:scale-105 group-hover:opacity-100" />
               </a>
             </div>
           </div>
