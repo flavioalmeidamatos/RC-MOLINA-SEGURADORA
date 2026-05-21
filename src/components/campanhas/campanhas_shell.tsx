@@ -592,7 +592,7 @@ export function CampanhasShell({ userId, userEmail }: CampanhasShellProps) {
         className="hidden"
       />
 
-      <div className="mr-auto flex w-full max-w-[1760px] flex-col gap-3 2xl:max-w-[1880px]">
+      <div className="mr-auto flex w-full max-w-[1760px] flex-col gap-4 2xl:max-w-[1880px]">
         <section className="overflow-hidden rounded-[20px] border border-white/70 bg-[#0c1826] text-white shadow-sm">
           <div className="relative px-5 py-3 sm:px-6">
             <div className="absolute -left-12 top-0 h-40 w-40 rounded-full bg-[#d4af37]/10 blur-3xl" />
@@ -607,44 +607,44 @@ export function CampanhasShell({ userId, userEmail }: CampanhasShellProps) {
 
               </div>
 
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                <div className="flex flex-col rounded-xl border border-white/10 bg-white/5 px-3 py-2 backdrop-blur-sm">
+              <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+                <div className="flex flex-col rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-sm">
                   <div className="flex items-center gap-1.5 text-[#d4af37]">
-                    <Megaphone size={13} strokeWidth={1.8} />
-                    <span className="text-[9px] font-black uppercase tracking-[0.18em]">Shell</span>
+                    <Megaphone size={15} strokeWidth={1.8} />
+                    <span className="text-[10px] font-black uppercase tracking-[0.18em]">Modulo</span>
                   </div>
-                  <p className="text-xs font-black mt-1">Ativo</p>
+                  <p className="mt-1.5 text-sm font-black">Ativo</p>
                 </div>
 
-                <div className="flex flex-col rounded-xl border border-white/10 bg-white/5 px-3 py-2 backdrop-blur-sm">
+                <div className="flex flex-col rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-sm">
                   <div className="flex items-center gap-1.5 text-[#d4af37]">
-                    <Users size={13} strokeWidth={1.8} />
-                    <span className="text-[9px] font-black uppercase tracking-[0.18em]">Validos</span>
+                    <Users size={15} strokeWidth={1.8} />
+                    <span className="text-[10px] font-black uppercase tracking-[0.18em]">Contatos validos</span>
                   </div>
-                  <p className="text-xs font-black mt-1">{recipientSummary.validNumbers.length}</p>
+                  <p className="mt-1.5 text-sm font-black">{recipientSummary.validNumbers.length}</p>
                 </div>
 
-                <div className="flex flex-col rounded-xl border border-white/10 bg-white/5 px-3 py-2 backdrop-blur-sm">
+                <div className="flex flex-col rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-sm">
                   <div className="flex items-center gap-1.5 text-[#d4af37]">
-                    <ShieldCheck size={13} strokeWidth={1.8} />
-                    <span className="text-[9px] font-black uppercase tracking-[0.18em]">Compliance</span>
+                    <ShieldCheck size={15} strokeWidth={1.8} />
+                    <span className="text-[10px] font-black uppercase tracking-[0.18em]">Conformidade</span>
                   </div>
-                  <p className="text-xs font-black mt-1">{readyForNextPhase ? "OK" : "Pendente"}</p>
+                  <p className="mt-1.5 text-sm font-black">{readyForNextPhase ? "OK" : "Pendente"}</p>
                 </div>
 
-                <div className="flex flex-col rounded-xl border border-white/10 bg-white/5 px-3 py-2 backdrop-blur-sm">
+                <div className="flex flex-col rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-sm">
                   <div className="flex items-center gap-1.5 text-[#d4af37]">
-                    <Sparkles size={13} strokeWidth={1.8} />
-                    <span className="text-[9px] font-black uppercase tracking-[0.18em]">Proxima</span>
+                    <Sparkles size={15} strokeWidth={1.8} />
+                    <span className="text-[10px] font-black uppercase tracking-[0.18em]">Proxima etapa</span>
                   </div>
-                  <p className="text-xs font-black mt-1">Bridge</p>
+                  <p className="mt-1.5 text-sm font-black">Bridge</p>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.5fr)_340px] 2xl:grid-cols-[minmax(0,1.5fr)_380px]">
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.28fr)_420px] 2xl:grid-cols-[minmax(0,1.25fr)_470px]">
           <div className="space-y-3">
             <WhatsAppCampaignEditor
               campaignName={campaignName}

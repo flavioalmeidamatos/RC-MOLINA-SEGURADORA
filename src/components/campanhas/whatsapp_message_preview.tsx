@@ -94,8 +94,19 @@ function renderAttachmentPreview(attachment: CampaignAttachment) {
 
   if (attachment.kind === "pdf") {
     return (
-      <div className="rounded-[18px] border border-[#b6d7a8] bg-white/80 px-3 py-3">
-        <div className="flex items-center gap-3">
+      <div className="overflow-hidden rounded-[18px] border border-[#b6d7a8] bg-white/80">
+        {attachment.fileUrl ? (
+          <iframe
+            src={`${attachment.fileUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+            title={attachment.name}
+            className="h-44 w-full bg-white"
+          />
+        ) : (
+          <div className="flex h-44 items-center justify-center bg-white">
+            <FileText size={28} className="text-[#9a7418]" />
+          </div>
+        )}
+        <div className="flex items-center gap-3 px-3 py-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#fff3cf] text-[#9a7418]">
             <FileText size={18} />
           </div>
@@ -135,16 +146,13 @@ export function WhatsAppMessagePreview({
   return (
     <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-100 bg-slate-50/80 px-4 py-3">
-        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#b58c2a]">
-          Preview
-        </p>
         <h3 className="mt-1 text-base font-black tracking-tight text-[#0c1826]">
-          Simulacao de mensagem
+          Simulacao da mensagem
         </h3>
       </div>
 
       <div className="space-y-4 p-4">
-        <div className="mx-auto w-full max-w-[320px] rounded-[32px] bg-[#111b21] p-3 shadow-[0_24px_60px_rgba(15,23,42,0.18)]">
+        <div className="mx-auto w-full max-w-[360px] rounded-[32px] bg-[#111b21] p-3 shadow-[0_24px_60px_rgba(15,23,42,0.18)]">
           <div className="overflow-hidden rounded-[28px] bg-[#efeae2]">
             <div className="flex items-center justify-between bg-[#202c33] px-4 py-3 text-white">
               <div>
@@ -158,7 +166,7 @@ export function WhatsAppMessagePreview({
 
             <div className="min-h-[280px] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.55),transparent_48%),linear-gradient(180deg,#f4efe6_0%,#e8dfd1_100%)] px-4 py-4">
               <div className="ml-auto max-w-[88%] rounded-[22px] rounded-tr-md bg-[#dcf8c6] px-3 py-3 text-[12px] leading-6 text-[#0f172a] shadow-sm">
-                <p className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#5b7c49]">
+                <p className="mb-2 text-[11px] font-black uppercase tracking-[0.18em] text-[#5b7c49]">
                   {campaignName.trim() || "Campanha sem nome"}
                 </p>
 
@@ -171,7 +179,7 @@ export function WhatsAppMessagePreview({
                 ) : null}
 
                 {message.trim() ? (
-                  <div className="space-y-1 break-words">
+                  <div className="space-y-1.5 break-words text-[13px]">
                     {lines.map((lineTokens, index) => (
                       <p key={`line-${index}`}>
                         {lineTokens.length > 0 ? renderInlineTokens(lineTokens) : <span>&nbsp;</span>}
@@ -193,17 +201,17 @@ export function WhatsAppMessagePreview({
 
         <div className="grid gap-3 sm:grid-cols-3">
           <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#b58c2a]">
+            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#b58c2a]">
               Alcance valido
             </p>
-            <p className="mt-1 text-base font-black text-[#0c1826]">{validRecipients}</p>
+            <p className="mt-1 text-lg font-black text-[#0c1826]">{validRecipients}</p>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#b58c2a]">
+            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#b58c2a]">
               Midia
             </p>
-            <p className="mt-1 text-base font-black text-[#0c1826]">{attachments.length}</p>
+            <p className="mt-1 text-lg font-black text-[#0c1826]">{attachments.length}</p>
           </div>
 
           <div
@@ -214,14 +222,14 @@ export function WhatsAppMessagePreview({
             }`}
           >
             <p
-              className={`text-[10px] font-black uppercase tracking-[0.18em] ${
+              className={`text-[11px] font-black uppercase tracking-[0.18em] ${
                 readyForNextPhase ? "text-emerald-700" : "text-amber-700"
               }`}
             >
               Status
             </p>
             <p
-              className={`mt-1 text-xs font-black ${
+              className={`mt-1 text-sm font-black ${
                 readyForNextPhase ? "text-emerald-800" : "text-amber-800"
               }`}
             >

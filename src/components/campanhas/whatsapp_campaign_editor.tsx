@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Bold, Code, Italic, Paperclip, SmilePlus, Strikethrough } from "lucide-react";
 import EmojiPicker, { Categories, type CategoryConfig, type EmojiClickData } from "emoji-picker-react";
 
@@ -31,6 +31,21 @@ export function WhatsAppCampaignEditor({
 }: WhatsAppCampaignEditorProps) {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (!showEmojiPicker) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setShowEmojiPicker(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showEmojiPicker]);
 
   const insertFormatting = (prefix: string, suffix: string = prefix) => {
     const textarea = textareaRef.current;
@@ -154,7 +169,19 @@ export function WhatsAppCampaignEditor({
                 </button>
 
                 {showEmojiPicker ? (
-                  <div className="absolute left-0 top-10 z-50 overflow-hidden rounded-2xl shadow-2xl">
+                  <div className="absolute left-0 top-10 z-50 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+                    <div className="flex items-center justify-between border-b border-slate-200 px-3 py-2">
+                      <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">
+                        Emojis
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setShowEmojiPicker(false)}
+                        className="rounded-full border border-slate-200 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500 transition hover:bg-slate-50"
+                      >
+                        Fechar
+                      </button>
+                    </div>
                     <EmojiPicker
                       onEmojiClick={onEmojiClick}
                       categories={emojiCategories}
@@ -188,7 +215,7 @@ export function WhatsAppCampaignEditor({
               placeholder={
                 "Use este espaco para montar sua mensagem.\n\nUse a barra acima para adicionar emojis ou formatacao."
               }
-              className="h-[118px] w-full resize-none rounded-b-[24px] bg-transparent px-4 py-3 text-xs leading-6 text-slate-700 outline-none"
+              className="h-[108px] w-full resize-none rounded-b-[24px] bg-transparent px-4 py-3 text-sm leading-6 text-slate-700 outline-none"
             />
           </div>
 
