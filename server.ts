@@ -51,7 +51,7 @@ const AMIL_BROWSER_USER_AGENT =
 const MEDSENIOR_ORIGIN = 'https://vendadigital.medsenior.com.br';
 const MEDSENIOR_PROXY_PREFIX = '/medsenior-proxy';
 const MEDSENIOR_LOGIN = '77915445715';
-const MEDSENIOR_PASSWORD = 'Benj@min88';
+const MEDSENIOR_PASSWORD = 'Benjamin88';
 const SIMULATOR_BLOCKED_RESPONSE_HEADERS = new Set([
   'content-encoding',
   'content-length',
@@ -1017,6 +1017,13 @@ const medseniorAutofillScript = `
 (function () {
   var loginValue = ${JSON.stringify(MEDSENIOR_LOGIN)};
   var senhaValue = ${JSON.stringify(MEDSENIOR_PASSWORD)};
+  var userStorageKey = 'rc-medsenior-usuario';
+  var passwordStorageKey = 'rc-medsenior-senha';
+
+  try {
+    window.localStorage.setItem(userStorageKey, loginValue);
+    window.localStorage.setItem(passwordStorageKey, senhaValue);
+  } catch (_storageError) {}
 
   function triggerEvents(el) {
     if (!el) return;
@@ -1025,22 +1032,53 @@ const medseniorAutofillScript = `
     el.dispatchEvent(new Event('blur', { bubbles: true }));
   }
 
-  function fillMedseniorLogin() {
-    var userField = document.querySelector('#usuario') || document.querySelector('input[name="usuario"]');
-    var passwordField = document.querySelector('#password') || document.querySelector('input[name="password"]');
+  function getPersistedValue(storageKey, fallbackValue) {
+    try {
+      return window.localStorage.getItem(storageKey) || fallbackValue;
+    } catch (_storageError) {
+      return fallbackValue;
+    }
+  }
 
-    if (userField && userField.value !== loginValue) {
-      userField.value = loginValue;
-      userField.setAttribute('autocomplete', 'off');
+  function fillMedseniorLogin() {
+    var persistedUser = getPersistedValue(userStorageKey, loginValue);
+    var persistedPassword = getPersistedValue(passwordStorageKey, senhaValue);
+    var userField =
+      document.querySelector('#usuario') ||
+      document.querySelector('input[name="usuario"]') ||
+      document.querySelector('input[autocomplete="username"]') ||
+      document.querySelector('input[type="text"]');
+    var passwordField =
+      document.querySelector('#password') ||
+      document.querySelector('input[name="password"]') ||
+      document.querySelector('input[name="senha"]') ||
+      document.querySelector('input[autocomplete="current-password"]') ||
+      document.querySelector('input[type="password"]');
+
+    if (userField && userField.value !== persistedUser) {
+      userField.value = persistedUser;
+      userField.setAttribute('autocomplete', 'username');
       userField.setAttribute('data-lpignore', 'true');
       triggerEvents(userField);
     }
-    if (passwordField && passwordField.value !== senhaValue) {
-      passwordField.value = senhaValue;
-      passwordField.setAttribute('autocomplete', 'off');
+    if (passwordField && passwordField.value !== persistedPassword) {
+      passwordField.value = persistedPassword;
+      passwordField.setAttribute('autocomplete', 'current-password');
       passwordField.setAttribute('data-lpignore', 'true');
       triggerEvents(passwordField);
     }
+  }
+
+  function observeMutations() {
+    if (!window.MutationObserver) return;
+    var observer = new MutationObserver(function () {
+      fillMedseniorLogin();
+    });
+    observer.observe(document.documentElement || document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+    });
   }
 
   // Executa imediatamente e em intervalos para lidar com carregamento assíncrono do React/MUI
@@ -1049,6 +1087,7 @@ const medseniorAutofillScript = `
   intervals.forEach(function (delay) {
     window.setTimeout(fillMedseniorLogin, delay);
   });
+  observeMutations();
 })();
 </script>`;
 
