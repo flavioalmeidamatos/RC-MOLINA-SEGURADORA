@@ -51,7 +51,7 @@ const AMIL_BROWSER_USER_AGENT =
 const MEDSENIOR_ORIGIN = 'https://vendadigital.medsenior.com.br';
 const MEDSENIOR_PROXY_PREFIX = '/medsenior-proxy';
 const MEDSENIOR_LOGIN = '77915445715';
-const MEDSENIOR_PASSWORD = 'Benjamin88';
+const MEDSENIOR_PASSWORD = 'Benj@min88';
 const SIMULATOR_BLOCKED_RESPONSE_HEADERS = new Set([
   'content-encoding',
   'content-length',
