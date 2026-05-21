@@ -1,7 +1,6 @@
 import type express from 'express';
 
 import { requireCampaignActor } from './_lib/campanhas_auth';
-import { recordCampaignDispatch, recordCampaignDispatchFailure } from './_lib/campanhas_db';
 import { getWhatsAppBridgeStatus, logoutWhatsAppBridge, sendCampaignToWhatsAppBridge } from './_lib/whatsapp_bridge';
 
 const asyncRoute =
@@ -38,18 +37,8 @@ export const registerWhatsAppBridgeRoutes = (app: express.Express) => {
       const actor = await requireCampaignActor(req, res);
       if (!actor) return;
 
-      try {
-        const result = await sendCampaignToWhatsAppBridge(req.body || {});
-        await recordCampaignDispatch(actor, req.body || {}, result);
-        res.json({ data: result });
-      } catch (error) {
-        await recordCampaignDispatchFailure(
-          actor,
-          req.body || {},
-          error instanceof Error ? error.message : 'Falha no disparo da campanha.',
-        );
-        throw error;
-      }
+      const result = await sendCampaignToWhatsAppBridge(req.body || {});
+      res.json({ data: result });
     }),
   );
 };

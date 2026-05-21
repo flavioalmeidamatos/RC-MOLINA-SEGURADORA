@@ -1,11 +1,16 @@
 import { useEffect, useRef, useState } from "react";
-import { Bold, Code, Italic, Paperclip, SmilePlus, Strikethrough } from "lucide-react";
+import { Bold, Code, Italic, Paperclip, Smartphone, SmilePlus, Strikethrough, Wifi } from "lucide-react";
 import EmojiPicker, { Categories, type CategoryConfig, type EmojiClickData } from "emoji-picker-react";
+
+import type { WhatsAppBridgeStatus } from "../../types/whatsapp_campaign";
 
 interface WhatsAppCampaignEditorProps {
   message: string;
   optInChecked: boolean;
   templateChecked: boolean;
+  activeCampaignId?: string | null;
+  isBridgeConnected?: boolean;
+  status?: WhatsAppBridgeStatus | null;
   onMessageChange: (value: string) => void;
   onPickMedia: () => void;
   onOptInChange: (checked: boolean) => void;
@@ -28,6 +33,9 @@ export function WhatsAppCampaignEditor({
   message,
   optInChecked,
   templateChecked,
+  activeCampaignId,
+  isBridgeConnected,
+  status,
   onMessageChange,
   onPickMedia,
   onOptInChange,
@@ -95,9 +103,36 @@ export function WhatsAppCampaignEditor({
   return (
     <section className="rounded-[20px] border border-slate-200 bg-white shadow-sm p-3">
       <div className="space-y-2">
+        <div className="relative rounded-[24px] border border-slate-200 bg-[#fcfcfd] transition focus-within:border-[#d4af37] focus-within:ring-4 focus-within:ring-[#d4af37]/10">
+          
+          {/* Header Status Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-[#f8fafc] px-4 py-2.5 rounded-t-[24px]">
+            <span className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-500 shrink-0">
+              Editor de Mensagem
+            </span>
+            
+            {isBridgeConnected ? (
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#a2ebd3] bg-[#e6fcf5] px-3.5 py-1 text-[11px] font-black uppercase tracking-[0.08em] text-[#0ca678] shadow-sm">
+                  <Wifi size={13} strokeWidth={2.5} className="text-[#0ca678]" />
+                  <span>CONECTADO</span>
+                </span>
+                {status?.user ? (
+                  <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#a2ebd3] bg-[#e6fcf5] px-3.5 py-1 text-[11px] font-black uppercase tracking-[0.08em] text-[#0ca678] shadow-sm">
+                    <Smartphone size={13} strokeWidth={2.5} className="text-[#0ca678]" />
+                    <span>Sessão ativa - {status.user.pushname}</span>
+                  </span>
+                ) : null}
+              </div>
+            ) : (
+              <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3.5 py-1 text-[11px] font-black uppercase tracking-[0.08em] text-slate-400 shadow-sm">
+                <Wifi size={13} strokeWidth={2.5} className="text-slate-400" />
+                <span>DESCONECTADO</span>
+              </span>
+            )}
+          </div>
 
-          <div className="relative rounded-[24px] border border-slate-200 bg-[#fcfcfd] transition focus-within:border-[#d4af37] focus-within:ring-4 focus-within:ring-[#d4af37]/10">
-            <div className="flex flex-wrap items-center gap-1 border-b border-slate-200 bg-white/70 px-3 py-2 rounded-t-[24px]">
+          <div className="flex flex-wrap items-center gap-1 border-b border-slate-200 bg-white/70 px-3 py-2">
               <button
                 type="button"
                 onClick={() => insertFormatting("*")}
@@ -210,7 +245,7 @@ export function WhatsAppCampaignEditor({
                   onChange={(event) => onTemplateChange(event.target.checked)}
                   className="h-3.5 w-3.5 rounded border-slate-300 text-[#b58c2a] focus:ring-[#d4af37]"
                 />
-                <span className="text-[11px] font-semibold text-slate-600">Texto revisado para disparo</span>
+                <span className="text-[11px] font-semibold text-slate-600">Texto revisado para o disparo</span>
               </label>
             </div>
             <span>{message.length} caracteres</span>

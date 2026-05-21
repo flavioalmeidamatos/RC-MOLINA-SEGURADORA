@@ -125,15 +125,23 @@ const mapAttachmentsToBridgeMedia = async (attachments: WhatsAppDispatchPayload[
 
   for (const attachment of attachments || []) {
     if (!attachment.fileUrl || !attachment.mimeType) {
-      throw new Error(`Anexo "${attachment.name}" ainda nao foi persistido no servidor.`);
+      throw new Error(`Anexo "${attachment.name}" invalido.`);
     }
 
-    const fileBuffer = await fs.readFile(resolveStoredAttachmentPath(attachment.fileUrl));
-    media.push({
-      base64: `data:${attachment.mimeType};base64,${fileBuffer.toString('base64')}`,
-      type: attachment.mimeType,
-      name: attachment.name,
-    });
+    if (attachment.fileUrl.startsWith('data:')) {
+      media.push({
+        base64: attachment.fileUrl,
+        type: attachment.mimeType,
+        name: attachment.name,
+      });
+    } else {
+      const fileBuffer = await fs.readFile(resolveStoredAttachmentPath(attachment.fileUrl));
+      media.push({
+        base64: `data:${attachment.mimeType};base64,${fileBuffer.toString('base64')}`,
+        type: attachment.mimeType,
+        name: attachment.name,
+      });
+    }
   }
 
   return media;

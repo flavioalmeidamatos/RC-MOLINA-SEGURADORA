@@ -1256,7 +1256,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                 />
               </React.Suspense>
             ) : showCampanhasArea ? (
-              <>
+              <div className="flex flex-1 flex-col min-h-0 overflow-hidden h-[calc(100vh-120px)] lg:h-[calc(100vh-64px)]">
                 <CampanhasShell
                   userId={perfil?.id || session?.user?.id || null}
                   userEmail={perfil?.email || session?.user?.email || null}
@@ -1293,7 +1293,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                 </div>
               </div>
                 */}
-              </>
+              </div>
             ) : activeMenu === "Agenda" ? (
               <Agenda aniversariantesMes={aniversariantesMes} />
             ) : (

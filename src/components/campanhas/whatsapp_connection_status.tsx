@@ -1,13 +1,9 @@
-import { Loader2, LogOut, QrCode, RefreshCcw, Smartphone, Wifi, WifiOff } from "lucide-react";
+import { QrCode, Smartphone, Wifi, WifiOff } from "lucide-react";
 
 import type { WhatsAppBridgeStatus } from "../../types/whatsapp_campaign";
 
 interface WhatsAppConnectionStatusProps {
   status: WhatsAppBridgeStatus | null;
-  isLoading: boolean;
-  isLoggingOut: boolean;
-  onRefresh: () => void;
-  onLogout: () => void;
 }
 
 const statusLabel: Record<WhatsAppBridgeStatus["status"], string> = {
@@ -30,40 +26,24 @@ const statusTone: Record<WhatsAppBridgeStatus["status"], string> = {
 
 export function WhatsAppConnectionStatus({
   status,
-  isLoading,
-  isLoggingOut,
-  onRefresh,
-  onLogout,
 }: WhatsAppConnectionStatusProps) {
   const connectionState = status?.status || "disabled";
   const connected = connectionState === "connected";
 
   return (
     <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
-      <div className="border-b border-slate-100 bg-slate-50/80 px-5 py-4">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#b58c2a]">
-              Conexao
-            </p>
-            <h3 className="mt-1 text-lg font-black tracking-tight text-[#0c1826]">
-              Status do WhatsApp
-            </h3>
-          </div>
-
-          <div
-            className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] ${statusTone[connectionState]}`}
-          >
-            {connected ? <Wifi size={14} strokeWidth={1.9} /> : <WifiOff size={14} strokeWidth={1.9} />}
-            {statusLabel[connectionState]}
-          </div>
+      <div className="border-b border-slate-100 bg-slate-50/80 px-4 py-2.5">
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="text-[15px] font-black tracking-tight text-[#0c1826] shrink-0 mr-1">
+            Status do WhatsApp
+          </h3>
         </div>
       </div>
 
-      <div className="space-y-4 p-5">
+      <div className="space-y-2 p-3">
         {(!status?.configured || !status?.available || status?.error) && (
-          <div className="rounded-[20px] border border-slate-200 bg-slate-50/80 px-4 py-4">
-            <p className="text-sm font-semibold leading-6 text-slate-700">
+          <div className="rounded-[14px] border border-slate-200 bg-slate-50/80 px-3 py-2.5">
+            <p className="text-sm font-semibold leading-5 text-slate-700">
               {!status?.configured
                 ? "O conector do WhatsApp ainda não foi configurado neste ambiente."
                 : !status?.available
@@ -71,62 +51,38 @@ export function WhatsAppConnectionStatus({
                   : null}
             </p>
             {status?.error ? (
-              <p className="mt-2 text-xs font-semibold leading-5 text-rose-600">
+              <p className="mt-1 text-xs font-semibold leading-4 text-rose-600">
                 {status.error}
               </p>
             ) : null}
           </div>
         )}
 
-        {status?.user ? (
-          <div className="rounded-[20px] border border-emerald-200 bg-emerald-50/70 px-4 py-4">
-            <div className="flex items-center gap-2 text-emerald-700">
-              <Smartphone size={16} strokeWidth={1.9} />
-              <span className="text-[11px] font-black uppercase tracking-[0.18em]">Sessão ativa</span>
-            </div>
-            <p className="mt-2 text-sm font-black text-emerald-900">{status.user.pushname}</p>
-            <p className="mt-1 text-xs font-semibold text-emerald-700">{status.user.phone}</p>
-          </div>
-        ) : null}
-
         {status?.qrAvailable ? (
-          <div className="rounded-[20px] border border-amber-200 bg-amber-50/70 px-4 py-4">
-            <div className="flex items-center gap-2 text-amber-700">
-              <QrCode size={16} strokeWidth={1.9} />
-              <span className="text-[11px] font-black uppercase tracking-[0.18em]">QR disponivel</span>
+          <div className="rounded-[14px] border border-amber-200 bg-amber-50/70 px-3 py-2.5">
+            <div className="flex items-center gap-1.5 text-amber-700">
+              <QrCode size={14} strokeWidth={1.9} />
+              <span className="text-[10px] font-black uppercase tracking-[0.18em]">QR disponivel</span>
             </div>
-            <p className="mt-2 text-sm font-semibold leading-6 text-amber-900">
+            <p className="mt-1 text-xs font-semibold leading-5 text-amber-900">
               Existe um QR pendente. Leia o codigo com o WhatsApp no celular para liberar o disparo.
             </p>
             {status.qrSvg ? (
-              <div className="mt-3 flex justify-center rounded-[18px] border border-amber-200/80 bg-white p-3 shadow-sm">
-                <img src={status.qrSvg} alt="QR code do WhatsApp" className="h-52 w-52 rounded-2xl" />
+              <div className="mt-2 flex justify-center rounded-[14px] border border-amber-200/80 bg-white p-2.5 shadow-sm">
+                <img src={status.qrSvg} alt="QR code do WhatsApp" className="h-44 w-44 rounded-xl" />
               </div>
             ) : null}
           </div>
         ) : null}
 
-        <div className="flex flex-wrap gap-3">
-          <button
-            type="button"
-            onClick={onRefresh}
-            disabled={isLoading}
-            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.18em] text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isLoading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCcw size={14} strokeWidth={1.9} />}
-            Atualizar
-          </button>
-
-          <button
-            type="button"
-            onClick={onLogout}
-            disabled={isLoggingOut || !status?.configured}
-            className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.18em] text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isLoggingOut ? <Loader2 size={14} className="animate-spin" /> : <LogOut size={14} strokeWidth={1.9} />}
-            Desconectar
-          </button>
-        </div>
+        {status?.configured && status?.available && !status?.error && !status?.qrAvailable && (
+          <div className="rounded-[14px] border border-emerald-100 bg-emerald-50/40 px-3 py-2 flex items-center gap-2 shadow-2xs">
+            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <p className="text-[11px] font-black tracking-wide text-emerald-800">
+              Pronto para envio de mensagens
+            </p>
+          </div>
+        )}
       </div>
     </section>
   );

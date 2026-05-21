@@ -57,7 +57,7 @@ Create a production backup on the VPS with:
 
 Current state:
 
-- The application is 100% standalone and does not depend on external BaaS (like Supabase).
+- The application is 100% standalone and does not depend on any external cloud database or BaaS.
 - The production database is local PostgreSQL on the Hostinger VPS.
 - A bootstrap admin user is created automatically if `ADMIN_INITIAL_PASSWORD` is configured.
 - Runtime API endpoints are served by `server.ts`.

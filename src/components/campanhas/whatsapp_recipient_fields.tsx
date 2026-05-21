@@ -7,7 +7,9 @@ interface WhatsAppRecipientFieldsProps {
   onRemoveRecipient: (index: number) => void;
   validRecipients: number;
   invalidRecipients: number;
+  onComposeEmail?: () => void;
 }
+
 
 export function WhatsAppRecipientFields({
   recipients,
@@ -16,6 +18,7 @@ export function WhatsAppRecipientFields({
   onRemoveRecipient,
   validRecipients,
   invalidRecipients,
+  onComposeEmail,
 }: WhatsAppRecipientFieldsProps) {
   return (
     <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
@@ -112,7 +115,7 @@ export function WhatsAppRecipientFields({
         <div className="grid gap-2 sm:grid-cols-3">
           <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
             <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#b58c2a]">Total</p>
-            <p className="text-sm font-black text-[#0c1826]">{recipients.length}</p>
+            <p className="text-sm font-black text-[#0c1826]">{validRecipients + invalidRecipients}</p>
           </div>
 
           <div className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50/70 px-3 py-3">
@@ -120,10 +123,15 @@ export function WhatsAppRecipientFields({
             <p className="text-sm font-black text-emerald-800">{validRecipients}</p>
           </div>
 
-          <div className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50/70 px-3 py-3">
-            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-amber-700">Ajustar</p>
-            <p className="text-sm font-black text-amber-800">{invalidRecipients}</p>
-          </div>
+          <button
+            type="button"
+            onClick={onComposeEmail}
+            className="flex items-center justify-center rounded-xl border border-amber-200 bg-amber-50/70 hover:bg-amber-100/70 hover:border-amber-300 active:scale-95 transition-all duration-200 px-3 py-3 w-full cursor-pointer group"
+          >
+            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-amber-700 group-hover:text-amber-800 transition-colors">
+              Compor Email
+            </p>
+          </button>
         </div>
       </div>
     </section>

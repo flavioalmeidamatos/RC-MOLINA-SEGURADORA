@@ -22,6 +22,7 @@ export type WhatsAppInlineTokenKind = "text" | "bold" | "italic" | "strike" | "c
 export interface WhatsAppInlineToken {
   kind: WhatsAppInlineTokenKind;
   value: string;
+  children?: WhatsAppInlineToken[];
 }
 
 export interface WhatsAppCampaignDraft {

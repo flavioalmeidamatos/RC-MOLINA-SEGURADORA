@@ -9,7 +9,6 @@ import { ImportLeadHttpError, importLeadFromSistemaQuer } from './api/_lib/impor
 import importLeadAssetHandler from './api/import-lead-asset';
 import sendLoginCodeHandler from './api/send-login-code';
 import { aniversariantesMesHandler, createClienteHandler, listClientesHandler, nextClienteCodigoHandler, searchClientesHandler, updateClienteHandler, deleteClienteHandler, clientStatsHandler } from './api/clientes';
-import { registerCampanhasRoutes } from './api/campanhas';
 import { registerWhatsAppBridgeRoutes } from './api/whatsapp_bridge';
 import { initializeLocalWhatsAppConnector } from './api/_lib/whatsapp_connector';
 
@@ -682,7 +681,6 @@ async function startServer() {
   app.use('/api', gmailRouter);
 
   app.post('/api/send-login-code', sendLoginCodeHandler);
-  registerCampanhasRoutes(app);
   registerWhatsAppBridgeRoutes(app);
 
   app.post('/api/clientes', createClienteHandler);
