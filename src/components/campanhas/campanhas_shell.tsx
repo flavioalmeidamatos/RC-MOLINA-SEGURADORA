@@ -577,7 +577,7 @@ export function CampanhasShell({ userId, userEmail }: CampanhasShellProps) {
   }, [activeCampaignId, actor]);
 
   return (
-    <div className="flex-1 overflow-y-auto bg-[linear-gradient(180deg,#f8fafc_0%,#f2f6fb_45%,#eef2f7_100%)] pl-1 pr-3 pb-4 pt-3 sm:pl-2 sm:pr-5 sm:pb-6 sm:pt-4 md:pl-3 md:pr-6 md:pb-8">
+    <div className="flex-1 overflow-y-auto bg-[linear-gradient(180deg,#f8fafc_0%,#f2f6fb_45%,#eef2f7_100%)] pl-0 pr-3 pb-4 pt-3 sm:pl-1 sm:pr-5 sm:pb-6 sm:pt-4 md:pl-1 md:pr-6 md:pb-8 lg:pl-0">
       <input
         ref={fileInputRef}
         type="file"
@@ -587,7 +587,7 @@ export function CampanhasShell({ userId, userEmail }: CampanhasShellProps) {
         className="hidden"
       />
 
-      <div className="mr-auto flex w-full max-w-[1760px] flex-col gap-3 2xl:max-w-[1880px]">
+      <div className="mr-auto flex w-full max-w-[1760px] flex-col gap-3 lg:-ml-2 xl:-ml-3 2xl:max-w-[1880px]">
         <section className="overflow-hidden rounded-[20px] border border-white/70 bg-[#0c1826] text-white shadow-sm">
           <div className="relative px-5 py-3 sm:px-6">
             <div className="absolute -left-12 top-0 h-40 w-40 rounded-full bg-[#d4af37]/10 blur-3xl" />
