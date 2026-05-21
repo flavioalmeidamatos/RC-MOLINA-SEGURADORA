@@ -57,8 +57,8 @@ export function WhatsAppMediaPanel({
           <p className="mt-1 text-xs leading-5 text-slate-600">
             Os arquivos selecionados são guardados com segurança e ficam prontos para serem enviados na sua campanha.
           </p>
-          <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-            Formatos: JPG, PNG, WEBP, GIF, MP4, MOV, WEBM e PDF. Limite de 12 MB.
+          <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#b58c2a]">
+            💡 Dica: Formatos: JPG, PNG, WEBP, GIF, MP4, MOV, WEBM e PDF. Limite de 12 MB.
           </p>
         </div>
 
