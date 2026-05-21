@@ -63,6 +63,25 @@ export default function App() {
 
   useEffect(() => {
     const syncSession = async () => {
+      if (import.meta.env.DEV) {
+        const devSession = {
+          user: {
+            id: '00000000-0000-0000-0000-000000000000',
+            email: 'dev@rcmolina.com.br',
+          },
+        };
+        const devPerfil = {
+          id: '00000000-0000-0000-0000-000000000000',
+          email: 'dev@rcmolina.com.br',
+          nome_completo: 'Desenvolvedor Local (Bypass)',
+          organizacao: 'Molina Seguros',
+        };
+        setSession(devSession);
+        setPerfil(devPerfil);
+        setLoading(false);
+        return;
+      }
+
       const storedSession = getStoredSession();
 
       if (!storedSession) {
@@ -111,6 +130,16 @@ export default function App() {
           element={
             session ? (
               <SCR_MENUPRINCIPAL session={session} perfil={perfil} onLogout={handleLogout} />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+        <Route
+          path="/campanhas"
+          element={
+            session ? (
+              <SCR_MENUPRINCIPAL session={session} perfil={perfil} onLogout={handleLogout} forcedMenu="Campanhas" />
             ) : (
               <Navigate to="/login" replace />
             )

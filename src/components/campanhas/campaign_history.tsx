@@ -25,7 +25,7 @@ export function CampaignHistory({ items, isLoading, activeCampaignName }: Campai
               Auditoria
             </p>
             <h3 className="mt-1 text-lg font-black tracking-tight text-[#0c1826]">
-              Historico da campanha
+              Histórico da campanha
             </h3>
           </div>
 

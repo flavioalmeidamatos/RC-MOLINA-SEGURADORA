@@ -15,6 +15,15 @@ import { initializeLocalWhatsAppConnector } from './api/_lib/whatsapp_connector'
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Evita que erros de bibliotecas de terceiros derrubem o servidor local
+process.on('uncaughtException', (err) => {
+  console.error('[SERVER] Erro nao capturado:', err);
+});
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[SERVER] Rejeicao nao tratada em:', promise, 'motivo:', reason);
+});
+
 dotenv.config({ path: path.join(__dirname, '.env.local') });
 const SIMULATOR_ORIGIN = 'https://app.simuladoronline.com';
 const SIMULATOR_PROXY_PREFIX = '/simulador-proxy';

@@ -160,7 +160,7 @@ export function WhatsAppMessagePreview({
               </div>
             </div>
 
-            <div className="min-h-[280px] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.55),transparent_48%),linear-gradient(180deg,#f4efe6_0%,#e8dfd1_100%)] px-4 py-4">
+            <div className="h-[480px] overflow-y-auto bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.55),transparent_48%),linear-gradient(180deg,#f4efe6_0%,#e8dfd1_100%)] px-4 py-4">
               <div className="ml-auto max-w-[88%] rounded-[22px] rounded-tr-md bg-[#dcf8c6] px-3 py-3 text-[12px] leading-6 text-[#0f172a] shadow-sm">
                 <p className="mb-2 text-[11px] font-black uppercase tracking-[0.18em] text-[#5b7c49]">
                   {campaignName.trim() || "Campanha sem nome"}

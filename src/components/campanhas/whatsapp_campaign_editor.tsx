@@ -3,11 +3,13 @@ import { Bold, Code, Italic, Paperclip, SmilePlus, Strikethrough } from "lucide-
 import EmojiPicker, { Categories, type CategoryConfig, type EmojiClickData } from "emoji-picker-react";
 
 interface WhatsAppCampaignEditorProps {
-  campaignName: string;
   message: string;
-  onCampaignNameChange: (value: string) => void;
+  optInChecked: boolean;
+  templateChecked: boolean;
   onMessageChange: (value: string) => void;
   onPickMedia: () => void;
+  onOptInChange: (checked: boolean) => void;
+  onTemplateChange: (checked: boolean) => void;
 }
 
 const emojiCategories: CategoryConfig[] = [
@@ -18,16 +20,18 @@ const emojiCategories: CategoryConfig[] = [
   { category: Categories.TRAVEL_PLACES, name: "Viagens e lugares" },
   { category: Categories.ACTIVITIES, name: "Atividades" },
   { category: Categories.OBJECTS, name: "Objetos" },
-  { category: Categories.SYMBOLS, name: "Simbolos" },
+  { category: Categories.SYMBOLS, name: "Símbolos" },
   { category: Categories.FLAGS, name: "Bandeiras" },
 ];
 
 export function WhatsAppCampaignEditor({
-  campaignName,
   message,
-  onCampaignNameChange,
+  optInChecked,
+  templateChecked,
   onMessageChange,
   onPickMedia,
+  onOptInChange,
+  onTemplateChange,
 }: WhatsAppCampaignEditorProps) {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -89,38 +93,8 @@ export function WhatsAppCampaignEditor({
   };
 
   return (
-    <section className="rounded-[28px] border border-slate-200 bg-white shadow-sm">
-      <div className="rounded-t-[28px] border-b border-slate-100 bg-slate-50/80 px-4 py-3">
-        <h3 className="text-base font-black tracking-tight text-[#0c1826]">
-          Editor da campanha
-        </h3>
-      </div>
-
-      <div className="space-y-4 p-4">
-        <div className="space-y-2">
-          <label
-            htmlFor="campaign-name"
-            className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500"
-          >
-            Nome interno
-          </label>
-          <input
-            id="campaign-name"
-            type="text"
-            value={campaignName}
-            onChange={(event) => onCampaignNameChange(event.target.value)}
-            placeholder="Ex.: Renovacao plano familiar"
-            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-700 outline-none transition focus:border-[#d4af37] focus:ring-4 focus:ring-[#d4af37]/10"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <label
-            htmlFor="campaign-message"
-            className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500"
-          >
-            Mensagem principal
-          </label>
+    <section className="rounded-[20px] border border-slate-200 bg-white shadow-sm p-3">
+      <div className="space-y-2">
 
           <div className="relative rounded-[24px] border border-slate-200 bg-[#fcfcfd] transition focus-within:border-[#d4af37] focus-within:ring-4 focus-within:ring-[#d4af37]/10">
             <div className="flex flex-wrap items-center gap-1 border-b border-slate-200 bg-white/70 px-3 py-2 rounded-t-[24px]">
@@ -136,7 +110,7 @@ export function WhatsAppCampaignEditor({
                 type="button"
                 onClick={() => insertFormatting("_")}
                 className="rounded transition p-1.5 text-slate-500 hover:bg-slate-200 hover:text-slate-700"
-                title="Italico"
+                title="Itálico"
               >
                 <Italic size={16} />
               </button>
@@ -203,7 +177,7 @@ export function WhatsAppCampaignEditor({
                 title="Selecionar imagens, videos ou PDF"
               >
                 <Paperclip size={14} />
-                <span>Anexar midia</span>
+                <span>Anexar mídia</span>
               </button>
             </div>
 
@@ -212,18 +186,35 @@ export function WhatsAppCampaignEditor({
               ref={textareaRef}
               value={message}
               onChange={(event) => onMessageChange(event.target.value)}
-              placeholder={
-                "Use este espaco para montar sua mensagem.\n\nUse a barra acima para adicionar emojis ou formatacao."
-              }
-              className="h-[108px] w-full resize-none rounded-b-[24px] bg-transparent px-4 py-3 text-sm leading-6 text-slate-700 outline-none"
+              placeholder="Use este espaço para montar sua mensagem. Use a barra acima para adicionar emojis ou formatação."
+              className="h-[72px] w-full resize-none rounded-b-[24px] bg-transparent px-4 py-2 text-sm leading-6 text-slate-700 outline-none"
             />
           </div>
 
           <div className="flex items-center justify-between gap-3 px-1 text-[11px] font-semibold text-slate-400">
-            <span>Preview local apenas. Nenhum disparo sera feito nesta etapa.</span>
+            <div className="flex items-center gap-4">
+              <span>Preview local apenas. Nenhum disparo será feito nesta etapa.</span>
+              <label className="flex items-center gap-1.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={optInChecked}
+                  onChange={(event) => onOptInChange(event.target.checked)}
+                  className="h-3.5 w-3.5 rounded border-slate-300 text-[#b58c2a] focus:ring-[#d4af37]"
+                />
+                <span className="text-[11px] font-semibold text-slate-600">Opt-in confirmado</span>
+              </label>
+              <label className="flex items-center gap-1.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={templateChecked}
+                  onChange={(event) => onTemplateChange(event.target.checked)}
+                  className="h-3.5 w-3.5 rounded border-slate-300 text-[#b58c2a] focus:ring-[#d4af37]"
+                />
+                <span className="text-[11px] font-semibold text-slate-600">Texto revisado para disparo</span>
+              </label>
+            </div>
             <span>{message.length} caracteres</span>
           </div>
-        </div>
       </div>
     </section>
   );

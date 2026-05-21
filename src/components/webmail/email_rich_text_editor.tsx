@@ -88,7 +88,7 @@ async function createVideoThumbnailDataUrl(file: File) {
 
         const context = canvas.getContext('2d');
         if (!context) {
-          reject(new Error('Nao foi possivel gerar a miniatura do video.'));
+          reject(new Error('Não foi possível gerar a miniatura do video.'));
           return;
         }
 

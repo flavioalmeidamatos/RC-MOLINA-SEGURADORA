@@ -61,26 +61,28 @@ export function WhatsAppConnectionStatus({
       </div>
 
       <div className="space-y-4 p-5">
-        <div className="rounded-[20px] border border-slate-200 bg-slate-50/80 px-4 py-4">
-          <p className="text-sm font-semibold leading-6 text-slate-700">
-            {status?.configured
-              ? status.available
-                ? "A RC Molina esta conectada ao conector local do WhatsApp."
-                : "O conector do WhatsApp foi configurado, mas ainda nao respondeu."
-              : "O conector do WhatsApp ainda nao foi configurado neste ambiente."}
-          </p>
-          {status?.error ? (
-            <p className="mt-2 text-xs font-semibold leading-5 text-rose-600">
-              {status.error}
+        {(!status?.configured || !status?.available || status?.error) && (
+          <div className="rounded-[20px] border border-slate-200 bg-slate-50/80 px-4 py-4">
+            <p className="text-sm font-semibold leading-6 text-slate-700">
+              {!status?.configured
+                ? "O conector do WhatsApp ainda não foi configurado neste ambiente."
+                : !status?.available
+                  ? "O conector do WhatsApp foi configurado, mas ainda não respondeu."
+                  : null}
             </p>
-          ) : null}
-        </div>
+            {status?.error ? (
+              <p className="mt-2 text-xs font-semibold leading-5 text-rose-600">
+                {status.error}
+              </p>
+            ) : null}
+          </div>
+        )}
 
         {status?.user ? (
           <div className="rounded-[20px] border border-emerald-200 bg-emerald-50/70 px-4 py-4">
             <div className="flex items-center gap-2 text-emerald-700">
               <Smartphone size={16} strokeWidth={1.9} />
-              <span className="text-[11px] font-black uppercase tracking-[0.18em]">Sessao ativa</span>
+              <span className="text-[11px] font-black uppercase tracking-[0.18em]">Sessão ativa</span>
             </div>
             <p className="mt-2 text-sm font-black text-emerald-900">{status.user.pushname}</p>
             <p className="mt-1 text-xs font-semibold text-emerald-700">{status.user.phone}</p>

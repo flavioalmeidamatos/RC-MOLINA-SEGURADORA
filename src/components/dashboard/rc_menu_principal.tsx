@@ -163,7 +163,7 @@ const getSimulatorExternalMessage = (
 
 const getSimulatorExternalExplanation = (browser: SimulatorBrowser) =>
   !isSimulatorSupportedBrowser(browser)
-    ? "Para evitar falhas de login e sessao, o acesso incorporado ao Simulador foi limitado aos navegadores Chrome, Edge e Firefox."
+    ? "Para evitar falhas de login e sessão, o acesso incorporado ao Simulador foi limitado aos navegadores Chrome, Edge e Firefox."
     : usesSimulatorProxy(browser)
     ? `O ${getSimulatorBrowserLabel(browser)} pode tratar cookies e armazenamento de sites externos dentro de iframes de forma mais restritiva. O proxy experimental tenta manter o simulador dentro do app usando o mesmo dominio local.`
     : "Esse fallback é acionado quando o navegador ou o próprio simulador restringe algum recurso necessário para manter o site externo incorporado.";
@@ -399,10 +399,10 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
         setSystemUsers(data || []);
       } catch (error) {
-        console.error("Erro ao carregar usuarios do sistema:", error);
+        console.error("Erro ao carregar usuários do sistema:", error);
         if (!ignore) {
           setSystemUsers([]);
-          setSystemUsersError("Nao foi possivel carregar os usuarios do sistema.");
+          setSystemUsersError("Não foi possível carregar os usuários do sistema.");
         }
       } finally {
         if (!ignore) {
@@ -702,7 +702,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
         cache: "no-store",
       });
     } catch (error) {
-      console.warn("Nao foi possivel resetar a sessao do proxy SulAmerica.", error);
+      console.warn("Não foi possível resetar a sessão do proxy SulAmerica.", error);
     } finally {
       setSulamericaFrameKey((prev) => prev + 1);
     }
@@ -1616,10 +1616,10 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                         <div className="relative flex items-center justify-between gap-4">
                           <div>
                             <p className="text-[9px] font-black uppercase tracking-[0.22em] text-[#d4af37]/90">
-                              Usuarios do banco
+                              Usuários do banco
                             </p>
                             <h2 className="mt-0.5 text-2xl font-black tracking-tight">
-                              {isLoadingSystemUsers ? "Carregando..." : `${systemUsers.length} usuarios`}
+                              {isLoadingSystemUsers ? "Carregando..." : `${systemUsers.length} usuários`}
                             </h2>
                             <p className="mt-1 text-[11px] font-medium text-white/50">
                               Visualizacao liberada para {USERS_VIEWER_FULL_NAME}
@@ -1647,7 +1647,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                           </div>
                         ) : systemUsers.length === 0 ? (
                           <div className="rounded-xl border border-slate-200 bg-white px-4 py-5 text-sm font-semibold text-slate-500">
-                            Nenhum usuario encontrado.
+                            Nenhum usuário encontrado.
                           </div>
                         ) : (
                           <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">

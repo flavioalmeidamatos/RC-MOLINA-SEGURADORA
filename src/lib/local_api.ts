@@ -9,7 +9,7 @@ const parseJson = async <T>(response: Response): Promise<ApiResult<T>> => {
   const payload = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    return { error: payload?.error || 'Nao foi possivel concluir a operacao.' };
+    return { error: payload?.error || 'Não foi possível concluir a operação.' };
   }
 
   return { data: payload?.data ?? payload };
@@ -89,7 +89,7 @@ export const apiAdminLogin = async (email: string, senha: string) => {
   const payload = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    return { error: payload?.error || 'Nao foi possivel concluir a operacao.' };
+    return { error: payload?.error || 'Não foi possível concluir a operação.' };
   }
 
   return { data: { token: payload?.token || '', data: payload?.data as UsuarioPerfil } };

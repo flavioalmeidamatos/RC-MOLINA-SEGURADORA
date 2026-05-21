@@ -124,7 +124,7 @@ export const Cadastro: React.FC = () => {
     setLoading(true);
 
     try {
-      // Verifica se o e-mail ja existe na tabela de usuarios
+      // Verifica se o e-mail ja existe na tabela de usuários
       const { data: existingUser } = await apiEmailExists(normalizedEmail);
 
       if (existingUser) {
