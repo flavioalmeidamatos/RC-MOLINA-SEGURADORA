@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { FileImage, FileText, Paperclip, PlayCircle, Video } from "lucide-react";
 
 import { splitWhatsAppMessageLines } from "../../lib/whatsapp_text_formatter";
 import type { CampaignAttachment, WhatsAppInlineToken } from "../../types/whatsapp_campaign";
@@ -52,6 +53,76 @@ function renderInlineTokens(tokens: WhatsAppInlineToken[]): ReactNode[] {
   });
 }
 
+function renderAttachmentPreview(attachment: CampaignAttachment) {
+  if (attachment.kind === "image" && attachment.fileUrl) {
+    return (
+      <div className="overflow-hidden rounded-[18px] border border-[#b6d7a8] bg-white/80">
+        <img
+          src={attachment.fileUrl}
+          alt={attachment.name}
+          className="h-40 w-full object-cover"
+        />
+        <div className="flex items-center gap-2 px-3 py-2 text-[10px] font-semibold text-slate-600">
+          <FileImage size={14} className="text-[#5b7c49]" />
+          <span className="truncate">{attachment.name}</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (attachment.kind === "video" && attachment.fileUrl) {
+    return (
+      <div className="overflow-hidden rounded-[18px] border border-[#b6d7a8] bg-white/80">
+        <div className="relative">
+          <video
+            src={attachment.fileUrl}
+            controls
+            preload="metadata"
+            className="h-40 w-full bg-slate-900 object-cover"
+          />
+          <div className="pointer-events-none absolute left-3 top-3 rounded-full bg-black/40 p-1.5 text-white backdrop-blur-sm">
+            <PlayCircle size={16} />
+          </div>
+        </div>
+        <div className="flex items-center gap-2 px-3 py-2 text-[10px] font-semibold text-slate-600">
+          <Video size={14} className="text-[#5b7c49]" />
+          <span className="truncate">{attachment.name}</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (attachment.kind === "pdf") {
+    return (
+      <div className="rounded-[18px] border border-[#b6d7a8] bg-white/80 px-3 py-3">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#fff3cf] text-[#9a7418]">
+            <FileText size={18} />
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-[11px] font-black text-[#0f172a]">{attachment.name}</p>
+            <p className="mt-0.5 text-[10px] font-semibold text-slate-500">PDF pronto para envio</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-[18px] border border-[#b6d7a8] bg-white/80 px-3 py-3">
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#ecf2f8] text-slate-600">
+          <Paperclip size={18} />
+        </div>
+        <div className="min-w-0">
+          <p className="truncate text-[11px] font-black text-[#0f172a]">{attachment.name}</p>
+          <p className="mt-0.5 text-[10px] font-semibold text-slate-500">Arquivo pronto para envio</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function WhatsAppMessagePreview({
   campaignName,
   message,
@@ -68,7 +139,7 @@ export function WhatsAppMessagePreview({
           Preview
         </p>
         <h3 className="mt-1 text-base font-black tracking-tight text-[#0c1826]">
-          Simulação de mensagem
+          Simulacao de mensagem
         </h3>
       </div>
 
@@ -86,10 +157,18 @@ export function WhatsAppMessagePreview({
             </div>
 
             <div className="min-h-[280px] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.55),transparent_48%),linear-gradient(180deg,#f4efe6_0%,#e8dfd1_100%)] px-4 py-4">
-              <div className="ml-auto max-w-[88%] rounded-[22px] rounded-tr-md bg-[#dcf8c6] px-4 py-3 text-[12px] leading-6 text-[#0f172a] shadow-sm">
+              <div className="ml-auto max-w-[88%] rounded-[22px] rounded-tr-md bg-[#dcf8c6] px-3 py-3 text-[12px] leading-6 text-[#0f172a] shadow-sm">
                 <p className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#5b7c49]">
                   {campaignName.trim() || "Campanha sem nome"}
                 </p>
+
+                {attachments.length > 0 ? (
+                  <div className="mb-3 space-y-2">
+                    {attachments.map((attachment) => (
+                      <div key={attachment.id}>{renderAttachmentPreview(attachment)}</div>
+                    ))}
+                  </div>
+                ) : null}
 
                 {message.trim() ? (
                   <div className="space-y-1 break-words">
@@ -100,19 +179,8 @@ export function WhatsAppMessagePreview({
                     ))}
                   </div>
                 ) : (
-                  <p className="text-slate-500">Escreva a mensagem para ver a simulação neste balão.</p>
+                  <p className="text-slate-500">Escreva a mensagem para ver a simulacao neste balao.</p>
                 )}
-
-                {attachments.length > 0 ? (
-                  <div className="mt-3 rounded-2xl border border-[#b6d7a8] bg-white/50 px-3 py-2">
-                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5b7c49]">
-                      Anexos preparados
-                    </p>
-                    <p className="mt-1 text-[11px] font-semibold text-slate-600">
-                      {attachments.length} arquivo(s) pronto(s) para envio.
-                    </p>
-                  </div>
-                ) : null}
 
                 <div className="mt-3 flex items-center justify-end gap-2 text-[10px] font-semibold text-slate-400">
                   <span>14:35</span>
@@ -126,14 +194,14 @@ export function WhatsAppMessagePreview({
         <div className="grid gap-3 sm:grid-cols-3">
           <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#b58c2a]">
-              Alcance válido
+              Alcance valido
             </p>
             <p className="mt-1 text-base font-black text-[#0c1826]">{validRecipients}</p>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#b58c2a]">
-              Mídia
+              Midia
             </p>
             <p className="mt-1 text-base font-black text-[#0c1826]">{attachments.length}</p>
           </div>
@@ -157,7 +225,7 @@ export function WhatsAppMessagePreview({
                 readyForNextPhase ? "text-emerald-800" : "text-amber-800"
               }`}
             >
-              {readyForNextPhase ? "Pronto para disparo" : "Módulo em preparo"}
+              {readyForNextPhase ? "Pronto para disparo" : "Modulo em preparo"}
             </p>
           </div>
         </div>
