@@ -67,6 +67,7 @@ export interface WhatsAppBridgeStatus {
   available: boolean;
   status: WhatsAppBridgeConnectionState;
   qr: string | null;
+  qrSvg?: string | null;
   qrAvailable: boolean;
   user: WhatsAppBridgeUserInfo | null;
   error?: string | null;

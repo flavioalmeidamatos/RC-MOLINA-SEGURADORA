@@ -29,6 +29,7 @@ import type {
 } from "../../types/whatsapp_campaign";
 import { CampaignHistory } from "./campaign_history";
 import { WhatsAppCampaignEditor } from "./whatsapp_campaign_editor";
+import { WhatsAppConnectionGateModal } from "./whatsapp_connection_gate_modal";
 import { WhatsAppConnectionStatus } from "./whatsapp_connection_status";
 import { WhatsAppMediaPanel } from "./whatsapp_media_panel";
 import { WhatsAppMessagePreview } from "./whatsapp_message_preview";
@@ -66,6 +67,8 @@ const draftToPayload = (draft: WhatsAppCampaignDraft): SaveWhatsAppCampaignPaylo
   optInChecked: draft.optInChecked,
   templateChecked: draft.templateChecked,
 });
+
+const BRIDGE_STATUS_POLL_MS = 4000;
 
 export function CampanhasShell({ userId, userEmail }: CampanhasShellProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -105,6 +108,8 @@ export function CampanhasShell({ userId, userEmail }: CampanhasShellProps) {
     recipientSummary.validNumbers.length > 0 &&
     optInChecked &&
     templateChecked;
+  const isBridgeConnected = bridgeStatus?.status === "connected";
+  const shouldShowConnectionGate = Boolean(actor) && !isBridgeConnected;
 
   useEffect(() => {
     let ignore = false;
@@ -209,7 +214,7 @@ export function CampanhasShell({ userId, userEmail }: CampanhasShellProps) {
     void loadBridgeStatus();
     intervalId = window.setInterval(() => {
       void loadBridgeStatus();
-    }, 15000);
+    }, BRIDGE_STATUS_POLL_MS);
 
     return () => {
       ignore = true;
@@ -666,14 +671,6 @@ export function CampanhasShell({ userId, userEmail }: CampanhasShellProps) {
           </div>
 
           <div className="space-y-3">
-            <WhatsAppConnectionStatus
-              status={bridgeStatus}
-              isLoading={isLoadingBridgeStatus}
-              isLoggingOut={isLoggingOutBridge}
-              onRefresh={() => void handleRefreshBridgeStatus()}
-              onLogout={() => void handleLogoutBridge()}
-            />
-
             <WhatsAppMessagePreview
               campaignName={campaignName}
               message={message}
@@ -687,6 +684,14 @@ export function CampanhasShell({ userId, userEmail }: CampanhasShellProps) {
               templateChecked={templateChecked}
               onOptInChange={(checked) => setDraft((current) => ({ ...current, optInChecked: checked }))}
               onTemplateChange={(checked) => setDraft((current) => ({ ...current, templateChecked: checked }))}
+            />
+
+            <WhatsAppConnectionStatus
+              status={bridgeStatus}
+              isLoading={isLoadingBridgeStatus}
+              isLoggingOut={isLoggingOutBridge}
+              onRefresh={() => void handleRefreshBridgeStatus()}
+              onLogout={() => void handleLogoutBridge()}
             />
 
             <CampaignHistory
@@ -816,6 +821,15 @@ export function CampanhasShell({ userId, userEmail }: CampanhasShellProps) {
           </div>
         </section>
       </div>
+
+      <WhatsAppConnectionGateModal
+        open={shouldShowConnectionGate}
+        status={bridgeStatus}
+        isLoading={isLoadingBridgeStatus}
+        isLoggingOut={isLoggingOutBridge}
+        onRefresh={() => void handleRefreshBridgeStatus()}
+        onLogout={() => void handleLogoutBridge()}
+      />
     </div>
   );
 }

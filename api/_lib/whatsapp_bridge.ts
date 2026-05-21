@@ -1,4 +1,5 @@
 import fs from 'fs/promises';
+import { createRequire } from 'module';
 import path from 'path';
 
 import type { WhatsAppBridgeStatus, WhatsAppDispatchPayload, WhatsAppDispatchRecipientResult, WhatsAppDispatchResult } from '../../src/types/whatsapp_campaign';
@@ -9,6 +10,9 @@ import {
 } from './whatsapp_connector';
 
 const DEFAULT_TIMEOUT_MS = 20000;
+const require = createRequire(import.meta.url);
+const QRCode = require('qrcode-terminal/vendor/QRCode');
+const QRErrorCorrectLevel = require('qrcode-terminal/vendor/QRCode/QRErrorCorrectLevel');
 
 const normalizeBaseUrl = (value: string | undefined) => {
   const trimmed = (value || '').trim();
@@ -37,6 +41,37 @@ const createBridgeStatus = (
   error: null,
   ...override,
 });
+
+const createQrSvgDataUrl = (qrValue: string | null) => {
+  if (!qrValue) {
+    return null;
+  }
+
+  const qrCode = new QRCode(-1, QRErrorCorrectLevel.M);
+  qrCode.addData(qrValue);
+  qrCode.make();
+
+  const moduleCount = qrCode.getModuleCount();
+  const cellSize = 8;
+  const quietZone = 4;
+  const size = (moduleCount + quietZone * 2) * cellSize;
+  let pathData = '';
+
+  for (let row = 0; row < moduleCount; row += 1) {
+    for (let col = 0; col < moduleCount; col += 1) {
+      if (!qrCode.isDark(row, col)) {
+        continue;
+      }
+
+      const x = (col + quietZone) * cellSize;
+      const y = (row + quietZone) * cellSize;
+      pathData += `M${x} ${y}h${cellSize}v${cellSize}H${x}z`;
+    }
+  }
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" shape-rendering="crispEdges"><rect width="${size}" height="${size}" fill="#ffffff"/><path fill="#0f172a" d="${pathData}"/></svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+};
 
 const fetchBridgeJson = async <T>(pathname: string, init?: RequestInit): Promise<T> => {
   const baseUrl = bridgeBaseUrl();
@@ -106,7 +141,11 @@ const mapAttachmentsToBridgeMedia = async (attachments: WhatsAppDispatchPayload[
 
 export const getWhatsAppBridgeStatus = async (): Promise<WhatsAppBridgeStatus> => {
   if (!useExternalBridge()) {
-    return getLocalWhatsAppBridgeStatus();
+    const localStatus = await getLocalWhatsAppBridgeStatus();
+    return {
+      ...localStatus,
+      qrSvg: createQrSvgDataUrl(localStatus.qr),
+    };
   }
 
   try {
@@ -126,6 +165,7 @@ export const getWhatsAppBridgeStatus = async (): Promise<WhatsAppBridgeStatus> =
       available: true,
       status,
       qr,
+      qrSvg: createQrSvgDataUrl(qr),
       qrAvailable: Boolean(qr),
       user: payload?.user?.phone
         ? {
