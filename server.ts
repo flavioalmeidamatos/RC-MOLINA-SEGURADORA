@@ -2,6 +2,7 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
+import { exec } from 'child_process';
 import dotenv from 'dotenv';
 import { registerLocalAuthRoutes } from './api/_lib/local_auth_routes';
 import { gmailRouter } from './api/_lib/gmail_routes.js';
@@ -692,6 +693,17 @@ async function startServer() {
 
   app.get('/api/import-lead-asset', (req, res) => {
     importLeadAssetHandler(req, res);
+  });
+
+  app.post('/api/launch-electron', (req, res) => {
+    const sidebarWidth = req.body?.sidebarWidth || 192;
+    // Dispara a janela do Electron do outro projeto (Totem)
+    exec(`npx electron "D:\\APRENDIZADO APP\\JANELA" --sidebar=${sidebarWidth}`, (err) => {
+      if (err) {
+        console.error('Erro ao iniciar o Electron:', err);
+      }
+    });
+    res.json({ success: true });
   });
 
   app.post('/api/import-lead', async (req, res) => {

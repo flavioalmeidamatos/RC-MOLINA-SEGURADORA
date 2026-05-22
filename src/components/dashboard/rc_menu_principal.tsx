@@ -1837,9 +1837,29 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                 <img src="/klini.svg" alt="Simulador Klini" className="max-h-20 max-w-[85%] object-contain opacity-90 transition-all duration-300 group-hover:scale-105 group-hover:opacity-100" />
               </a>
 
-              <div className="group relative flex h-32 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <a
+                href="#"
+                onClick={async (event) => {
+                  event.preventDefault();
+                  setShowSimulatorChooser(false);
+                  
+                  // A sidebar tem 12rem = 192px no desktop (lg:w-48)
+                  const sidebarWidth = window.innerWidth >= 1024 ? 192 : 0;
+                  
+                  try {
+                    await fetch('/api/launch-electron', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ sidebarWidth })
+                    });
+                  } catch (e) {
+                    console.error('Failed to launch electron', e);
+                  }
+                }}
+                className="group relative flex h-32 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:border-[#d4af37]/70 hover:shadow-md cursor-pointer"
+              >
                 <img src="/solutions.svg" alt="Simulador Solutions" className="max-h-20 max-w-[85%] object-contain opacity-90 transition-all duration-300 group-hover:scale-105 group-hover:opacity-100" />
-              </div>
+              </a>
             </div>
           </div>
         </div>
