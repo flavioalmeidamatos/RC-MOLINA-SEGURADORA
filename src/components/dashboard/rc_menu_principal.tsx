@@ -66,6 +66,7 @@ const AMIL_SIMULATOR_URL = "https://portalcorretor.amil.com.br/portal/web/servic
 const AMIL_PROXY_LOGIN_URL = "/amil-proxy/portal/web/servicos/usuario/corretor/login";
 const MEDSENIOR_SIMULATOR_URL = "https://vendadigital.medsenior.com.br/";
 const KLINI_SIMULATOR_URL = "https://klinisaude.hcommerce.com.br/corretora/login";
+const SOLUTIONS_LOCAL_BRIDGE_URL = "http://127.0.0.1:32145/api/launch-solutions";
 const AMIL_LOGIN = "77915445715";
 const AMIL_PASSWORD = "sqn0y3zqmo";
 const SIMULATOR_FALLBACK_WINDOW_NAME = "simulador_online_fallback_window";
@@ -77,6 +78,31 @@ const wait = (ms: number) =>
   new Promise<void>((resolve) => {
     window.setTimeout(resolve, ms);
   });
+
+const isLocalWindowsAppHost = () => window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+
+const postSolutionsLaunchRequest = async (url: string, sidebarWidth: number) => {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), 4000);
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      mode: "cors",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sidebarWidth }),
+      signal: controller.signal,
+    });
+
+    const payload = await response.json().catch(() => null);
+
+    if (!response.ok || !payload?.success) {
+      throw new Error(payload?.error || "Nao foi possivel abrir o Solutions.");
+    }
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+};
 
 const formatBirthDate = (value: string) => {
   const [year, month, day] = String(value || "").slice(0, 10).split("-");
@@ -540,6 +566,27 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     cleanupSimulatorUi();
     setShowSimulatorChooser(false);
     setActiveMenu("Simulador Klini");
+  };
+
+  const launchSolutions = async () => {
+    const sidebarWidth = window.innerWidth >= 1024 ? 192 : 0;
+
+    try {
+      await postSolutionsLaunchRequest(SOLUTIONS_LOCAL_BRIDGE_URL, sidebarWidth);
+      setShowSimulatorChooser(false);
+      return;
+    } catch (bridgeError) {
+      if (isLocalWindowsAppHost()) {
+        await postSolutionsLaunchRequest("/api/launch-electron", sidebarWidth);
+        setShowSimulatorChooser(false);
+        return;
+      }
+
+      const details = bridgeError instanceof Error ? bridgeError.message : "Nao foi possivel abrir o Solutions.";
+      throw new Error(
+        `${details} Inicie o bridge local com "npm run solutions:bridge" neste Windows e tente novamente.`
+      );
+    }
   };
 
   const fillAndSubmitAmilLogin = () => {
@@ -1842,22 +1889,8 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                 onClick={async (event) => {
                   event.preventDefault();
 
-                  const sidebarWidth = window.innerWidth >= 1024 ? 192 : 0;
-
                   try {
-                    const response = await fetch('/api/launch-electron', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ sidebarWidth })
-                    });
-
-                    const payload = await response.json().catch(() => null);
-
-                    if (!response.ok || !payload?.success) {
-                      throw new Error(payload?.error || 'Nao foi possivel abrir o Solutions.');
-                    }
-
-                    setShowSimulatorChooser(false);
+                    await launchSolutions();
                   } catch (e) {
                     const message = e instanceof Error ? e.message : 'Nao foi possivel abrir o Solutions.';
                     console.error('Failed to launch electron', e);
