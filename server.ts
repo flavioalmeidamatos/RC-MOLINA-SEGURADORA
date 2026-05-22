@@ -1,8 +1,9 @@
 import express from 'express';
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
-import { exec } from 'child_process';
+import { spawn } from 'child_process';
 import dotenv from 'dotenv';
 import { registerLocalAuthRoutes } from './api/_lib/local_auth_routes';
 import { gmailRouter } from './api/_lib/gmail_routes.js';
@@ -15,6 +16,14 @@ import { initializeLocalWhatsAppConnector } from './api/_lib/whatsapp_connector'
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const SOLUTIONS_ELECTRON_APP_DIR = path.join(__dirname, 'janela');
+const SOLUTIONS_ELECTRON_BINARY = path.join(
+  SOLUTIONS_ELECTRON_APP_DIR,
+  'node_modules',
+  'electron',
+  'dist',
+  process.platform === 'win32' ? 'electron.exe' : 'electron'
+);
 
 // Evita que erros de bibliotecas de terceiros derrubem o servidor local
 process.on('uncaughtException', (err) => {
@@ -696,14 +705,50 @@ async function startServer() {
   });
 
   app.post('/api/launch-electron', (req, res) => {
-    const sidebarWidth = req.body?.sidebarWidth || 192;
-    // Dispara a janela do Electron do outro projeto (Totem)
-    exec(`npx electron "D:\\APRENDIZADO APP\\JANELA" --sidebar=${sidebarWidth}`, (err) => {
-      if (err) {
-        console.error('Erro ao iniciar o Electron:', err);
-      }
-    });
-    res.json({ success: true });
+    const rawSidebarWidth = Number(req.body?.sidebarWidth);
+    const sidebarWidth = Number.isFinite(rawSidebarWidth) && rawSidebarWidth >= 0 ? rawSidebarWidth : 192;
+
+    if (process.platform !== 'win32') {
+      return res.status(409).json({
+        success: false,
+        error: 'A abertura do Solutions via janela nativa esta disponivel apenas no Windows local.',
+      });
+    }
+
+    if (!fs.existsSync(path.join(SOLUTIONS_ELECTRON_APP_DIR, 'package.json'))) {
+      return res.status(500).json({
+        success: false,
+        error: 'A pasta integrada janela/ nao foi encontrada dentro do projeto principal.',
+      });
+    }
+
+    if (!fs.existsSync(SOLUTIONS_ELECTRON_BINARY)) {
+      return res.status(500).json({
+        success: false,
+        error: 'As dependencias do Solutions nao estao instaladas em janela/. Execute npm install nessa pasta.',
+      });
+    }
+
+    try {
+      const electronEnv = { ...process.env };
+      delete electronEnv.ELECTRON_RUN_AS_NODE;
+
+      const child = spawn(SOLUTIONS_ELECTRON_BINARY, ['.', `--sidebar=${sidebarWidth}`], {
+        cwd: SOLUTIONS_ELECTRON_APP_DIR,
+        detached: true,
+        env: electronEnv,
+        stdio: 'ignore',
+      });
+
+      child.unref();
+      return res.json({ success: true });
+    } catch (error) {
+      console.error('Erro ao iniciar o Electron:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Nao foi possivel abrir o Solutions na janela nativa.',
+      });
+    }
   });
 
   app.post('/api/import-lead', async (req, res) => {

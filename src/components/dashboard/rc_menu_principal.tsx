@@ -1841,19 +1841,27 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                 href="#"
                 onClick={async (event) => {
                   event.preventDefault();
-                  setShowSimulatorChooser(false);
-                  
-                  // A sidebar tem 12rem = 192px no desktop (lg:w-48)
+
                   const sidebarWidth = window.innerWidth >= 1024 ? 192 : 0;
-                  
+
                   try {
-                    await fetch('/api/launch-electron', {
+                    const response = await fetch('/api/launch-electron', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({ sidebarWidth })
                     });
+
+                    const payload = await response.json().catch(() => null);
+
+                    if (!response.ok || !payload?.success) {
+                      throw new Error(payload?.error || 'Nao foi possivel abrir o Solutions.');
+                    }
+
+                    setShowSimulatorChooser(false);
                   } catch (e) {
+                    const message = e instanceof Error ? e.message : 'Nao foi possivel abrir o Solutions.';
                     console.error('Failed to launch electron', e);
+                    window.alert(message);
                   }
                 }}
                 className="group relative flex h-32 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:border-[#d4af37]/70 hover:shadow-md cursor-pointer"
