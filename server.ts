@@ -30,7 +30,7 @@ const SIMULATOR_PROXY_PREFIX_ESCAPED = SIMULATOR_PROXY_PREFIX.replace(/\//g, '\\
 const SIMULATOR_APP_PATHS =
   'static|js|files|login|login_check|inicio|logout|simulador|operadoras|cliente|clientes|agenda|admin|io|mig|recuperar-senha|favicon\\.ico';
 const LOCAL_APP_PATHS_TO_KEEP =
-  'api|uploads|simulador-proxy|sulamerica-proxy|amil-proxy|medsenior-proxy|@vite|src|node_modules';
+  'api|uploads|simulador-proxy|sulamerica-proxy|amil-proxy|medsenior-proxy|solutions-proxy|@vite|src|node_modules';
 const SULAMERICA_ORIGIN = 'https://os11.sulamerica.com.br';
 const SULAMERICA_PROXY_PREFIX = '/sulamerica-proxy';
 const SULAMERICA_PROXY_PREFIX_ESCAPED = SULAMERICA_PROXY_PREFIX.replace(/\//g, '\\/');
@@ -50,6 +50,8 @@ const AMIL_BROWSER_USER_AGENT =
 
 const MEDSENIOR_ORIGIN = 'https://vendadigital.medsenior.com.br';
 const MEDSENIOR_PROXY_PREFIX = '/medsenior-proxy';
+const SOLUTIONS_ORIGIN = 'https://solutions.hcommerce.com.br';
+const SOLUTIONS_PROXY_PREFIX = '/solutions-proxy';
 const SIMULATOR_BLOCKED_RESPONSE_HEADERS = new Set([
   'content-encoding',
   'content-length',
@@ -403,6 +405,131 @@ const rewriteMedseniorCookie = (cookie: string) =>
     .replace(/;\s*domain=[^;]*/gi, '')
     .replace(/;\s*path=[^;]*/gi, `; Path=${MEDSENIOR_PROXY_PREFIX}`)
     .replace(/;\s*secure/gi, '');
+
+const rewriteSolutionsLocation = (location: string) => {
+  if (location.startsWith(SOLUTIONS_ORIGIN)) {
+    return `${SOLUTIONS_PROXY_PREFIX}${location.slice(SOLUTIONS_ORIGIN.length)}`;
+  }
+  if (location.startsWith('//solutions.hcommerce.com.br')) {
+    return `${SOLUTIONS_PROXY_PREFIX}${location.slice('//solutions.hcommerce.com.br'.length)}`;
+  }
+  if (location.startsWith('/')) {
+    return `${SOLUTIONS_PROXY_PREFIX}${location}`;
+  }
+  return location;
+};
+
+const rewriteSolutionsCookie = (cookie: string) =>
+  cookie
+    .replace(/;\s*domain=[^;]*/gi, '')
+    .replace(/;\s*path=[^;]*/gi, `; Path=${SOLUTIONS_PROXY_PREFIX}`)
+    .replace(/;\s*secure/gi, '');
+
+const solutionsProxyBootstrapScript = `
+<script>
+(function () {
+  var proxyPrefix = ${JSON.stringify(SOLUTIONS_PROXY_PREFIX)};
+  var upstreamOrigin = ${JSON.stringify(SOLUTIONS_ORIGIN)};
+
+  function normalizeUrl(value) {
+    if (!value || typeof value !== 'string') {
+      return value;
+    }
+
+    if (value.startsWith(proxyPrefix)) {
+      return value;
+    }
+
+    if (value.startsWith(upstreamOrigin)) {
+      return proxyPrefix + value.slice(upstreamOrigin.length);
+    }
+
+    if (value.startsWith('//solutions.hcommerce.com.br')) {
+      return proxyPrefix + value.slice('//solutions.hcommerce.com.br'.length);
+    }
+
+    if (value.startsWith('/')) {
+      return proxyPrefix + value;
+    }
+
+    return value;
+  }
+
+  var originalFetch = window.fetch;
+  if (typeof originalFetch === 'function') {
+    window.fetch = function (input, init) {
+      try {
+        if (typeof input === 'string') {
+          input = normalizeUrl(input);
+        } else if (input instanceof Request) {
+          var nextUrl = normalizeUrl(input.url);
+          if (nextUrl !== input.url) {
+            input = new Request(nextUrl, input);
+          }
+        }
+      } catch (_fetchError) {}
+
+      return originalFetch.call(this, input, init);
+    };
+  }
+
+  var originalXhrOpen = XMLHttpRequest.prototype.open;
+  XMLHttpRequest.prototype.open = function (method, url) {
+    try {
+      arguments[1] = normalizeUrl(String(url));
+    } catch (_xhrError) {}
+
+    return originalXhrOpen.apply(this, arguments);
+  };
+
+  ['pushState', 'replaceState'].forEach(function (methodName) {
+    var originalMethod = window.history[methodName];
+    if (typeof originalMethod !== 'function') {
+      return;
+    }
+
+    window.history[methodName] = function (state, title, url) {
+      if (typeof url === 'string') {
+        url = normalizeUrl(url);
+      }
+      return originalMethod.call(this, state, title, url);
+    };
+  });
+
+  var originalWindowOpen = window.open;
+  if (typeof originalWindowOpen === 'function') {
+    window.open = function (url, target, features) {
+      if (typeof url === 'string') {
+        url = normalizeUrl(url);
+      }
+      return originalWindowOpen.call(window, url, target, features);
+    };
+  }
+})();
+</script>`;
+
+const rewriteSolutionsText = (content: string, contentType: string) => {
+  let rewritten = content
+    .replaceAll(SOLUTIONS_ORIGIN, SOLUTIONS_PROXY_PREFIX)
+    .replaceAll('http://solutions.hcommerce.com.br', SOLUTIONS_PROXY_PREFIX)
+    .replaceAll('//solutions.hcommerce.com.br', SOLUTIONS_PROXY_PREFIX);
+
+  if (contentType.includes('text/html')) {
+    rewritten = rewritten
+      .replace(/<base\s+href=["'][^"']*["']\s*\/?>/i, '')
+      .replace(/<head([^>]*)>/i, `<head$1><base href="${SOLUTIONS_PROXY_PREFIX}/" />${solutionsProxyBootstrapScript}`)
+      .replace(/\b(href|src|action)=["']\/(?!\/|solutions-proxy\/)/gi, `$1="${SOLUTIONS_PROXY_PREFIX}/`)
+      .replace(/\b(top|parent)\.location\b/g, 'location')
+      .replace(/window\.top\./g, 'window.')
+      .replace(/window\.parent\./g, 'window.');
+  }
+
+  if (contentType.includes('text/css') || contentType.includes('javascript') || contentType.includes('text/html')) {
+    rewritten = rewritten.replace(/url\((['"]?)\/(?!\/)/gi, `url($1${SOLUTIONS_PROXY_PREFIX}/`);
+  }
+
+  return rewritten;
+};
 
 const sulamericaAutofillScript = `
 <script>
@@ -1066,6 +1193,71 @@ const medseniorBootstrapScript = `
     }
   });
 
+  app.all(`${SOLUTIONS_PROXY_PREFIX}*`, async (req, res) => {
+    const upstreamPath = req.originalUrl.slice(SOLUTIONS_PROXY_PREFIX.length) || '/dashboard';
+    const upstreamUrl = new URL(upstreamPath, SOLUTIONS_ORIGIN);
+    const requestHeaders = new Headers();
+
+    for (const [name, value] of Object.entries(req.headers)) {
+      if (!value) continue;
+      const lowerName = name.toLowerCase();
+      if (['host', 'connection', 'content-length', 'accept-encoding'].includes(lowerName)) {
+        continue;
+      }
+      requestHeaders.set(name, Array.isArray(value) ? value.join(',') : value);
+    }
+
+    requestHeaders.set('host', 'solutions.hcommerce.com.br');
+    requestHeaders.set('origin', SOLUTIONS_ORIGIN);
+    requestHeaders.set('referer', `${SOLUTIONS_ORIGIN}/`);
+    requestHeaders.set(
+      'user-agent',
+      requestHeaders.get('user-agent') ||
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
+    );
+
+    try {
+      const bodyBuffer = ['GET', 'HEAD'].includes(req.method) ? undefined : await getRequestBody(req);
+      const upstreamResponse = await fetch(upstreamUrl, {
+        method: req.method,
+        headers: requestHeaders,
+        body: bodyBuffer as unknown as BodyInit,
+        redirect: 'manual',
+      });
+
+      res.status(upstreamResponse.status);
+
+      upstreamResponse.headers.forEach((value, name) => {
+        const lowerName = name.toLowerCase();
+        if (SIMULATOR_BLOCKED_RESPONSE_HEADERS.has(lowerName)) return;
+        if (lowerName === 'location') {
+          res.setHeader('Location', rewriteSolutionsLocation(value));
+          return;
+        }
+        if (lowerName === 'set-cookie') return;
+        res.setHeader(name, value);
+      });
+
+      const setCookies = upstreamResponse.headers.getSetCookie?.() || [];
+      for (const cookie of setCookies) {
+        res.append('Set-Cookie', rewriteSolutionsCookie(cookie));
+      }
+
+      const contentType = upstreamResponse.headers.get('content-type') || '';
+      const responseBuffer = Buffer.from(await upstreamResponse.arrayBuffer());
+
+      if (contentType.includes('text/html') || contentType.includes('text/css') || contentType.includes('javascript')) {
+        res.send(rewriteSolutionsText(responseBuffer.toString('utf8'), contentType));
+        return;
+      }
+
+      res.send(responseBuffer);
+    } catch (error) {
+      console.error('ERRO NO PROXY SOLUTIONS:', error);
+      res.status(502).send('Erro ao carregar o proxy Solutions.');
+    }
+  });
+
   app.use((req, res, next) => {
     const referer = req.headers.referer || '';
     if (
@@ -1073,7 +1265,8 @@ const medseniorBootstrapScript = `
       !req.originalUrl.startsWith(SIMULATOR_PROXY_PREFIX) &&
       !req.originalUrl.startsWith(SULAMERICA_PROXY_PREFIX) &&
       !req.originalUrl.startsWith(AMIL_PROXY_PREFIX) &&
-      !req.originalUrl.startsWith(MEDSENIOR_PROXY_PREFIX)
+      !req.originalUrl.startsWith(MEDSENIOR_PROXY_PREFIX) &&
+      !req.originalUrl.startsWith(SOLUTIONS_PROXY_PREFIX)
     ) {
       if (referer.includes(SIMULATOR_PROXY_PREFIX)) {
         return res.redirect(307, `${SIMULATOR_PROXY_PREFIX}${req.originalUrl}`);
@@ -1086,6 +1279,9 @@ const medseniorBootstrapScript = `
       }
       if (referer.includes(MEDSENIOR_PROXY_PREFIX)) {
         return res.redirect(307, `${MEDSENIOR_PROXY_PREFIX}${req.originalUrl}`);
+      }
+      if (referer.includes(SOLUTIONS_PROXY_PREFIX)) {
+        return res.redirect(307, `${SOLUTIONS_PROXY_PREFIX}${req.originalUrl}`);
       }
     }
     next();
