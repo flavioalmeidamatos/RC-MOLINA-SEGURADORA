@@ -81,6 +81,15 @@ const wait = (ms: number) =>
 
 const isLocalWindowsAppHost = () => window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
 
+const getSolutionsHostWindowMetrics = () => ({
+  screenX: Number.isFinite(window.screenX) ? window.screenX : window.screenLeft || 0,
+  screenY: Number.isFinite(window.screenY) ? window.screenY : window.screenTop || 0,
+  outerWidth: Number.isFinite(window.outerWidth) ? window.outerWidth : window.innerWidth,
+  outerHeight: Number.isFinite(window.outerHeight) ? window.outerHeight : window.innerHeight,
+  innerWidth: window.innerWidth,
+  innerHeight: window.innerHeight,
+});
+
 const postSolutionsLaunchRequest = async (url: string, sidebarWidth: number) => {
   const controller = new AbortController();
   const timeoutId = window.setTimeout(() => controller.abort(), 4000);
@@ -90,7 +99,10 @@ const postSolutionsLaunchRequest = async (url: string, sidebarWidth: number) => 
       method: "POST",
       mode: "cors",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sidebarWidth }),
+      body: JSON.stringify({
+        sidebarWidth,
+        hostWindow: getSolutionsHostWindowMetrics(),
+      }),
       signal: controller.signal,
     });
 

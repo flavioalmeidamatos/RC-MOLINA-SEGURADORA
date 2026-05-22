@@ -30,6 +30,11 @@ const app = express();
 
 app.use(express.json({ limit: '1mb' }));
 
+const normalizeNumber = (value, fallback = 0) => {
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? numericValue : fallback;
+};
+
 const isOriginAllowed = (origin) => !origin || allowedOrigins.has(origin);
 
 app.use((req, res, next) => {
@@ -73,6 +78,14 @@ app.get('/health', (_req, res) => {
 app.post('/api/launch-solutions', (req, res) => {
   const rawSidebarWidth = Number(req.body?.sidebarWidth);
   const sidebarWidth = Number.isFinite(rawSidebarWidth) && rawSidebarWidth >= 0 ? rawSidebarWidth : 192;
+  const hostWindow = {
+    screenX: normalizeNumber(req.body?.hostWindow?.screenX),
+    screenY: normalizeNumber(req.body?.hostWindow?.screenY),
+    outerWidth: normalizeNumber(req.body?.hostWindow?.outerWidth),
+    outerHeight: normalizeNumber(req.body?.hostWindow?.outerHeight),
+    innerWidth: normalizeNumber(req.body?.hostWindow?.innerWidth),
+    innerHeight: normalizeNumber(req.body?.hostWindow?.innerHeight),
+  };
 
   if (process.platform !== 'win32') {
     return res.status(409).json({
@@ -99,12 +112,25 @@ app.post('/api/launch-solutions', (req, res) => {
     const electronEnv = { ...process.env };
     delete electronEnv.ELECTRON_RUN_AS_NODE;
 
-    const child = spawn(electronBinary, ['.', `--sidebar=${sidebarWidth}`], {
+    const child = spawn(
+      electronBinary,
+      [
+        '.',
+        `--sidebar=${sidebarWidth}`,
+        `--host-screen-x=${hostWindow.screenX}`,
+        `--host-screen-y=${hostWindow.screenY}`,
+        `--host-outer-width=${hostWindow.outerWidth}`,
+        `--host-outer-height=${hostWindow.outerHeight}`,
+        `--host-inner-width=${hostWindow.innerWidth}`,
+        `--host-inner-height=${hostWindow.innerHeight}`,
+      ],
+      {
       cwd: electronAppDir,
       detached: true,
       env: electronEnv,
       stdio: 'ignore',
-    });
+      }
+    );
 
     child.unref();
     return res.json({ success: true });

@@ -1,64 +1,112 @@
 const { app, BrowserWindow, screen } = require('electron');
 
+const getFlagValue = (flagName) => {
+  const flag = process.argv.find((value) => value.startsWith(`${flagName}=`));
+  return flag ? flag.slice(flagName.length + 1) : null;
+};
+
+const getNumberFlag = (flagName, fallback) => {
+  const value = Number(getFlagValue(flagName));
+  return Number.isFinite(value) ? value : fallback;
+};
+
+function resolveHostBounds() {
+  const screenX = getNumberFlag('--host-screen-x', 0);
+  const screenY = getNumberFlag('--host-screen-y', 0);
+  const outerWidth = Math.max(getNumberFlag('--host-outer-width', 0), 0);
+  const outerHeight = Math.max(getNumberFlag('--host-outer-height', 0), 0);
+  const innerWidth = Math.max(getNumberFlag('--host-inner-width', outerWidth), 0);
+  const innerHeight = Math.max(getNumberFlag('--host-inner-height', outerHeight), 0);
+
+  return {
+    screenX,
+    screenY,
+    outerWidth,
+    outerHeight,
+    innerWidth,
+    innerHeight,
+  };
+}
+
+function resolveWindowPlacement() {
+  const sidebarWidth = Math.max(getNumberFlag('--sidebar', 350), 0);
+  const hostBounds = resolveHostBounds();
+  const hasHostWindow = hostBounds.outerWidth > 0 && hostBounds.outerHeight > 0;
+
+  const targetPoint = hasHostWindow
+    ? {
+        x: Math.round(hostBounds.screenX + hostBounds.outerWidth / 2),
+        y: Math.round(hostBounds.screenY + hostBounds.outerHeight / 2),
+      }
+    : screen.getCursorScreenPoint();
+
+  const targetDisplay = screen.getDisplayNearestPoint(targetPoint);
+  const workArea = targetDisplay.workArea;
+
+  if (!hasHostWindow) {
+    return {
+      x: workArea.x + sidebarWidth,
+      y: workArea.y,
+      width: Math.max(workArea.width - sidebarWidth, 480),
+      height: workArea.height,
+    };
+  }
+
+  const browserChromeWidth = Math.max(hostBounds.outerWidth - hostBounds.innerWidth, 0);
+  const browserChromeHeight = Math.max(hostBounds.outerHeight - hostBounds.innerHeight, 0);
+  const leftInset = Math.round(browserChromeWidth / 2);
+  const rightInset = Math.max(browserChromeWidth - leftInset, 0);
+  const topInset = browserChromeHeight;
+
+  const contentX = hostBounds.screenX + leftInset;
+  const contentY = hostBounds.screenY + topInset;
+  const maxContentWidth = Math.max(hostBounds.innerWidth, 480);
+  const maxContentHeight = Math.max(hostBounds.innerHeight, 320);
+
+  const preferredX = contentX + sidebarWidth;
+  const preferredY = contentY;
+  const preferredWidth = Math.max(maxContentWidth - sidebarWidth, 480);
+  const preferredHeight = maxContentHeight;
+
+  const availableWidth = Math.max(workArea.x + workArea.width - preferredX, 480);
+  const availableHeight = Math.max(workArea.y + workArea.height - preferredY, 320);
+
+  return {
+    x: Math.min(Math.max(preferredX, workArea.x), workArea.x + workArea.width - 480),
+    y: Math.min(Math.max(preferredY, workArea.y), workArea.y + workArea.height - 320),
+    width: Math.min(preferredWidth, availableWidth),
+    height: Math.min(preferredHeight, availableHeight),
+    rightInset,
+  };
+}
+
 function createWindow() {
-  // Pega a tela principal e sua área útil (descontando a barra do Windows)
-  const primaryDisplay = screen.getPrimaryDisplay();
-  const { width: screenWidth, height: screenHeight } = primaryDisplay.workArea;
+  const placement = resolveWindowPlacement();
 
-  // ==========================================
-  // CÁLCULO DINÂMICO DE LIMITES
-  // ==========================================
-  const flagSidebar = process.argv.find(a => a.startsWith('--sidebar='));
-  const sidebarWidth = flagSidebar ? parseInt(flagSidebar.split('=')[1], 10) : 350;
-  
-  // A janela vai ocupar o resto da tela
-  const windowWidth = screenWidth - sidebarWidth;
-  const windowHeight = screenHeight;
-
-  // Cria a janela
   const win = new BrowserWindow({
-    // Define a posição: X = depois da sidebar, Y = topo
-    x: sidebarWidth,
-    y: 0,
-    
-    // Define o tamanho restante
-    width: windowWidth,
-    height: windowHeight,
-    
-    // ==========================================
-    // MAGIA DO ELECTRON: Controle total da UI
-    // ==========================================
-    resizable: false,      // BLOQUEIO TOTAL: O usuário não consegue redimensionar
-    maximizable: false,    // Desabilita o botão de maximizar
-    autoHideMenuBar: true, // Esconde a barra de menu (Arquivo, Editar...)
-    
-    // (Opcional) frame: false deixaria sem a barra superior do Windows
-    // frame: false, 
-
+    x: placement.x,
+    y: placement.y,
+    width: placement.width,
+    height: placement.height,
+    resizable: false,
+    maximizable: false,
+    autoHideMenuBar: true,
     webPreferences: {
-      // Segurança: impede que o site externo rode scripts Node.js na sua máquina
       nodeIntegration: false,
-      contextIsolation: true
-    }
+      contextIsolation: true,
+    },
   });
 
-  // 1. Carrega o site diretamente (NÃO USA IFRAME, portanto ignora os bloqueios de segurança do site)
   win.loadURL('https://solutions.hcommerce.com.br/dashboard');
 
-  // 2. Assim que o site carregar, injeta um CSS personalizado!
-  // O Google Chrome JAMAIS permitiria que você fizesse isso de fora para dentro.
   win.webContents.on('did-finish-load', () => {
     win.webContents.insertCSS(`
-      /* Remove completamente as barras de rolagem vertical e horizontal */
       body { overflow: hidden !important; }
-      
-      /* Esconde os elementos visuais de scrollbar no Webkit */
       ::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }
     `);
   });
 }
 
-// Inicia o app quando o Electron estiver pronto
 app.whenReady().then(() => {
   createWindow();
 
@@ -69,7 +117,6 @@ app.whenReady().then(() => {
   });
 });
 
-// Encerra o processo quando a janela for fechada (Windows/Linux)
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();

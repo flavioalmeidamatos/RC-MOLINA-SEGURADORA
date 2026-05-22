@@ -5,8 +5,9 @@ Esta pasta contem a janela Electron usada pelo card `Solutions` no menu de simul
 ## Fluxo atual
 
 1. A aplicacao web publicada chama o bridge local em `http://127.0.0.1:32145`.
-2. O bridge local abre esta app Electron no Windows.
-3. A janela Electron carrega `https://solutions.hcommerce.com.br/dashboard` fora do `iframe`.
+2. O bridge local recebe a posicao atual da janela do navegador.
+3. O bridge local abre esta app Electron no mesmo monitor do sistema no Windows.
+4. A janela Electron carrega `https://solutions.hcommerce.com.br/dashboard` fora do `iframe`.
 
 ## Como testar no Windows
 

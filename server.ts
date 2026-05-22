@@ -24,6 +24,10 @@ const SOLUTIONS_ELECTRON_BINARY = path.join(
   'dist',
   process.platform === 'win32' ? 'electron.exe' : 'electron'
 );
+const normalizeFiniteNumber = (value: unknown, fallback = 0) => {
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? numericValue : fallback;
+};
 
 // Evita que erros de bibliotecas de terceiros derrubem o servidor local
 process.on('uncaughtException', (err) => {
@@ -707,6 +711,14 @@ async function startServer() {
   app.post('/api/launch-electron', (req, res) => {
     const rawSidebarWidth = Number(req.body?.sidebarWidth);
     const sidebarWidth = Number.isFinite(rawSidebarWidth) && rawSidebarWidth >= 0 ? rawSidebarWidth : 192;
+    const hostWindow = {
+      screenX: normalizeFiniteNumber(req.body?.hostWindow?.screenX),
+      screenY: normalizeFiniteNumber(req.body?.hostWindow?.screenY),
+      outerWidth: normalizeFiniteNumber(req.body?.hostWindow?.outerWidth),
+      outerHeight: normalizeFiniteNumber(req.body?.hostWindow?.outerHeight),
+      innerWidth: normalizeFiniteNumber(req.body?.hostWindow?.innerWidth),
+      innerHeight: normalizeFiniteNumber(req.body?.hostWindow?.innerHeight),
+    };
 
     if (process.platform !== 'win32') {
       return res.status(409).json({
@@ -733,12 +745,25 @@ async function startServer() {
       const electronEnv = { ...process.env };
       delete electronEnv.ELECTRON_RUN_AS_NODE;
 
-      const child = spawn(SOLUTIONS_ELECTRON_BINARY, ['.', `--sidebar=${sidebarWidth}`], {
-        cwd: SOLUTIONS_ELECTRON_APP_DIR,
-        detached: true,
-        env: electronEnv,
-        stdio: 'ignore',
-      });
+      const child = spawn(
+        SOLUTIONS_ELECTRON_BINARY,
+        [
+          '.',
+          `--sidebar=${sidebarWidth}`,
+          `--host-screen-x=${hostWindow.screenX}`,
+          `--host-screen-y=${hostWindow.screenY}`,
+          `--host-outer-width=${hostWindow.outerWidth}`,
+          `--host-outer-height=${hostWindow.outerHeight}`,
+          `--host-inner-width=${hostWindow.innerWidth}`,
+          `--host-inner-height=${hostWindow.innerHeight}`,
+        ],
+        {
+          cwd: SOLUTIONS_ELECTRON_APP_DIR,
+          detached: true,
+          env: electronEnv,
+          stdio: 'ignore',
+        }
+      );
 
       child.unref();
       return res.json({ success: true });
