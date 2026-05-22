@@ -28,9 +28,21 @@ function resolveHostBounds() {
   };
 }
 
+function resolveAnchorBounds() {
+  return {
+    left: Math.max(getNumberFlag('--anchor-left', 0), 0),
+    top: Math.max(getNumberFlag('--anchor-top', 0), 0),
+    right: Math.max(getNumberFlag('--anchor-right', 0), 0),
+    bottom: Math.max(getNumberFlag('--anchor-bottom', 0), 0),
+    width: Math.max(getNumberFlag('--anchor-width', 0), 0),
+    height: Math.max(getNumberFlag('--anchor-height', 0), 0),
+  };
+}
+
 function resolveWindowPlacement() {
   const sidebarWidth = Math.max(getNumberFlag('--sidebar', 350), 0);
   const hostBounds = resolveHostBounds();
+  const anchorBounds = resolveAnchorBounds();
   const hasHostWindow = hostBounds.outerWidth > 0 && hostBounds.outerHeight > 0;
 
   const targetPoint = hasHostWindow
@@ -62,11 +74,13 @@ function resolveWindowPlacement() {
   const contentY = hostBounds.screenY + topInset;
   const maxContentWidth = Math.max(hostBounds.innerWidth, 480);
   const maxContentHeight = Math.max(hostBounds.innerHeight, 320);
+  const anchorGap = 8;
+  const anchorBottom = anchorBounds.bottom > 0 ? anchorBounds.bottom + anchorGap : 0;
 
   const preferredX = contentX + sidebarWidth;
-  const preferredY = contentY;
+  const preferredY = contentY + anchorBottom;
   const preferredWidth = Math.max(maxContentWidth - sidebarWidth, 480);
-  const preferredHeight = maxContentHeight;
+  const preferredHeight = Math.max(maxContentHeight - anchorBottom, 320);
 
   const availableWidth = Math.max(workArea.x + workArea.width - preferredX, 480);
   const availableHeight = Math.max(workArea.y + workArea.height - preferredY, 320);

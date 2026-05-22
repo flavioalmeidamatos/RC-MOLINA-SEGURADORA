@@ -90,6 +90,24 @@ const getSolutionsHostWindowMetrics = () => ({
   innerHeight: window.innerHeight,
 });
 
+const getSolutionsAnchorMetrics = () => {
+  const anchor = document.querySelector<HTMLElement>('[data-solutions-anchor="brand"]');
+
+  if (!anchor) {
+    return null;
+  }
+
+  const rect = anchor.getBoundingClientRect();
+  return {
+    left: rect.left,
+    top: rect.top,
+    right: rect.right,
+    bottom: rect.bottom,
+    width: rect.width,
+    height: rect.height,
+  };
+};
+
 const postSolutionsLaunchRequest = async (url: string, sidebarWidth: number) => {
   const controller = new AbortController();
   const timeoutId = window.setTimeout(() => controller.abort(), 4000);
@@ -102,6 +120,7 @@ const postSolutionsLaunchRequest = async (url: string, sidebarWidth: number) => 
       body: JSON.stringify({
         sidebarWidth,
         hostWindow: getSolutionsHostWindowMetrics(),
+        anchorRect: getSolutionsAnchorMetrics(),
       }),
       signal: controller.signal,
     });
@@ -998,7 +1017,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       <div className="flex min-w-0 flex-1 flex-col relative">
         <header className="flex flex-col gap-4 bg-white px-4 py-4 shadow-sm sm:px-6 md:px-8 lg:h-16 lg:flex-row lg:items-center lg:justify-between lg:gap-0 lg:py-0">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-            <div className="flex flex-col items-start bg-white px-2 py-1">
+            <div data-solutions-anchor="brand" className="flex flex-col items-start bg-white px-2 py-1">
               <div className="text-xl font-bold leading-none tracking-widest text-[#d4af37]">
                 RC MOLINA
               </div>

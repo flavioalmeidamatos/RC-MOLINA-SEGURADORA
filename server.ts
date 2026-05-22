@@ -719,6 +719,14 @@ async function startServer() {
       innerWidth: normalizeFiniteNumber(req.body?.hostWindow?.innerWidth),
       innerHeight: normalizeFiniteNumber(req.body?.hostWindow?.innerHeight),
     };
+    const anchorRect = {
+      left: normalizeFiniteNumber(req.body?.anchorRect?.left),
+      top: normalizeFiniteNumber(req.body?.anchorRect?.top),
+      right: normalizeFiniteNumber(req.body?.anchorRect?.right),
+      bottom: normalizeFiniteNumber(req.body?.anchorRect?.bottom),
+      width: normalizeFiniteNumber(req.body?.anchorRect?.width),
+      height: normalizeFiniteNumber(req.body?.anchorRect?.height),
+    };
 
     if (process.platform !== 'win32') {
       return res.status(409).json({
@@ -756,6 +764,12 @@ async function startServer() {
           `--host-outer-height=${hostWindow.outerHeight}`,
           `--host-inner-width=${hostWindow.innerWidth}`,
           `--host-inner-height=${hostWindow.innerHeight}`,
+          `--anchor-left=${anchorRect.left}`,
+          `--anchor-top=${anchorRect.top}`,
+          `--anchor-right=${anchorRect.right}`,
+          `--anchor-bottom=${anchorRect.bottom}`,
+          `--anchor-width=${anchorRect.width}`,
+          `--anchor-height=${anchorRect.height}`,
         ],
         {
           cwd: SOLUTIONS_ELECTRON_APP_DIR,

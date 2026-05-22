@@ -86,6 +86,14 @@ app.post('/api/launch-solutions', (req, res) => {
     innerWidth: normalizeNumber(req.body?.hostWindow?.innerWidth),
     innerHeight: normalizeNumber(req.body?.hostWindow?.innerHeight),
   };
+  const anchorRect = {
+    left: normalizeNumber(req.body?.anchorRect?.left),
+    top: normalizeNumber(req.body?.anchorRect?.top),
+    right: normalizeNumber(req.body?.anchorRect?.right),
+    bottom: normalizeNumber(req.body?.anchorRect?.bottom),
+    width: normalizeNumber(req.body?.anchorRect?.width),
+    height: normalizeNumber(req.body?.anchorRect?.height),
+  };
 
   if (process.platform !== 'win32') {
     return res.status(409).json({
@@ -123,6 +131,12 @@ app.post('/api/launch-solutions', (req, res) => {
         `--host-outer-height=${hostWindow.outerHeight}`,
         `--host-inner-width=${hostWindow.innerWidth}`,
         `--host-inner-height=${hostWindow.innerHeight}`,
+        `--anchor-left=${anchorRect.left}`,
+        `--anchor-top=${anchorRect.top}`,
+        `--anchor-right=${anchorRect.right}`,
+        `--anchor-bottom=${anchorRect.bottom}`,
+        `--anchor-width=${anchorRect.width}`,
+        `--anchor-height=${anchorRect.height}`,
       ],
       {
       cwd: electronAppDir,
