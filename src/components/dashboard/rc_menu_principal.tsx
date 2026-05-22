@@ -547,6 +547,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     cleanupSimulatorUi();
     setShowSimulatorChooser(false);
     setActiveMenu("Simulador Solutions");
+    window.open(SOLUTIONS_SIMULATOR_URL, "_blank", "noopener,noreferrer");
   };
 
   const fillAndSubmitAmilLogin = () => {
@@ -1289,13 +1290,29 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                     <ExternalLink size={13} />
                   </a>
                 </div>
-                <iframe
-                  src={SOLUTIONS_SIMULATOR_URL}
-                  title="Simulador Solutions"
-                  className="h-full w-full flex-1 border-none bg-white"
-                  allow="geolocation; microphone; camera; payment; encrypted-media"
-                  referrerPolicy="strict-origin-when-cross-origin"
-                />
+                <div className="flex flex-1 items-center justify-center bg-slate-50 p-6">
+                  <div className="w-full max-w-xl rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+                    <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50">
+                      <img src="/solutions.svg" alt="Simulador Solutions" className="max-h-12 max-w-12 object-contain" />
+                    </div>
+                    <h2 className="text-2xl font-black text-[#0c1826]">Solutions abre em janela externa</h2>
+                    <p className="mt-3 text-sm leading-6 text-slate-600">
+                      O portal bloqueia incorporação dentro da aplicação por política de segurança do próprio site.
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-slate-500">
+                      Se a nova aba não abrir automaticamente, use o botão abaixo.
+                    </p>
+                    <a
+                      href={SOLUTIONS_SIMULATOR_URL}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#0c1826] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#152a42]"
+                    >
+                      Abrir Solutions
+                      <ExternalLink size={16} />
+                    </a>
+                  </div>
+                </div>
               </div>
             ) : showClientArea ? (
               <div className="flex-1 overflow-y-auto px-4 pb-4 pt-2 sm:px-6 sm:pb-6 sm:pt-3 md:px-8 md:pb-8 md:pt-4">
