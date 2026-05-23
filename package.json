@@ -9,6 +9,7 @@
     "start": "tsx server.ts",
     "start:prod": "node --import tsx -e \"process.env.NODE_ENV='production'; import('./server.ts')\"",
     "solutions:bridge": "node scripts/solutions-local-bridge.mjs",
+    "desktop:start": "node scripts/run-desktop-shell.mjs",
     "deploy:hostinger": "powershell -ExecutionPolicy Bypass -File scripts/deploy-hostinger.ps1",
     "build": "vite build",
     "preview": "vite preview",

@@ -28,6 +28,7 @@ import { CampanhasShell } from "../campanhas/campanhas_shell";
 import { apiListVisibleUsers } from "../../lib/local_api";
 import type { LocalAuthSession, UsuarioPerfil } from "../../lib/local_auth";
 import { createGmailApi, type MessageSummary } from "../../lib/gmail_api";
+import type { DesktopEmbedBounds, DesktopShellInfo, DesktopSolutionsApi } from "../../types/desktop_shell";
 
 const RCWebmail = React.lazy(async () => ({
   default: (await import("../webmail/rc_webmail")).RCWebmail,
@@ -80,6 +81,7 @@ const wait = (ms: number) =>
   });
 
 const isLocalWindowsAppHost = () => window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+const getDesktopShellApi = (): DesktopSolutionsApi | null => window.rcMolinaDesktop ?? null;
 
 const getSolutionsHostWindowMetrics = () => ({
   screenX: Number.isFinite(window.screenX) ? window.screenX : window.screenLeft || 0,
@@ -105,6 +107,24 @@ const getSolutionsAnchorMetrics = () => {
     bottom: rect.bottom,
     width: rect.width,
     height: rect.height,
+  };
+};
+
+const getDesktopEmbedBoundsFromElement = (element: HTMLElement | null): DesktopEmbedBounds | null => {
+  if (!element) {
+    return null;
+  }
+
+  const rect = element.getBoundingClientRect();
+  if (rect.width <= 0 || rect.height <= 0) {
+    return null;
+  }
+
+  return {
+    x: Math.max(Math.round(rect.left), 0),
+    y: Math.max(Math.round(rect.top), 0),
+    width: Math.max(Math.round(rect.width), 480),
+    height: Math.max(Math.round(rect.height), 320),
   };
 };
 
@@ -261,6 +281,10 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const [simulatorStatusMessage, setSimulatorStatusMessage] = useState("");
   const [simulatorBrowser, setSimulatorBrowser] = useState<SimulatorBrowser>("other");
   const [showSimulatorChooser, setShowSimulatorChooser] = useState(false);
+  const [desktopShellInfo, setDesktopShellInfo] = useState<DesktopShellInfo | null>(null);
+  const [isSolutionsDesktopLoading, setIsSolutionsDesktopLoading] = useState(false);
+  const [solutionsDesktopError, setSolutionsDesktopError] = useState("");
+  const [solutionsDesktopReloadToken, setSolutionsDesktopReloadToken] = useState(0);
 
   const simulatorTimeoutRef = useRef<number | null>(null);
   const simulatorWindowRef = useRef<Window | null>(null);
@@ -268,6 +292,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const simulatorIframeLoadedRef = useRef(false);
   const amilIframeRef = useRef<HTMLIFrameElement | null>(null);
   const amilLoginSubmittedRef = useRef(false);
+  const solutionsDesktopHostRef = useRef<HTMLDivElement | null>(null);
 
   const [credential, setCredential] = useState({
     login: "Rosilene Rodrigues",
@@ -387,6 +412,117 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       setShowSimulatorChooser(false);
     }
   }, [forcedMenu]);
+
+  useEffect(() => {
+    const desktopApi = getDesktopShellApi();
+
+    if (!desktopApi) {
+      return;
+    }
+
+    let ignore = false;
+    const removeListener = desktopApi.onSolutionsEmbeddedClosed(() => {
+      if (!ignore) {
+        setIsSolutionsDesktopLoading(false);
+      }
+    });
+
+    desktopApi
+      .getInfo()
+      .then((info) => {
+        if (!ignore) {
+          setDesktopShellInfo(info);
+        }
+      })
+      .catch((error) => {
+        console.error("Nao foi possivel identificar o shell desktop.", error);
+      });
+
+    return () => {
+      ignore = true;
+      removeListener();
+    };
+  }, []);
+
+  useEffect(() => {
+    const desktopApi = getDesktopShellApi();
+    const shouldShowSolutionsDesktopArea = activeMenu === "Simulador Solutions";
+
+    if (!desktopApi || !shouldShowSolutionsDesktopArea || showSimulatorChooser) {
+      void desktopApi?.closeSolutionsEmbedded().catch((error) => {
+        console.error("Nao foi possivel fechar o Solutions embutido.", error);
+      });
+      setIsSolutionsDesktopLoading(false);
+      return;
+    }
+
+    let ignore = false;
+    let lastSerializedBounds = "";
+    const hostElement = solutionsDesktopHostRef.current;
+
+    if (!hostElement) {
+      return;
+    }
+
+    const syncBounds = async (mode: "open" | "update") => {
+      const bounds = getDesktopEmbedBoundsFromElement(solutionsDesktopHostRef.current);
+
+      if (!bounds) {
+        return;
+      }
+
+      const serializedBounds = JSON.stringify(bounds);
+      if (mode === "update" && serializedBounds === lastSerializedBounds) {
+        return;
+      }
+
+      lastSerializedBounds = serializedBounds;
+
+      try {
+        if (mode === "open") {
+          await desktopApi.openSolutionsEmbedded({ bounds });
+          if (!ignore) {
+            setIsSolutionsDesktopLoading(false);
+            setSolutionsDesktopError("");
+          }
+          return;
+        }
+
+        await desktopApi.updateSolutionsEmbeddedBounds({ bounds });
+      } catch (error) {
+        if (!ignore) {
+          const message = error instanceof Error ? error.message : "Nao foi possivel abrir o Solutions dentro do app desktop.";
+          setSolutionsDesktopError(message);
+          setIsSolutionsDesktopLoading(false);
+        }
+      }
+    };
+
+    const rafId = window.requestAnimationFrame(() => {
+      void syncBounds("open");
+    });
+
+    const handleResize = () => {
+      void syncBounds("update");
+    };
+
+    const resizeObserver = new ResizeObserver(() => {
+      void syncBounds("update");
+    });
+
+    resizeObserver.observe(hostElement);
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      ignore = true;
+      window.cancelAnimationFrame(rafId);
+      resizeObserver.disconnect();
+      window.removeEventListener("resize", handleResize);
+      void desktopApi.closeSolutionsEmbedded().catch((error) => {
+        console.error("Nao foi possivel fechar o Solutions embutido.", error);
+      });
+    };
+  }, [activeMenu, showSimulatorChooser, solutionsDesktopReloadToken]);
 
   useEffect(() => {
     let ignore = false;
@@ -599,7 +735,31 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     setActiveMenu("Simulador Klini");
   };
 
+  const closeSolutionsDesktopArea = async () => {
+    try {
+      await getDesktopShellApi()?.closeSolutionsEmbedded();
+    } catch (error) {
+      console.error("Nao foi possivel fechar o Solutions embutido.", error);
+    } finally {
+      setIsSolutionsDesktopLoading(false);
+      setSolutionsDesktopError("");
+      setActiveMenu("Home");
+    }
+  };
+
   const launchSolutions = async () => {
+    const desktopApi = getDesktopShellApi();
+
+    if (desktopApi) {
+      cleanupSimulatorUi();
+      setSolutionsDesktopError("");
+      setIsSolutionsDesktopLoading(true);
+      setShowSimulatorChooser(false);
+      setSolutionsDesktopReloadToken((prev) => prev + 1);
+      setActiveMenu("Simulador Solutions");
+      return;
+    }
+
     const sidebarWidth = window.innerWidth >= 1024 ? 192 : 0;
 
     try {
@@ -966,6 +1126,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const showAmilSimulator = activeMenu === "Simulador Amil";
   const showMedseniorSimulator = activeMenu === "Simulador Medsenior";
   const showKliniSimulator = activeMenu === "Simulador Klini";
+  const showSolutionsDesktopArea = activeMenu === "Simulador Solutions";
   const showClientArea = activeMenu === "Meus clientes";
   const showAgendaArea = activeMenu === "Agenda";
   const showWebmailArea = activeMenu === "Webmail";
@@ -1032,7 +1193,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-            {showClientArea || showSimulator || showSulamericaSimulator || showAmilSimulator || showMedseniorSimulator || showKliniSimulator || showAgendaArea || showWebmailArea || showCampanhasArea ? (
+            {showClientArea || showSimulator || showSulamericaSimulator || showAmilSimulator || showMedseniorSimulator || showKliniSimulator || showSolutionsDesktopArea || showAgendaArea || showWebmailArea || showCampanhasArea ? (
               <button
                 type="button"
                 onClick={() => void handleMenuClick("Home")}
@@ -1342,45 +1503,63 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                   referrerPolicy="strict-origin-when-cross-origin"
                 />
               </div>
-            ) : false ? (
+            ) : showSolutionsDesktopArea ? (
               <div className="flex flex-1 flex-col bg-white" style={{ height: "calc(100vh - 120px)" }}>
                 <div className="flex items-center justify-between border-b bg-gray-50 px-4 py-2 text-xs text-gray-500">
                   <span className="flex items-center gap-2">
                     <ExternalLink size={14} />
                     Simulador Solutions
                   </span>
-                  <a
-                    href="#"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-600 transition hover:border-[#b58c2a]/40 hover:text-[#b58c2a]"
-                  >
-                    Abrir externamente
-                    <ExternalLink size={13} />
-                  </a>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void launchSolutions()}
+                      className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-600 transition hover:border-[#b58c2a]/40 hover:text-[#b58c2a]"
+                    >
+                      Recarregar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void closeSolutionsDesktopArea()}
+                      className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-600 transition hover:border-[#b58c2a]/40 hover:text-[#b58c2a]"
+                    >
+                      Fechar
+                    </button>
+                  </div>
                 </div>
-                <div className="flex flex-1 items-center justify-center bg-slate-50 p-6">
+                <div ref={solutionsDesktopHostRef} className="relative flex flex-1 items-center justify-center bg-slate-50 p-6">
                   <div className="w-full max-w-xl rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
                     <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50">
                       <img src="/solutions.svg" alt="Simulador Solutions" className="max-h-12 max-w-12 object-contain" />
                     </div>
-                    <h2 className="text-2xl font-black text-[#0c1826]">Solutions abre em janela externa</h2>
+                    <h2 className="text-2xl font-black text-[#0c1826]">Solutions dentro do app desktop</h2>
                     <p className="mt-3 text-sm leading-6 text-slate-600">
                       O portal bloqueia incorporação dentro da aplicação por política de segurança do próprio site.
                     </p>
                     <p className="mt-2 text-sm leading-6 text-slate-500">
                       Se a nova aba não abrir automaticamente, use o botão abaixo.
                     </p>
-                    <a
-                      href="#"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#0c1826] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#152a42]"
-                    >
-                      Abrir Solutions
-                      <ExternalLink size={16} />
-                    </a>
+                    {desktopShellInfo ? (
+                      <div className="mt-6 inline-flex items-center gap-2 rounded-full bg-slate-100 px-5 py-3 text-sm font-semibold text-slate-600">
+                        Shell ativo: {desktopShellInfo.shell}
+                      </div>
+                    ) : null}
                   </div>
+
+                  {isSolutionsDesktopLoading ? (
+                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-white/80">
+                      <div className="flex items-center gap-3 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 shadow-sm">
+                        <Loader2 size={18} className="animate-spin text-[#b58c2a]" />
+                        Carregando Solutions dentro do app desktop...
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {solutionsDesktopError ? (
+                    <div className="absolute inset-x-6 top-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 shadow-sm">
+                      {solutionsDesktopError}
+                    </div>
+                  ) : null}
                 </div>
               </div>
             ) : showClientArea ? (
