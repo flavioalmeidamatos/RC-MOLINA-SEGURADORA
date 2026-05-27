@@ -117,6 +117,13 @@ export function EmailComposeModal({
     }
   }, [status, onClose]);
 
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(""), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
   async function loadAccounts() {
     try {
       const result = await gmailApi.accounts();
@@ -172,7 +179,8 @@ export function EmailComposeModal({
   }
 
   function isValidEmail(email: string) {
-    const regex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+    // Stricter regex to enforce TLD and valid format
+    const regex = /^[\w!#$%&'*+/=?^_{|}~.-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     return regex.test(email.trim());
   }
 
@@ -349,13 +357,19 @@ export function EmailComposeModal({
         </div>
 
         {/* Content */}
-        <div className="min-h-0 overflow-y-auto p-6">
+        <div className="min-h-0 overflow-y-auto p-6 relative">
           {error && (
-            <div className="mb-6 flex items-center gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 shadow-sm animate-in fade-in slide-in-from-top-1">
-              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600">
-                <AlertCircle size={14} />
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 flex max-w-lg items-center gap-3 rounded-full border border-red-200 bg-white px-5 py-3 text-sm font-semibold text-red-700 shadow-xl animate-in fade-in slide-in-from-top-4">
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600">
+                <AlertCircle size={16} />
               </div>
-              {error}
+              <p className="mr-2">{error}</p>
+              <button 
+                onClick={() => setError("")}
+                className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
+              >
+                <X size={14} />
+              </button>
             </div>
           )}
 
