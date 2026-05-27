@@ -27,6 +27,7 @@ import { splitWhatsAppMessageLines } from "../../lib/whatsapp_text_formatter";
 interface CampanhasShellProps {
   userId: string | null;
   userEmail: string | null;
+  initialMessage?: string;
 }
 
 const createEmptyDraft = (): WhatsAppCampaignDraft => ({
@@ -40,7 +41,7 @@ const createEmptyDraft = (): WhatsAppCampaignDraft => ({
 
 const BRIDGE_STATUS_POLL_MS = 4000;
 
-export function CampanhasShell({ userId, userEmail }: CampanhasShellProps) {
+export function CampanhasShell({ userId, userEmail, initialMessage }: CampanhasShellProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const actor = useMemo(
     () => (userId && userEmail ? { id: userId, email: userEmail } : null),
@@ -48,7 +49,7 @@ export function CampanhasShell({ userId, userEmail }: CampanhasShellProps) {
   );
   const [draft, setDraft] = useState<WhatsAppCampaignDraft>({
     campaignName: "",
-    message: "",
+    message: initialMessage || "",
     recipients: createRecipientState(""),
     attachments: [],
     optInChecked: true,
@@ -68,6 +69,14 @@ export function CampanhasShell({ userId, userEmail }: CampanhasShellProps) {
   } | null>(null);
   const [showEmailComposeModal, setShowEmailComposeModal] = useState(false);
 
+  useEffect(() => {
+    if (initialMessage) {
+      setDraft((current) => ({
+        ...current,
+        message: current.message ? current.message : initialMessage,
+      }));
+    }
+  }, [initialMessage]);
 
   const { campaignName, message, recipients, attachments, optInChecked, templateChecked } = draft;
 

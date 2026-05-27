@@ -266,6 +266,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const canViewSystemUsers = normalizeFullName(perfil?.nome_completo || "") === USERS_VIEWER_FULL_NAME;
 
   const [activeMenu, setActiveMenu] = useState(forcedMenu || "Home");
+  const [campanhaInitialMessage, setCampanhaInitialMessage] = useState("");
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [aniversariantesMes, setAniversariantesMes] = useState<AniversarianteMes[]>([]);
   const [isLoadingAniversariantes, setIsLoadingAniversariantes] = useState(false);
@@ -1590,6 +1591,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                 <CampanhasShell
                   userId={perfil?.id || session?.user?.id || null}
                   userEmail={perfil?.email || session?.user?.email || null}
+                  initialMessage={campanhaInitialMessage}
                 />
                 {/*
               <div className="flex flex-1 items-center justify-center bg-gradient-to-br from-[#f8fafc] to-[#f1f5f9] p-6">
@@ -1734,7 +1736,14 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                   return (
                                     <div
                                       key={cliente.codigo}
-                                      onClick={() => isToday && handleMenuClick("Campanhas")}
+                                      onClick={() => {
+                                        if (isToday) {
+                                          const primeiroNome = cliente.nome_completo.trim().split(" ")[0] || "";
+                                          const formattedName = primeiroNome.charAt(0).toUpperCase() + primeiroNome.slice(1).toLowerCase();
+                                          setCampanhaInitialMessage(`Olá, *${formattedName}* `);
+                                          handleMenuClick("Campanhas");
+                                        }
+                                      }}
                                       className={`group relative overflow-hidden rounded-lg border border-white bg-white px-2.5 py-2 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#d4af37]/30 hover:shadow-md ${
                                         isToday ? "ring-2 ring-[#d4af37]/20 bg-[#fffaf0]/50 cursor-pointer" : ""
                                       }`}
