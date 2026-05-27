@@ -491,3 +491,22 @@ export const clientStatsHandler = async (_req: express.Request, res: express.Res
     res.status(500).json({ error: error.message });
   }
 };
+
+export const checkClienteCodigoHandler = async (req: express.Request, res: express.Response) => {
+  await initLocalDatabase();
+  const pool = getPool();
+  const { codigo } = req.params;
+
+  try {
+    const normalizedCodigo = normalizeClienteCodigo(codigo);
+    const result = await pool.query(
+      `SELECT id_cliente FROM "RCMOLINASEGUROS"."CLIENTES" WHERE codigo = $1 LIMIT 1`,
+      [normalizedCodigo]
+    );
+
+    res.json({ exists: result.rowCount ? result.rowCount > 0 : false });
+  } catch (error: any) {
+    console.error('Error checking cliente codigo:', error);
+    res.status(500).json({ error: error.message });
+  }
+};

@@ -6,6 +6,7 @@ import {
   MapPin,
   User,
   Users,
+  AlertTriangle,
 } from 'lucide-react';
 
 export type SistemaQuerLeadData = {
@@ -58,6 +59,7 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
   const [importLoading, setImportLoading] = useState(false);
   const [useLeadLoading, setUseLeadLoading] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult>(null);
+  const [duplicateError, setDuplicateError] = useState(false);
   const [expandedAdImageUrl, setExpandedAdImageUrl] = useState('');
   const [adImageUnavailable, setAdImageUnavailable] = useState(false);
   const indicationIdInputRef = useRef<HTMLInputElement | null>(null);
@@ -76,6 +78,7 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
     if (!open) return;
 
     setImportResult(null);
+    setDuplicateError(false);
     setAdImageUnavailable(false);
     setCredential((prev) => ({ ...prev, indicationId: extractIndicationId(initialLeadUrl) }));
 
@@ -91,6 +94,7 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
 
   const closeModal = () => {
     setImportResult(null);
+    setDuplicateError(false);
     setExpandedAdImageUrl('');
     setAdImageUnavailable(false);
     setUseLeadLoading(false);
@@ -126,9 +130,24 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
 
     setImportLoading(true);
     setImportResult(null);
+    setDuplicateError(false);
     setAdImageUnavailable(false);
 
     try {
+      const checkResponse = await fetch(`/api/clientes/check-codigo/${credential.indicationId}`);
+      if (checkResponse.ok) {
+        const checkData = await checkResponse.json();
+        if (checkData.exists) {
+          setDuplicateError(true);
+          setTimeout(() => {
+            setDuplicateError(false);
+            closeModal();
+          }, 5000);
+          setImportLoading(false);
+          return;
+        }
+      }
+
       const leadUrl = `${SISTEMA_QUER_INDICATION_URL}${credential.indicationId}`;
       const response = await fetch('/api/import-lead', {
         method: 'POST',
@@ -165,7 +184,33 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-      <div className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-lg bg-white shadow-2xl animate-in fade-in zoom-in duration-300">
+      <div className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-lg bg-white shadow-2xl animate-in fade-in zoom-in duration-300 relative">
+        
+        {duplicateError && (
+          <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/95 backdrop-blur-sm animate-in fade-in zoom-in duration-300">
+            <div className="flex flex-col items-center p-6 text-center max-w-sm rounded-2xl shadow-2xl bg-white border border-red-100 relative overflow-hidden">
+              <div className="mb-4 rounded-full bg-red-100 p-4 text-red-600">
+                <AlertTriangle size={32} />
+              </div>
+              <h4 className="mb-2 text-lg font-bold text-gray-900">Lead Já Importado</h4>
+              <p className="text-sm text-gray-600">
+                A indicação <strong>#{credential.indicationId}</strong> já encontra-se cadastrada no banco de dados. 
+                <br /><br />
+                Para evitar duplicidade, a importação foi bloqueada.
+              </p>
+              <div className="absolute bottom-0 left-0 w-full h-1 bg-gray-100">
+                <div className="h-full bg-red-500 animate-[shrink_5s_linear_forwards]" style={{ animation: 'shrink 5s linear forwards' }} />
+              </div>
+              <style dangerouslySetInnerHTML={{__html: `
+                @keyframes shrink {
+                  from { width: 100%; }
+                  to { width: 0%; }
+                }
+              `}} />
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-shrink-0 items-center justify-between bg-[#0c1826] p-4">
           <h3 className="flex items-center gap-2 font-bold text-[#b58c2a]">
             <ExternalLink size={20} />
