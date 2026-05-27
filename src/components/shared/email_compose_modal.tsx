@@ -462,7 +462,7 @@ export function EmailComposeModal({
               }
             >
               <EmailRichTextEditor
-                height={550}
+                height={400}
                 disabled={busy}
                 value={compose.bodyHtml}
                 onChange={(html) => patchCompose({ bodyHtml: html })}
