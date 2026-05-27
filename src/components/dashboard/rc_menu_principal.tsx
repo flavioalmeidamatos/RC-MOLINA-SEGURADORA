@@ -1701,7 +1701,16 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                               .sort((a, b) => {
                                 const dayA = new Date(a.data_nascimento).getUTCDate();
                                 const dayB = new Date(b.data_nascimento).getUTCDate();
-                                return dayA - dayB;
+                                const today = new Date().getDate();
+                                
+                                const distA = Math.abs(dayA - today);
+                                const distB = Math.abs(dayB - today);
+                                
+                                if (distA === distB) {
+                                  return dayA >= today ? -1 : 1;
+                                }
+                                
+                                return distA - distB;
                               });
 
                             if (filtered.length === 0) {
