@@ -63,9 +63,18 @@ export function WhatsAppCampaignEditor({
     const textarea = textareaRef.current;
     if (!textarea) return;
 
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = message.substring(start, end);
+    let start = textarea.selectionStart;
+    let end = textarea.selectionEnd;
+    let selectedText = message.substring(start, end);
+
+    if (selectedText.length > 0 && selectedText.endsWith(" ")) {
+      selectedText = selectedText.substring(0, selectedText.length - 1);
+      end = end - 1;
+    }
+    if (selectedText.length > 0 && selectedText.startsWith(" ")) {
+      selectedText = selectedText.substring(1);
+      start = start + 1;
+    }
 
     const newMessage =
       message.substring(0, start) +
