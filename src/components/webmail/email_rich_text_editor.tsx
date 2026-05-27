@@ -214,6 +214,20 @@ export function EmailRichTextEditor({
             callback(dataUrl, { title: file.name, alt: file.name });
           },
           setup: (editor: TinyMceEditor) => {
+            // Previne que o duplo-clique selecione o espaço em branco seguinte
+            editor.on('dblclick', () => {
+              const selection = editor.selection;
+              const rng = selection.getRng();
+              
+              if (!rng.collapsed && rng.endContainer.nodeType === 3 && rng.endOffset > 0) {
+                const text = rng.toString();
+                if (text.endsWith(' ') || text.endsWith('\u00A0')) {
+                  rng.setEnd(rng.endContainer, rng.endOffset - 1);
+                  selection.setRng(rng);
+                }
+              }
+            });
+
             editor.ui.registry.addButton('localvideo', {
               icon: 'embed',
               tooltip: 'Inserir miniatura clicavel de video',
