@@ -1,4 +1,4 @@
-import { AlertCircle, Archive, CheckCircle2, Download, Loader2, Send, X } from "lucide-react";
+import { AlertCircle, Archive, CheckCircle2, Download, Loader2, Send, X, FileText } from "lucide-react";
 import React, { lazy, Suspense, useEffect, useMemo, useRef, useState, type ComponentType } from "react";
 import type { EmailRichTextEditorProps } from "../webmail/email_rich_text_editor";
 import { createGmailApi, type Account, ApiError } from "../../lib/gmail_api";
