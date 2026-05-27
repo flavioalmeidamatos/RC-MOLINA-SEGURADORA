@@ -139,10 +139,10 @@ app.post('/api/launch-solutions', (req, res) => {
         `--anchor-height=${anchorRect.height}`,
       ],
       {
-      cwd: electronAppDir,
-      detached: true,
-      env: electronEnv,
-      stdio: 'ignore',
+        cwd: electronAppDir,
+        detached: true,
+        env: electronEnv,
+        stdio: 'ignore',
       }
     );
 

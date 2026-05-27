@@ -1734,8 +1734,9 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                   return (
                                     <div
                                       key={cliente.codigo}
+                                      onClick={() => isToday && handleMenuClick("Campanhas")}
                                       className={`group relative overflow-hidden rounded-lg border border-white bg-white px-2.5 py-2 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#d4af37]/30 hover:shadow-md ${
-                                        isToday ? "ring-2 ring-[#d4af37]/20 bg-[#fffaf0]/50" : ""
+                                        isToday ? "ring-2 ring-[#d4af37]/20 bg-[#fffaf0]/50 cursor-pointer" : ""
                                       }`}
                                     >
                                       {isToday && (
