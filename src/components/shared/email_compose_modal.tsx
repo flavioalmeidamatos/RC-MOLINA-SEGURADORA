@@ -491,16 +491,20 @@ export function EmailComposeModal({
           </div>
 
           {compose.files.length > 0 ? (
-            <div className="mt-4 grid gap-2 md:grid-cols-2">
+            <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5">
               {compose.files.map((file, index) => (
                 <div
                   key={`${file.name}-${file.size}-${index}`}
-                  className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
+                  className="group relative flex flex-col items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-3 text-center transition-colors hover:bg-slate-100"
                 >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-bold text-[#0c1826]">{file.name}</p>
-                    <p className="text-xs text-slate-500">{formatBytes(file.size)}</p>
-                  </div>
+                  <FileText className="mb-1 text-slate-400" size={20} />
+                  <p
+                    className="w-full truncate text-[11px] font-bold text-[#0c1826]"
+                    title={file.name}
+                  >
+                    {file.name}
+                  </p>
+                  <p className="text-[10px] text-slate-500">{formatBytes(file.size)}</p>
                   <button
                     type="button"
                     onClick={() =>
@@ -508,9 +512,10 @@ export function EmailComposeModal({
                         files: compose.files.filter((_, fileIndex) => fileIndex !== index),
                       })
                     }
-                    className="rounded-full border border-slate-200 px-3 py-1 text-xs font-bold text-slate-500 transition hover:border-red-200 hover:text-red-600"
+                    className="absolute right-1 top-1 rounded-full bg-slate-200/60 p-1 text-slate-500 opacity-0 transition-opacity hover:bg-red-100 hover:text-red-600 group-hover:opacity-100"
+                    title="Remover anexo"
                   >
-                    Remover
+                    <X size={12} strokeWidth={3} />
                   </button>
                 </div>
               ))}

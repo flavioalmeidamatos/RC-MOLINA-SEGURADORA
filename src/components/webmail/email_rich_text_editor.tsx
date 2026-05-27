@@ -188,7 +188,7 @@ export function EmailRichTextEditor({
           ],
           toolbar:
             'undo redo | blocks fontfamily fontsize | bold italic underline | forecolor backcolor | alignleft aligncenter alignright | bullist numlist | link image localvideo table | preview code fullscreen',
-          toolbar_mode: 'wrap',
+          toolbar_mode: 'scrolling',
           branding: false,
           promotion: false,
           resize: false,
