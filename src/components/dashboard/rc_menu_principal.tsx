@@ -1738,9 +1738,18 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                       key={cliente.codigo}
                                       onClick={() => {
                                         if (isToday) {
-                                          const primeiroNome = cliente.nome_completo.trim().split(" ")[0] || "";
-                                          const formattedName = primeiroNome.charAt(0).toUpperCase() + primeiroNome.slice(1).toLowerCase();
-                                          setCampanhaInitialMessage(`Olá, *${formattedName}* `);
+                                          const nomeFormatado = cliente.nome_completo
+                                            .trim()
+                                            .split(" ")
+                                            .filter(Boolean)
+                                            .map((word) => {
+                                              const lower = word.toLowerCase();
+                                              if (["de", "da", "do", "dos", "das", "e"].includes(lower)) return lower;
+                                              return lower.charAt(0).toUpperCase() + lower.slice(1);
+                                            })
+                                            .join(" ");
+                                            
+                                          setCampanhaInitialMessage(`Olá, *${nomeFormatado}* `);
                                           handleMenuClick("Campanhas");
                                         }
                                       }}
