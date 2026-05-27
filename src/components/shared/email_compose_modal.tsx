@@ -330,7 +330,7 @@ export function EmailComposeModal({
 
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="flex max-h-[92vh] w-full max-w-[1400px] flex-col overflow-hidden rounded-[30px] border border-white/60 bg-white shadow-2xl animate-in zoom-in-95 duration-200">
+      <div className="flex max-h-[96vh] w-full max-w-[1600px] flex-col overflow-hidden rounded-[30px] border border-white/60 bg-white shadow-2xl animate-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
           <div>
@@ -462,6 +462,7 @@ export function EmailComposeModal({
               }
             >
               <EmailRichTextEditor
+                height={550}
                 disabled={busy}
                 value={compose.bodyHtml}
                 onChange={(html) => patchCompose({ bodyHtml: html })}
