@@ -1751,28 +1751,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                           </div>
                         </div>
 
-                        {/* Inputs Section */}
-                        <div className="flex flex-col gap-2 border-b border-gray-200 bg-white px-3 py-2 text-xs sm:flex-row sm:items-center sm:justify-between shrink-0">
-                          <input
-                            type="text"
-                            placeholder="Nova tarefa..."
-                            className="w-full bg-transparent italic text-gray-500 outline-none placeholder-gray-400 sm:w-2/3"
-                          />
-                          <div className="flex items-center gap-1 text-gray-400">
-                            <input
-                              type="text"
-                              placeholder="Hora"
-                              className="w-10 bg-transparent text-center outline-none"
-                            />
-                            <span>:</span>
-                            <input
-                              type="text"
-                              placeholder="Min."
-                              className="w-10 bg-transparent text-center outline-none"
-                            />
-                          </div>
-                        </div>
-
                         {/* List Section */}
                         <div className="custom-scrollbar flex-1 overflow-y-auto bg-slate-50/50 p-2.5">
                           <div className="flex flex-col gap-2">

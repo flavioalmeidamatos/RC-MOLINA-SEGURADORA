@@ -59,6 +59,22 @@ export const createAgendamentoHandler = async (req: Request, res: Response) => {
   const { id_cliente, data_agendamento, hora_inicio, hora_fim, duracao_minutos, observacao, repetir, enviar_sms } = req.body;
 
   try {
+    const conflict = await pool.query(
+      `SELECT id_agendamento
+       FROM "RCMOLINASEGUROS"."AGENDAMENTOS"
+       WHERE data_agendamento = $1
+         AND hora_inicio = $2
+       LIMIT 1`,
+      [data_agendamento, hora_inicio]
+    );
+
+    if ((conflict.rowCount || 0) > 0) {
+      return res.status(409).json({
+        error: 'Ja existe um compromisso agendado para este horario de inicio.',
+        code: 'APPOINTMENT_START_CONFLICT',
+      });
+    }
+
     const result = await pool.query(
       `INSERT INTO "RCMOLINASEGUROS"."AGENDAMENTOS" (
         id_cliente, data_agendamento, hora_inicio, hora_fim, duracao_minutos, observacao, repetir, enviar_sms
@@ -79,6 +95,36 @@ export const updateAgendamentoHandler = async (req: Request, res: Response) => {
   const { id_cliente, data_agendamento, hora_inicio, hora_fim, duracao_minutos, observacao, repetir, enviar_sms } = req.body;
 
   try {
+    const currentResult = await pool.query(
+      `SELECT data_agendamento, hora_inicio
+       FROM "RCMOLINASEGUROS"."AGENDAMENTOS"
+       WHERE id_agendamento = $1`,
+      [id]
+    );
+
+    if (currentResult.rowCount === 0) {
+      return res.status(404).json({ error: 'Agendamento not found' });
+    }
+
+    const targetDate = data_agendamento || currentResult.rows[0].data_agendamento;
+    const targetTime = hora_inicio || currentResult.rows[0].hora_inicio;
+    const conflict = await pool.query(
+      `SELECT id_agendamento
+       FROM "RCMOLINASEGUROS"."AGENDAMENTOS"
+       WHERE data_agendamento = $1
+         AND hora_inicio = $2
+         AND id_agendamento <> $3
+       LIMIT 1`,
+      [targetDate, targetTime, id]
+    );
+
+    if ((conflict.rowCount || 0) > 0) {
+      return res.status(409).json({
+        error: 'Ja existe um compromisso agendado para este horario de inicio.',
+        code: 'APPOINTMENT_START_CONFLICT',
+      });
+    }
+
     const result = await pool.query(
       `UPDATE "RCMOLINASEGUROS"."AGENDAMENTOS" SET
         id_cliente = coalesce($1, id_cliente),

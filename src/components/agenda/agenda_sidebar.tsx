@@ -42,6 +42,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isEditingSelected, setIsEditingSelected] = useState(false);
+  const [saveNotice, setSaveNotice] = useState("");
 
   useEffect(() => {
     if (!showDeleteConfirm) return;
@@ -52,6 +53,16 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
 
     return () => window.clearTimeout(timeoutId);
   }, [showDeleteConfirm]);
+
+  useEffect(() => {
+    if (!saveNotice) return;
+
+    const timeoutId = window.setTimeout(() => {
+      setSaveNotice("");
+    }, 5000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [saveNotice]);
 
   useEffect(() => {
     setShowDeleteConfirm(false);
@@ -282,11 +293,11 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
       } else {
         const err = await res.json();
         console.error("Failed to save agendamento:", err);
-        alert(`Erro: ${err.error}`);
+        setSaveNotice(err.error || "Nao foi possivel salvar este compromisso.");
       }
     } catch (e) {
       console.error(e);
-      alert("Erro ao salvar.");
+      setSaveNotice("Nao foi possivel salvar este compromisso.");
     } finally {
       setIsSaving(false);
     }
@@ -376,6 +387,41 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
             >
               <Trash2 size={16} />
               {isSaving ? "Excluindo..." : "Excluir"}
+            </button>
+          </div>
+        </div>
+      </div>
+    ) : null}
+
+    {saveNotice ? (
+      <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/35 px-4 backdrop-blur-sm">
+        <div
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="save-notice-title"
+          className="w-full max-w-sm overflow-hidden rounded-lg border border-white/70 bg-white shadow-2xl"
+        >
+          <div className="flex items-start gap-4 border-b border-slate-100 bg-amber-50 px-5 py-4">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+              <AlertTriangle size={22} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 id="save-notice-title" className="text-base font-black text-slate-950">
+                Horario indisponivel
+              </h3>
+              <p className="mt-1 text-sm leading-5 text-slate-600">
+                {saveNotice}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex justify-end bg-white px-5 py-4">
+            <button
+              type="button"
+              onClick={() => setSaveNotice("")}
+              className="rounded-md bg-[#00B5AD] px-5 py-2 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#009d96]"
+            >
+              OK
             </button>
           </div>
         </div>
