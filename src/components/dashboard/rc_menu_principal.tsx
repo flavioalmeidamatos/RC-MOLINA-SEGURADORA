@@ -74,6 +74,7 @@ const SIMULATOR_FALLBACK_WINDOW_NAME = "simulador_online_fallback_window";
 const CHROME_SIMULATOR_LOAD_TIMEOUT_MS = 18000;
 const GMAIL_INBOX_POLL_INTERVAL_MS = 5000;
 const AGENDA_REMINDER_POLL_INTERVAL_MS = 30000;
+const AGENDA_REFRESH_INTERVAL_MS = 30000;
 const AGENDA_REMINDER_LEAD_MINUTES = 5;
 const AGENDA_REMINDER_STORAGE_KEY = "rc_molina_agenda_reminders";
 const BASE_SIMULATOR_IFRAME_ALLOW =
@@ -458,11 +459,24 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     void loadAgendamentos();
     const intervalId = window.setInterval(() => {
       void loadAgendamentos();
-    }, 60000);
+    }, AGENDA_REFRESH_INTERVAL_MS);
+    const handleFocus = () => {
+      void loadAgendamentos();
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void loadAgendamentos();
+      }
+    };
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       ignore = true;
       window.clearInterval(intervalId);
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);
 
@@ -1782,8 +1796,8 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                   }`}>
                                     <User size={14} />
                                   </div>
-                                  <div className="min-w-0 flex-1">
-                                    <p className={`truncate text-sm font-bold transition-colors ${
+                                  <div className={`min-w-0 flex-1 ${item.highlight ? "pr-16" : ""}`}>
+                                    <p className={`truncate text-[11px] font-bold leading-4 transition-colors ${
                                       item.highlight ? "text-red-700" : "text-[#0c1826] group-hover:text-[#a2812a]"
                                     }`}>
                                       {item.name}
