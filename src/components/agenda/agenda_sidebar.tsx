@@ -255,6 +255,11 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
   const handleSave = async () => {
     if (!selectedClientId || !agendaDate || !agendaTime) return;
 
+    if (!observacao || !observacao.trim()) {
+      setSaveNotice("Por favor, preencha o campo de observação.");
+      return;
+    }
+
     setIsSaving(true);
     try {
       const payload = {
@@ -400,7 +405,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
             </div>
             <div className="min-w-0 flex-1">
               <h3 id="save-notice-title" className="text-base font-black text-slate-950">
-                Horario indisponivel
+                Atenção
               </h3>
               <p className="mt-1 text-sm leading-5 text-slate-600">
                 {saveNotice}
@@ -577,7 +582,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
 
         <div>
           <textarea 
-            placeholder="Observação..." 
+            placeholder="Observação * (Obrigatório)..." 
             value={observacao}
             onChange={(e) => setObservacao(e.target.value)}
             disabled={isFormDisabled}

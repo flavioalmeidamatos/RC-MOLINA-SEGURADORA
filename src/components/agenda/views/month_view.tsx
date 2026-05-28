@@ -126,7 +126,7 @@ export const MonthView: React.FC<MonthViewProps> = ({
                   <div
                     key={agendamento.id_agendamento}
                     className="rounded border border-blue-400/50 bg-blue-50 px-1.5 py-1 text-[10px] font-black leading-tight text-blue-700 shadow-sm cursor-pointer hover:bg-blue-100"
-                    title={`Agendamento: ${agendamento.cliente_nome || 'Cliente'}`}
+                    title={`Observação: ${agendamento.observacao || ''}`}
                     onClick={(e) => {
                       e.stopPropagation(); // prevent setting current date when clicking the badge
                       onSelectAgendamento?.(agendamento);
