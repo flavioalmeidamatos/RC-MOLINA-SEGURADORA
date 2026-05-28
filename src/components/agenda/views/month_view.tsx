@@ -83,11 +83,11 @@ export const MonthView: React.FC<MonthViewProps> = ({
             <div 
               key={i} 
               onClick={() => setCurrentDate(day)}
-              className={`min-h-[75px] border-b border-r border-black p-1 flex flex-col gap-0.5 transition-colors hover:bg-gray-50 cursor-pointer ${
+              className={`min-h-0 border-b border-r border-black p-1 flex flex-col gap-0.5 transition-colors hover:bg-gray-50 cursor-pointer ${
                 !isCurrentMonth ? "bg-gray-50/50 text-gray-400" : isWeekend ? "text-red-600" : "text-black"
               } ${isSelected ? "bg-blue-50 ring-2 ring-inset ring-blue-400" : ""}`}
             >
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center shrink-0">
                 <span className={`text-xs font-bold leading-none ${
                   isToday 
                     ? "bg-[#00B5AD] text-white w-6 h-6 flex items-center justify-center rounded-full" 
@@ -97,7 +97,7 @@ export const MonthView: React.FC<MonthViewProps> = ({
                 </span>
               </div>
               
-              <div className="flex flex-col gap-1 overflow-y-auto no-scrollbar">
+              <div className="flex flex-col gap-1 overflow-y-auto no-scrollbar flex-1 min-h-0">
                 {dayHolidays.map((holiday, idx) => (
                   <div 
                     key={idx} 
@@ -122,7 +122,7 @@ export const MonthView: React.FC<MonthViewProps> = ({
                 {dayAgendamentos.map((agendamento) => (
                   <div
                     key={agendamento.id_agendamento}
-                    className="rounded border border-blue-400/50 bg-blue-100 px-1.5 py-1 text-[10px] font-black leading-tight text-blue-800 shadow-sm cursor-pointer hover:bg-blue-200"
+                    className="rounded border border-blue-400/50 bg-blue-50 px-1.5 py-1 text-[10px] font-black leading-tight text-blue-700 shadow-sm cursor-pointer hover:bg-blue-100"
                     title={`Agendamento: ${agendamento.cliente_nome || 'Cliente'}`}
                     onClick={(e) => {
                       e.stopPropagation(); // prevent setting current date when clicking the badge
