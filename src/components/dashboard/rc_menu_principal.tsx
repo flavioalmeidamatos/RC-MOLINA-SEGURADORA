@@ -1832,8 +1832,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                 href="#"
                 onClick={(event) => {
                   event.preventDefault();
-                  // TODO: Substitua a URL abaixo pela URL oficial do Simulador Solutions
-                  window.open("https://solutions.com.br", "_blank");
                 }}
                 className="group relative flex h-32 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:border-[#d4af37]/70 hover:shadow-md cursor-pointer"
               >
