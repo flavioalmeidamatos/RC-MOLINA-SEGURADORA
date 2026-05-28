@@ -1776,14 +1776,14 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                             {agendaItems.map((item) => (
                               <div
                                 key={item.id}
-                                className={`group relative overflow-hidden rounded-xl border border-white bg-white p-3 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md cursor-pointer ${
+                                className={`group relative rounded-xl border border-white bg-white p-3 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md cursor-pointer ${
                                   item.highlight 
                                     ? "ring-2 ring-red-500/20 bg-red-50/50 hover:border-red-300" 
                                     : "hover:border-[#d4af37]/30"
                                 }`}
                               >
                                 {item.highlight && (
-                                  <div className="absolute right-0 top-0 rounded-bl-xl bg-red-500 px-2 py-1 text-[8px] font-black uppercase tracking-wider text-white animate-pulse">
+                                  <div className="absolute right-0 top-0 rounded-tr-xl rounded-bl-xl bg-red-500 px-2 py-1 text-[8px] font-black uppercase tracking-wider text-white animate-pulse">
                                     Atrasado
                                   </div>
                                 )}
