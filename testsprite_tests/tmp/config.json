@@ -1,0 +1,17 @@
+{
+  "status": "init",
+  "executionArgs": {
+    "projectName": "RC-MOLINA-SEGURADORA",
+    "projectPath": "d:\\APRENDIZADO APP\\RC-MOLINA-SEGURADORA",
+    "testIds": [],
+    "additionalInstruction": "Fluxo completo ponta a ponta (E2E)",
+    "serverMode": "development",
+    "envs": {
+      "API_KEY": "sk-user-_6B1pjzOanKS2H-GVFyWqmUtfVh0jp7OeOkuBjXzS0d-kWFVpeeHDLL3LC5ROLSBMWnCx1thAPj5FNc0PRtiWbcvh1bhcwP0vcGKvTEI9ay7MdFCS-aHfRLPSchVh-Dhu18"
+    }
+  },
+  "scope": "codebase",
+  "type": "frontend",
+  "localEndpoint": "http://localhost:3000/",
+  "serverPort": 52525
+}
