@@ -66,7 +66,10 @@ export const MonthView: React.FC<MonthViewProps> = ({
         ))}
       </div>
 
-      <div className="flex-1 grid grid-cols-7 auto-rows-fr overflow-y-auto custom-scrollbar">
+      <div 
+        className="flex-1 grid grid-cols-7 overflow-y-auto custom-scrollbar"
+        style={{ gridTemplateRows: `repeat(${days.length / 7}, minmax(0, 1fr))` }}
+      >
         {days.map((day, i) => {
           const dayHolidays = holidays.filter(h => h.date === format(day, "yyyy-MM-dd"));
           const dayAgendamentos = agendamentos.filter(a => String(a.data_agendamento).substring(0, 10) === format(day, "yyyy-MM-dd"));
