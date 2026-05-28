@@ -27,9 +27,10 @@ export interface Agendamento {
 
 interface AgendaProps {
   aniversariantesMes?: AniversarianteMes[];
+  onAgendamentosChanged?: () => void;
 }
 
-export const Agenda: React.FC<AgendaProps> = ({ aniversariantesMes = [] }) => {
+export const Agenda: React.FC<AgendaProps> = ({ aniversariantesMes = [], onAgendamentosChanged }) => {
   const [activeView, setActiveView] = useState<CalendarView>("month");
   const [currentDate, setCurrentDateRaw] = useState(() => startOfDay(new Date()));
 
@@ -52,6 +53,11 @@ export const Agenda: React.FC<AgendaProps> = ({ aniversariantesMes = [] }) => {
     }
   }, []);
 
+  const handleAgendamentosChanged = useCallback(() => {
+    void fetchAgendamentos();
+    onAgendamentosChanged?.();
+  }, [fetchAgendamentos, onAgendamentosChanged]);
+
   useEffect(() => {
     fetchAgendamentos();
   }, [fetchAgendamentos]);
@@ -67,7 +73,7 @@ export const Agenda: React.FC<AgendaProps> = ({ aniversariantesMes = [] }) => {
         <AgendaSidebar 
           setCurrentDate={setCurrentDate} 
           setActiveView={setActiveView} 
-          onAgendamentosChanged={fetchAgendamentos}
+          onAgendamentosChanged={handleAgendamentosChanged}
           selectedAgendamento={selectedAgendamento}
           setSelectedAgendamento={setSelectedAgendamento}
         />

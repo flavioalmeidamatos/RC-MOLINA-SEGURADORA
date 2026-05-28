@@ -444,17 +444,19 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   useEffect(() => {
     let ignore = false;
 
-    const loadAgendamentos = async () => {
+    const loadAgendamentos = async (options?: { allowAfterUnmount?: boolean }) => {
       try {
         const response = await fetch("/api/agendamentos");
         if (!response.ok) throw new Error("Falha ao carregar agendamentos.");
         const json = await response.json();
-        if (!ignore) setAgendamentos(Array.isArray(json.data) ? json.data : []);
+        if (!ignore || options?.allowAfterUnmount) setAgendamentos(Array.isArray(json.data) ? json.data : []);
       } catch (error) {
         console.error("Erro ao carregar agendamentos:", error);
-        if (!ignore) setAgendamentos([]);
+        if (!ignore || options?.allowAfterUnmount) setAgendamentos([]);
       }
     };
+
+    (window as any).__rcMolinaRefreshAgendamentos = () => loadAgendamentos({ allowAfterUnmount: true });
 
     void loadAgendamentos();
     const intervalId = window.setInterval(() => {
@@ -477,6 +479,9 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       window.clearInterval(intervalId);
       window.removeEventListener("focus", handleFocus);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      if ((window as any).__rcMolinaRefreshAgendamentos) {
+        delete (window as any).__rcMolinaRefreshAgendamentos;
+      }
     };
   }, []);
 
@@ -1552,7 +1557,12 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
               </div>
             ) : activeMenu === "Agenda" ? (
               <div className="flex min-h-0 flex-1 overflow-hidden">
-                <Agenda aniversariantesMes={aniversariantesMes} />
+                <Agenda
+                  aniversariantesMes={aniversariantesMes}
+                  onAgendamentosChanged={() => {
+                    void (window as any).__rcMolinaRefreshAgendamentos?.();
+                  }}
+                />
               </div>
             ) : (
               <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-5">
