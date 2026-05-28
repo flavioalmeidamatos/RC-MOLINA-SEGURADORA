@@ -28,7 +28,6 @@ import { CampanhasShell } from "../campanhas/campanhas_shell";
 import { apiListVisibleUsers } from "../../lib/local_api";
 import type { LocalAuthSession, UsuarioPerfil } from "../../lib/local_auth";
 import { createGmailApi, type MessageSummary } from "../../lib/gmail_api";
-import type { DesktopEmbedBounds, DesktopShellInfo, DesktopSolutionsApi } from "../../types/desktop_shell";
 
 const RCWebmail = React.lazy(async () => ({
   default: (await import("../webmail/rc_webmail")).RCWebmail,
@@ -67,7 +66,6 @@ const AMIL_SIMULATOR_URL = "https://portalcorretor.amil.com.br/portal/web/servic
 const AMIL_PROXY_LOGIN_URL = "/amil-proxy/portal/web/servicos/usuario/corretor/login";
 const MEDSENIOR_SIMULATOR_URL = "https://vendadigital.medsenior.com.br/";
 const KLINI_SIMULATOR_URL = "https://klinisaude.hcommerce.com.br/corretora/login";
-const SOLUTIONS_LOCAL_BRIDGE_URL = "http://127.0.0.1:32145/api/launch-solutions";
 const AMIL_LOGIN = "77915445715";
 const AMIL_PASSWORD = "sqn0y3zqmo";
 const SIMULATOR_FALLBACK_WINDOW_NAME = "simulador_online_fallback_window";
@@ -79,82 +77,6 @@ const wait = (ms: number) =>
   new Promise<void>((resolve) => {
     window.setTimeout(resolve, ms);
   });
-
-const isLocalWindowsAppHost = () => window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-const getDesktopShellApi = (): DesktopSolutionsApi | null => window.rcMolinaDesktop ?? null;
-
-const getSolutionsHostWindowMetrics = () => ({
-  screenX: Number.isFinite(window.screenX) ? window.screenX : window.screenLeft || 0,
-  screenY: Number.isFinite(window.screenY) ? window.screenY : window.screenTop || 0,
-  outerWidth: Number.isFinite(window.outerWidth) ? window.outerWidth : window.innerWidth,
-  outerHeight: Number.isFinite(window.outerHeight) ? window.outerHeight : window.innerHeight,
-  innerWidth: window.innerWidth,
-  innerHeight: window.innerHeight,
-});
-
-const getSolutionsAnchorMetrics = () => {
-  const anchor = document.querySelector<HTMLElement>('[data-solutions-anchor="brand"]');
-
-  if (!anchor) {
-    return null;
-  }
-
-  const rect = anchor.getBoundingClientRect();
-  return {
-    left: rect.left,
-    top: rect.top,
-    right: rect.right,
-    bottom: rect.bottom,
-    width: rect.width,
-    height: rect.height,
-  };
-};
-
-const getDesktopEmbedBoundsFromElement = (element: HTMLElement | null): DesktopEmbedBounds | null => {
-  if (!element) {
-    return null;
-  }
-
-  const rect = element.getBoundingClientRect();
-  if (rect.width <= 0 || rect.height <= 0) {
-    return null;
-  }
-
-  return {
-    x: Math.max(Math.round(rect.left), 0),
-    y: Math.max(Math.round(rect.top), 0),
-    width: Math.max(Math.round(rect.width), 480),
-    height: Math.max(Math.round(rect.height), 320),
-  };
-};
-
-const postSolutionsLaunchRequest = async (url: string, sidebarWidth: number) => {
-  const controller = new AbortController();
-  const timeoutId = window.setTimeout(() => controller.abort(), 4000);
-
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      mode: "cors",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        sidebarWidth,
-        hostWindow: getSolutionsHostWindowMetrics(),
-        anchorRect: getSolutionsAnchorMetrics(),
-      }),
-      signal: controller.signal,
-    });
-
-    const payload = await response.json().catch(() => null);
-
-    if (!response.ok || !payload?.success) {
-      throw new Error(payload?.error || "Nao foi possivel abrir o Solutions.");
-    }
-  } finally {
-    window.clearTimeout(timeoutId);
-  }
-};
-
 const formatBirthDate = (value: string) => {
   const [year, month, day] = String(value || "").slice(0, 10).split("-");
   return day && month && year ? `${day}/${month}` : "";
@@ -282,10 +204,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const [simulatorStatusMessage, setSimulatorStatusMessage] = useState("");
   const [simulatorBrowser, setSimulatorBrowser] = useState<SimulatorBrowser>("other");
   const [showSimulatorChooser, setShowSimulatorChooser] = useState(false);
-  const [desktopShellInfo, setDesktopShellInfo] = useState<DesktopShellInfo | null>(null);
-  const [isSolutionsDesktopLoading, setIsSolutionsDesktopLoading] = useState(false);
-  const [solutionsDesktopError, setSolutionsDesktopError] = useState("");
-  const [solutionsDesktopReloadToken, setSolutionsDesktopReloadToken] = useState(0);
+
 
   const simulatorTimeoutRef = useRef<number | null>(null);
   const simulatorWindowRef = useRef<Window | null>(null);
@@ -293,7 +212,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const simulatorIframeLoadedRef = useRef(false);
   const amilIframeRef = useRef<HTMLIFrameElement | null>(null);
   const amilLoginSubmittedRef = useRef(false);
-  const solutionsDesktopHostRef = useRef<HTMLDivElement | null>(null);
+
 
   const [credential, setCredential] = useState({
     login: "Rosilene Rodrigues",
@@ -414,116 +333,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     }
   }, [forcedMenu]);
 
-  useEffect(() => {
-    const desktopApi = getDesktopShellApi();
-
-    if (!desktopApi) {
-      return;
-    }
-
-    let ignore = false;
-    const removeListener = desktopApi.onSolutionsEmbeddedClosed(() => {
-      if (!ignore) {
-        setIsSolutionsDesktopLoading(false);
-      }
-    });
-
-    desktopApi
-      .getInfo()
-      .then((info) => {
-        if (!ignore) {
-          setDesktopShellInfo(info);
-        }
-      })
-      .catch((error) => {
-        console.error("Nao foi possivel identificar o shell desktop.", error);
-      });
-
-    return () => {
-      ignore = true;
-      removeListener();
-    };
-  }, []);
-
-  useEffect(() => {
-    const desktopApi = getDesktopShellApi();
-    const shouldShowSolutionsDesktopArea = activeMenu === "Simulador Solutions";
-
-    if (!desktopApi || !shouldShowSolutionsDesktopArea || showSimulatorChooser) {
-      void desktopApi?.closeSolutionsEmbedded().catch((error) => {
-        console.error("Nao foi possivel fechar o Solutions embutido.", error);
-      });
-      setIsSolutionsDesktopLoading(false);
-      return;
-    }
-
-    let ignore = false;
-    let lastSerializedBounds = "";
-    const hostElement = solutionsDesktopHostRef.current;
-
-    if (!hostElement) {
-      return;
-    }
-
-    const syncBounds = async (mode: "open" | "update") => {
-      const bounds = getDesktopEmbedBoundsFromElement(solutionsDesktopHostRef.current);
-
-      if (!bounds) {
-        return;
-      }
-
-      const serializedBounds = JSON.stringify(bounds);
-      if (mode === "update" && serializedBounds === lastSerializedBounds) {
-        return;
-      }
-
-      lastSerializedBounds = serializedBounds;
-
-      try {
-        if (mode === "open") {
-          await desktopApi.openSolutionsEmbedded({ bounds });
-          if (!ignore) {
-            setIsSolutionsDesktopLoading(false);
-            setSolutionsDesktopError("");
-          }
-          return;
-        }
-
-        await desktopApi.updateSolutionsEmbeddedBounds({ bounds });
-      } catch (error) {
-        if (!ignore) {
-          const message = error instanceof Error ? error.message : "Nao foi possivel abrir o Solutions dentro do app desktop.";
-          setSolutionsDesktopError(message);
-          setIsSolutionsDesktopLoading(false);
-        }
-      }
-    };
-
-    const rafId = window.requestAnimationFrame(() => {
-      void syncBounds("open");
-    });
-
-    const handleResize = () => {
-      void syncBounds("update");
-    };
-
-    const resizeObserver = new ResizeObserver(() => {
-      void syncBounds("update");
-    });
-
-    resizeObserver.observe(hostElement);
-    window.addEventListener("resize", handleResize);
-
-    return () => {
-      ignore = true;
-      window.cancelAnimationFrame(rafId);
-      resizeObserver.disconnect();
-      window.removeEventListener("resize", handleResize);
-      void desktopApi.closeSolutionsEmbedded().catch((error) => {
-        console.error("Nao foi possivel fechar o Solutions embutido.", error);
-      });
-    };
-  }, [activeMenu, showSimulatorChooser, solutionsDesktopReloadToken]);
 
   useEffect(() => {
     let ignore = false;
@@ -736,50 +545,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     setActiveMenu("Simulador Klini");
   };
 
-  const closeSolutionsDesktopArea = async () => {
-    try {
-      await getDesktopShellApi()?.closeSolutionsEmbedded();
-    } catch (error) {
-      console.error("Nao foi possivel fechar o Solutions embutido.", error);
-    } finally {
-      setIsSolutionsDesktopLoading(false);
-      setSolutionsDesktopError("");
-      setActiveMenu("Home");
-    }
-  };
 
-  const launchSolutions = async () => {
-    const desktopApi = getDesktopShellApi();
-
-    if (desktopApi) {
-      cleanupSimulatorUi();
-      setSolutionsDesktopError("");
-      setIsSolutionsDesktopLoading(true);
-      setShowSimulatorChooser(false);
-      setSolutionsDesktopReloadToken((prev) => prev + 1);
-      setActiveMenu("Simulador Solutions");
-      return;
-    }
-
-    const sidebarWidth = window.innerWidth >= 1024 ? 192 : 0;
-
-    try {
-      await postSolutionsLaunchRequest(SOLUTIONS_LOCAL_BRIDGE_URL, sidebarWidth);
-      setShowSimulatorChooser(false);
-      return;
-    } catch (bridgeError) {
-      if (isLocalWindowsAppHost()) {
-        await postSolutionsLaunchRequest("/api/launch-electron", sidebarWidth);
-        setShowSimulatorChooser(false);
-        return;
-      }
-
-      const details = bridgeError instanceof Error ? bridgeError.message : "Nao foi possivel abrir o Solutions.";
-      throw new Error(
-        `${details} Inicie o bridge local com "npm run solutions:bridge" neste Windows e tente novamente.`
-      );
-    }
-  };
 
   const fillAndSubmitAmilLogin = () => {
     const frame = amilIframeRef.current;
@@ -1127,7 +893,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const showAmilSimulator = activeMenu === "Simulador Amil";
   const showMedseniorSimulator = activeMenu === "Simulador Medsenior";
   const showKliniSimulator = activeMenu === "Simulador Klini";
-  const showSolutionsDesktopArea = activeMenu === "Simulador Solutions";
   const showClientArea = activeMenu === "Meus clientes";
   const showAgendaArea = activeMenu === "Agenda";
   const showWebmailArea = activeMenu === "Webmail";
@@ -1179,7 +944,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       <div className="flex min-w-0 flex-1 flex-col relative">
         <header className="flex flex-col gap-4 bg-white px-4 py-4 shadow-sm sm:px-6 md:px-8 lg:h-16 lg:flex-row lg:items-center lg:justify-between lg:gap-0 lg:py-0">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-            <div data-solutions-anchor="brand" className="flex flex-col items-start bg-white px-2 py-1">
+            <div className="flex flex-col items-start bg-white px-2 py-1">
               <div className="text-xl font-bold leading-none tracking-widest text-[#d4af37]">
                 RC MOLINA
               </div>
@@ -1194,7 +959,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-            {showClientArea || showSimulator || showSulamericaSimulator || showAmilSimulator || showMedseniorSimulator || showKliniSimulator || showSolutionsDesktopArea || showAgendaArea || showWebmailArea || showCampanhasArea ? (
+            {showClientArea || showSimulator || showSulamericaSimulator || showAmilSimulator || showMedseniorSimulator || showKliniSimulator || showAgendaArea || showWebmailArea || showCampanhasArea ? (
               <button
                 type="button"
                 onClick={() => void handleMenuClick("Home")}
@@ -1503,65 +1268,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                   allow="geolocation; microphone; camera; payment; encrypted-media"
                   referrerPolicy="strict-origin-when-cross-origin"
                 />
-              </div>
-            ) : showSolutionsDesktopArea ? (
-              <div className="flex flex-1 flex-col bg-white" style={{ height: "calc(100vh - 120px)" }}>
-                <div className="flex items-center justify-between border-b bg-gray-50 px-4 py-2 text-xs text-gray-500">
-                  <span className="flex items-center gap-2">
-                    <ExternalLink size={14} />
-                    Simulador Solutions
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => void launchSolutions()}
-                      className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-600 transition hover:border-[#b58c2a]/40 hover:text-[#b58c2a]"
-                    >
-                      Recarregar
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void closeSolutionsDesktopArea()}
-                      className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-600 transition hover:border-[#b58c2a]/40 hover:text-[#b58c2a]"
-                    >
-                      Fechar
-                    </button>
-                  </div>
-                </div>
-                <div ref={solutionsDesktopHostRef} className="relative flex flex-1 items-center justify-center bg-slate-50 p-6">
-                  <div className="w-full max-w-xl rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-                    <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50">
-                      <img src="/solutions.svg" alt="Simulador Solutions" className="max-h-12 max-w-12 object-contain" />
-                    </div>
-                    <h2 className="text-2xl font-black text-[#0c1826]">Solutions dentro do app desktop</h2>
-                    <p className="mt-3 text-sm leading-6 text-slate-600">
-                      O portal bloqueia incorporação dentro da aplicação por política de segurança do próprio site.
-                    </p>
-                    <p className="mt-2 text-sm leading-6 text-slate-500">
-                      Se a nova aba não abrir automaticamente, use o botão abaixo.
-                    </p>
-                    {desktopShellInfo ? (
-                      <div className="mt-6 inline-flex items-center gap-2 rounded-full bg-slate-100 px-5 py-3 text-sm font-semibold text-slate-600">
-                        Shell ativo: {desktopShellInfo.shell}
-                      </div>
-                    ) : null}
-                  </div>
-
-                  {isSolutionsDesktopLoading ? (
-                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-white/80">
-                      <div className="flex items-center gap-3 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 shadow-sm">
-                        <Loader2 size={18} className="animate-spin text-[#b58c2a]" />
-                        Carregando Solutions dentro do app desktop...
-                      </div>
-                    </div>
-                  ) : null}
-
-                  {solutionsDesktopError ? (
-                    <div className="absolute inset-x-6 top-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 shadow-sm">
-                      {solutionsDesktopError}
-                    </div>
-                  ) : null}
-                </div>
               </div>
             ) : showClientArea ? (
               <div className="flex-1 overflow-y-auto px-4 pb-4 pt-2 sm:px-6 sm:pb-6 sm:pt-3 md:px-8 md:pb-8 md:pt-4">
@@ -2124,16 +1830,10 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
               <a
                 href="#"
-                onClick={async (event) => {
+                onClick={(event) => {
                   event.preventDefault();
-
-                  try {
-                    await launchSolutions();
-                  } catch (e) {
-                    const message = e instanceof Error ? e.message : 'Nao foi possivel abrir o Solutions.';
-                    console.error('Failed to launch electron', e);
-                    window.alert(message);
-                  }
+                  // TODO: Substitua a URL abaixo pela URL oficial do Simulador Solutions
+                  window.open("https://solutions.com.br", "_blank");
                 }}
                 className="group relative flex h-32 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:border-[#d4af37]/70 hover:shadow-md cursor-pointer"
               >

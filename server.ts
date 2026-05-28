@@ -16,14 +16,7 @@ import { initializeLocalWhatsAppConnector } from './api/_lib/whatsapp_connector'
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const SOLUTIONS_ELECTRON_APP_DIR = path.join(__dirname, 'janela');
-const SOLUTIONS_ELECTRON_BINARY = path.join(
-  SOLUTIONS_ELECTRON_APP_DIR,
-  'node_modules',
-  'electron',
-  'dist',
-  process.platform === 'win32' ? 'electron.exe' : 'electron'
-);
+
 const normalizeFiniteNumber = (value: unknown, fallback = 0) => {
   const numericValue = Number(value);
   return Number.isFinite(numericValue) ? numericValue : fallback;
@@ -709,87 +702,6 @@ async function startServer() {
     importLeadAssetHandler(req, res);
   });
 
-  app.post('/api/launch-electron', (req, res) => {
-    const rawSidebarWidth = Number(req.body?.sidebarWidth);
-    const sidebarWidth = Number.isFinite(rawSidebarWidth) && rawSidebarWidth >= 0 ? rawSidebarWidth : 192;
-    const hostWindow = {
-      screenX: normalizeFiniteNumber(req.body?.hostWindow?.screenX),
-      screenY: normalizeFiniteNumber(req.body?.hostWindow?.screenY),
-      outerWidth: normalizeFiniteNumber(req.body?.hostWindow?.outerWidth),
-      outerHeight: normalizeFiniteNumber(req.body?.hostWindow?.outerHeight),
-      innerWidth: normalizeFiniteNumber(req.body?.hostWindow?.innerWidth),
-      innerHeight: normalizeFiniteNumber(req.body?.hostWindow?.innerHeight),
-    };
-    const anchorRect = {
-      left: normalizeFiniteNumber(req.body?.anchorRect?.left),
-      top: normalizeFiniteNumber(req.body?.anchorRect?.top),
-      right: normalizeFiniteNumber(req.body?.anchorRect?.right),
-      bottom: normalizeFiniteNumber(req.body?.anchorRect?.bottom),
-      width: normalizeFiniteNumber(req.body?.anchorRect?.width),
-      height: normalizeFiniteNumber(req.body?.anchorRect?.height),
-    };
-
-    if (process.platform !== 'win32') {
-      return res.status(409).json({
-        success: false,
-        error: 'A abertura do Solutions via janela nativa esta disponivel apenas no Windows local.',
-      });
-    }
-
-    if (!fs.existsSync(path.join(SOLUTIONS_ELECTRON_APP_DIR, 'package.json'))) {
-      return res.status(500).json({
-        success: false,
-        error: 'A pasta integrada janela/ nao foi encontrada dentro do projeto principal.',
-      });
-    }
-
-    if (!fs.existsSync(SOLUTIONS_ELECTRON_BINARY)) {
-      return res.status(500).json({
-        success: false,
-        error: 'As dependencias do Solutions nao estao instaladas em janela/. Execute npm install nessa pasta.',
-      });
-    }
-
-    try {
-      const electronEnv = { ...process.env };
-      delete electronEnv.ELECTRON_RUN_AS_NODE;
-
-      const child = spawn(
-        SOLUTIONS_ELECTRON_BINARY,
-        [
-          '.',
-          `--sidebar=${sidebarWidth}`,
-          `--host-screen-x=${hostWindow.screenX}`,
-          `--host-screen-y=${hostWindow.screenY}`,
-          `--host-outer-width=${hostWindow.outerWidth}`,
-          `--host-outer-height=${hostWindow.outerHeight}`,
-          `--host-inner-width=${hostWindow.innerWidth}`,
-          `--host-inner-height=${hostWindow.innerHeight}`,
-          `--anchor-left=${anchorRect.left}`,
-          `--anchor-top=${anchorRect.top}`,
-          `--anchor-right=${anchorRect.right}`,
-          `--anchor-bottom=${anchorRect.bottom}`,
-          `--anchor-width=${anchorRect.width}`,
-          `--anchor-height=${anchorRect.height}`,
-        ],
-        {
-          cwd: SOLUTIONS_ELECTRON_APP_DIR,
-          detached: true,
-          env: electronEnv,
-          stdio: 'ignore',
-        }
-      );
-
-      child.unref();
-      return res.json({ success: true });
-    } catch (error) {
-      console.error('Erro ao iniciar o Electron:', error);
-      return res.status(500).json({
-        success: false,
-        error: 'Nao foi possivel abrir o Solutions na janela nativa.',
-      });
-    }
-  });
 
   app.post('/api/import-lead', async (req, res) => {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
