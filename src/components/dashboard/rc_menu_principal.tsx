@@ -30,6 +30,7 @@ import { CampanhasShell } from "../campanhas/campanhas_shell";
 import { apiListVisibleUsers } from "../../lib/local_api";
 import type { LocalAuthSession, UsuarioPerfil } from "../../lib/local_auth";
 import { createGmailApi, type MessageSummary } from "../../lib/gmail_api";
+import { APP_VERSION } from "../../version";
 
 const RCWebmail = React.lazy(async () => ({
   default: (await import("../webmail/rc_webmail")).RCWebmail,
@@ -1124,44 +1125,53 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-[#F0F4F8] font-sans lg:h-screen lg:flex-row lg:overflow-hidden">
-      <aside className="w-full flex-shrink-0 bg-[#0c1826] shadow-xl lg:w-48 lg:z-20">
-        <div className="flex flex-col items-center justify-center bg-gradient-to-b from-[#b58c2a] to-[#806117] px-4 py-6 shadow-inner lg:h-44 lg:pt-4 lg:pb-2">
-          <div className="mb-3 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-2 border-white/50 bg-white shadow-md transition-all hover:border-white">
-            {avatarUrl ? (
-              <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
-            ) : (
-              <User size={32} className="text-gray-400" />
-            )}
+      <aside className="w-full flex-shrink-0 bg-[#0c1826] shadow-xl lg:w-48 lg:z-20 lg:flex lg:flex-col lg:justify-between lg:h-screen">
+        <div className="lg:flex lg:flex-col lg:min-h-0 lg:flex-1">
+          <div className="flex flex-col items-center justify-center bg-gradient-to-b from-[#b58c2a] to-[#806117] px-4 py-6 shadow-inner lg:h-44 lg:pt-4 lg:pb-2">
+            <div className="mb-3 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-2 border-white/50 bg-white shadow-md transition-all hover:border-white">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
+              ) : (
+                <User size={32} className="text-gray-400" />
+              )}
+            </div>
+            <span className="px-4 text-center text-sm font-medium text-white">{userName}</span>
           </div>
-          <span className="px-4 text-center text-sm font-medium text-white">{userName}</span>
+
+          <div className="custom-scrollbar flex gap-2 overflow-x-auto px-3 py-3 lg:block lg:space-y-0 lg:overflow-y-auto lg:px-0 lg:py-4 lg:flex-1">
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              const isActive =
+                activeMenu === item.title ||
+                (item.title === "Simuladores" &&
+                  (activeMenu === "Simulador SulAmerica" || activeMenu === "Simulador Amil" || activeMenu === "Simulador Medsenior" || activeMenu === "Simulador Klini"));
+
+              return (
+                <button
+                  key={item.title}
+                  type="button"
+                  onClick={() => void handleMenuClick(item.title)}
+                  className={`flex min-w-max items-center justify-between gap-3 rounded-2xl border-l-4 px-4 py-3 text-left transition-colors lg:w-full lg:rounded-none lg:px-6 ${
+                    isActive
+                      ? "border-[#b58c2a] bg-[#152a42] text-white"
+                      : "border-transparent text-gray-400 hover:bg-[#112338] hover:text-white"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Icon size={18} className={isActive ? "text-[#b58c2a]" : "text-gray-500"} />
+                    <span className="text-sm">{item.title}</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        <div className="custom-scrollbar flex gap-2 overflow-x-auto px-3 py-3 lg:block lg:space-y-0 lg:overflow-y-auto lg:px-0 lg:py-4">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive =
-              activeMenu === item.title ||
-              (item.title === "Simuladores" &&
-                (activeMenu === "Simulador SulAmerica" || activeMenu === "Simulador Amil" || activeMenu === "Simulador Medsenior" || activeMenu === "Simulador Klini"));
-
-            return (
-              <button
-                key={item.title}
-                type="button"
-                onClick={() => void handleMenuClick(item.title)}
-                className={`flex min-w-max items-center justify-between gap-3 rounded-2xl border-l-4 px-4 py-3 text-left transition-colors lg:w-full lg:rounded-none lg:px-6 ${
-                  isActive
-                    ? "border-[#b58c2a] bg-[#152a42] text-white"
-                    : "border-transparent text-gray-400 hover:bg-[#112338] hover:text-white"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Icon size={18} className={isActive ? "text-[#b58c2a]" : "text-gray-500"} />
-                  <span className="text-sm">{item.title}</span>
-                </div>
-              </button>
-            );
-          })}
+        {/* Sidebar Footer with Version */}
+        <div className="hidden border-t border-slate-800 px-6 py-4 text-center lg:block bg-[#09111c] shrink-0">
+          <span className="text-xs font-semibold text-gray-500 tracking-wider">
+            Versão: {APP_VERSION}
+          </span>
         </div>
       </aside>
 
@@ -1786,7 +1796,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                     <User size={14} />
                                   </div>
                                   <div className={`min-w-0 flex-1 ${item.highlight ? "pr-16" : ""}`}>
-                                    <div className="group/name relative max-w-full">
+                                    <div className="relative max-w-full">
                                       <p
                                         title={`Inicio: ${item.time}${item.endTime ? ` | Fim: ${item.endTime}` : ""}`}
                                         className={`truncate text-[11px] font-bold leading-4 transition-colors ${
@@ -1795,7 +1805,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                       >
                                         {item.name}
                                       </p>
-                                      <div className="pointer-events-none absolute bottom-full left-0 z-20 mb-2 hidden min-w-[170px] rounded-md border border-slate-700 bg-[#0c1826] px-3 py-2 text-[11px] font-semibold text-white shadow-xl group-hover/name:block">
+                                      <div className="pointer-events-none absolute bottom-full left-0 z-20 mb-2 hidden min-w-[170px] rounded-md border border-slate-700 bg-[#0c1826] px-3 py-2 text-[11px] font-semibold text-white shadow-xl group-hover:block">
                                         <div className="whitespace-nowrap">Inicio: {item.time}</div>
                                         <div className="mt-0.5 whitespace-nowrap">Fim: {item.endTime || "Nao informado"}</div>
                                       </div>

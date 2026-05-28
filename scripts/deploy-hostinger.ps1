@@ -12,6 +12,40 @@ $archivePath = Join-Path $env:TEMP "rc-molina-app.tgz"
 $remoteDeployPath = "/tmp/rc-molina-deploy"
 $sshTarget = "$User@$HostName"
 
+# Bump version in package.json and src/version.ts, and auto-commit
+Write-Host "Incrementing version..."
+$versionFile = "src/version.ts"
+$packageFile = "package.json"
+
+if (Test-Path $versionFile) {
+    $content = Get-Content $versionFile -Raw
+    if ($content -match 'export const APP_VERSION = "(\d+)\.(\d+)\.(\d+)"') {
+        $major = [int]$Matches[1]
+        $minor = [int]$Matches[2]
+        $patch = [int]$Matches[3]
+        $patch++
+        $newVersion = "$major.$minor.$patch"
+        
+        # Write back to version.ts
+        Set-Content -Path $versionFile -Value "export const APP_VERSION = `"$newVersion`";`r`n" -NoNewline
+        Write-Host "Bumped version to $newVersion in $versionFile"
+
+        # Write back to package.json
+        if (Test-Path $packageFile) {
+            $pkgContent = Get-Content $packageFile -Raw
+            $pkgContent = $pkgContent -replace '"version":\s*"[^"]+"', ('"version": "' + $newVersion + '"')
+            Set-Content -Path $packageFile -Value $pkgContent -NoNewline
+            Write-Host "Updated version in $packageFile"
+        }
+        
+        # Auto-commit the version bump and modifications
+        Write-Host "Committing changes to Git..."
+        git add -A
+        git commit -m "chore: bump version to $newVersion and update layout"
+        git push origin main
+    }
+}
+
 Write-Host "Building local package..."
 tar -czf $archivePath `
   --exclude=.git `
