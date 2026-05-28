@@ -1796,7 +1796,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                     <User size={14} />
                                   </div>
                                   <div className={`min-w-0 flex-1 ${item.highlight ? "pr-16" : ""}`}>
-                                    <div className="relative max-w-full">
+                                    <div className="max-w-full">
                                       <p
                                         title={`Inicio: ${item.time}${item.endTime ? ` | Fim: ${item.endTime}` : ""}`}
                                         className={`truncate text-[11px] font-bold leading-4 transition-colors ${
@@ -1805,10 +1805,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                       >
                                         {item.name}
                                       </p>
-                                      <div className="pointer-events-none absolute bottom-full left-0 z-20 mb-2 hidden min-w-[170px] rounded-md border border-slate-700 bg-[#0c1826] px-3 py-2 text-[11px] font-semibold text-white shadow-xl group-hover:block">
-                                        <div className="whitespace-nowrap">Inicio: {item.time}</div>
-                                        <div className="mt-0.5 whitespace-nowrap">Fim: {item.endTime || "Nao informado"}</div>
-                                      </div>
                                     </div>
                                     <div className="mt-0.5 flex items-center justify-between text-[11px] font-semibold text-slate-500">
                                       <div className="flex items-center gap-1">
@@ -1821,6 +1817,11 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                       </div>
                                     </div>
                                   </div>
+                                </div>
+                                {/* Tooltip positioned below the entire card, completely preventing clipping and not covering the client's name */}
+                                <div className="pointer-events-none absolute top-full left-4 z-50 mt-1.5 hidden min-w-[170px] rounded-md border border-slate-700 bg-[#0c1826] px-3 py-2 text-[11px] font-semibold text-white shadow-xl group-hover:block">
+                                  <div className="whitespace-nowrap">Inicio: {item.time}</div>
+                                  <div className="mt-0.5 whitespace-nowrap">Fim: {item.endTime || "Nao informado"}</div>
                                 </div>
                               </div>
                             ))}
