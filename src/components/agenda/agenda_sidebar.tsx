@@ -21,6 +21,47 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
   const [justSelected, setJustSelected] = useState(false);
   const [statusNegociacao, setStatusNegociacao] = useState("");
 
+  const today = new Date();
+  const todayStr = today.toLocaleDateString('en-CA'); // "YYYY-MM-DD" local time
+  const [agendaDate, setAgendaDate] = useState(todayStr);
+  const [agendaTime, setAgendaTime] = useState("");
+
+  const generateTimeOptions = () => {
+    const options = [];
+    for (let h = 8; h <= 20; h++) {
+      const hourStr = h.toString().padStart(2, "0");
+      options.push(`${hourStr}:00`);
+      if (h !== 20) {
+        options.push(`${hourStr}:30`);
+      }
+    }
+    return options;
+  };
+
+  const getFilteredTimeOptions = () => {
+    const options = generateTimeOptions();
+    if (agendaDate === todayStr) {
+      const currentHour = today.getHours();
+      const currentMinute = today.getMinutes();
+      return options.filter((time) => {
+        const [h, m] = time.split(":").map(Number);
+        if (h > currentHour) return true;
+        if (h === currentHour && m > currentMinute) return true;
+        return false;
+      });
+    }
+    return options;
+  };
+
+  const availableTimeOptions = getFilteredTimeOptions();
+
+  // If the current selected time is no longer available, we should clear it or select the first available
+  useEffect(() => {
+    if (agendaTime && !availableTimeOptions.includes(agendaTime)) {
+      setAgendaTime("");
+    }
+  }, [agendaDate, agendaTime, availableTimeOptions]);
+
   useEffect(() => {
     if (justSelected) {
       setJustSelected(false);
@@ -183,17 +224,22 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
 
         <div className="flex gap-1">
           <input 
-            type="text" 
-            placeholder="Data do agendamento"
-            defaultValue="03/04/2026" 
-            className="flex-1 px-3 py-2 border border-black rounded text-sm outline-none focus:border-black"
+            type="date" 
+            min={todayStr}
+            value={agendaDate}
+            onChange={(e) => setAgendaDate(e.target.value)}
+            className="flex-1 px-3 py-2 border border-black rounded text-sm outline-none focus:border-black bg-white uppercase text-center"
           />
-          <input 
-            type="text" 
-            placeholder="00:00"
-            defaultValue="00:00" 
-            className="w-[68px] px-2 py-2 border border-black rounded text-sm text-center outline-none focus:border-black"
-          />
+          <select 
+            value={agendaTime}
+            onChange={(e) => setAgendaTime(e.target.value)}
+            className="w-[85px] px-2 py-2 border border-black rounded text-sm text-center outline-none focus:border-black appearance-none bg-white cursor-pointer"
+          >
+            <option value="" disabled>Hora</option>
+            {availableTimeOptions.map((time) => (
+              <option key={time} value={time}>{time}</option>
+            ))}
+          </select>
         </div>
 
         <div>
