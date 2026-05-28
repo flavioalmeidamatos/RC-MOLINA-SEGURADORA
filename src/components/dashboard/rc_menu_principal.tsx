@@ -1808,7 +1808,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                     <div className="mt-0.5 flex items-center justify-between text-[11px] font-semibold text-slate-500">
                                       <div className="flex items-center gap-1">
                                         <Phone size={11} className={item.highlight ? "text-red-400" : ""} />
-                                        <span className={item.highlight ? "text-red-600" : "text-slate-500"}>{item.phone}</span>
+                                        <span className={`whitespace-nowrap ${item.highlight ? "text-red-600" : "text-slate-500"}`}>{item.phone}</span>
                                       </div>
                                       <div className="flex items-center gap-2">
                                         <span className={`font-bold ${item.highlight ? "text-red-600" : "text-[#a2812a]"}`}>{item.time}</span>
