@@ -159,11 +159,19 @@ create table if not exists "RCMOLINASEGUROS"."AGENDAMENTOS" (
   atualizado_em timestamptz default timezone('utc', now())
 );
 
+create or replace function "RCMOLINASEGUROS".touch_agendamentos_atualizado_em()
+returns trigger as $$
+begin
+  new.atualizado_em := timezone('utc', now());
+  return new;
+end;
+$$ language plpgsql;
+
 drop trigger if exists trg_agendamentos_touch_updated_at on "RCMOLINASEGUROS"."AGENDAMENTOS";
 create trigger trg_agendamentos_touch_updated_at
 before update on "RCMOLINASEGUROS"."AGENDAMENTOS"
 for each row
-execute function "RCMOLINASEGUROS".touch_updated_at();
+execute function "RCMOLINASEGUROS".touch_agendamentos_atualizado_em();
 
 drop trigger if exists trg_clientes_touch_updated_at on "RCMOLINASEGUROS"."CLIENTES";
 create trigger trg_clientes_touch_updated_at
