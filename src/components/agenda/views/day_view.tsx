@@ -15,6 +15,17 @@ interface DayViewProps {
 
 const birthMonthDay = (value: string) => String(value || "").slice(5, 10);
 
+const isAtrasado = (dataAgendamento: string, horaInicio: string) => {
+  try {
+    const dateStr = String(dataAgendamento).substring(0, 10);
+    const timeStr = String(horaInicio).substring(0, 5);
+    const appointmentDateTime = new Date(`${dateStr}T${timeStr}:00`);
+    return appointmentDateTime < new Date();
+  } catch (e) {
+    return false;
+  }
+};
+
 export const DayView: React.FC<DayViewProps> = ({
   currentDate,
   holidays,
@@ -87,6 +98,7 @@ export const DayView: React.FC<DayViewProps> = ({
                 const agendamento = dayAgendamentos.find(
                   (a) => a.hora_inicio?.slice(0, 5) === time
                 );
+                const atrasado = agendamento ? isAtrasado(agendamento.data_agendamento, agendamento.hora_inicio) : false;
 
                 return (
                   <div 
@@ -96,18 +108,22 @@ export const DayView: React.FC<DayViewProps> = ({
                       index !== timeSlots.length - 1 ? 'border-b' : ''
                     } ${
                       agendamento 
-                        ? "bg-blue-50/50 hover:bg-blue-100/50 cursor-pointer" 
+                        ? (atrasado ? "bg-red-50/50 hover:bg-red-100/50 cursor-pointer" : "bg-blue-50/50 hover:bg-blue-100/50 cursor-pointer")
                         : "hover:bg-gray-50/50 cursor-pointer"
                     } ${isWeekend ? "bg-red-50/10" : ""}`}
                   >
                     {agendamento && (
                       <div 
                         title={`Observação: ${agendamento.observacao || ''}`}
-                        className="flex-1 rounded border border-blue-400/50 bg-blue-50/90 px-1.5 py-0.5 text-[9px] font-black text-blue-700 shadow-sm flex items-center justify-between gap-1 overflow-hidden"
+                        className={`flex-1 rounded border px-1.5 py-0.5 text-[9px] font-black shadow-sm flex items-center justify-between gap-1 overflow-hidden ${
+                          atrasado 
+                            ? "border-red-400/50 bg-red-50/90 text-red-700" 
+                            : "border-blue-400/50 bg-blue-50/90 text-blue-700"
+                        }`}
                       >
                         <span className="truncate leading-none">{agendamento.cliente_nome}</span>
                         {agendamento.hora_fim && (
-                          <span className="text-[7px] text-blue-500 font-semibold shrink-0 leading-none">
+                          <span className={`text-[7px] font-semibold shrink-0 leading-none ${atrasado ? "text-red-500" : "text-blue-500"}`}>
                             Até {agendamento.hora_fim.slice(0, 5)}
                           </span>
                         )}

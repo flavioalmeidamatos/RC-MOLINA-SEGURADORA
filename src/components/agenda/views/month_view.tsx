@@ -21,6 +21,17 @@ interface MonthViewProps {
 
 const birthMonthDay = (value: string) => String(value || "").slice(5, 10);
 
+const isAtrasado = (dataAgendamento: string, horaInicio: string) => {
+  try {
+    const dateStr = String(dataAgendamento).substring(0, 10);
+    const timeStr = String(horaInicio).substring(0, 5);
+    const appointmentDateTime = new Date(`${dateStr}T${timeStr}:00`);
+    return appointmentDateTime < new Date();
+  } catch (e) {
+    return false;
+  }
+};
+
 export const MonthView: React.FC<MonthViewProps> = ({
   currentDate,
   holidays,
@@ -151,28 +162,35 @@ export const MonthView: React.FC<MonthViewProps> = ({
                   </div>
                 ))}
                 
-                {dayAgendamentos.map((agendamento) => (
-                  <div
-                    key={agendamento.id_agendamento}
-                    draggable={true}
-                    onDragStart={(e) => {
-                      e.stopPropagation();
-                      e.dataTransfer.setData("text/plain", agendamento.id_agendamento);
-                      e.dataTransfer.effectAllowed = "move";
-                    }}
-                    className="rounded border border-blue-400/50 bg-blue-50 px-1.5 py-1 text-[10px] font-black leading-tight text-blue-700 shadow-sm cursor-grab active:cursor-grabbing hover:bg-blue-100 transition-colors duration-150"
-                    title={`Observação: ${agendamento.observacao || ''}`}
-                    onClick={(e) => {
-                      e.stopPropagation(); // prevent setting current date when clicking the badge
-                      onSelectAgendamento?.(agendamento);
-                    }}
-                  >
-                    <div className="flex items-center gap-1">
-                      <Clock size={11} className="shrink-0 text-blue-600" />
-                      <span className="truncate">{agendamento.hora_inicio} - {agendamento.cliente_nome || 'Cliente'}</span>
+                {dayAgendamentos.map((agendamento) => {
+                  const atrasado = isAtrasado(agendamento.data_agendamento, agendamento.hora_inicio);
+                  return (
+                    <div
+                      key={agendamento.id_agendamento}
+                      draggable={true}
+                      onDragStart={(e) => {
+                        e.stopPropagation();
+                        e.dataTransfer.setData("text/plain", agendamento.id_agendamento);
+                        e.dataTransfer.effectAllowed = "move";
+                      }}
+                      className={`rounded border px-1.5 py-1 text-[10px] font-black leading-tight shadow-sm cursor-grab active:cursor-grabbing transition-colors duration-150 ${
+                        atrasado
+                          ? "border-red-400/50 bg-red-50 text-red-700 hover:bg-red-100"
+                          : "border-blue-400/50 bg-blue-50 text-blue-700 hover:bg-blue-100"
+                      }`}
+                      title={`Observação: ${agendamento.observacao || ''}`}
+                      onClick={(e) => {
+                        e.stopPropagation(); // prevent setting current date when clicking the badge
+                        onSelectAgendamento?.(agendamento);
+                      }}
+                    >
+                      <div className="flex items-center gap-1">
+                        <Clock size={11} className={atrasado ? "shrink-0 text-red-600" : "shrink-0 text-blue-600"} />
+                        <span className="truncate">{agendamento.hora_inicio} - {agendamento.cliente_nome || 'Cliente'}</span>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
 
               </div>
             </div>

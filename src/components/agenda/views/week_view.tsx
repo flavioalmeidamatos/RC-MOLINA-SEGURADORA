@@ -15,6 +15,17 @@ interface WeekViewProps {
 
 const birthMonthDay = (value: string) => String(value || "").slice(5, 10);
 
+const isAtrasado = (dataAgendamento: string, horaInicio: string) => {
+  try {
+    const dateStr = String(dataAgendamento).substring(0, 10);
+    const timeStr = String(horaInicio).substring(0, 5);
+    const appointmentDateTime = new Date(`${dateStr}T${timeStr}:00`);
+    return appointmentDateTime < new Date();
+  } catch (e) {
+    return false;
+  }
+};
+
 export const WeekView: React.FC<WeekViewProps> = ({
   currentDate,
   holidays,
@@ -112,6 +123,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
                     const agendamento = dayAgendamentos.find(
                       (a) => a.hora_inicio?.slice(0, 5) === time
                     );
+                    const atrasado = agendamento ? isAtrasado(agendamento.data_agendamento, agendamento.hora_inicio) : false;
 
                     return (
                       <div 
@@ -119,18 +131,22 @@ export const WeekView: React.FC<WeekViewProps> = ({
                         onClick={() => agendamento && onSelectAgendamento?.(agendamento)}
                         className={`flex-1 border-b border-black last:border-b-0 transition-colors p-0.5 min-h-0 flex items-stretch ${
                           agendamento 
-                            ? "bg-blue-50/50 hover:bg-blue-100/50 cursor-pointer" 
+                            ? (atrasado ? "bg-red-50/50 hover:bg-red-100/50 cursor-pointer" : "bg-blue-50/50 hover:bg-blue-100/50 cursor-pointer")
                             : "hover:bg-gray-50/50 cursor-pointer"
                         }`}
                       >
                         {agendamento && (
                           <div 
                             title={`Observação: ${agendamento.observacao || ''}`}
-                            className="flex-1 rounded border border-blue-400/50 bg-blue-50/90 px-1.5 py-0.5 text-[9px] font-black text-blue-700 shadow-sm flex items-center justify-between gap-1 overflow-hidden"
+                            className={`flex-1 rounded border px-1.5 py-0.5 text-[9px] font-black shadow-sm flex items-center justify-between gap-1 overflow-hidden ${
+                              atrasado 
+                                ? "border-red-400/50 bg-red-50/90 text-red-700" 
+                                : "border-blue-400/50 bg-blue-50/90 text-blue-700"
+                            }`}
                           >
                             <span className="truncate leading-none">{agendamento.cliente_nome}</span>
                             {agendamento.hora_fim && (
-                              <span className="text-[7px] text-blue-500 font-semibold shrink-0 leading-none">
+                              <span className={`text-[7px] font-semibold shrink-0 leading-none ${atrasado ? "text-red-500" : "text-blue-500"}`}>
                                 {agendamento.hora_fim.slice(0, 5)}
                               </span>
                             )}
