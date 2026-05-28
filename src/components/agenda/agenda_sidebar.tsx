@@ -26,6 +26,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
   const todayStr = today.toLocaleDateString('en-CA'); // "YYYY-MM-DD" local time
   const [agendaDate, setAgendaDate] = useState(todayStr);
   const [agendaTime, setAgendaTime] = useState("");
+  const [agendaDuration, setAgendaDuration] = useState("");
 
   const generateTimeOptions = () => {
     const options = [];
@@ -56,12 +57,34 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
 
   const availableTimeOptions = getFilteredTimeOptions();
 
+  const getFilteredDurationOptions = () => {
+    if (!agendaTime) return [];
+    const options = generateTimeOptions();
+    const [startH, startM] = agendaTime.split(":").map(Number);
+    
+    return options.filter((time) => {
+      const [h, m] = time.split(":").map(Number);
+      if (h > startH) return true;
+      if (h === startH && m > startM) return true;
+      return false;
+    });
+  };
+
+  const availableDurationOptions = getFilteredDurationOptions();
+
   // If the current selected time is no longer available, we should clear it or select the first available
   useEffect(() => {
     if (agendaTime && !availableTimeOptions.includes(agendaTime)) {
       setAgendaTime("");
     }
   }, [agendaDate, agendaTime, availableTimeOptions]);
+
+  // If the current duration is no longer available, clear it
+  useEffect(() => {
+    if (agendaDuration && !availableDurationOptions.includes(agendaDuration)) {
+      setAgendaDuration("");
+    }
+  }, [agendaTime, agendaDuration, availableDurationOptions]);
 
   useEffect(() => {
     if (justSelected) {
@@ -253,8 +276,16 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
         </div>
 
         <div>
-          <select disabled={!selectedClientId} className="w-full px-3 py-2 border border-black rounded text-sm outline-none appearance-none bg-white focus:border-black disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100">
-            <option>Duração...</option>
+          <select 
+            value={agendaDuration}
+            onChange={(e) => setAgendaDuration(e.target.value)}
+            disabled={!selectedClientId || !agendaTime} 
+            className="w-full px-3 py-2 border border-black rounded text-sm outline-none appearance-none bg-white focus:border-black disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
+          >
+            <option value="" disabled>Duração...</option>
+            {availableDurationOptions.map((time) => (
+              <option key={time} value={time}>Até {time}</option>
+            ))}
           </select>
         </div>
 
