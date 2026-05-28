@@ -941,7 +941,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
         </div>
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col relative">
+      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
         <header className="flex flex-col gap-4 bg-white px-4 py-4 shadow-sm sm:px-6 md:px-8 lg:h-16 lg:flex-row lg:items-center lg:justify-between lg:gap-0 lg:py-0">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
             <div className="flex flex-col items-start bg-white px-2 py-1">
@@ -1015,7 +1015,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
         </header>
 
         <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden transition-all duration-300">
-          <div className="flex min-w-0 flex-1 flex-col">
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
             {showSimulator ? (
               <div
                 className="flex flex-1 flex-col bg-white"
@@ -1333,7 +1333,9 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                 */}
               </div>
             ) : activeMenu === "Agenda" ? (
-              <Agenda aniversariantesMes={aniversariantesMes} />
+              <div className="flex min-h-0 flex-1 overflow-hidden">
+                <Agenda aniversariantesMes={aniversariantesMes} />
+              </div>
             ) : (
               <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-5">
                 <div className="flex flex-col gap-3">

@@ -62,8 +62,8 @@ export const Agenda: React.FC<AgendaProps> = ({ aniversariantesMes = [] }) => {
   }, [currentDate]);
 
   return (
-    <div className="flex h-full flex-1 flex-col overflow-hidden bg-white">
-      <div className="flex flex-1 overflow-hidden">
+    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-white">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
         <AgendaSidebar 
           setCurrentDate={setCurrentDate} 
           setActiveView={setActiveView} 
@@ -72,7 +72,7 @@ export const Agenda: React.FC<AgendaProps> = ({ aniversariantesMes = [] }) => {
           setSelectedAgendamento={setSelectedAgendamento}
         />
 
-        <div className="flex min-w-0 flex-1 flex-col border-l border-black bg-white">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col border-l border-black bg-white">
           <AgendaHeader 
             currentDate={currentDate} 
             setCurrentDate={setCurrentDate} 
@@ -80,7 +80,7 @@ export const Agenda: React.FC<AgendaProps> = ({ aniversariantesMes = [] }) => {
             setActiveView={setActiveView}
           />
           
-          <div className="flex-1 overflow-hidden min-h-0 border-t border-black">
+          <div className="min-h-0 flex-1 overflow-hidden border-t border-black">
             {activeView === "month" && (
               <MonthView 
                 currentDate={currentDate} 

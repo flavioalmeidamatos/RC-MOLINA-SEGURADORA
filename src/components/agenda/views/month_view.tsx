@@ -53,7 +53,7 @@ export const MonthView: React.FC<MonthViewProps> = ({
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-white">
-      <div className="grid grid-cols-7 border-b border-black">
+      <div className="grid shrink-0 grid-cols-7 border-b border-black">
         {weekDays.map((day) => (
           <div 
             key={day.name} 
@@ -66,8 +66,8 @@ export const MonthView: React.FC<MonthViewProps> = ({
         ))}
       </div>
 
-      <div 
-        className="flex-1 grid grid-cols-7"
+      <div
+        className="grid min-h-0 flex-1 grid-cols-7 overflow-hidden"
         style={{ gridTemplateRows: `repeat(${days.length / 7}, minmax(0, 1fr))` }}
       >
         {days.map((day, i) => {
@@ -86,7 +86,7 @@ export const MonthView: React.FC<MonthViewProps> = ({
             <div 
               key={i} 
               onClick={() => setCurrentDate(day)}
-              className={`min-h-0 border-b border-r border-black p-1 flex flex-col gap-0.5 transition-colors hover:bg-gray-50 cursor-pointer ${
+              className={`min-h-0 overflow-hidden border-b border-r border-black p-1 flex flex-col gap-0.5 transition-colors hover:bg-gray-50 cursor-pointer ${
                 !isCurrentMonth ? "bg-gray-50/50 text-gray-400" : isWeekend ? "text-red-600" : "text-black"
               } ${isSelected ? "bg-blue-50 ring-2 ring-inset ring-blue-400" : ""}`}
             >
