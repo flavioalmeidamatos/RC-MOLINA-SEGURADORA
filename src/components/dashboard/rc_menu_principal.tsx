@@ -1207,7 +1207,10 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
             <button
               type="button"
               aria-label="WhatsApp"
-              className="flex min-h-11 items-center gap-2 rounded-full border border-[#25D366]/25 bg-[#25D366]/10 px-4 py-2 text-[#128C7E]"
+              onClick={() => void handleMenuClick("Campanhas")}
+              className={`flex min-h-11 items-center gap-2 rounded-full border border-[#25D366]/25 bg-[#25D366]/10 px-4 py-2 text-[#128C7E] transition-all hover:bg-[#25D366]/20 active:scale-95 cursor-pointer ${
+                activeMenu === "Campanhas" ? "ring-2 ring-[#25D366] ring-offset-2" : ""
+              }`}
             >
               <WhatsAppIcon className="h-5 w-5" />
               <span className="text-sm font-semibold">WhatsApp</span>

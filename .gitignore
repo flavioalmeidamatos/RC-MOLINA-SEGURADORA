@@ -10,3 +10,5 @@ coverage/
 supabase/.temp/
 .whatsapp_auth/
 .whatsapp_cache/
+
+testsprite_tests\tmp\config.json
