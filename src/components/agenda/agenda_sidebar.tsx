@@ -20,6 +20,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
   setSelectedAgendamento,
 }) => {
   const dateInputRef = useRef<HTMLInputElement>(null);
+  const clientInputRef = useRef<HTMLInputElement>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -151,6 +152,27 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
 
   const availableDurationOptions = getFilteredDurationOptions();
 
+  const clearFormForNextAppointment = () => {
+    setSearchTerm("");
+    setSuggestions([]);
+    setShowSuggestions(false);
+    setPhone("");
+    setBirthDate("");
+    setStatusNegociacao("");
+    setSelectedClientId(null);
+    setAgendaDate(todayStr);
+    setAgendaTime("");
+    setAgendaDuration("");
+    setObservacao("");
+    setRepetir("");
+    setEnviarSms(false);
+    setIsEditingSelected(false);
+
+    window.setTimeout(() => {
+      clientInputRef.current?.focus();
+    }, 0);
+  };
+
   // If the current selected time is no longer available, we should clear it or select the first available
   useEffect(() => {
     if (!selectedAgendamento && agendaTime && !availableTimeOptions.includes(agendaTime)) {
@@ -256,6 +278,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
       if (res.ok) {
         onAgendamentosChanged?.();
         setSelectedAgendamento?.(null);
+        clearFormForNextAppointment();
       } else {
         const err = await res.json();
         console.error("Failed to save agendamento:", err);
@@ -399,6 +422,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
           <div className="relative flex-1">
             <input 
               type="text" 
+              ref={clientInputRef}
               placeholder="Cliente..." 
               value={searchTerm}
               onChange={(e) => {
