@@ -140,8 +140,13 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
         if (checkData.exists) {
           setDuplicateError(true);
           setTimeout(() => {
-            setDuplicateError(false);
-            closeModal();
+            setDuplicateError((curr) => {
+              if (curr) {
+                setCredential((prev) => ({ ...prev, indicationId: '' }));
+                setTimeout(() => indicationIdInputRef.current?.focus(), 50);
+              }
+              return false;
+            });
           }, 5000);
           setImportLoading(false);
           return;
@@ -198,6 +203,17 @@ export const SistemaQuerImportModal: React.FC<SistemaQuerImportModalProps> = ({
                 <br /><br />
                 Para evitar duplicidade, a importação foi bloqueada.
               </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setDuplicateError(false);
+                  setCredential((prev) => ({ ...prev, indicationId: '' }));
+                  setTimeout(() => indicationIdInputRef.current?.focus(), 50);
+                }}
+                className="mt-4 w-full rounded-lg bg-red-600 py-2.5 text-sm font-bold text-white transition hover:bg-red-700 cursor-pointer"
+              >
+                Voltar e Corrigir
+              </button>
               <div className="absolute bottom-0 left-0 w-full h-1 bg-gray-100">
                 <div className="h-full bg-red-500 animate-[shrink_5s_linear_forwards]" style={{ animation: 'shrink 5s linear forwards' }} />
               </div>
