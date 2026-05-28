@@ -2,14 +2,22 @@ import React, { useRef, useState, useEffect } from "react";
 import { Plus, Search, Calendar, User } from "lucide-react";
 import { CalendarView } from "./agenda";
 
+import type { Agendamento } from "./agenda";
+
 interface AgendaSidebarProps {
   setCurrentDate: (date: Date) => void;
   setActiveView: (view: CalendarView) => void;
+  onAgendamentosChanged?: () => void;
+  selectedAgendamento?: Agendamento | null;
+  setSelectedAgendamento?: (agendamento: Agendamento | null) => void;
 }
 
 export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
   setCurrentDate,
   setActiveView,
+  onAgendamentosChanged,
+  selectedAgendamento,
+  setSelectedAgendamento,
 }) => {
   const dateInputRef = useRef<HTMLInputElement>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -27,6 +35,44 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
   const [agendaDate, setAgendaDate] = useState(todayStr);
   const [agendaTime, setAgendaTime] = useState("");
   const [agendaDuration, setAgendaDuration] = useState("");
+  const [observacao, setObservacao] = useState("");
+  const [repetir, setRepetir] = useState("");
+  const [enviarSms, setEnviarSms] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (selectedAgendamento) {
+      setSearchTerm(selectedAgendamento.cliente_nome || "");
+      setSelectedClientId(selectedAgendamento.id_cliente);
+      setPhone(selectedAgendamento.telefone_celular || selectedAgendamento.telefone_residencial || "");
+      setBirthDate(""); // Can't easily get it here unless passed or fetched, leaving blank for edit is ok
+      setStatusNegociacao(""); // Same
+      setAgendaDate(selectedAgendamento.data_agendamento.split('T')[0]);
+      setAgendaTime(selectedAgendamento.hora_inicio);
+      
+      if (selectedAgendamento.duracao_minutos && selectedAgendamento.hora_inicio) {
+        // We'd map duracao_minutos back to agendaDuration, but for simplicity we can just set it empty or try to calculate it
+        setAgendaDuration(selectedAgendamento.hora_fim || "");
+      }
+      
+      setObservacao(selectedAgendamento.observacao || "");
+      setRepetir(selectedAgendamento.repetir || "");
+      setEnviarSms(selectedAgendamento.enviar_sms || false);
+    } else {
+      // Clear form
+      setSearchTerm("");
+      setSelectedClientId(null);
+      setPhone("");
+      setBirthDate("");
+      setStatusNegociacao("");
+      setAgendaDate(todayStr);
+      setAgendaTime("");
+      setAgendaDuration("");
+      setObservacao("");
+      setRepetir("");
+      setEnviarSms(false);
+    }
+  }, [selectedAgendamento, todayStr]);
 
   const generateTimeOptions = () => {
     const options = [];
@@ -147,12 +193,88 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
     }
   };
 
+  const handleSave = async () => {
+    if (!selectedClientId || !agendaDate || !agendaTime) return;
+
+    setIsSaving(true);
+    try {
+      const payload = {
+        id_cliente: selectedClientId,
+        data_agendamento: agendaDate,
+        hora_inicio: agendaTime,
+        hora_fim: agendaDuration || null,
+        duracao_minutos: agendaDuration ? 30 : null, // Assuming 30 if duration selected, simplistic for now
+        observacao,
+        repetir,
+        enviar_sms: enviarSms,
+      };
+
+      const url = selectedAgendamento 
+        ? `/api/agendamentos/${selectedAgendamento.id_agendamento}`
+        : "/api/agendamentos";
+      const method = selectedAgendamento ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        onAgendamentosChanged?.();
+        setSelectedAgendamento?.(null);
+      } else {
+        const err = await res.json();
+        console.error("Failed to save agendamento:", err);
+        alert(`Erro: ${err.error}`);
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Erro ao salvar.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedAgendamento) return;
+    if (!window.confirm("Deseja realmente excluir este agendamento?")) return;
+
+    setIsSaving(true);
+    try {
+      const res = await fetch(`/api/agendamentos/${selectedAgendamento.id_agendamento}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        onAgendamentosChanged?.();
+        setSelectedAgendamento?.(null);
+      } else {
+        const err = await res.json();
+        alert(`Erro ao excluir: ${err.error}`);
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Erro ao excluir.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <aside className="w-[300px] flex-shrink-0 bg-white border-r border-black overflow-y-auto p-4 custom-scrollbar">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-bold text-black uppercase">
-          Agendar
+          {selectedAgendamento ? 'Editar Agendamento' : 'Agendar'}
         </h2>
+        {selectedAgendamento && (
+          <button 
+            onClick={() => setSelectedAgendamento?.(null)}
+            className="text-xs text-blue-600 underline hover:text-blue-800"
+          >
+            Novo
+          </button>
+        )}
         <div className="flex gap-1 relative">
           <input 
             type="date"
@@ -222,16 +344,16 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
             type="text" 
             placeholder="(__) ____-____" 
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            disabled={!selectedClientId}
+            readOnly={true}
+            disabled={true}
             className="flex-1 min-w-0 px-3 py-2 border border-black rounded text-sm italic outline-none focus:border-black disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
           />
           <input 
             type="text" 
             placeholder="Nascimento" 
             value={birthDate}
-            onChange={(e) => setBirthDate(e.target.value)}
-            disabled={!selectedClientId}
+            readOnly={true}
+            disabled={true}
             className="w-[120px] min-w-0 px-3 py-2 border border-black rounded text-sm outline-none focus:border-black disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
           />
         </div>
@@ -241,8 +363,8 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
             type="text" 
             placeholder="Status de Negociação..." 
             value={statusNegociacao}
-            onChange={(e) => setStatusNegociacao(e.target.value)}
-            disabled={!selectedClientId}
+            readOnly={true}
+            disabled={true}
             className="flex-1 px-3 py-2 border border-black rounded text-sm outline-none focus:border-black disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
           />
           <button disabled={!selectedClientId} className="p-2 bg-[#00B5AD] text-white rounded shadow-sm hover:bg-[#009d96] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#00B5AD]">
@@ -294,34 +416,75 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
         <div>
           <textarea 
             placeholder="Observação..." 
+            value={observacao}
+            onChange={(e) => setObservacao(e.target.value)}
             disabled={!selectedClientId}
             className="w-full px-3 py-2 border border-black rounded text-sm outline-none h-20 resize-none focus:border-black disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
           />
         </div>
 
         <div className="flex gap-2">
-          <select disabled={!selectedClientId} className="flex-1 px-3 py-2 border border-black rounded text-sm outline-none appearance-none bg-white focus:border-black disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100">
-            <option>Repetir?</option>
+          <select 
+            value={repetir}
+            onChange={(e) => setRepetir(e.target.value)}
+            disabled={!selectedClientId} 
+            className="flex-1 px-3 py-2 border border-black rounded text-sm outline-none appearance-none bg-white focus:border-black disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
+          >
+            <option value="">Repetir?</option>
+            <option value="diario">Diário</option>
+            <option value="semanal">Semanal</option>
+            <option value="mensal">Mensal</option>
+            <option value="anual">Anual</option>
           </select>
           <select disabled={!selectedClientId} className="flex-1 px-3 py-2 border border-black rounded text-sm outline-none appearance-none bg-white focus:border-black disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100">
             <option>Nunca</option>
           </select>
         </div>
 
-
-
         <div className="flex items-center justify-end gap-2">
           <span className={`text-xs font-bold uppercase ${!selectedClientId ? 'text-gray-300' : 'text-gray-500'}`}>Enviar SMS</span>
           <div className="flex bg-gray-200 rounded p-1">
-            <button disabled={!selectedClientId} className="px-3 py-1 text-xs font-bold text-gray-500 uppercase disabled:opacity-50 disabled:cursor-not-allowed">Sim</button>
-            <button disabled={!selectedClientId} className="px-3 py-1 text-xs font-bold bg-red-500 text-white rounded shadow-sm uppercase disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-red-300">Não</button>
+            <button 
+              onClick={() => setEnviarSms(true)}
+              disabled={!selectedClientId} 
+              className={`px-3 py-1 text-xs font-bold uppercase disabled:opacity-50 disabled:cursor-not-allowed rounded shadow-sm ${enviarSms ? 'bg-[#00B5AD] text-white' : 'text-gray-500 hover:bg-gray-300'}`}
+            >Sim</button>
+            <button 
+              onClick={() => setEnviarSms(false)}
+              disabled={!selectedClientId} 
+              className={`px-3 py-1 text-xs font-bold uppercase disabled:opacity-50 disabled:cursor-not-allowed rounded shadow-sm ${!enviarSms ? 'bg-red-500 text-white' : 'text-gray-500 hover:bg-gray-300'}`}
+            >Não</button>
           </div>
         </div>
 
-        <button disabled={!selectedClientId} className="w-full py-3 bg-[#00B5AD] text-white font-bold rounded shadow-lg hover:bg-[#009d96] transition-all flex items-center justify-center gap-2 mt-4 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#00B5AD]">
-          <Plus size={18} />
-          SALVAR
-        </button>
+        {selectedAgendamento ? (
+          <div className="flex gap-2 mt-4">
+            <button 
+              onClick={handleSave}
+              disabled={!selectedClientId || isSaving} 
+              className="flex-1 py-3 bg-blue-600 text-white font-bold rounded shadow-lg hover:bg-blue-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Plus size={18} />
+              ALTERAR
+            </button>
+            <button 
+              onClick={handleDelete}
+              disabled={isSaving} 
+              className="flex-1 py-3 bg-red-600 text-white font-bold rounded shadow-lg hover:bg-red-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              EXCLUIR
+            </button>
+          </div>
+        ) : (
+          <button 
+            onClick={handleSave}
+            disabled={!selectedClientId || isSaving} 
+            className="w-full py-3 bg-[#00B5AD] text-white font-bold rounded shadow-lg hover:bg-[#009d96] transition-all flex items-center justify-center gap-2 mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Plus size={18} />
+            SALVAR
+          </button>
+        )}
       </div>
     </aside>
   );

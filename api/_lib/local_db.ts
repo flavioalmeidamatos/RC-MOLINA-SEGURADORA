@@ -134,6 +134,7 @@ create table if not exists "RCMOLINASEGUROS"."CLIENTES_CONTATOS" (
   criado_em timestamptz default timezone('utc', now())
 );
 
+
 create table if not exists "RCMOLINASEGUROS"."CLIENTES_ANEXOS" (
   id_anexo uuid primary key default gen_random_uuid(),
   id_cliente uuid not null references "RCMOLINASEGUROS"."CLIENTES"(id_cliente) on delete cascade,
@@ -143,6 +144,26 @@ create table if not exists "RCMOLINASEGUROS"."CLIENTES_ANEXOS" (
   tipo_mime varchar(100),
   criado_em timestamptz default timezone('utc', now())
 );
+
+create table if not exists "RCMOLINASEGUROS"."AGENDAMENTOS" (
+  id_agendamento uuid primary key default gen_random_uuid(),
+  id_cliente uuid not null references "RCMOLINASEGUROS"."CLIENTES"(id_cliente) on delete cascade,
+  data_agendamento date not null,
+  hora_inicio varchar(5) not null,
+  hora_fim varchar(5),
+  duracao_minutos integer,
+  observacao text,
+  repetir varchar(20),
+  enviar_sms boolean default false,
+  criado_em timestamptz default timezone('utc', now()),
+  atualizado_em timestamptz default timezone('utc', now())
+);
+
+drop trigger if exists trg_agendamentos_touch_updated_at on "RCMOLINASEGUROS"."AGENDAMENTOS";
+create trigger trg_agendamentos_touch_updated_at
+before update on "RCMOLINASEGUROS"."AGENDAMENTOS"
+for each row
+execute function "RCMOLINASEGUROS".touch_updated_at();
 
 drop trigger if exists trg_clientes_touch_updated_at on "RCMOLINASEGUROS"."CLIENTES";
 create trigger trg_clientes_touch_updated_at

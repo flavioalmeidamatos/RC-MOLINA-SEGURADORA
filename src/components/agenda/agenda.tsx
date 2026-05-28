@@ -10,6 +10,21 @@ import type { AniversarianteMes } from "../dashboard/rc_menu_principal";
 
 export type CalendarView = "month" | "week" | "day";
 
+export interface Agendamento {
+  id_agendamento: string;
+  id_cliente: string;
+  cliente_nome?: string;
+  telefone_celular?: string;
+  telefone_residencial?: string;
+  data_agendamento: string;
+  hora_inicio: string;
+  hora_fim: string;
+  duracao_minutos: number;
+  observacao: string;
+  repetir: string;
+  enviar_sms: boolean;
+}
+
 interface AgendaProps {
   aniversariantesMes?: AniversarianteMes[];
 }
@@ -22,6 +37,24 @@ export const Agenda: React.FC<AgendaProps> = ({ aniversariantesMes = [] }) => {
     setCurrentDateRaw(startOfDay(date));
   }, []);
   const [holidays, setHolidays] = useState<Holiday[]>([]);
+  const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
+  const [selectedAgendamento, setSelectedAgendamento] = useState<Agendamento | null>(null);
+
+  const fetchAgendamentos = useCallback(async () => {
+    try {
+      const res = await fetch("/api/agendamentos");
+      if (res.ok) {
+        const json = await res.json();
+        setAgendamentos(json.data || []);
+      }
+    } catch (e) {
+      console.error("Erro ao buscar agendamentos", e);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAgendamentos();
+  }, [fetchAgendamentos]);
 
   useEffect(() => {
     const year = currentDate.getFullYear();
@@ -34,6 +67,9 @@ export const Agenda: React.FC<AgendaProps> = ({ aniversariantesMes = [] }) => {
         <AgendaSidebar 
           setCurrentDate={setCurrentDate} 
           setActiveView={setActiveView} 
+          onAgendamentosChanged={fetchAgendamentos}
+          selectedAgendamento={selectedAgendamento}
+          setSelectedAgendamento={setSelectedAgendamento}
         />
 
         <div className="flex min-w-0 flex-1 flex-col border-l border-black bg-white">
@@ -50,6 +86,8 @@ export const Agenda: React.FC<AgendaProps> = ({ aniversariantesMes = [] }) => {
                 currentDate={currentDate} 
                 holidays={holidays} 
                 aniversariantesMes={aniversariantesMes}
+                agendamentos={agendamentos}
+                onSelectAgendamento={setSelectedAgendamento}
                 setCurrentDate={setCurrentDate} 
                 setActiveView={setActiveView} 
               />
@@ -59,6 +97,8 @@ export const Agenda: React.FC<AgendaProps> = ({ aniversariantesMes = [] }) => {
                 currentDate={currentDate} 
                 holidays={holidays} 
                 aniversariantesMes={aniversariantesMes}
+                agendamentos={agendamentos}
+                onSelectAgendamento={setSelectedAgendamento}
               />
             )}
             {activeView === "day" && (
@@ -66,6 +106,8 @@ export const Agenda: React.FC<AgendaProps> = ({ aniversariantesMes = [] }) => {
                 currentDate={currentDate} 
                 holidays={holidays} 
                 aniversariantesMes={aniversariantesMes}
+                agendamentos={agendamentos}
+                onSelectAgendamento={setSelectedAgendamento}
               />
             )}
           </div>

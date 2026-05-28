@@ -11,6 +11,7 @@ import { ImportLeadHttpError, importLeadFromSistemaQuer } from './api/_lib/impor
 import importLeadAssetHandler from './api/import-lead-asset';
 import sendLoginCodeHandler from './api/send-login-code';
 import { aniversariantesMesHandler, createClienteHandler, listClientesHandler, nextClienteCodigoHandler, searchClientesHandler, updateClienteHandler, deleteClienteHandler, clientStatsHandler, checkClienteCodigoHandler } from './api/clientes';
+import { listAgendamentosHandler, createAgendamentoHandler, updateAgendamentoHandler, deleteAgendamentoHandler } from './api/agendamentos';
 import { registerWhatsAppBridgeRoutes } from './api/whatsapp_bridge';
 import { initializeLocalWhatsAppConnector } from './api/_lib/whatsapp_connector';
 
@@ -697,6 +698,13 @@ async function startServer() {
   app.get('/api/clientes/stats', clientStatsHandler);
   app.put('/api/clientes/:id', updateClienteHandler);
   app.delete('/api/clientes/:id', deleteClienteHandler);
+
+  // Agendamentos routes
+  app.get('/api/agendamentos', listAgendamentosHandler);
+  app.post('/api/agendamentos', createAgendamentoHandler);
+  app.put('/api/agendamentos/:id', updateAgendamentoHandler);
+  app.delete('/api/agendamentos/:id', deleteAgendamentoHandler);
+
 
   app.get('/api/import-lead-asset', (req, res) => {
     importLeadAssetHandler(req, res);

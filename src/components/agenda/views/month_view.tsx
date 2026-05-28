@@ -6,14 +6,19 @@ import { Holiday } from "../../../lib/holidays";
 
 import { CalendarView } from "../agenda";
 import type { AniversarianteMes } from "../../dashboard/rc_menu_principal";
+import type { Agendamento } from "../agenda";
+import { Clock } from "lucide-react";
 
 interface MonthViewProps {
   currentDate: Date;
   holidays: Holiday[];
   aniversariantesMes?: AniversarianteMes[];
+  agendamentos?: Agendamento[];
+  onSelectAgendamento?: (agendamento: Agendamento) => void;
   setCurrentDate: (date: Date) => void;
   setActiveView: (view: CalendarView) => void;
 }
+
 
 const birthMonthDay = (value: string) => String(value || "").slice(5, 10);
 
@@ -21,6 +26,8 @@ export const MonthView: React.FC<MonthViewProps> = ({
   currentDate,
   holidays,
   aniversariantesMes = [],
+  agendamentos = [],
+  onSelectAgendamento,
   setCurrentDate,
   setActiveView,
 }) => {
@@ -62,6 +69,7 @@ export const MonthView: React.FC<MonthViewProps> = ({
       <div className="flex-1 grid grid-cols-7 auto-rows-fr overflow-y-auto custom-scrollbar">
         {days.map((day, i) => {
           const dayHolidays = holidays.filter(h => h.date === format(day, "yyyy-MM-dd"));
+          const dayAgendamentos = agendamentos.filter(a => a.data_agendamento === format(day, "yyyy-MM-dd"));
           const dayBirthdays = aniversariantesMes.filter(
             (cliente) => birthMonthDay(cliente.data_nascimento) === format(day, "MM-dd")
           );
@@ -111,6 +119,23 @@ export const MonthView: React.FC<MonthViewProps> = ({
                     </div>
                   </div>
                 ))}
+                {dayAgendamentos.map((agendamento) => (
+                  <div
+                    key={agendamento.id_agendamento}
+                    className="rounded border border-blue-400/50 bg-blue-50 px-1.5 py-1 text-[10px] font-black leading-tight text-blue-700 shadow-sm cursor-pointer hover:bg-blue-100"
+                    title={`Agendamento: ${agendamento.cliente_nome || 'Cliente'}`}
+                    onClick={(e) => {
+                      e.stopPropagation(); // prevent setting current date when clicking the badge
+                      onSelectAgendamento?.(agendamento);
+                    }}
+                  >
+                    <div className="flex items-center gap-1">
+                      <Clock size={11} className="shrink-0 text-blue-600" />
+                      <span className="truncate">{agendamento.hora_inicio} - {agendamento.cliente_nome || 'Cliente'}</span>
+                    </div>
+                  </div>
+                ))}
+
               </div>
             </div>
           );
