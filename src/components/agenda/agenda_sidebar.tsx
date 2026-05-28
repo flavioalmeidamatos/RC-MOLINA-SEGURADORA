@@ -40,6 +40,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
   const [enviarSms, setEnviarSms] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isEditingSelected, setIsEditingSelected] = useState(false);
 
   useEffect(() => {
     if (!showDeleteConfirm) return;
@@ -53,6 +54,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
 
   useEffect(() => {
     setShowDeleteConfirm(false);
+    setIsEditingSelected(false);
 
     if (selectedAgendamento) {
       setSearchTerm(selectedAgendamento.cliente_nome || "");
@@ -87,6 +89,22 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
     }
   }, [selectedAgendamento, todayStr]);
 
+  const applySelectedAgendamentoToForm = () => {
+    if (!selectedAgendamento) return;
+
+    setSearchTerm(selectedAgendamento.cliente_nome || "");
+    setSelectedClientId(selectedAgendamento.id_cliente);
+    setPhone(selectedAgendamento.telefone_celular || selectedAgendamento.telefone_residencial || "");
+    setBirthDate("");
+    setStatusNegociacao("");
+    setAgendaDate(selectedAgendamento.data_agendamento.split('T')[0]);
+    setAgendaTime(selectedAgendamento.hora_inicio);
+    setAgendaDuration(selectedAgendamento.hora_fim || "");
+    setObservacao(selectedAgendamento.observacao || "");
+    setRepetir(selectedAgendamento.repetir || "");
+    setEnviarSms(selectedAgendamento.enviar_sms || false);
+  };
+
   const generateTimeOptions = () => {
     const options = [];
     for (let h = 8; h <= 20; h++) {
@@ -115,6 +133,8 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
   };
 
   const availableTimeOptions = getFilteredTimeOptions();
+  const isFormLockedForEdit = Boolean(selectedAgendamento && !isEditingSelected);
+  const isFormDisabled = !selectedClientId || isFormLockedForEdit;
 
   const getFilteredDurationOptions = () => {
     if (!agendaTime) return [];
@@ -133,10 +153,10 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
 
   // If the current selected time is no longer available, we should clear it or select the first available
   useEffect(() => {
-    if (agendaTime && !availableTimeOptions.includes(agendaTime)) {
+    if (!selectedAgendamento && agendaTime && !availableTimeOptions.includes(agendaTime)) {
       setAgendaTime("");
     }
-  }, [agendaDate, agendaTime, availableTimeOptions]);
+  }, [agendaDate, agendaTime, availableTimeOptions, selectedAgendamento]);
 
   // If the current duration is no longer available, clear it
   useEffect(() => {
@@ -387,6 +407,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
               }}
               onKeyDown={handleKeyDown}
               onFocus={() => searchTerm.length >= 2 && setShowSuggestions(true)}
+              disabled={isFormLockedForEdit}
               className="w-full pl-3 pr-10 py-2 border border-black rounded text-sm outline-none focus:border-black"
             />
             <div className="absolute right-0 top-0 bottom-0 flex items-center pr-2">
@@ -444,10 +465,10 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
             disabled={true}
             className="flex-1 px-3 py-2 border border-black rounded text-sm outline-none focus:border-black disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
           />
-          <button disabled={!selectedClientId} className="p-2 bg-[#00B5AD] text-white rounded shadow-sm hover:bg-[#009d96] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#00B5AD]">
+          <button disabled={isFormDisabled} className="p-2 bg-[#00B5AD] text-white rounded shadow-sm hover:bg-[#009d96] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#00B5AD]">
             <Plus size={16} />
           </button>
-          <button disabled={!selectedClientId} className="p-2 bg-[#00B5AD] text-white rounded shadow-sm hover:bg-[#009d96] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#00B5AD]">
+          <button disabled={isFormDisabled} className="p-2 bg-[#00B5AD] text-white rounded shadow-sm hover:bg-[#009d96] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#00B5AD]">
             <Search size={16} />
           </button>
         </div>
@@ -458,13 +479,13 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
             min={todayStr}
             value={agendaDate}
             onChange={(e) => setAgendaDate(e.target.value)}
-            disabled={!selectedClientId}
+            disabled={isFormDisabled}
             className="flex-1 px-3 py-2 border border-black rounded text-sm outline-none focus:border-black bg-white uppercase text-center disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
           />
           <select 
             value={agendaTime}
             onChange={(e) => setAgendaTime(e.target.value)}
-            disabled={!selectedClientId}
+            disabled={isFormDisabled}
             className="w-[85px] px-2 py-2 border border-black rounded text-sm text-center outline-none focus:border-black appearance-none bg-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
           >
             <option value="" disabled>Hora</option>
@@ -478,7 +499,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
           <select 
             value={agendaDuration}
             onChange={(e) => setAgendaDuration(e.target.value)}
-            disabled={!selectedClientId || !agendaTime} 
+            disabled={isFormDisabled || !agendaTime} 
             className="w-full px-3 py-2 border border-black rounded text-sm outline-none appearance-none bg-white focus:border-black disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
           >
             <option value="" disabled>Duração...</option>
@@ -495,7 +516,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
             placeholder="Observação..." 
             value={observacao}
             onChange={(e) => setObservacao(e.target.value)}
-            disabled={!selectedClientId}
+            disabled={isFormDisabled}
             className="w-full px-3 py-2 border border-black rounded text-sm outline-none h-20 resize-none focus:border-black disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
           />
         </div>
@@ -504,7 +525,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
           <select 
             value={repetir}
             onChange={(e) => setRepetir(e.target.value)}
-            disabled={!selectedClientId} 
+            disabled={isFormDisabled} 
             className="flex-1 px-3 py-2 border border-black rounded text-sm outline-none appearance-none bg-white focus:border-black disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
           >
             <option value="">Repetir?</option>
@@ -513,7 +534,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
             <option value="mensal">Mensal</option>
             <option value="anual">Anual</option>
           </select>
-          <select disabled={!selectedClientId} className="flex-1 px-3 py-2 border border-black rounded text-sm outline-none appearance-none bg-white focus:border-black disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100">
+          <select disabled={isFormDisabled} className="flex-1 px-3 py-2 border border-black rounded text-sm outline-none appearance-none bg-white focus:border-black disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100">
             <option>Nunca</option>
           </select>
         </div>
@@ -523,12 +544,12 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
           <div className="flex bg-gray-200 rounded p-1">
             <button 
               onClick={() => setEnviarSms(true)}
-              disabled={!selectedClientId} 
+              disabled={isFormDisabled} 
               className={`px-3 py-1 text-xs font-bold uppercase disabled:opacity-50 disabled:cursor-not-allowed rounded shadow-sm ${enviarSms ? 'bg-[#00B5AD] text-white' : 'text-gray-500 hover:bg-gray-300'}`}
             >Sim</button>
             <button 
               onClick={() => setEnviarSms(false)}
-              disabled={!selectedClientId} 
+              disabled={isFormDisabled} 
               className={`px-3 py-1 text-xs font-bold uppercase disabled:opacity-50 disabled:cursor-not-allowed rounded shadow-sm ${!enviarSms ? 'bg-red-500 text-white' : 'text-gray-500 hover:bg-gray-300'}`}
             >Não</button>
           </div>
@@ -537,19 +558,30 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
         {selectedAgendamento ? (
           <div className="flex gap-2 mt-4">
             <button 
-              onClick={handleSave}
+              onClick={() => {
+                if (isEditingSelected) {
+                  applySelectedAgendamentoToForm();
+                  setIsEditingSelected(false);
+                  return;
+                }
+                setIsEditingSelected(true);
+              }}
               disabled={!selectedClientId || isSaving} 
-              className="flex-1 py-3 bg-blue-600 text-white font-bold rounded shadow-lg hover:bg-blue-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`flex-1 py-3 text-white font-bold rounded shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                isEditingSelected ? "bg-slate-600 hover:bg-slate-700" : "bg-blue-600 hover:bg-blue-700"
+              }`}
             >
               <Plus size={18} />
-              ALTERAR
+              {isEditingSelected ? "CANCELAR" : "ALTERAR"}
             </button>
             <button 
-              onClick={() => setShowDeleteConfirm(true)}
+              onClick={isEditingSelected ? handleSave : () => setShowDeleteConfirm(true)}
               disabled={isSaving} 
-              className="flex-1 py-3 bg-red-600 text-white font-bold rounded shadow-lg hover:bg-red-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`flex-1 py-3 text-white font-bold rounded shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                isEditingSelected ? "bg-[#00B5AD] hover:bg-[#009d96]" : "bg-red-600 hover:bg-red-700"
+              }`}
             >
-              EXCLUIR
+              {isEditingSelected ? "SALVAR" : "EXCLUIR"}
             </button>
           </div>
         ) : (
