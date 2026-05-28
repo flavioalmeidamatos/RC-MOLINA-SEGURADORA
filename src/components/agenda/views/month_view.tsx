@@ -67,7 +67,7 @@ export const MonthView: React.FC<MonthViewProps> = ({
       </div>
 
       <div 
-        className="flex-1 grid grid-cols-7 overflow-y-auto custom-scrollbar"
+        className="flex-1 grid grid-cols-7"
         style={{ gridTemplateRows: `repeat(${days.length / 7}, minmax(0, 1fr))` }}
       >
         {days.map((day, i) => {
