@@ -5,7 +5,9 @@ export const listAgendamentosHandler = async (req: Request, res: Response) => {
   const pool = getPool();
   try {
     const result = await pool.query(`
-      SELECT a.*, c.nome_completo as cliente_nome
+      SELECT a.*, 
+             TO_CHAR(a.data_agendamento, 'YYYY-MM-DD') as data_agendamento,
+             c.nome_completo as cliente_nome
       FROM "RCMOLINASEGUROS"."AGENDAMENTOS" a
       JOIN "RCMOLINASEGUROS"."CLIENTES" c ON a.id_cliente = c.id_cliente
       ORDER BY a.data_agendamento ASC, a.hora_inicio ASC
