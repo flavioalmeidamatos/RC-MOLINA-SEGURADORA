@@ -1776,7 +1776,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                             {agendaItems.map((item) => (
                               <div
                                 key={item.id}
-                                className={`group relative rounded-xl border border-white bg-white p-3 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md cursor-pointer ${
+                                className={`group relative hover:z-30 rounded-xl border border-white bg-white p-3 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md cursor-pointer ${
                                   item.highlight 
                                     ? "ring-2 ring-red-500/20 bg-red-50/50 hover:border-red-300" 
                                     : "hover:border-[#d4af37]/30"
