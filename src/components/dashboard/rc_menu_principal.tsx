@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
+  Bell,
   Banknote,
   Briefcase,
   Calendar,
@@ -24,6 +25,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { ClientRegistrationMultipage } from "../clientes/client_registration_multipage";
 import { Agenda } from "../agenda/agenda";
+import type { Agendamento } from "../agenda/agenda";
 import { CampanhasShell } from "../campanhas/campanhas_shell";
 import { apiListVisibleUsers } from "../../lib/local_api";
 import type { LocalAuthSession, UsuarioPerfil } from "../../lib/local_auth";
@@ -71,6 +73,9 @@ const AMIL_PASSWORD = "sqn0y3zqmo";
 const SIMULATOR_FALLBACK_WINDOW_NAME = "simulador_online_fallback_window";
 const CHROME_SIMULATOR_LOAD_TIMEOUT_MS = 18000;
 const GMAIL_INBOX_POLL_INTERVAL_MS = 5000;
+const AGENDA_REMINDER_POLL_INTERVAL_MS = 30000;
+const AGENDA_REMINDER_LEAD_MINUTES = 5;
+const AGENDA_REMINDER_STORAGE_KEY = "rc_molina_agenda_reminders";
 const BASE_SIMULATOR_IFRAME_ALLOW =
   "geolocation; microphone; camera; midi; vr; accelerometer; gyroscope; payment; ambient-light-sensor; encrypted-media; usb";
 const wait = (ms: number) =>
@@ -84,6 +89,59 @@ const formatBirthDate = (value: string) => {
 
 const currentMonthName = () =>
   new Intl.DateTimeFormat("pt-BR", { month: "long" }).format(new Date()).replace(/^./, (letter) => letter.toUpperCase());
+
+type AgendaReminderState = Record<
+  string,
+  {
+    dismissedPhases?: string[];
+    snoozedUntil?: number;
+  }
+>;
+
+type AgendaReminderPhase = "before" | "due" | "snoozed";
+
+type ActiveAgendaReminder = {
+  agendamento: Agendamento;
+  appointmentAt: Date;
+  phase: AgendaReminderPhase;
+};
+
+const getLocalDateKey = (date = new Date()) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const parseAgendamentoDateTime = (agendamento: Agendamento) => {
+  const date = String(agendamento.data_agendamento || "").slice(0, 10);
+  const time = String(agendamento.hora_inicio || "00:00").slice(0, 5);
+  const parsed = new Date(`${date}T${time}:00`);
+
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const formatReminderDate = (date: Date) =>
+  new Intl.DateTimeFormat("pt-BR", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+
+const loadAgendaReminderState = (): AgendaReminderState => {
+  try {
+    return JSON.parse(window.localStorage.getItem(AGENDA_REMINDER_STORAGE_KEY) || "{}");
+  } catch {
+    return {};
+  }
+};
+
+const saveAgendaReminderState = (state: AgendaReminderState) => {
+  window.localStorage.setItem(AGENDA_REMINDER_STORAGE_KEY, JSON.stringify(state));
+};
 
 const detectSimulatorBrowser = (): SimulatorBrowser => {
   const userAgent = window.navigator.userAgent;
@@ -192,6 +250,10 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [aniversariantesMes, setAniversariantesMes] = useState<AniversarianteMes[]>([]);
   const [isLoadingAniversariantes, setIsLoadingAniversariantes] = useState(false);
+  const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
+  const [agendaReminderState, setAgendaReminderState] = useState<AgendaReminderState>({});
+  const [activeAgendaReminder, setActiveAgendaReminder] = useState<ActiveAgendaReminder | null>(null);
+  const [reminderSnoozeMinutes, setReminderSnoozeMinutes] = useState("5");
   const [clientStats, setClientStats] = useState({ total: 0, ativos: 0, inativos: 0 });
   const [isLoadingClientStats, setIsLoadingClientStats] = useState(false);
   const [systemUsers, setSystemUsers] = useState<UsuarioPerfil[]>([]);
@@ -373,6 +435,79 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       ignore = true;
     };
   }, []);
+
+  useEffect(() => {
+    setAgendaReminderState(loadAgendaReminderState());
+  }, []);
+
+  useEffect(() => {
+    let ignore = false;
+
+    const loadAgendamentos = async () => {
+      try {
+        const response = await fetch("/api/agendamentos");
+        if (!response.ok) throw new Error("Falha ao carregar agendamentos.");
+        const json = await response.json();
+        if (!ignore) setAgendamentos(Array.isArray(json.data) ? json.data : []);
+      } catch (error) {
+        console.error("Erro ao carregar agendamentos:", error);
+        if (!ignore) setAgendamentos([]);
+      }
+    };
+
+    void loadAgendamentos();
+    const intervalId = window.setInterval(() => {
+      void loadAgendamentos();
+    }, 60000);
+
+    return () => {
+      ignore = true;
+      window.clearInterval(intervalId);
+    };
+  }, []);
+
+  useEffect(() => {
+    const findDueReminder = () => {
+      if (activeAgendaReminder) return;
+
+      const now = Date.now();
+      const todayKey = getLocalDateKey();
+
+      for (const agendamento of agendamentos) {
+        if (String(agendamento.data_agendamento || "").slice(0, 10) !== todayKey) continue;
+
+        const appointmentAt = parseAgendamentoDateTime(agendamento);
+        if (!appointmentAt) continue;
+
+        const appointmentTime = appointmentAt.getTime();
+        const reminderTime = appointmentTime - AGENDA_REMINDER_LEAD_MINUTES * 60 * 1000;
+        const state = agendaReminderState[agendamento.id_agendamento] || {};
+        const dismissedPhases = new Set(state.dismissedPhases || []);
+
+        if (state.snoozedUntil && now >= state.snoozedUntil) {
+          setActiveAgendaReminder({ agendamento, appointmentAt, phase: "snoozed" });
+          return;
+        }
+
+        if (state.snoozedUntil && now < state.snoozedUntil) continue;
+
+        if (now >= appointmentTime && !dismissedPhases.has("due")) {
+          setActiveAgendaReminder({ agendamento, appointmentAt, phase: "due" });
+          return;
+        }
+
+        if (now >= reminderTime && now < appointmentTime && !dismissedPhases.has("before")) {
+          setActiveAgendaReminder({ agendamento, appointmentAt, phase: "before" });
+          return;
+        }
+      }
+    };
+
+    findDueReminder();
+    const intervalId = window.setInterval(findDueReminder, AGENDA_REMINDER_POLL_INTERVAL_MS);
+
+    return () => window.clearInterval(intervalId);
+  }, [activeAgendaReminder, agendaReminderState, agendamentos]);
 
   useEffect(() => {
     let ignore = false;
@@ -878,15 +1013,84 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     { line1: "Configurar", line2: "", icon: Wrench },
   ];
 
-  const agendaItems = [
-    {
-      name: "Ana cristina",
-      phone: "24998366001",
-      time: "14:00",
-      status: "ligarei novamente",
-      highlight: true,
-    },
-  ];
+  const updateAgendaReminderState = (updater: (state: AgendaReminderState) => AgendaReminderState) => {
+    setAgendaReminderState((current) => {
+      const next = updater(current);
+      saveAgendaReminderState(next);
+      return next;
+    });
+  };
+
+  const closeAgendaReminder = () => {
+    if (!activeAgendaReminder) return;
+
+    const phase = activeAgendaReminder.phase === "before" ? "before" : "due";
+    updateAgendaReminderState((state) => {
+      const current = state[activeAgendaReminder.agendamento.id_agendamento] || {};
+      return {
+        ...state,
+        [activeAgendaReminder.agendamento.id_agendamento]: {
+          ...current,
+          dismissedPhases: Array.from(new Set([...(current.dismissedPhases || []), phase])),
+          snoozedUntil: undefined,
+        },
+      };
+    });
+    setActiveAgendaReminder(null);
+  };
+
+  const snoozeAgendaReminder = () => {
+    if (!activeAgendaReminder) return;
+
+    const minutes = Number(reminderSnoozeMinutes) || 5;
+    const snoozedUntil = Date.now() + minutes * 60 * 1000;
+
+    updateAgendaReminderState((state) => ({
+      ...state,
+      [activeAgendaReminder.agendamento.id_agendamento]: {
+        ...(state[activeAgendaReminder.agendamento.id_agendamento] || {}),
+        snoozedUntil,
+      },
+    }));
+    setActiveAgendaReminder(null);
+  };
+
+  const discardAllAgendaReminders = () => {
+    const todayKey = getLocalDateKey();
+    updateAgendaReminderState((state) => {
+      const next = { ...state };
+      agendamentos.forEach((agendamento) => {
+        if (String(agendamento.data_agendamento || "").slice(0, 10) !== todayKey) return;
+        next[agendamento.id_agendamento] = {
+          ...(next[agendamento.id_agendamento] || {}),
+          dismissedPhases: ["before", "due"],
+          snoozedUntil: undefined,
+        };
+      });
+      return next;
+    });
+    setActiveAgendaReminder(null);
+  };
+
+  const agendaItems = agendamentos
+    .filter((agendamento) => String(agendamento.data_agendamento || "").slice(0, 10) === getLocalDateKey())
+    .map((agendamento) => {
+      const appointmentAt = parseAgendamentoDateTime(agendamento);
+      const reminderState = agendaReminderState[agendamento.id_agendamento] || {};
+      const isLate = appointmentAt ? appointmentAt.getTime() < Date.now() : false;
+      const hasBeenSnoozed = Boolean(reminderState.snoozedUntil);
+
+      return {
+        id: agendamento.id_agendamento,
+        name: agendamento.cliente_nome || "Cliente",
+        phone: agendamento.telefone_celular || agendamento.telefone_residencial || "-",
+        time: agendamento.hora_inicio?.slice(0, 5) || "--:--",
+        status: agendamento.observacao || "compromisso",
+        highlight: isLate && hasBeenSnoozed,
+        sortTime: appointmentAt?.getTime() || 0,
+      };
+    })
+    .sort((a, b) => a.sortTime - b.sortTime);
 
   const showSimulator = activeMenu === "Simuladores";
   const showSulamericaSimulator = activeMenu === "Simulador SulAmerica";
@@ -1547,9 +1751,18 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                         {/* List Section */}
                         <div className="custom-scrollbar flex-1 overflow-y-auto bg-slate-50/50 p-2.5">
                           <div className="flex flex-col gap-2">
+                            {agendaItems.length === 0 ? (
+                              <div className="flex flex-col items-center justify-center py-8 text-center">
+                                <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 text-slate-300">
+                                  <Calendar size={22} />
+                                </div>
+                                <p className="text-xs font-bold text-slate-400">Nenhum compromisso para hoje</p>
+                                <p className="mt-1 text-xs text-slate-400/80">Os lembretes aparecem automaticamente.</p>
+                              </div>
+                            ) : null}
                             {agendaItems.map((item) => (
                               <div
-                                key={`${item.name}-${item.time}`}
+                                key={item.id}
                                 className={`group relative overflow-hidden rounded-xl border border-white bg-white p-3 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md cursor-pointer ${
                                   item.highlight 
                                     ? "ring-2 ring-red-500/20 bg-red-50/50 hover:border-red-300" 
@@ -1582,7 +1795,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                       </div>
                                       <div className="flex items-center gap-2">
                                         <span className={`font-bold ${item.highlight ? "text-red-600" : "text-[#a2812a]"}`}>{item.time}</span>
-                                        <span className={item.highlight ? "text-red-500" : "text-slate-400"}>{item.status}</span>
+                                        <span className={`max-w-[92px] truncate ${item.highlight ? "text-red-500" : "text-slate-400"}`}>{item.status}</span>
                                       </div>
                                     </div>
                                   </div>
@@ -1913,6 +2126,111 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
         </div>,
         document.body
       )}
+
+      {activeAgendaReminder
+        ? createPortal(
+            <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-950/45 px-4 backdrop-blur-sm">
+              <div className="w-full max-w-lg overflow-hidden rounded-lg border border-slate-700 bg-[#242424] text-white shadow-2xl">
+                <div className="flex items-center justify-between border-b border-white/10 bg-[#202020] px-4 py-2">
+                  <div className="flex items-center gap-2">
+                    <Bell size={16} className="text-[#d4af37]" />
+                    <span className="text-sm font-semibold">1 Lembrete(s)</span>
+                  </div>
+                  <button
+                    type="button"
+                    aria-label="Fechar lembrete"
+                    onClick={closeAgendaReminder}
+                    className="rounded p-1 text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+                  >
+                    <X size={17} />
+                  </button>
+                </div>
+
+                <div className="px-5 py-4">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center border border-white/70 text-white">
+                      <Calendar size={23} />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="truncate text-xl font-medium leading-tight">
+                        {activeAgendaReminder.agendamento.observacao ||
+                          activeAgendaReminder.agendamento.cliente_nome ||
+                          "Compromisso da agenda"}
+                      </h3>
+                      <p className="mt-1 text-xs font-semibold text-white">
+                        {formatReminderDate(activeAgendaReminder.appointmentAt)}
+                      </p>
+                      <p className="mt-2 text-sm text-white/75">
+                        {activeAgendaReminder.phase === "before"
+                          ? `Faltam ${Math.max(
+                              1,
+                              Math.ceil((activeAgendaReminder.appointmentAt.getTime() - Date.now()) / 60000)
+                            )} minutos para o compromisso.`
+                          : "O horario marcado para este compromisso chegou."}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 min-h-[112px] border border-white/35 bg-[#1f1f1f]">
+                    <div className="flex items-center justify-between bg-[#0078d4] px-2 py-1 text-xs font-bold">
+                      <div className="flex min-w-0 items-center gap-1.5">
+                        <Calendar size={13} />
+                        <span className="truncate">
+                          {activeAgendaReminder.agendamento.cliente_nome || "Cliente"}
+                        </span>
+                      </div>
+                      <span className="shrink-0 pl-3">
+                        {activeAgendaReminder.agendamento.hora_inicio?.slice(0, 5)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={closeAgendaReminder}
+                      className="rounded border border-white/30 px-5 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+                    >
+                      Descartar
+                    </button>
+                  </div>
+
+                  <div className="mt-3 text-xs font-semibold text-white">
+                    Clique em Adiar para ser lembrado novamente em:
+                  </div>
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                    <select
+                      value={reminderSnoozeMinutes}
+                      onChange={(event) => setReminderSnoozeMinutes(event.target.value)}
+                      className="h-8 min-w-[220px] rounded border border-white/40 bg-[#1f1f1f] px-2 text-xs font-semibold text-white outline-none"
+                    >
+                      <option value="5">5 minutos</option>
+                      <option value="10">10 minutos</option>
+                      <option value="15">15 minutos</option>
+                      <option value="30">30 minutos</option>
+                      <option value="60">1 hora</option>
+                    </select>
+                    <button
+                      type="button"
+                      onClick={snoozeAgendaReminder}
+                      className="h-8 rounded border border-white/40 px-3 text-xs font-semibold text-white transition-colors hover:bg-white/10"
+                    >
+                      Adiar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={discardAllAgendaReminders}
+                      className="ml-auto h-8 rounded border border-white/40 px-3 text-xs font-semibold text-white transition-colors hover:bg-white/10"
+                    >
+                      Descartar Tudo
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>,
+            document.body
+          )
+        : null}
 
       <style>{`
         .custom-scrollbar::-webkit-scrollbar {

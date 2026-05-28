@@ -7,13 +7,27 @@ export const listAgendamentosHandler = async (req: Request, res: Response) => {
     const result = await pool.query(`
       SELECT a.*, 
              TO_CHAR(a.data_agendamento, 'YYYY-MM-DD') as data_agendamento,
-             c.nome_completo as cliente_nome
+             c.nome_completo as cliente_nome,
+             (
+               SELECT cc.valor
+               FROM "RCMOLINASEGUROS"."CLIENTES_CONTATOS" cc
+               WHERE cc.id_cliente = c.id_cliente
+                 AND lower(cc.tipo) LIKE '%celular%'
+               ORDER BY cc.preferencial DESC, cc.criado_em ASC
+               LIMIT 1
+             ) as telefone_celular,
+             (
+               SELECT cc.valor
+               FROM "RCMOLINASEGUROS"."CLIENTES_CONTATOS" cc
+               WHERE cc.id_cliente = c.id_cliente
+                 AND lower(cc.tipo) LIKE '%telefone%'
+               ORDER BY cc.preferencial DESC, cc.criado_em ASC
+               LIMIT 1
+             ) as telefone_residencial
       FROM "RCMOLINASEGUROS"."AGENDAMENTOS" a
       JOIN "RCMOLINASEGUROS"."CLIENTES" c ON a.id_cliente = c.id_cliente
       ORDER BY a.data_agendamento ASC, a.hora_inicio ASC
     `);
-    // Wait, the client phone isn't in CLIENTES natively anymore, it's in CLIENTES_CONTATOS, but maybe it is. Let's just return what we have.
-    // Actually, I'll just return the agendamento and the client's name.
     res.json({ data: result.rows });
   } catch (error: any) {
     console.error('Error fetching agendamentos:', error);
