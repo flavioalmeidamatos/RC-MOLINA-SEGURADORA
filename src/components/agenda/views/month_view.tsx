@@ -69,7 +69,7 @@ export const MonthView: React.FC<MonthViewProps> = ({
       <div className="flex-1 grid grid-cols-7 auto-rows-fr overflow-y-auto custom-scrollbar">
         {days.map((day, i) => {
           const dayHolidays = holidays.filter(h => h.date === format(day, "yyyy-MM-dd"));
-          const dayAgendamentos = agendamentos.filter(a => a.data_agendamento === format(day, "yyyy-MM-dd"));
+          const dayAgendamentos = agendamentos.filter(a => String(a.data_agendamento).substring(0, 10) === format(day, "yyyy-MM-dd"));
           const dayBirthdays = aniversariantesMes.filter(
             (cliente) => birthMonthDay(cliente.data_nascimento) === format(day, "MM-dd")
           );
@@ -122,7 +122,7 @@ export const MonthView: React.FC<MonthViewProps> = ({
                 {dayAgendamentos.map((agendamento) => (
                   <div
                     key={agendamento.id_agendamento}
-                    className="rounded border border-blue-400/50 bg-blue-50 px-1.5 py-1 text-[10px] font-black leading-tight text-blue-700 shadow-sm cursor-pointer hover:bg-blue-100"
+                    className="rounded border border-blue-400/50 bg-blue-100 px-1.5 py-1 text-[10px] font-black leading-tight text-blue-800 shadow-sm cursor-pointer hover:bg-blue-200"
                     title={`Agendamento: ${agendamento.cliente_nome || 'Cliente'}`}
                     onClick={(e) => {
                       e.stopPropagation(); // prevent setting current date when clicking the badge
