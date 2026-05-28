@@ -19,6 +19,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
   const [birthDate, setBirthDate] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [justSelected, setJustSelected] = useState(false);
+  const [statusNegociacao, setStatusNegociacao] = useState("");
 
   useEffect(() => {
     if (justSelected) {
@@ -63,6 +64,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
     setPhone(preferredContact?.valor || "");
     
     setBirthDate(formatBirthDate(client.data_nascimento));
+    setStatusNegociacao(client.status_negociacao || "");
     setShowSuggestions(false);
     setSuggestions([]);
   };
@@ -166,7 +168,9 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
         <div className="flex gap-1">
           <input 
             type="text" 
-            placeholder="Serviço..." 
+            placeholder="Status de Negociação..." 
+            value={statusNegociacao}
+            onChange={(e) => setStatusNegociacao(e.target.value)}
             className="flex-1 px-3 py-2 border border-black rounded text-sm outline-none focus:border-black"
           />
           <button className="p-2 bg-[#00B5AD] text-white rounded shadow-sm hover:bg-[#009d96]">
@@ -198,12 +202,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
           </select>
         </div>
 
-        <div>
-          <select className="w-full px-3 py-2 border border-black rounded text-sm outline-none appearance-none bg-white focus:border-black">
-            <option>Responsável...</option>
-            <option>FLAVIO ALMEIDA MATOS</option>
-          </select>
-        </div>
+
 
         <div>
           <textarea 
@@ -221,12 +220,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
           </select>
         </div>
 
-        <div>
-          <select className="w-full px-3 py-2 border border-black rounded text-sm outline-none appearance-none bg-white focus:border-black">
-            <option>Status...</option>
-            <option>Agendado</option>
-          </select>
-        </div>
+
 
         <div className="flex items-center justify-end gap-2">
           <span className="text-xs font-bold text-gray-500 uppercase">Enviar SMS</span>
