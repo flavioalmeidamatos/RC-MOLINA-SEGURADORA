@@ -1795,8 +1795,8 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                   }`}>
                                     <User size={14} />
                                   </div>
-                                  <div className={`min-w-0 flex-1 ${item.highlight ? "pr-16" : ""}`}>
-                                    <div className="max-w-full">
+                                  <div className="min-w-0 flex-1">
+                                    <div className={`max-w-full ${item.highlight ? "pr-16" : ""}`}>
                                       <p
                                         className={`truncate text-[11px] font-bold leading-4 transition-colors ${
                                           item.highlight ? "text-red-700" : "text-[#0c1826] group-hover:text-[#a2812a]"
