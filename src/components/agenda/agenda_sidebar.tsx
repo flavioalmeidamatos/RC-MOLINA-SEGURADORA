@@ -37,8 +37,6 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
   const [agendaTime, setAgendaTime] = useState("");
   const [agendaDuration, setAgendaDuration] = useState("");
   const [observacao, setObservacao] = useState("");
-  const [repetir, setRepetir] = useState("");
-  const [enviarSms, setEnviarSms] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isEditingSelected, setIsEditingSelected] = useState(false);
@@ -83,8 +81,6 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
       }
       
       setObservacao(selectedAgendamento.observacao || "");
-      setRepetir(selectedAgendamento.repetir || "");
-      setEnviarSms(selectedAgendamento.enviar_sms || false);
     } else {
       // Clear form
       setSearchTerm("");
@@ -96,8 +92,6 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
       setAgendaTime("");
       setAgendaDuration("");
       setObservacao("");
-      setRepetir("");
-      setEnviarSms(false);
     }
   }, [selectedAgendamento, todayStr]);
 
@@ -113,8 +107,6 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
     setAgendaTime(selectedAgendamento.hora_inicio);
     setAgendaDuration(selectedAgendamento.hora_fim || "");
     setObservacao(selectedAgendamento.observacao || "");
-    setRepetir(selectedAgendamento.repetir || "");
-    setEnviarSms(selectedAgendamento.enviar_sms || false);
   };
 
   const generateTimeOptions = () => {
@@ -175,8 +167,6 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
     setAgendaTime("");
     setAgendaDuration("");
     setObservacao("");
-    setRepetir("");
-    setEnviarSms(false);
     setIsEditingSelected(false);
 
     window.setTimeout(() => {
@@ -271,8 +261,8 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
         hora_fim: agendaDuration || null,
         duracao_minutos: agendaDuration ? 30 : null, // Assuming 30 if duration selected, simplistic for now
         observacao,
-        repetir,
-        enviar_sms: enviarSms,
+        repetir: "",
+        enviar_sms: false,
       };
 
       const url = selectedAgendamento 
@@ -589,40 +579,6 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
             disabled={isFormDisabled}
             className="w-full px-3 py-2 border border-black rounded text-sm outline-none h-20 resize-none focus:border-black disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
           />
-        </div>
-
-        <div className="flex gap-2">
-          <select 
-            value={repetir}
-            onChange={(e) => setRepetir(e.target.value)}
-            disabled={isFormDisabled} 
-            className="flex-1 px-3 py-2 border border-black rounded text-sm outline-none appearance-none bg-white focus:border-black disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
-          >
-            <option value="">Repetir?</option>
-            <option value="diario">Diário</option>
-            <option value="semanal">Semanal</option>
-            <option value="mensal">Mensal</option>
-            <option value="anual">Anual</option>
-          </select>
-          <select disabled={isFormDisabled} className="flex-1 px-3 py-2 border border-black rounded text-sm outline-none appearance-none bg-white focus:border-black disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100">
-            <option>Nunca</option>
-          </select>
-        </div>
-
-        <div className="flex items-center justify-end gap-2">
-          <span className={`text-xs font-bold uppercase ${!selectedClientId ? 'text-gray-300' : 'text-gray-500'}`}>Enviar SMS</span>
-          <div className="flex bg-gray-200 rounded p-1">
-            <button 
-              onClick={() => setEnviarSms(true)}
-              disabled={isFormDisabled} 
-              className={`px-3 py-1 text-xs font-bold uppercase disabled:opacity-50 disabled:cursor-not-allowed rounded shadow-sm ${enviarSms ? 'bg-[#00B5AD] text-white' : 'text-gray-500 hover:bg-gray-300'}`}
-            >Sim</button>
-            <button 
-              onClick={() => setEnviarSms(false)}
-              disabled={isFormDisabled} 
-              className={`px-3 py-1 text-xs font-bold uppercase disabled:opacity-50 disabled:cursor-not-allowed rounded shadow-sm ${!enviarSms ? 'bg-red-500 text-white' : 'text-gray-500 hover:bg-gray-300'}`}
-            >Não</button>
-          </div>
         </div>
 
         {selectedAgendamento ? (
