@@ -2,18 +2,26 @@ import React from "react";
 import { format, startOfWeek, addDays, eachDayOfInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Holiday } from "../../../lib/holidays";
-
 import { AniversarianteMes } from "../../dashboard/rc_menu_principal";
+import type { Agendamento } from "../agenda";
 
 interface WeekViewProps {
   currentDate: Date;
   holidays: Holiday[];
   aniversariantesMes?: AniversarianteMes[];
+  agendamentos?: Agendamento[];
+  onSelectAgendamento?: (agendamento: Agendamento) => void;
 }
 
 const birthMonthDay = (value: string) => String(value || "").slice(5, 10);
 
-export const WeekView: React.FC<WeekViewProps> = ({ currentDate, holidays, aniversariantesMes = [] }) => {
+export const WeekView: React.FC<WeekViewProps> = ({
+  currentDate,
+  holidays,
+  aniversariantesMes = [],
+  agendamentos = [],
+  onSelectAgendamento,
+}) => {
   const startDate = startOfWeek(currentDate, { weekStartsOn: 0 });
   const endDate = addDays(startDate, 6);
   const weekDays = eachDayOfInterval({ start: startDate, end: endDate });
@@ -21,7 +29,7 @@ export const WeekView: React.FC<WeekViewProps> = ({ currentDate, holidays, anive
   const timeSlots = Array.from({ length: 25 }, (_, i) => {
     const hour = Math.floor(i / 2) + 8;
     const minutes = i % 2 === 0 ? "00" : "30";
-    return `${hour}:${minutes}`;
+    return `${hour.toString().padStart(2, "0")}:${minutes}`;
   });
 
   return (
@@ -85,10 +93,14 @@ export const WeekView: React.FC<WeekViewProps> = ({ currentDate, holidays, anive
             ))}
           </div>
 
-          {/* Days columns */}
           <div className="flex-1 grid grid-cols-7 border-r border-black h-full">
             {weekDays.map((day) => {
               const isWeekend = day.getDay() === 0 || day.getDay() === 6;
+              const dateStr = format(day, "yyyy-MM-dd");
+              const dayAgendamentos = agendamentos.filter(
+                (a) => String(a.data_agendamento).substring(0, 10) === dateStr
+              );
+
               return (
                 <div 
                   key={day.toString()} 
@@ -96,13 +108,37 @@ export const WeekView: React.FC<WeekViewProps> = ({ currentDate, holidays, anive
                     isWeekend ? "bg-red-50/10" : ""
                   }`}
                 >
-                  {timeSlots.map((time) => (
-                    <div 
-                      key={`${day}-${time}`}
-                      className="flex-1 border-b border-black last:border-b-0 transition-colors hover:bg-gray-50/50 cursor-pointer"
-                    >
-                    </div>
-                  ))}
+                  {timeSlots.map((time) => {
+                    const agendamento = dayAgendamentos.find(
+                      (a) => a.hora_inicio?.slice(0, 5) === time
+                    );
+
+                    return (
+                      <div 
+                        key={`${day}-${time}`}
+                        onClick={() => agendamento && onSelectAgendamento?.(agendamento)}
+                        className={`flex-1 border-b border-black last:border-b-0 transition-colors p-0.5 min-h-0 flex items-stretch ${
+                          agendamento 
+                            ? "bg-blue-50/50 hover:bg-blue-100/50 cursor-pointer" 
+                            : "hover:bg-gray-50/50 cursor-pointer"
+                        }`}
+                      >
+                        {agendamento && (
+                          <div 
+                            title={`Observação: ${agendamento.observacao || ''}`}
+                            className="flex-1 rounded border border-blue-400/50 bg-blue-50/90 px-1.5 py-0.5 text-[9px] font-black text-blue-700 shadow-sm flex items-center justify-between gap-1 overflow-hidden"
+                          >
+                            <span className="truncate leading-none">{agendamento.cliente_nome}</span>
+                            {agendamento.hora_fim && (
+                              <span className="text-[7px] text-blue-500 font-semibold shrink-0 leading-none">
+                                {agendamento.hora_fim.slice(0, 5)}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               );
             })}

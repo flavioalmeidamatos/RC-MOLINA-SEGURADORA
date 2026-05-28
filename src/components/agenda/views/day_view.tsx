@@ -2,22 +2,30 @@ import React from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Holiday } from "../../../lib/holidays";
-
 import { AniversarianteMes } from "../../dashboard/rc_menu_principal";
+import type { Agendamento } from "../agenda";
 
 interface DayViewProps {
   currentDate: Date;
   holidays: Holiday[];
   aniversariantesMes?: AniversarianteMes[];
+  agendamentos?: Agendamento[];
+  onSelectAgendamento?: (agendamento: Agendamento) => void;
 }
 
 const birthMonthDay = (value: string) => String(value || "").slice(5, 10);
 
-export const DayView: React.FC<DayViewProps> = ({ currentDate, holidays, aniversariantesMes = [] }) => {
+export const DayView: React.FC<DayViewProps> = ({
+  currentDate,
+  holidays,
+  aniversariantesMes = [],
+  agendamentos = [],
+  onSelectAgendamento,
+}) => {
   const timeSlots = Array.from({ length: 25 }, (_, i) => {
     const hour = Math.floor(i / 2) + 8;
     const minutes = i % 2 === 0 ? "00" : "30";
-    return `${hour}:${minutes}`;
+    return `${hour.toString().padStart(2, "0")}:${minutes}`;
   });
   const holiday = holidays.find(h => h.date === format(currentDate, "yyyy-MM-dd"));
   const isWeekend = currentDate.getDay() === 0 || currentDate.getDay() === 6;
@@ -69,15 +77,46 @@ export const DayView: React.FC<DayViewProps> = ({ currentDate, holidays, anivers
 
           {/* Content area */}
           <div className="flex-1 flex flex-col">
-            {timeSlots.map((time, index) => (
-              <div 
-                key={time}
-                className={`flex-1 border-black transition-colors hover:bg-gray-50/50 cursor-pointer ${
-                  index !== timeSlots.length - 1 ? 'border-b' : ''
-                } ${isWeekend ? "bg-red-50/10" : ""}`}
-              >
-              </div>
-            ))}
+            {(() => {
+              const dateStr = format(currentDate, "yyyy-MM-dd");
+              const dayAgendamentos = agendamentos.filter(
+                (a) => String(a.data_agendamento).substring(0, 10) === dateStr
+              );
+
+              return timeSlots.map((time, index) => {
+                const agendamento = dayAgendamentos.find(
+                  (a) => a.hora_inicio?.slice(0, 5) === time
+                );
+
+                return (
+                  <div 
+                    key={time}
+                    onClick={() => agendamento && onSelectAgendamento?.(agendamento)}
+                    className={`flex-1 border-black transition-colors p-0.5 min-h-0 flex items-stretch ${
+                      index !== timeSlots.length - 1 ? 'border-b' : ''
+                    } ${
+                      agendamento 
+                        ? "bg-blue-50/50 hover:bg-blue-100/50 cursor-pointer" 
+                        : "hover:bg-gray-50/50 cursor-pointer"
+                    } ${isWeekend ? "bg-red-50/10" : ""}`}
+                  >
+                    {agendamento && (
+                      <div 
+                        title={`Observação: ${agendamento.observacao || ''}`}
+                        className="flex-1 rounded border border-blue-400/50 bg-blue-50/90 px-1.5 py-0.5 text-[9px] font-black text-blue-700 shadow-sm flex items-center justify-between gap-1 overflow-hidden"
+                      >
+                        <span className="truncate leading-none">{agendamento.cliente_nome}</span>
+                        {agendamento.hora_fim && (
+                          <span className="text-[7px] text-blue-500 font-semibold shrink-0 leading-none">
+                            Até {agendamento.hora_fim.slice(0, 5)}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              });
+            })()}
           </div>
         </div>
       </div>
