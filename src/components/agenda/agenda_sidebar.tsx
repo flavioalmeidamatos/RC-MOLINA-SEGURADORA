@@ -20,6 +20,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [justSelected, setJustSelected] = useState(false);
   const [statusNegociacao, setStatusNegociacao] = useState("");
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
 
   const today = new Date();
   const todayStr = today.toLocaleDateString('en-CA'); // "YYYY-MM-DD" local time
@@ -98,6 +99,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
 
   const handleSelectClient = (client: any) => {
     setJustSelected(true);
+    setSelectedClientId(client.id_cliente);
     setSearchTerm(client.nome_completo);
     
     // Find preferred phone or the first one
@@ -157,7 +159,10 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
               type="text" 
               placeholder="Cliente..." 
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                if (selectedClientId) setSelectedClientId(null);
+              }}
               onKeyDown={handleKeyDown}
               onFocus={() => searchTerm.length >= 2 && setShowSuggestions(true)}
               className="w-full pl-3 pr-10 py-2 border border-black rounded text-sm outline-none focus:border-black"
@@ -195,14 +200,16 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
             placeholder="(__) ____-____" 
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            className="flex-1 min-w-0 px-3 py-2 border border-black rounded text-sm italic outline-none focus:border-black"
+            disabled={!selectedClientId}
+            className="flex-1 min-w-0 px-3 py-2 border border-black rounded text-sm italic outline-none focus:border-black disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
           />
           <input 
             type="text" 
             placeholder="Nascimento" 
             value={birthDate}
             onChange={(e) => setBirthDate(e.target.value)}
-            className="w-[120px] min-w-0 px-3 py-2 border border-black rounded text-sm outline-none focus:border-black"
+            disabled={!selectedClientId}
+            className="w-[120px] min-w-0 px-3 py-2 border border-black rounded text-sm outline-none focus:border-black disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
           />
         </div>
 
@@ -212,12 +219,13 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
             placeholder="Status de Negociação..." 
             value={statusNegociacao}
             onChange={(e) => setStatusNegociacao(e.target.value)}
-            className="flex-1 px-3 py-2 border border-black rounded text-sm outline-none focus:border-black"
+            disabled={!selectedClientId}
+            className="flex-1 px-3 py-2 border border-black rounded text-sm outline-none focus:border-black disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
           />
-          <button className="p-2 bg-[#00B5AD] text-white rounded shadow-sm hover:bg-[#009d96]">
+          <button disabled={!selectedClientId} className="p-2 bg-[#00B5AD] text-white rounded shadow-sm hover:bg-[#009d96] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#00B5AD]">
             <Plus size={16} />
           </button>
-          <button className="p-2 bg-[#00B5AD] text-white rounded shadow-sm hover:bg-[#009d96]">
+          <button disabled={!selectedClientId} className="p-2 bg-[#00B5AD] text-white rounded shadow-sm hover:bg-[#009d96] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#00B5AD]">
             <Search size={16} />
           </button>
         </div>
@@ -228,12 +236,14 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
             min={todayStr}
             value={agendaDate}
             onChange={(e) => setAgendaDate(e.target.value)}
-            className="flex-1 px-3 py-2 border border-black rounded text-sm outline-none focus:border-black bg-white uppercase text-center"
+            disabled={!selectedClientId}
+            className="flex-1 px-3 py-2 border border-black rounded text-sm outline-none focus:border-black bg-white uppercase text-center disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
           />
           <select 
             value={agendaTime}
             onChange={(e) => setAgendaTime(e.target.value)}
-            className="w-[85px] px-2 py-2 border border-black rounded text-sm text-center outline-none focus:border-black appearance-none bg-white cursor-pointer"
+            disabled={!selectedClientId}
+            className="w-[85px] px-2 py-2 border border-black rounded text-sm text-center outline-none focus:border-black appearance-none bg-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
           >
             <option value="" disabled>Hora</option>
             {availableTimeOptions.map((time) => (
@@ -243,7 +253,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
         </div>
 
         <div>
-          <select className="w-full px-3 py-2 border border-black rounded text-sm outline-none appearance-none bg-white focus:border-black">
+          <select disabled={!selectedClientId} className="w-full px-3 py-2 border border-black rounded text-sm outline-none appearance-none bg-white focus:border-black disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100">
             <option>Duração...</option>
           </select>
         </div>
@@ -253,15 +263,16 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
         <div>
           <textarea 
             placeholder="Observação..." 
-            className="w-full px-3 py-2 border border-black rounded text-sm outline-none h-20 resize-none focus:border-black"
+            disabled={!selectedClientId}
+            className="w-full px-3 py-2 border border-black rounded text-sm outline-none h-20 resize-none focus:border-black disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
           />
         </div>
 
         <div className="flex gap-2">
-          <select className="flex-1 px-3 py-2 border border-black rounded text-sm outline-none appearance-none bg-white focus:border-black">
+          <select disabled={!selectedClientId} className="flex-1 px-3 py-2 border border-black rounded text-sm outline-none appearance-none bg-white focus:border-black disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100">
             <option>Repetir?</option>
           </select>
-          <select className="flex-1 px-3 py-2 border border-black rounded text-sm outline-none appearance-none bg-white focus:border-black">
+          <select disabled={!selectedClientId} className="flex-1 px-3 py-2 border border-black rounded text-sm outline-none appearance-none bg-white focus:border-black disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100">
             <option>Nunca</option>
           </select>
         </div>
@@ -269,14 +280,14 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
 
 
         <div className="flex items-center justify-end gap-2">
-          <span className="text-xs font-bold text-gray-500 uppercase">Enviar SMS</span>
+          <span className={`text-xs font-bold uppercase ${!selectedClientId ? 'text-gray-300' : 'text-gray-500'}`}>Enviar SMS</span>
           <div className="flex bg-gray-200 rounded p-1">
-            <button className="px-3 py-1 text-xs font-bold text-gray-500 uppercase">Sim</button>
-            <button className="px-3 py-1 text-xs font-bold bg-red-500 text-white rounded shadow-sm uppercase">Não</button>
+            <button disabled={!selectedClientId} className="px-3 py-1 text-xs font-bold text-gray-500 uppercase disabled:opacity-50 disabled:cursor-not-allowed">Sim</button>
+            <button disabled={!selectedClientId} className="px-3 py-1 text-xs font-bold bg-red-500 text-white rounded shadow-sm uppercase disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-red-300">Não</button>
           </div>
         </div>
 
-        <button className="w-full py-3 bg-[#00B5AD] text-white font-bold rounded shadow-lg hover:bg-[#009d96] transition-all flex items-center justify-center gap-2 mt-4">
+        <button disabled={!selectedClientId} className="w-full py-3 bg-[#00B5AD] text-white font-bold rounded shadow-lg hover:bg-[#009d96] transition-all flex items-center justify-center gap-2 mt-4 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#00B5AD]">
           <Plus size={18} />
           SALVAR
         </button>
