@@ -2169,7 +2169,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                       <Calendar size={23} />
                     </div>
                     <div className="min-w-0">
-                      <h3 className="truncate text-xl font-medium leading-tight">
+                      <h3 className="truncate text-xl font-medium leading-tight animate-pulse-attention">
                         {activeAgendaReminder.agendamento.observacao ||
                           activeAgendaReminder.agendamento.cliente_nome ||
                           "Compromisso da agenda"}
@@ -2273,6 +2273,17 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
         @keyframes fade-in {
           from { opacity: 0; }
           to { opacity: 1; }
+        }
+
+        @keyframes pulse-attention {
+          0%, 100% { opacity: 1; transform: scale(1); filter: brightness(1); }
+          50% { opacity: 0.9; transform: scale(1.02); filter: brightness(1.2) drop-shadow(0 0 4px rgba(212, 175, 55, 0.4)); text-shadow: 0 0 8px rgba(212, 175, 55, 0.6); }
+        }
+
+        .animate-pulse-attention {
+          animation: pulse-attention 1.8s ease-in-out infinite;
+          display: inline-block;
+          color: #fff;
         }
 
         .animate-in {
