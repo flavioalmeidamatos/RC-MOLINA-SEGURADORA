@@ -67,6 +67,9 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
     setIsEditingSelected(false);
 
     if (selectedAgendamento) {
+      setJustSelected(true);
+      setShowSuggestions(false);
+      setSuggestions([]);
       setSearchTerm(selectedAgendamento.cliente_nome || "");
       setSelectedClientId(selectedAgendamento.id_cliente);
       setPhone(selectedAgendamento.telefone_celular || selectedAgendamento.telefone_residencial || "");
@@ -426,8 +429,9 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
         {selectedAgendamento && (
           <button 
             onClick={() => setSelectedAgendamento?.(null)}
-            className="text-xs text-blue-600 underline hover:text-blue-800"
+            className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-slate-600 transition hover:bg-slate-200"
           >
+            <X size={10} />
             Novo
           </button>
         )}
