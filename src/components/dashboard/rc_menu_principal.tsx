@@ -1817,7 +1817,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                       >
                                         {item.name}
                                       </p>
-                                      <div className="pointer-events-none absolute left-0 top-5 z-20 hidden min-w-[170px] rounded-md border border-slate-700 bg-[#0c1826] px-3 py-2 text-[11px] font-semibold text-white shadow-xl group-hover/name:block">
+                                      <div className="pointer-events-none absolute bottom-full left-0 z-20 mb-2 hidden min-w-[170px] rounded-md border border-slate-700 bg-[#0c1826] px-3 py-2 text-[11px] font-semibold text-white shadow-xl group-hover/name:block">
                                         <div className="whitespace-nowrap">Inicio: {item.time}</div>
                                         <div className="mt-0.5 whitespace-nowrap">Fim: {item.endTime || "Nao informado"}</div>
                                       </div>
