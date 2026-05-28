@@ -74,6 +74,35 @@ export const Agenda: React.FC<AgendaProps> = ({ aniversariantesMes = [], onAgend
     }
   }, []);
 
+  const handleMoveAgendamento = useCallback(async (id: string, newDate: string) => {
+    try {
+      const res = await fetch(`/api/agendamentos/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ data_agendamento: newDate }),
+      });
+
+      if (res.status === 409) {
+        const json = await res.json();
+        alert(json.error || "Já existe um compromisso agendado para este horário de início.");
+        return;
+      }
+
+      if (!res.ok) {
+        const json = await res.json();
+        alert(json.error || "Erro ao atualizar a data do compromisso.");
+        return;
+      }
+
+      handleAgendamentosChanged();
+    } catch (error) {
+      console.error("Erro ao mover o compromisso", error);
+      alert("Erro de conexão ao mover o compromisso.");
+    }
+  }, [handleAgendamentosChanged]);
+
   useEffect(() => {
     fetchAgendamentos();
   }, [fetchAgendamentos]);
@@ -110,6 +139,7 @@ export const Agenda: React.FC<AgendaProps> = ({ aniversariantesMes = [], onAgend
                 aniversariantesMes={aniversariantesMes}
                 agendamentos={agendamentos}
                 onSelectAgendamento={(agendamento) => void handleSelectAgendamento(agendamento)}
+                onMoveAgendamento={handleMoveAgendamento}
                 setCurrentDate={setCurrentDate} 
                 setActiveView={setActiveView} 
               />

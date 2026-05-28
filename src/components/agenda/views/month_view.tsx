@@ -1,13 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { PartyPopper } from "lucide-react";
+import { PartyPopper, Clock } from "lucide-react";
 import { Holiday } from "../../../lib/holidays";
 
 import { CalendarView } from "../agenda";
 import type { AniversarianteMes } from "../../dashboard/rc_menu_principal";
 import type { Agendamento } from "../agenda";
-import { Clock } from "lucide-react";
 
 interface MonthViewProps {
   currentDate: Date;
@@ -15,10 +14,10 @@ interface MonthViewProps {
   aniversariantesMes?: AniversarianteMes[];
   agendamentos?: Agendamento[];
   onSelectAgendamento?: (agendamento: Agendamento) => void;
+  onMoveAgendamento?: (id: string, newDate: string) => Promise<void>;
   setCurrentDate: (date: Date) => void;
   setActiveView: (view: CalendarView) => void;
 }
-
 
 const birthMonthDay = (value: string) => String(value || "").slice(5, 10);
 
@@ -28,9 +27,12 @@ export const MonthView: React.FC<MonthViewProps> = ({
   aniversariantesMes = [],
   agendamentos = [],
   onSelectAgendamento,
+  onMoveAgendamento,
   setCurrentDate,
   setActiveView,
 }) => {
+  const [draggedOverDate, setDraggedOverDate] = useState<string | null>(null);
+
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(monthStart);
   const startDate = startOfWeek(monthStart, { weekStartsOn: 0 }); // Sunday
@@ -71,8 +73,9 @@ export const MonthView: React.FC<MonthViewProps> = ({
         style={{ gridTemplateRows: `repeat(${days.length / 7}, minmax(0, 1fr))` }}
       >
         {days.map((day, i) => {
-          const dayHolidays = holidays.filter(h => h.date === format(day, "yyyy-MM-dd"));
-          const dayAgendamentos = agendamentos.filter(a => String(a.data_agendamento).substring(0, 10) === format(day, "yyyy-MM-dd"));
+          const dayStr = format(day, "yyyy-MM-dd");
+          const dayHolidays = holidays.filter(h => h.date === dayStr);
+          const dayAgendamentos = agendamentos.filter(a => String(a.data_agendamento).substring(0, 10) === dayStr);
           const dayBirthdays = aniversariantesMes.filter(
             (cliente) => birthMonthDay(cliente.data_nascimento) === format(day, "MM-dd")
           );
@@ -81,14 +84,39 @@ export const MonthView: React.FC<MonthViewProps> = ({
           const dayOfWeek = day.getDay();
           const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
           const isSelected = isSameDay(day, currentDate);
+          const isDraggedOver = draggedOverDate === dayStr;
 
           return (
             <div 
               key={i} 
               onClick={() => setCurrentDate(day)}
-              className={`min-h-0 overflow-hidden border-b border-r border-black p-1 flex flex-col gap-0.5 transition-colors hover:bg-gray-50 cursor-pointer ${
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+              }}
+              onDragEnter={(e) => {
+                e.preventDefault();
+                setDraggedOverDate(dayStr);
+              }}
+              onDragLeave={() => {
+                if (draggedOverDate === dayStr) {
+                  setDraggedOverDate(null);
+                }
+              }}
+              onDrop={async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setDraggedOverDate(null);
+                const id = e.dataTransfer.getData("text/plain");
+                if (id && onMoveAgendamento) {
+                  await onMoveAgendamento(id, dayStr);
+                }
+              }}
+              className={`min-h-0 overflow-hidden border-b border-r border-black p-1 flex flex-col gap-0.5 transition-all duration-200 cursor-pointer ${
                 !isCurrentMonth ? "bg-gray-50/50 text-gray-400" : isWeekend ? "text-red-600" : "text-black"
-              } ${isSelected ? "bg-blue-50 ring-2 ring-inset ring-blue-400" : ""}`}
+              } ${isSelected ? "bg-blue-50 ring-2 ring-inset ring-blue-400" : ""} ${
+                isDraggedOver ? "ring-2 ring-inset ring-[#00B5AD] bg-[#00B5AD]/5 border-[#00B5AD]/50 scale-[0.98]" : "hover:bg-gray-50"
+              }`}
             >
               <div className="flex justify-between items-center shrink-0">
                 <span className={`text-xs font-bold leading-none ${
@@ -104,7 +132,7 @@ export const MonthView: React.FC<MonthViewProps> = ({
                 {dayHolidays.map((holiday, idx) => (
                   <div 
                     key={idx} 
-                    className="bg-black text-white p-1 rounded text-[10px] font-bold leading-tight uppercase"
+                    className="bg-black text-white p-1 rounded text-[10px] font-bold leading-tight uppercase animate-fade-in"
                   >
                     FERIADO: {holiday.name}
                   </div>
@@ -113,7 +141,7 @@ export const MonthView: React.FC<MonthViewProps> = ({
                 {dayBirthdays.map((cliente) => (
                   <div
                     key={cliente.codigo}
-                    className="rounded border border-[#d4af37]/50 bg-[#fff7df] px-1.5 py-1 text-[10px] font-black leading-tight text-[#7a5a12] shadow-sm"
+                    className="rounded border border-[#d4af37]/50 bg-[#fff7df] px-1.5 py-1 text-[10px] font-black leading-tight text-[#7a5a12] shadow-sm animate-fade-in"
                     title={`Aniversariante: ${cliente.nome_completo}`}
                   >
                     <div className="flex items-center gap-1">
@@ -122,10 +150,17 @@ export const MonthView: React.FC<MonthViewProps> = ({
                     </div>
                   </div>
                 ))}
+                
                 {dayAgendamentos.map((agendamento) => (
                   <div
                     key={agendamento.id_agendamento}
-                    className="rounded border border-blue-400/50 bg-blue-50 px-1.5 py-1 text-[10px] font-black leading-tight text-blue-700 shadow-sm cursor-pointer hover:bg-blue-100"
+                    draggable={true}
+                    onDragStart={(e) => {
+                      e.stopPropagation();
+                      e.dataTransfer.setData("text/plain", agendamento.id_agendamento);
+                      e.dataTransfer.effectAllowed = "move";
+                    }}
+                    className="rounded border border-blue-400/50 bg-blue-50 px-1.5 py-1 text-[10px] font-black leading-tight text-blue-700 shadow-sm cursor-grab active:cursor-grabbing hover:bg-blue-100 transition-colors duration-150"
                     title={`Observação: ${agendamento.observacao || ''}`}
                     onClick={(e) => {
                       e.stopPropagation(); // prevent setting current date when clicking the badge
