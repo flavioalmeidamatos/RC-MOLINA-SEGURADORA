@@ -58,6 +58,22 @@ export const Agenda: React.FC<AgendaProps> = ({ aniversariantesMes = [], onAgend
     onAgendamentosChanged?.();
   }, [fetchAgendamentos, onAgendamentosChanged]);
 
+  const handleSelectAgendamento = useCallback(async (agendamento: Agendamento) => {
+    setSelectedAgendamento(agendamento);
+
+    try {
+      const res = await fetch(`/api/agendamentos/${agendamento.id_agendamento}`);
+      if (!res.ok) return;
+
+      const json = await res.json();
+      if (json.data) {
+        setSelectedAgendamento(json.data);
+      }
+    } catch (error) {
+      console.error("Erro ao recarregar agendamento selecionado", error);
+    }
+  }, []);
+
   useEffect(() => {
     fetchAgendamentos();
   }, [fetchAgendamentos]);
@@ -93,7 +109,7 @@ export const Agenda: React.FC<AgendaProps> = ({ aniversariantesMes = [], onAgend
                 holidays={holidays} 
                 aniversariantesMes={aniversariantesMes}
                 agendamentos={agendamentos}
-                onSelectAgendamento={setSelectedAgendamento}
+                onSelectAgendamento={(agendamento) => void handleSelectAgendamento(agendamento)}
                 setCurrentDate={setCurrentDate} 
                 setActiveView={setActiveView} 
               />
@@ -104,7 +120,7 @@ export const Agenda: React.FC<AgendaProps> = ({ aniversariantesMes = [], onAgend
                 holidays={holidays} 
                 aniversariantesMes={aniversariantesMes}
                 agendamentos={agendamentos}
-                onSelectAgendamento={setSelectedAgendamento}
+                onSelectAgendamento={(agendamento) => void handleSelectAgendamento(agendamento)}
               />
             )}
             {activeView === "day" && (
@@ -113,7 +129,7 @@ export const Agenda: React.FC<AgendaProps> = ({ aniversariantesMes = [], onAgend
                 holidays={holidays} 
                 aniversariantesMes={aniversariantesMes}
                 agendamentos={agendamentos}
-                onSelectAgendamento={setSelectedAgendamento}
+                onSelectAgendamento={(agendamento) => void handleSelectAgendamento(agendamento)}
               />
             )}
           </div>
