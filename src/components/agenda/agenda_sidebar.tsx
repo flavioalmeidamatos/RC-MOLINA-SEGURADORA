@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import { Plus, Search, Calendar, User } from "lucide-react";
+import { AlertTriangle, Calendar, Plus, Search, Trash2, User, X } from "lucide-react";
 import { CalendarView } from "./agenda";
 
 import type { Agendamento } from "./agenda";
@@ -39,8 +39,21 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
   const [repetir, setRepetir] = useState("");
   const [enviarSms, setEnviarSms] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
+    if (!showDeleteConfirm) return;
+
+    const timeoutId = window.setTimeout(() => {
+      setShowDeleteConfirm(false);
+    }, 5000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [showDeleteConfirm]);
+
+  useEffect(() => {
+    setShowDeleteConfirm(false);
+
     if (selectedAgendamento) {
       setSearchTerm(selectedAgendamento.cliente_nome || "");
       setSelectedClientId(selectedAgendamento.id_cliente);
@@ -238,9 +251,9 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
 
   const handleDelete = async () => {
     if (!selectedAgendamento) return;
-    if (!window.confirm("Deseja realmente excluir este agendamento?")) return;
 
     setIsSaving(true);
+    setShowDeleteConfirm(false);
     try {
       const res = await fetch(`/api/agendamentos/${selectedAgendamento.id_agendamento}`, {
         method: "DELETE",
@@ -262,6 +275,70 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
   };
 
   return (
+    <>
+    {showDeleteConfirm && selectedAgendamento ? (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/40 px-4 backdrop-blur-sm">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-agendamento-title"
+          className="w-full max-w-md overflow-hidden rounded-lg border border-white/70 bg-white shadow-2xl"
+        >
+          <div className="flex items-start gap-4 border-b border-slate-100 bg-slate-50 px-5 py-4">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-600">
+              <AlertTriangle size={22} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 id="delete-agendamento-title" className="text-base font-black text-slate-950">
+                Excluir agendamento?
+              </h3>
+              <p className="mt-1 text-sm leading-5 text-slate-600">
+                Esta acao remove o compromisso da agenda. A janela fecha automaticamente em 5 segundos.
+              </p>
+            </div>
+            <button
+              type="button"
+              aria-label="Fechar"
+              onClick={() => setShowDeleteConfirm(false)}
+              className="rounded-full p-1 text-slate-400 transition-colors hover:bg-slate-200 hover:text-slate-700"
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          <div className="px-5 py-4">
+            <div className="rounded-md border border-slate-200 bg-white px-4 py-3">
+              <p className="truncate text-sm font-bold text-slate-900">
+                {selectedAgendamento.cliente_nome || "Cliente"}
+              </p>
+              <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                {agendaDate.split("-").reverse().join("/")} as {agendaTime || selectedAgendamento.hora_inicio}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 bg-slate-50 px-5 py-4">
+            <button
+              type="button"
+              onClick={() => setShowDeleteConfirm(false)}
+              className="rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-100"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={isSaving}
+              className="flex items-center gap-2 rounded-md bg-red-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Trash2 size={16} />
+              {isSaving ? "Excluindo..." : "Excluir"}
+            </button>
+          </div>
+        </div>
+      </div>
+    ) : null}
+
     <aside className="w-[300px] flex-shrink-0 bg-white border-r border-black overflow-y-auto p-4 custom-scrollbar">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-bold text-black uppercase">
@@ -468,7 +545,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
               ALTERAR
             </button>
             <button 
-              onClick={handleDelete}
+              onClick={() => setShowDeleteConfirm(true)}
               disabled={isSaving} 
               className="flex-1 py-3 bg-red-600 text-white font-bold rounded shadow-lg hover:bg-red-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -487,5 +564,6 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
         )}
       </div>
     </aside>
+    </>
   );
 };
