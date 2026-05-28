@@ -1104,6 +1104,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
         name: agendamento.cliente_nome || "Cliente",
         phone: agendamento.telefone_celular || agendamento.telefone_residencial || "-",
         time: agendamento.hora_inicio?.slice(0, 5) || "--:--",
+        endTime: agendamento.hora_fim?.slice(0, 5) || "",
         status: agendamento.observacao || "compromisso",
         highlight: isLate && hasBeenSnoozed,
         sortTime: appointmentAt?.getTime() || 0,
@@ -1807,11 +1808,20 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                     <User size={14} />
                                   </div>
                                   <div className={`min-w-0 flex-1 ${item.highlight ? "pr-16" : ""}`}>
-                                    <p className={`truncate text-[11px] font-bold leading-4 transition-colors ${
-                                      item.highlight ? "text-red-700" : "text-[#0c1826] group-hover:text-[#a2812a]"
-                                    }`}>
-                                      {item.name}
-                                    </p>
+                                    <div className="group/name relative max-w-full">
+                                      <p
+                                        title={`Inicio: ${item.time}${item.endTime ? ` | Fim: ${item.endTime}` : ""}`}
+                                        className={`truncate text-[11px] font-bold leading-4 transition-colors ${
+                                          item.highlight ? "text-red-700" : "text-[#0c1826] group-hover:text-[#a2812a]"
+                                        }`}
+                                      >
+                                        {item.name}
+                                      </p>
+                                      <div className="pointer-events-none absolute left-0 top-5 z-20 hidden min-w-[170px] rounded-md border border-slate-700 bg-[#0c1826] px-3 py-2 text-[11px] font-semibold text-white shadow-xl group-hover/name:block">
+                                        <div className="whitespace-nowrap">Inicio: {item.time}</div>
+                                        <div className="mt-0.5 whitespace-nowrap">Fim: {item.endTime || "Nao informado"}</div>
+                                      </div>
+                                    </div>
                                     <div className="mt-0.5 flex items-center justify-between text-[11px] font-semibold text-slate-500">
                                       <div className="flex items-center gap-1">
                                         <Phone size={11} className={item.highlight ? "text-red-400" : ""} />
