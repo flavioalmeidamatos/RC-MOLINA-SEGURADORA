@@ -71,35 +71,36 @@ function readTargetFromArgv(argv) {
 }
 
 function getWindowBounds(screenHint) {
-  if (screenHint && Number.isFinite(screenHint.x) && Number.isFinite(screenHint.y) && Number.isFinite(screenHint.width) && Number.isFinite(screenHint.height)) {
-    const x = Math.round(screenHint.x);
-    const y = Math.round(screenHint.y);
-    const width = Math.round(screenHint.width);
-    const height = Math.round(screenHint.height);
+  if (screenHint && Number.isFinite(screenHint.x) && Number.isFinite(screenHint.y)) {
+    const startX = Math.round(screenHint.x);
+    const startY = Math.round(screenHint.y);
+    
+    // Find the monitor/display nearest to the starting coordinate
+    const display = screen.getDisplayNearestPoint({ x: startX, y: startY });
+    const area = display.workArea; // This excludes the Windows taskbar!
+    
+    // Stretch to the right edge of the workArea
+    const width = Math.max(MIN_WINDOW_WIDTH, area.x + area.width - startX);
+    
+    // Stretch to the bottom edge of the workArea
+    const height = Math.max(480, area.y + area.height - startY);
+    
     return {
       width,
       height,
       minWidth: width,
       minHeight: height,
-      x,
-      y
+      x: startX,
+      y: startY
     };
   }
 
-  const hasAnchor = screenHint && Number.isFinite(screenHint.anchorX) && Number.isFinite(screenHint.anchorY);
-  const point = hasAnchor
-    ? { x: Math.round(screenHint.anchorX), y: Math.round(screenHint.anchorY) }
-    : screenHint && Number.isFinite(screenHint.x) && Number.isFinite(screenHint.y)
-      ? { x: Math.round(screenHint.x), y: Math.round(screenHint.y) }
-      : screen.getCursorScreenPoint();
+  const point = screen.getCursorScreenPoint();
   const display = screen.getDisplayNearestPoint(point);
   const area = display.workArea;
-  const rightEdge = area.x + area.width;
-  const preferredX = hasAnchor ? Math.round(screenHint.anchorX + WINDOW_GAP) : area.x + Math.round(area.width * 0.35);
-  const x = Math.min(Math.max(preferredX, area.x), Math.max(area.x, rightEdge - MIN_WINDOW_WIDTH));
-  const width = Math.max(MIN_WINDOW_WIDTH, rightEdge - x);
-  const preferredY = hasAnchor ? Math.round(screenHint.anchorY) : area.y;
-  const y = Math.min(Math.max(preferredY, area.y), area.y + area.height - 560);
+  const x = area.x + Math.round(area.width * 0.35);
+  const width = Math.max(MIN_WINDOW_WIDTH, area.x + area.width - x);
+  const y = area.y;
   const height = area.y + area.height - y;
 
   return {
@@ -271,8 +272,10 @@ function openTargetUrl(targetUrl, screenHint = null) {
 
 function registerProtocol() {
   if (process.platform === "win32") {
-    const wrapperPath = path.join(__dirname, "..", "open-desktop.cmd");
-    const command = `"${wrapperPath}" "%1"`;
+    const isDev = process.defaultApp || /node_modules[\\/]electron[\\/]dist/i.test(process.execPath);
+    const command = isDev
+      ? `"${process.execPath}" "${path.join(__dirname, "..")}" "%1"`
+      : `"${process.execPath}" "%1"`;
     execFileSync("reg", ["add", `HKCU\\Software\\Classes\\${PROTOCOL}`, "/ve", "/d", `URL:${PROTOCOL}`, "/f"], { windowsHide: true });
     execFileSync("reg", ["add", `HKCU\\Software\\Classes\\${PROTOCOL}`, "/v", "URL Protocol", "/t", "REG_SZ", "/d", "", "/f"], { windowsHide: true });
     execFileSync("reg", ["add", `HKCU\\Software\\Classes\\${PROTOCOL}\\shell\\open\\command`, "/ve", "/d", command, "/f"], { windowsHide: true });
