@@ -1312,16 +1312,31 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const showWebmailArea = activeMenu === "Webmail";
   const showCampanhasArea = activeMenu === "Campanhas";
   const shouldBlockSidebarLinks = showLinksChooser || Boolean(linksDesktopStatus) || isLinksDesktopWindowOpen;
+  const blockSidebarMouseEvent = (event: React.SyntheticEvent) => {
+    if (!shouldBlockSidebarLinks) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+  };
 
   return (
     <div className="relative flex min-h-screen w-full flex-col bg-[#F0F4F8] font-sans lg:h-screen lg:flex-row lg:overflow-hidden">
-      <aside className={`relative w-full flex-shrink-0 overflow-hidden bg-[#0c1826] shadow-xl lg:w-48 lg:z-20 lg:flex lg:flex-col lg:justify-between lg:h-screen transition-all duration-300 ${
+      <aside
+        aria-disabled={shouldBlockSidebarLinks}
+        onClickCapture={blockSidebarMouseEvent}
+        onMouseDownCapture={blockSidebarMouseEvent}
+        onPointerDownCapture={blockSidebarMouseEvent}
+        className={`relative w-full flex-shrink-0 overflow-hidden bg-[#0c1826] shadow-xl lg:w-48 lg:z-20 lg:flex lg:flex-col lg:justify-between lg:h-screen transition-all duration-300 ${
         shouldBlockSidebarLinks ? "opacity-55 select-none filter grayscale-[30%]" : ""
-      }`}>
+      }`}
+      >
         {shouldBlockSidebarLinks ? (
           <div
             aria-hidden="true"
-            className="absolute inset-0 z-50 cursor-not-allowed bg-[#0c1826]/15 backdrop-blur-[1px]"
+            className="absolute inset-0 z-50 cursor-not-allowed bg-[#0c1826]/15 backdrop-blur-[1px] pointer-events-auto"
+            onClick={blockSidebarMouseEvent}
+            onMouseDown={blockSidebarMouseEvent}
+            onPointerDown={blockSidebarMouseEvent}
           />
         ) : null}
 
