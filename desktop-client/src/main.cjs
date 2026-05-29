@@ -120,6 +120,8 @@ function createWindow(screenHint = null) {
     ...bounds,
     title: "URL Embed Diagnostic Desktop",
     frame: false,
+    hasShadow: false,
+    thickFrame: false,
     resizable: false,
     movable: false,
     maximizable: false,
@@ -310,6 +312,16 @@ function startLocalAgent() {
 
     if (req.method === "GET" && req.url === "/health") {
       sendJson(res, 200, { ok: true, app: "url-embed-diagnostic-desktop" });
+      return;
+    }
+
+    if (req.method === "GET" && req.url === "/window-state") {
+      const windowVisible = Boolean(mainWindow && !mainWindow.isDestroyed() && mainWindow.isVisible());
+      sendJson(res, 200, {
+        ok: true,
+        windowOpen: windowVisible,
+        windowVisible
+      });
       return;
     }
 

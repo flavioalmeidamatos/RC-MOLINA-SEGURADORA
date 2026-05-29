@@ -82,7 +82,6 @@ const AGENDA_REMINDER_POLL_INTERVAL_MS = 30000;
 const AGENDA_REFRESH_INTERVAL_MS = 30000;
 const AGENDA_REMINDER_LEAD_MINUTES = 5;
 const AGENDA_REMINDER_STORAGE_KEY = "rc_molina_agenda_reminders";
-const DESKTOP_LINK_WINDOW_FRAME_OFFSET_X = 28;
 const BASE_SIMULATOR_IFRAME_ALLOW =
   "geolocation; microphone; camera; midi; vr; accelerometer; gyroscope; payment; ambient-light-sensor; encrypted-media; usb";
 const wait = (ms: number) =>
@@ -276,6 +275,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const [showSistemasChooser, setShowSistemasChooser] = useState(false);
   const [showLinksChooser, setShowLinksChooser] = useState(false);
   const [linksDesktopStatus, setLinksDesktopStatus] = useState("");
+  const [isLinksDesktopWindowOpen, setIsLinksDesktopWindowOpen] = useState(false);
 
 
   const simulatorTimeoutRef = useRef<number | null>(null);
@@ -284,6 +284,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const simulatorIframeLoadedRef = useRef(false);
   const amilIframeRef = useRef<HTMLIFrameElement | null>(null);
   const amilLoginSubmittedRef = useRef(false);
+  const linksDesktopMonitorTokenRef = useRef(0);
 
 
   const [credential, setCredential] = useState({
@@ -334,7 +335,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     const viewportLeftOnScreen = Math.max(0, (window.outerWidth - window.innerWidth) / 2);
     const viewportTopOnScreen = Math.max(0, window.outerHeight - window.innerHeight);
 
-    const x = Math.round(window.screenLeft + viewportLeftOnScreen + sidebarWidth + DESKTOP_LINK_WINDOW_FRAME_OFFSET_X);
+    const x = Math.round(window.screenLeft + viewportLeftOnScreen + sidebarWidth);
     const y = Math.round(window.screenTop + viewportTopOnScreen + headerBottom);
 
     const width = window.innerWidth - sidebarWidth;
@@ -364,12 +365,52 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     }
   }
 
+  async function isDesktopLinkWindowVisible() {
+    const response = await fetch(`${DESKTOP_AGENT_ORIGIN}/window-state`, { cache: "no-store" });
+    if (!response.ok) return false;
+
+    const payload = await response.json();
+    return Boolean(payload.windowVisible || payload.windowOpen);
+  }
+
+  function monitorLinksDesktopWindow() {
+    const token = linksDesktopMonitorTokenRef.current + 1;
+    linksDesktopMonitorTokenRef.current = token;
+    setIsLinksDesktopWindowOpen(true);
+
+    void (async () => {
+      let failures = 0;
+
+      while (linksDesktopMonitorTokenRef.current === token) {
+        await wait(1000);
+
+        try {
+          const isVisible = await isDesktopLinkWindowVisible();
+          failures = 0;
+
+          if (!isVisible) {
+            setIsLinksDesktopWindowOpen(false);
+            return;
+          }
+        } catch {
+          failures += 1;
+
+          if (failures >= 8) {
+            setIsLinksDesktopWindowOpen(false);
+            return;
+          }
+        }
+      }
+    })();
+  }
+
   async function openPortalInDesktop(url: string, anchorRect?: DOMRect) {
     setLinksDesktopStatus("Abrindo portal no aplicativo desktop...");
 
     try {
       await requestDesktopOpen(url, anchorRect);
       setLinksDesktopStatus("");
+      monitorLinksDesktopWindow();
       return;
     } catch (err) {
       console.warn("[Links] Falha ao conectar ao agente local via HTTP. Usando deep link...", err);
@@ -385,12 +426,23 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       // Wait a little and clear status
       await wait(2000);
       setLinksDesktopStatus("");
+      const isAgentReady = await waitForDesktopAgent(5000);
+      if (isAgentReady) {
+        monitorLinksDesktopWindow();
+      }
     } catch (error) {
       console.warn("[Links] Falha ao abrir via deep link; usando nova aba como contingencia.", error);
       setLinksDesktopStatus("Não foi possível iniciar o desktop automaticamente. Abrindo em nova aba.");
       window.open(url, "_blank", "noopener,noreferrer");
+      setIsLinksDesktopWindowOpen(false);
     }
   }
+
+  useEffect(() => {
+    return () => {
+      linksDesktopMonitorTokenRef.current += 1;
+    };
+  }, []);
 
   useEffect(() => {
     const actorUserId = perfil?.id || session?.user?.id || null;
@@ -1226,6 +1278,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const showAgendaArea = activeMenu === "Agenda";
   const showWebmailArea = activeMenu === "Webmail";
   const showCampanhasArea = activeMenu === "Campanhas";
+  const shouldBlockSidebarLinks = showLinksChooser || Boolean(linksDesktopStatus) || isLinksDesktopWindowOpen;
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-[#F0F4F8] font-sans lg:h-screen lg:flex-row lg:overflow-hidden">
@@ -1254,8 +1307,9 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                 <button
                   key={item.title}
                   type="button"
+                  disabled={shouldBlockSidebarLinks}
                   onClick={() => void handleMenuClick(item.title)}
-                  className={`flex min-w-max items-center justify-between gap-3 rounded-2xl border-l-4 px-4 py-3 text-left transition-colors lg:w-full lg:rounded-none lg:px-6 ${
+                  className={`flex min-w-max items-center justify-between gap-3 rounded-2xl border-l-4 px-4 py-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-45 lg:w-full lg:rounded-none lg:px-6 ${
                     isActive
                       ? "border-[#b58c2a] bg-[#152a42] text-white"
                       : "border-transparent text-gray-400 hover:bg-[#112338] hover:text-white"
