@@ -1315,9 +1315,16 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
   return (
     <div className="relative flex min-h-screen w-full flex-col bg-[#F0F4F8] font-sans lg:h-screen lg:flex-row lg:overflow-hidden">
-      <aside className={`w-full flex-shrink-0 bg-[#0c1826] shadow-xl lg:w-48 lg:z-20 lg:flex lg:flex-col lg:justify-between lg:h-screen transition-all duration-300 ${
-        shouldBlockSidebarLinks ? "pointer-events-none opacity-40 select-none filter grayscale-[30%]" : ""
+      <aside className={`relative w-full flex-shrink-0 overflow-hidden bg-[#0c1826] shadow-xl lg:w-48 lg:z-20 lg:flex lg:flex-col lg:justify-between lg:h-screen transition-all duration-300 ${
+        shouldBlockSidebarLinks ? "opacity-55 select-none filter grayscale-[30%]" : ""
       }`}>
+        {shouldBlockSidebarLinks ? (
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 z-50 cursor-not-allowed bg-[#0c1826]/15 backdrop-blur-[1px]"
+          />
+        ) : null}
+
         <div className="lg:flex lg:flex-col lg:min-h-0 lg:flex-1">
           <div className="flex flex-col items-center justify-center bg-gradient-to-b from-[#b58c2a] to-[#806117] px-4 py-6 shadow-inner lg:h-44 lg:pt-4 lg:pb-2">
             <div className="mb-3 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-2 border-white/50 bg-white shadow-md transition-all hover:border-white">
