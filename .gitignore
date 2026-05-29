@@ -12,3 +12,9 @@ supabase/.temp/
 .whatsapp_cache/
 
 testsprite_tests\tmp\config.json
+
+# Electron Companion builds
+desktop-client/RC Molina Companion-win32-x64/
+desktop-client/RCMolinaCompanion.zip
+public/downloads/RCMolinaCompanion.zip
+desktop-client/dist/

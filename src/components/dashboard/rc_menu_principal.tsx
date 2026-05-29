@@ -33,6 +33,7 @@ import { apiListVisibleUsers } from "../../lib/local_api";
 import type { LocalAuthSession, UsuarioPerfil } from "../../lib/local_auth";
 import { createGmailApi, type MessageSummary } from "../../lib/gmail_api";
 import { APP_VERSION } from "../../version";
+import { Monitor, Download } from "lucide-react";
 
 const RCWebmail = React.lazy(async () => ({
   default: (await import("../webmail/rc_webmail")).RCWebmail,
@@ -277,6 +278,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const [showLinksChooser, setShowLinksChooser] = useState(false);
   const [linksDesktopStatus, setLinksDesktopStatus] = useState("");
   const [isLinksDesktopWindowOpen, setIsLinksDesktopWindowOpen] = useState(false);
+  const [isDesktopAgentConnected, setIsDesktopAgentConnected] = useState<boolean | null>(null);
 
 
   const simulatorTimeoutRef = useRef<number | null>(null);
@@ -444,6 +446,34 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   useEffect(() => {
     return () => {
       linksDesktopMonitorTokenRef.current += 1;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    const checkAgent = async () => {
+      try {
+        const response = await fetch(`${DESKTOP_AGENT_ORIGIN}/health`, { cache: "no-store" });
+        if (response.ok) {
+          if (active) setIsDesktopAgentConnected(true);
+          return;
+        }
+      } catch {
+        // Offline
+      }
+      if (active) setIsDesktopAgentConnected(false);
+    };
+
+    void checkAgent();
+
+    const intervalId = setInterval(() => {
+      void checkAgent();
+    }, 4000);
+
+    return () => {
+      active = false;
+      clearInterval(intervalId);
     };
   }, []);
 
@@ -1411,6 +1441,34 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
             </button>
           </div>
         </header>
+
+        {isDesktopAgentConnected === false && (
+          <div className="shrink-0 bg-gradient-to-r from-amber-50 to-orange-50 border-b border-amber-200 px-4 py-2.5 sm:px-6 md:px-8">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
+                  <Monitor size={18} strokeWidth={2} />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-amber-900 leading-snug">
+                    Integração de Links Desktop Inativa
+                  </p>
+                  <p className="text-[11px] text-amber-700/90 leading-normal">
+                    Para abrir portais externos e simuladores snappados abaixo do cabeçalho principal, baixe o aplicativo desktop integrado, extraia a pasta e execute-o uma vez.
+                  </p>
+                </div>
+              </div>
+              <a
+                href="/downloads/RCMolinaCompanion.zip"
+                download="RCMolinaCompanion.zip"
+                className="inline-flex shrink-0 items-center gap-2 rounded-full bg-[#b58c2a] hover:bg-[#967320] px-4 py-2 text-xs font-bold text-white shadow-sm transition active:scale-95 text-center justify-center"
+              >
+                <Download size={14} strokeWidth={2.5} />
+                Baixar Aplicativo Desktop
+              </a>
+            </div>
+          </div>
+        )}
 
         <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden transition-all duration-300">
           <div className="flex min-h-0 min-w-0 flex-1 flex-col">

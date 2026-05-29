@@ -291,6 +291,24 @@ function registerProtocol() {
   writeLog("protocol.register", { registered, defaultApp: process.defaultApp });
 }
 
+function registerAutoStart() {
+  try {
+    if (process.platform === "win32") {
+      const isDev = process.defaultApp || /node_modules[\\/]electron[\\/]dist/i.test(process.execPath);
+      app.setLoginItemSettings({
+        openAtLogin: true,
+        path: process.execPath,
+        args: isDev 
+          ? [path.resolve(process.argv[1]), "--background"] 
+          : ["--background"]
+      });
+      writeLog("autostart.register", { success: true, isDev });
+    }
+  } catch (error) {
+    writeLog("autostart.register_failed", { message: error.message });
+  }
+}
+
 function sendJson(res, statusCode, payload) {
   res.writeHead(statusCode, {
     "content-type": "application/json; charset=utf-8",
@@ -389,6 +407,7 @@ if (!gotTheLock) {
     writeLog("app.ready", { argv: process.argv });
     Menu.setApplicationMenu(null);
     registerProtocol();
+    registerAutoStart();
     startLocalAgent();
     const targetResult = readTargetFromArgv(process.argv);
     if (targetResult) {

@@ -7,9 +7,32 @@
   "scripts": {
     "dev": "set ELECTRON_RUN_AS_NODE=&& electron .",
     "start": "set ELECTRON_RUN_AS_NODE=&& electron .",
-    "register-protocol": "set ELECTRON_RUN_AS_NODE=&& electron . --register-protocol"
+    "register-protocol": "set ELECTRON_RUN_AS_NODE=&& electron . --register-protocol",
+    "dist": "electron-builder --win"
   },
-  "dependencies": {
-    "electron": "42.3.0"
+  "devDependencies": {
+    "electron": "42.3.0",
+    "electron-builder": "^24.13.3",
+    "electron-packager": "^17.1.2"
+  },
+  "build": {
+    "appId": "com.rcmolina.companion",
+    "productName": "RC Molina Companion",
+    "artifactName": "RCMolinaCompanionSetup.${ext}",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowElevation": false,
+      "allowToChangeInstallationDirectory": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "runAfterFinish": true
+    }
   }
 }
