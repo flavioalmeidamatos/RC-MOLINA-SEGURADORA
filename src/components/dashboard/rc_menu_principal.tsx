@@ -328,21 +328,19 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   function getDesktopScreenHint(anchorRect?: DOMRect) {
     const cardEl = document.getElementById("card-meus-clientes");
     const dpr = window.devicePixelRatio || 1;
-    let x = window.screenLeft + Math.round(192 * dpr);
-    let y = window.screenTop + Math.round(64 * dpr);
 
+    const sidebarEl = document.querySelector("aside");
+    const sidebarWidth = sidebarEl ? Math.round(sidebarEl.getBoundingClientRect().width) : 192;
+    const headerEl = document.querySelector("header");
+    const headerHeight = headerEl ? Math.round(headerEl.getBoundingClientRect().height) : 64;
+
+    let x = window.screenLeft + Math.round(sidebarWidth * dpr);
     if (cardEl) {
       const rect = cardEl.getBoundingClientRect();
       x = Math.round(window.screenLeft + rect.left * dpr);
-      y = Math.round(window.screenTop + rect.top * dpr);
-    } else {
-      const sidebarEl = document.querySelector("aside");
-      const sidebarWidth = sidebarEl ? Math.round(sidebarEl.getBoundingClientRect().width) : 192;
-      const headerEl = document.querySelector("header");
-      const headerHeight = headerEl ? Math.round(headerEl.getBoundingClientRect().height) : 64;
-      x = window.screenLeft + Math.round(sidebarWidth * dpr);
-      y = window.screenTop + Math.round(headerHeight * dpr);
     }
+
+    const y = Math.round(window.screenTop + headerHeight * dpr);
 
     const sidebarEl = document.querySelector("aside");
     const sidebarWidth = sidebarEl ? Math.round(sidebarEl.getBoundingClientRect().width) : 192;
