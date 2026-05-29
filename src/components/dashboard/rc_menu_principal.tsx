@@ -83,7 +83,6 @@ const AGENDA_REMINDER_POLL_INTERVAL_MS = 30000;
 const AGENDA_REFRESH_INTERVAL_MS = 30000;
 const AGENDA_REMINDER_LEAD_MINUTES = 5;
 const AGENDA_REMINDER_STORAGE_KEY = "rc_molina_agenda_reminders";
-const DESKTOP_LINK_WINDOW_VISIBLE_OFFSET_X = 28;
 const BASE_SIMULATOR_IFRAME_ALLOW =
   "geolocation; microphone; camera; midi; vr; accelerometer; gyroscope; payment; ambient-light-sensor; encrypted-media; usb";
 const wait = (ms: number) =>
@@ -335,22 +334,17 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     const sidebarWidth = sidebarEl ? Math.round(sidebarEl.getBoundingClientRect().width) : 192;
     const headerEl = document.getElementById("main-dashboard-header");
     const headerBottom = headerEl ? Math.round(headerEl.getBoundingClientRect().bottom) : 64;
-    const viewportLeftOnScreen = Math.max(0, (window.outerWidth - window.innerWidth) / 2);
-    const viewportTopOnScreen = Math.max(0, window.outerHeight - window.innerHeight);
 
-    const linkWindowLeft = sidebarWidth + DESKTOP_LINK_WINDOW_VISIBLE_OFFSET_X;
-
-    const x = Math.round(window.screenLeft + viewportLeftOnScreen + linkWindowLeft);
-    const y = Math.round(window.screenTop + viewportTopOnScreen + headerBottom);
-
-    const width = window.innerWidth - linkWindowLeft;
+    const width = window.innerWidth - sidebarWidth;
     const height = window.innerHeight - headerBottom;
 
     return {
-      x,
-      y,
+      x: Math.round(window.screenLeft),
+      y: Math.round(window.screenTop),
       width,
       height,
+      sidebarWidth,
+      headerHeight: headerBottom,
       anchorSource: "links",
     };
   }
@@ -423,7 +417,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
     try {
       const screen = getDesktopScreenHint(anchorRect);
-      const deepLinkUrl = `urlembeddiag://?url=${encodeURIComponent(url)}&x=${screen.x}&y=${screen.y}&width=${screen.width}&height=${screen.height}`;
+      const deepLinkUrl = `urlembeddiag://?url=${encodeURIComponent(url)}&x=${screen.x}&y=${screen.y}&width=${screen.width}&height=${screen.height}&sidebarWidth=${screen.sidebarWidth}&headerHeight=${screen.headerHeight}&anchorSource=${screen.anchorSource}`;
       
       setLinksDesktopStatus("Iniciando/Integrando com o aplicativo desktop...");
       window.location.href = deepLinkUrl;

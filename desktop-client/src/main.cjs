@@ -49,11 +49,17 @@ function readTargetFromDeepLink(rawValue) {
     const y = parsed.searchParams.get("y");
     const width = parsed.searchParams.get("width");
     const height = parsed.searchParams.get("height");
+    const sidebarWidth = parsed.searchParams.get("sidebarWidth");
+    const headerHeight = parsed.searchParams.get("headerHeight");
+    const anchorSource = parsed.searchParams.get("anchorSource");
 
     if (x !== null) screenHint.x = parseFloat(x);
     if (y !== null) screenHint.y = parseFloat(y);
     if (width !== null) screenHint.width = parseFloat(width);
     if (height !== null) screenHint.height = parseFloat(height);
+    if (sidebarWidth !== null) screenHint.sidebarWidth = parseFloat(sidebarWidth);
+    if (headerHeight !== null) screenHint.headerHeight = parseFloat(headerHeight);
+    if (anchorSource !== null) screenHint.anchorSource = anchorSource;
 
     return {
       url: target,
@@ -71,6 +77,33 @@ function readTargetFromArgv(argv) {
 }
 
 function getWindowBounds(screenHint) {
+  if (
+    screenHint &&
+    screenHint.anchorSource === "links" &&
+    Number.isFinite(screenHint.sidebarWidth) &&
+    Number.isFinite(screenHint.headerHeight)
+  ) {
+    const displayPoint =
+      Number.isFinite(screenHint.x) && Number.isFinite(screenHint.y)
+        ? { x: Math.round(screenHint.x), y: Math.round(screenHint.y) }
+        : screen.getCursorScreenPoint();
+    const display = screen.getDisplayNearestPoint(displayPoint);
+    const area = display.workArea;
+    const startX = area.x + Math.round(screenHint.sidebarWidth);
+    const startY = area.y + Math.round(screenHint.headerHeight);
+    const width = Math.max(MIN_WINDOW_WIDTH, area.x + area.width - startX);
+    const height = Math.max(480, area.y + area.height - startY);
+
+    return {
+      width,
+      height,
+      minWidth: width,
+      minHeight: height,
+      x: startX,
+      y: startY
+    };
+  }
+
   if (screenHint && Number.isFinite(screenHint.x) && Number.isFinite(screenHint.y)) {
     const startX = Math.round(screenHint.x);
     const startY = Math.round(screenHint.y);
