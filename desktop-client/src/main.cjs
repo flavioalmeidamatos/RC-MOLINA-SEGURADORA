@@ -55,6 +55,21 @@ function readTargetFromArgv(argv) {
 }
 
 function getWindowBounds(screenHint) {
+  if (screenHint && Number.isFinite(screenHint.x) && Number.isFinite(screenHint.y) && Number.isFinite(screenHint.width) && Number.isFinite(screenHint.height)) {
+    const x = Math.round(screenHint.x);
+    const y = Math.round(screenHint.y);
+    const width = Math.round(screenHint.width);
+    const height = Math.round(screenHint.height);
+    return {
+      width,
+      height,
+      minWidth: width,
+      minHeight: height,
+      x,
+      y
+    };
+  }
+
   const hasAnchor = screenHint && Number.isFinite(screenHint.anchorX) && Number.isFinite(screenHint.anchorY);
   const point = hasAnchor
     ? { x: Math.round(screenHint.anchorX), y: Math.round(screenHint.anchorY) }

@@ -328,22 +328,22 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   function getDesktopScreenHint(anchorRect?: DOMRect) {
     const browserChromeHeight = Math.max(0, window.outerHeight - window.innerHeight);
 
-    if (!anchorRect) {
-      return {
-        x: window.screenX + Math.round(window.outerWidth * 0.5),
-        y: window.screenY + browserChromeHeight + 80,
-      };
-    }
+    const sidebarEl = document.querySelector("aside");
+    const sidebarWidth = sidebarEl ? Math.round(sidebarEl.getBoundingClientRect().width) : 192;
+
+    const headerEl = document.querySelector("header");
+    const headerHeight = headerEl ? Math.round(headerEl.getBoundingClientRect().height) : 64;
+
+    const x = window.screenX + sidebarWidth;
+    const y = window.screenY + browserChromeHeight + headerHeight;
+    const width = window.innerWidth - sidebarWidth;
+    const height = window.innerHeight - headerHeight;
 
     return {
-      anchorX: window.screenX + anchorRect.right,
-      anchorY: window.screenY + browserChromeHeight + anchorRect.top,
-      anchorWidth: anchorRect.width,
-      anchorHeight: anchorRect.height,
-      browserX: window.screenX,
-      browserY: window.screenY,
-      browserWidth: window.outerWidth,
-      browserHeight: window.outerHeight,
+      x,
+      y,
+      width,
+      height,
       anchorSource: "links",
     };
   }
