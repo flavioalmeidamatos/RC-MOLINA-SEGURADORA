@@ -330,13 +330,17 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
     const sidebarEl = document.querySelector("aside");
     const sidebarWidth = sidebarEl ? Math.round(sidebarEl.getBoundingClientRect().width) : 192;
+    const versionTextEl = document.getElementById("sidebar-version-text");
+    const linkWindowLeft = versionTextEl
+      ? Math.round(versionTextEl.getBoundingClientRect().right + 200)
+      : sidebarWidth;
     const headerEl = document.querySelector("header");
     const headerHeight = headerEl ? Math.round(headerEl.getBoundingClientRect().height) : 64;
 
-    const x = Math.round((window.screenLeft + sidebarWidth) * dpr);
+    const x = Math.round((window.screenLeft + linkWindowLeft) * dpr);
     const y = Math.round((window.screenTop + headerHeight) * dpr);
 
-    const width = window.innerWidth - sidebarWidth;
+    const width = window.innerWidth - linkWindowLeft;
     const height = window.innerHeight - headerHeight;
 
     return {
@@ -1272,7 +1276,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
         {/* Sidebar Footer with Version */}
         <div className="hidden border-t border-slate-800 px-6 py-4 text-center lg:block bg-[#09111c] shrink-0">
-          <span className="text-xs font-semibold text-gray-500 tracking-wider">
+          <span id="sidebar-version-text" className="text-xs font-semibold text-gray-500 tracking-wider">
             Versão: {APP_VERSION}
           </span>
         </div>
