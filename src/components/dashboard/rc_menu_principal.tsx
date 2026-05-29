@@ -326,16 +326,14 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   }
 
   function getDesktopScreenHint(anchorRect?: DOMRect) {
-    const browserChromeHeight = Math.max(0, window.outerHeight - window.innerHeight);
-
     const sidebarEl = document.querySelector("aside");
     const sidebarWidth = sidebarEl ? Math.round(sidebarEl.getBoundingClientRect().width) : 192;
 
     const headerEl = document.querySelector("header");
     const headerHeight = headerEl ? Math.round(headerEl.getBoundingClientRect().height) : 64;
 
-    const x = window.screenX + sidebarWidth;
-    const y = window.screenY + browserChromeHeight + headerHeight;
+    const x = window.screenLeft + sidebarWidth;
+    const y = window.screenTop + headerHeight;
     const width = window.innerWidth - sidebarWidth;
     const height = window.innerHeight - headerHeight;
 
