@@ -334,14 +334,14 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     const linkWindowLeft = versionTextEl
       ? Math.round(versionTextEl.getBoundingClientRect().right + 200)
       : sidebarWidth;
-    const headerEl = document.querySelector("header");
-    const headerHeight = headerEl ? Math.round(headerEl.getBoundingClientRect().height) : 64;
+    const headerEl = document.getElementById("main-dashboard-header");
+    const headerBottom = headerEl ? Math.round(headerEl.getBoundingClientRect().bottom) : 64;
 
     const x = Math.round((window.screenLeft + linkWindowLeft) * dpr);
-    const y = Math.round((window.screenTop + headerHeight) * dpr);
+    const y = Math.round((window.screenTop + headerBottom) * dpr);
 
     const width = window.innerWidth - linkWindowLeft;
-    const height = window.innerHeight - headerHeight;
+    const height = window.innerHeight - headerBottom;
 
     return {
       x,
@@ -1283,7 +1283,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       </aside>
 
       <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
-        <header className="flex flex-col gap-4 bg-white px-4 py-4 shadow-sm sm:px-6 md:px-8 lg:h-16 lg:flex-row lg:items-center lg:justify-between lg:gap-0 lg:py-0">
+        <header id="main-dashboard-header" className="flex flex-col gap-4 bg-white px-4 py-4 shadow-sm sm:px-6 md:px-8 lg:h-16 lg:flex-row lg:items-center lg:justify-between lg:gap-0 lg:py-0">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
             <div className="flex flex-col items-start bg-white px-2 py-1">
               <div className="text-xl font-bold leading-none tracking-widest text-[#d4af37]">
