@@ -1763,6 +1763,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                   userId={perfil?.id || session?.user?.id || null}
                   userEmail={perfil?.email || session?.user?.email || null}
                   initialMessage={campanhaInitialMessage}
+                  onConnectionGateClose={() => setActiveMenu("Home")}
                 />
                 {/*
               <div className="flex flex-1 items-center justify-center bg-gradient-to-br from-[#f8fafc] to-[#f1f5f9] p-6">

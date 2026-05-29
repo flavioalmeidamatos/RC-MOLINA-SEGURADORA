@@ -28,6 +28,7 @@ interface CampanhasShellProps {
   userId: string | null;
   userEmail: string | null;
   initialMessage?: string;
+  onConnectionGateClose?: () => void;
 }
 
 const createEmptyDraft = (): WhatsAppCampaignDraft => ({
@@ -41,7 +42,7 @@ const createEmptyDraft = (): WhatsAppCampaignDraft => ({
 
 const BRIDGE_STATUS_POLL_MS = 4000;
 
-export function CampanhasShell({ userId, userEmail, initialMessage }: CampanhasShellProps) {
+export function CampanhasShell({ userId, userEmail, initialMessage, onConnectionGateClose }: CampanhasShellProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const actor = useMemo(
     () => (userId && userEmail ? { id: userId, email: userEmail } : null),
@@ -580,7 +581,10 @@ export function CampanhasShell({ userId, userEmail, initialMessage }: CampanhasS
         status={bridgeStatus}
         isLoading={isLoadingBridgeStatus}
         isLoggingOut={isLoggingOutBridge}
-        onClose={() => setIsConnectionGateDismissed(true)}
+        onClose={() => {
+          setIsConnectionGateDismissed(true);
+          onConnectionGateClose?.();
+        }}
         onRefresh={() => void handleRefreshBridgeStatus()}
         onLogout={() => void handleLogoutBridge()}
       />
