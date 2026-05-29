@@ -19,6 +19,8 @@ import {
   PartyPopper,
   User,
   Users,
+  Layers,
+  Link2,
   Wrench,
   X,
 } from "lucide-react";
@@ -268,6 +270,8 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const [simulatorStatusMessage, setSimulatorStatusMessage] = useState("");
   const [simulatorBrowser, setSimulatorBrowser] = useState<SimulatorBrowser>("other");
   const [showSimulatorChooser, setShowSimulatorChooser] = useState(false);
+  const [showSistemasChooser, setShowSistemasChooser] = useState(false);
+  const [showLinksChooser, setShowLinksChooser] = useState(false);
 
 
   const simulatorTimeoutRef = useRef<number | null>(null);
@@ -963,6 +967,16 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   };
 
   const handleCardClick = async (line1: string, line2: string) => {
+    if (line1 === "Sistemas") {
+      setShowSistemasChooser(true);
+      return;
+    }
+
+    if (line1 === "Links") {
+      setShowLinksChooser(true);
+      return;
+    }
+
     if (line1 === "Simuladores") {
       if (shouldResetSulamericaSession("Simuladores")) {
         await resetSulamericaProxySession();
@@ -1027,6 +1041,8 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     { line1: "Meus", line2: "clientes", icon: Briefcase },
     { line1: "Agenda", line2: "", icon: Calendar },
     { line1: "Simuladores", line2: "", icon: FolderOpen },
+    { line1: "Sistemas", line2: "", icon: Layers },
+    { line1: "Links", line2: "", icon: Link2 },
     { line1: "Webmail", line2: "", icon: Mail },
     { line1: "Campanhas", line2: "", icon: Megaphone },
     { line1: "Financeiro", line2: "", icon: Banknote },
@@ -1581,7 +1597,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
             ) : (
               <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-5">
                 <div className="flex flex-col gap-3">
-                  <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5 xl:grid-cols-8">
+                  <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5 xl:grid-cols-9">
                     {cards.map((card) => {
                       const Icon = card.icon;
 
@@ -2073,6 +2089,137 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
               >
                 <img src="/solutions.svg" alt="Simulador Solutions" className="max-h-20 max-w-[85%] object-contain opacity-90 transition-all duration-300 group-hover:scale-105 group-hover:opacity-100" />
               </a>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {showSistemasChooser ? (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-2xl overflow-hidden rounded-[28px] border border-white/70 bg-white shadow-2xl flex flex-col max-h-[85vh]">
+            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5 shrink-0">
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#b58c2a]">
+                  Sistemas
+                </p>
+                <h2 className="mt-1 text-2xl font-black text-[#0c1826]">Escolha o Sistema</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSistemasChooser(false)}
+                aria-label="Fechar"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-6 overflow-y-auto custom-scrollbar">
+              {[
+                { name: "AMIL", url: "https://comercial.amil.com.br/prweb/PRAuth/app/sales-experience/", type: "internal", action: enterAmilSimulator },
+                { name: "KLINI SAUDE", url: "https://klinisaude.hcommerce.com.br/corretora/login", type: "internal", action: enterKliniSimulator },
+                { name: "MEDSENIOR", url: "https://vendadigital.medsenior.com.br/", type: "internal", action: enterMedseniorSimulator },
+                { name: "SULAMERICA", url: "https://os11.sulamerica.com.br/SaudeCotador/LoginVendedor.aspx", type: "internal", action: enterSulamericaSimulator },
+              ].map((sys) => (
+                <button
+                  key={sys.name}
+                  type="button"
+                  onClick={() => {
+                    setShowSistemasChooser(false);
+                    if (sys.type === "internal" && sys.action) {
+                      sys.action();
+                    } else {
+                      window.open(sys.url, "_blank", "noopener,noreferrer");
+                    }
+                  }}
+                  className="group flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:-translate-y-1 hover:border-[#d4af37]/70 hover:shadow-md text-left w-full cursor-pointer"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#b58c2a]/10 text-[#b58c2a] font-bold text-sm tracking-wider">
+                      {sys.name.slice(0, 2)}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold text-[#0c1826] group-hover:text-[#b58c2a] transition-colors">
+                        {sys.name}
+                      </p>
+                      <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider block mt-0.5">
+                        Simulador Interno
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-400 group-hover:bg-[#b58c2a]/10 group-hover:text-[#b58c2a] transition-all">
+                    <ExternalLink size={14} />
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {showLinksChooser ? (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-4xl overflow-hidden rounded-[28px] border border-white/70 bg-white shadow-2xl flex flex-col max-h-[85vh]">
+            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5 shrink-0">
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#b58c2a]">
+                  Links
+                </p>
+                <h2 className="mt-1 text-2xl font-black text-[#0c1826]">Escolha o Portal</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowLinksChooser(false)}
+                aria-label="Fechar"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 p-6 overflow-y-auto custom-scrollbar">
+              {[
+                { name: "ALLCARE PORTAL", url: "https://portal.allcare.com.br/" },
+                { name: "ALLCARE VENDAS", url: "https://vendas.allcare.com.br/AllTechLoginVendas" },
+                { name: "ALLCARE WEB", url: "https://allcare.planium.io/web/login/entrar" },
+                { name: "ASSIM SAUDE", url: "https://assim.hcommerce.com.br/login" },
+                { name: "CONTEM ADMINISTRADORA", url: "https://digitalsaude.com.br/canal/contem" },
+                { name: "CORPE SAUDE", url: "https://contratacao.mktss.com.br/#/login" },
+                { name: "HAPVIDA", url: "https://gndi.planium.io/web/login/" },
+                { name: "LEVE SAUDE", url: "https://levesaude.planium.io/web/login/entrar" },
+                { name: "PLURAL", url: "https://plural.hcommerce.com.br/login" },
+                { name: "PORTO SEGURO", url: "https://corretor.portoseguro.com.br/portal/site/corretoronline/template.LOGIN/" },
+                { name: "QUALIVENDAS", url: "https://qualivendas.qualicorp.com.br/#/login" },
+                { name: "SOLUTIONS", url: "https://solutions.hcommerce.com.br/login" },
+                { name: "SUPERMED", url: "https://vendas.supermed.com.br/login" },
+              ].map((sys) => (
+                <button
+                  key={sys.name}
+                  type="button"
+                  onClick={() => {
+                    setShowLinksChooser(false);
+                    window.open(sys.url, "_blank", "noopener,noreferrer");
+                  }}
+                  className="group flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:-translate-y-1 hover:border-[#d4af37]/70 hover:shadow-md text-left w-full cursor-pointer"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#b58c2a]/10 text-[#b58c2a] font-bold text-sm tracking-wider">
+                      {sys.name.slice(0, 2)}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold text-[#0c1826] group-hover:text-[#b58c2a] transition-colors">
+                        {sys.name}
+                      </p>
+                      <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider block mt-0.5">
+                        Link Externo
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-400 group-hover:bg-[#b58c2a]/10 group-hover:text-[#b58c2a] transition-all">
+                    <ExternalLink size={14} />
+                  </div>
+                </button>
+              ))}
             </div>
           </div>
         </div>
