@@ -326,16 +326,27 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   }
 
   function getDesktopScreenHint(anchorRect?: DOMRect) {
+    const cardEl = document.getElementById("card-meus-clientes");
+    let x = window.screenLeft + 192;
+    let y = window.screenTop + 64;
+
+    if (cardEl) {
+      const rect = cardEl.getBoundingClientRect();
+      x = Math.round(window.screenLeft + rect.left);
+      y = Math.round(window.screenTop + rect.top);
+    } else {
+      const sidebarEl = document.querySelector("aside");
+      const sidebarWidth = sidebarEl ? Math.round(sidebarEl.getBoundingClientRect().width) : 192;
+      const headerEl = document.querySelector("header");
+      const headerHeight = headerEl ? Math.round(headerEl.getBoundingClientRect().height) : 64;
+      x = window.screenLeft + sidebarWidth;
+      y = window.screenTop + headerHeight;
+    }
+
     const sidebarEl = document.querySelector("aside");
     const sidebarWidth = sidebarEl ? Math.round(sidebarEl.getBoundingClientRect().width) : 192;
-
-    const headerEl = document.querySelector("header");
-    const headerHeight = headerEl ? Math.round(headerEl.getBoundingClientRect().height) : 64;
-
-    const x = window.screenLeft + sidebarWidth;
-    const y = window.screenTop + headerHeight;
     const width = window.innerWidth - sidebarWidth;
-    const height = window.innerHeight - headerHeight;
+    const height = window.innerHeight - 64;
 
     return {
       x,
@@ -1690,6 +1701,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                         <button
                           key={`${card.line1}-${card.line2}`}
                           type="button"
+                          id={card.line1 === "Meus" && card.line2 === "clientes" ? "card-meus-clientes" : undefined}
                           onClick={() => void handleCardClick(card.line1, card.line2)}
                           className="group flex h-auto min-h-[76px] overflow-hidden bg-white text-left shadow-sm transition-shadow hover:shadow-md"
                         >
