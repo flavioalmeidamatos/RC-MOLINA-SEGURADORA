@@ -336,9 +336,10 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       : sidebarWidth;
     const headerEl = document.getElementById("main-dashboard-header");
     const headerBottom = headerEl ? Math.round(headerEl.getBoundingClientRect().bottom) : 64;
+    const viewportTopOnScreen = Math.max(0, window.outerHeight - window.innerHeight);
 
     const x = Math.round((window.screenLeft + linkWindowLeft) * dpr);
-    const y = Math.round((window.screenTop + headerBottom) * dpr);
+    const y = Math.round((window.screenTop + viewportTopOnScreen + headerBottom) * dpr);
 
     const width = window.innerWidth - linkWindowLeft;
     const height = window.innerHeight - headerBottom;
