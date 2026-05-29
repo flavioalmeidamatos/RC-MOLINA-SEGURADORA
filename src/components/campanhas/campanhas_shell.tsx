@@ -61,6 +61,7 @@ export function CampanhasShell({ userId, userEmail, initialMessage }: CampanhasS
   const [isLoggingOutBridge, setIsLoggingOutBridge] = useState(false);
   const [isSendingCampaign, setIsSendingCampaign] = useState(false);
   const [isUploadingAttachments, setIsUploadingAttachments] = useState(false);
+  const [isConnectionGateDismissed, setIsConnectionGateDismissed] = useState(false);
   const [feedback, setFeedback] = useState<{
     show: boolean;
     type: "success" | "error";
@@ -142,7 +143,13 @@ export function CampanhasShell({ userId, userEmail, initialMessage }: CampanhasS
   }, [attachments]);
 
   const isBridgeConnected = bridgeStatus?.status === "connected";
-  const shouldShowConnectionGate = Boolean(actor) && !isBridgeConnected;
+  const shouldShowConnectionGate = Boolean(actor) && !isBridgeConnected && !isConnectionGateDismissed;
+
+  useEffect(() => {
+    if (isBridgeConnected) {
+      setIsConnectionGateDismissed(false);
+    }
+  }, [isBridgeConnected]);
 
   useEffect(() => {
     let ignore = false;
@@ -573,6 +580,7 @@ export function CampanhasShell({ userId, userEmail, initialMessage }: CampanhasS
         status={bridgeStatus}
         isLoading={isLoadingBridgeStatus}
         isLoggingOut={isLoggingOutBridge}
+        onClose={() => setIsConnectionGateDismissed(true)}
         onRefresh={() => void handleRefreshBridgeStatus()}
         onLogout={() => void handleLogoutBridge()}
       />

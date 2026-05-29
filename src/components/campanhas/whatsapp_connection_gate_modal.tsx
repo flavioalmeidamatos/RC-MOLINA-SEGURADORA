@@ -1,4 +1,4 @@
-import { Loader2, LogOut, QrCode, RefreshCcw, ShieldCheck, Smartphone, Sparkles, Wifi, WifiOff } from "lucide-react";
+import { Loader2, LogOut, QrCode, RefreshCcw, ShieldCheck, Smartphone, Sparkles, Wifi, WifiOff, X } from "lucide-react";
 import { createPortal } from "react-dom";
 
 import type { WhatsAppBridgeStatus } from "../../types/whatsapp_campaign";
@@ -8,6 +8,7 @@ interface WhatsAppConnectionGateModalProps {
   status: WhatsAppBridgeStatus | null;
   isLoading: boolean;
   isLoggingOut: boolean;
+  onClose?: () => void;
   onRefresh: () => void;
   onLogout: () => void;
 }
@@ -35,6 +36,7 @@ export function WhatsAppConnectionGateModal({
   status,
   isLoading,
   isLoggingOut,
+  onClose,
   onRefresh,
   onLogout,
 }: WhatsAppConnectionGateModalProps) {
@@ -60,6 +62,17 @@ export function WhatsAppConnectionGateModal({
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,#d4af3720,transparent_34%),radial-gradient(circle_at_bottom_right,#0c182640,transparent_38%)]" />
 
       <div className="relative grid w-full max-w-5xl overflow-hidden rounded-[36px] border border-white/70 bg-white/95 shadow-[0_40px_120px_rgba(15,23,42,0.35)] lg:grid-cols-[1.08fr_0.92fr]">
+        {onClose ? (
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Fechar"
+            className="absolute right-5 top-5 z-20 flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-500 shadow-sm transition hover:border-slate-300 hover:bg-white hover:text-slate-900"
+          >
+            <X size={18} strokeWidth={2.2} />
+          </button>
+        ) : null}
+
         <section className="relative overflow-hidden bg-[#0c1826] px-6 py-7 text-white sm:px-8 lg:px-10">
           <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#d4af37] via-[#f4d67b] to-[#d4af37]" />
           <div className="absolute -left-16 top-8 h-48 w-48 rounded-full bg-[#d4af37]/10 blur-3xl" />
