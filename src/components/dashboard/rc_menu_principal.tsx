@@ -335,15 +335,18 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     const headerHeight = headerEl ? Math.round(headerEl.getBoundingClientRect().height) : 64;
 
     let rectLeft = sidebarWidth;
+    let rectTop = headerHeight;
     if (cardEl) {
-      rectLeft = cardEl.getBoundingClientRect().left;
+      const cardRect = cardEl.getBoundingClientRect();
+      rectLeft = cardRect.left;
+      rectTop = cardRect.top;
     }
 
     const x = Math.round((window.screenLeft + rectLeft) * dpr);
-    const y = Math.round((window.screenTop + headerHeight) * dpr);
+    const y = Math.round((window.screenTop + rectTop) * dpr);
 
-    const width = window.innerWidth - sidebarWidth;
-    const height = window.innerHeight - 64;
+    const width = window.innerWidth - rectLeft;
+    const height = window.innerHeight - rectTop;
 
     return {
       x,
