@@ -42,9 +42,25 @@ function readTargetFromDeepLink(rawValue) {
     if (parsed.protocol !== `${PROTOCOL}:`) return null;
     const target = parsed.searchParams.get("url");
     writeLog("deep_link.received", { rawValue, target });
-    return target && isSupportedUrl(target) ? target : null;
-  } catch {
-    writeLog("deep_link.invalid", { rawValue });
+    if (!target || !isSupportedUrl(target)) return null;
+
+    const screenHint = {};
+    const x = parsed.searchParams.get("x");
+    const y = parsed.searchParams.get("y");
+    const width = parsed.searchParams.get("width");
+    const height = parsed.searchParams.get("height");
+
+    if (x !== null) screenHint.x = parseFloat(x);
+    if (y !== null) screenHint.y = parseFloat(y);
+    if (width !== null) screenHint.width = parseFloat(width);
+    if (height !== null) screenHint.height = parseFloat(height);
+
+    return {
+      url: target,
+      screen: Object.keys(screenHint).length > 0 ? screenHint : null
+    };
+  } catch (error) {
+    writeLog("deep_link.invalid", { rawValue, error: error.message });
     return null;
   }
 }
@@ -329,45 +345,68 @@ function startLocalAgent() {
   });
 }
 
-app.on("open-url", (event, url) => {
-  event.preventDefault();
-  writeLog("app.open_url", { url });
-  const target = readTargetFromDeepLink(url);
-  if (target) openTargetUrl(target);
-});
+const gotTheLock = app.requestSingleInstanceLock();
 
-app.whenReady().then(() => {
-  const backgroundMode = process.argv.includes("--background");
-  writeLog("app.ready", { argv: process.argv });
-  Menu.setApplicationMenu(null);
-  registerProtocol();
-  startLocalAgent();
-  const target = readTargetFromArgv(process.argv);
-  if (target) pendingUrl = target;
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on("second-instance", (event, commandLine, workingDirectory) => {
+    writeLog("app.second_instance", { commandLine });
+    const targetResult = readTargetFromArgv(commandLine);
+    if (targetResult) {
+      openTargetUrl(targetResult.url, targetResult.screen);
+    } else if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  });
 
-  if (process.argv.includes("--register-protocol")) {
-    dialog.showMessageBox({
-      type: "info",
-      title: "Protocolo registrado",
-      message: `Protocolo ${PROTOCOL}:// registrado para este usuario.`
-    });
-  }
+  app.on("open-url", (event, url) => {
+    event.preventDefault();
+    writeLog("app.open_url", { url });
+    const targetResult = readTargetFromDeepLink(url);
+    if (targetResult) openTargetUrl(targetResult.url, targetResult.screen);
+  });
 
-  if (target || !backgroundMode) {
-    createWindow();
-  } else {
-    writeLog("app.background_ready");
-  }
-});
+  app.whenReady().then(() => {
+    const backgroundMode = process.argv.includes("--background");
+    writeLog("app.ready", { argv: process.argv });
+    Menu.setApplicationMenu(null);
+    registerProtocol();
+    startLocalAgent();
+    const targetResult = readTargetFromArgv(process.argv);
+    if (targetResult) {
+      pendingUrl = targetResult.url;
+      pendingScreenHint = targetResult.screen;
+    }
 
-app.on("activate", () => {
-  if (BrowserWindow.getAllWindows().length === 0) createWindow();
-});
+    if (process.argv.includes("--register-protocol")) {
+      dialog.showMessageBox({
+        type: "info",
+        title: "Protocolo registrado",
+        message: `Protocolo ${PROTOCOL}:// registrado para este usuario.`
+      });
+    }
 
-app.on("window-all-closed", () => {
-  // Keep the local agent alive in the background. The window is restored by /open.
-});
+    if (targetResult || !backgroundMode) {
+      createWindow(targetResult ? targetResult.screen : null);
+    } else {
+      // Create a dummy hidden window to keep Electron event loop alive in background
+      const dummyWindow = new BrowserWindow({ show: false });
+      writeLog("app.background_ready");
+    }
+  });
 
-app.on("before-quit", () => {
-  allowQuit = true;
-});
+  app.on("activate", () => {
+    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+  });
+
+  app.on("window-all-closed", () => {
+    // Keep the local agent alive in the background. The window is restored by /open.
+  });
+
+  app.on("before-quit", () => {
+    allowQuit = true;
+  });
+}

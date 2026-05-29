@@ -368,23 +368,23 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       await requestDesktopOpen(url, anchorRect);
       setLinksDesktopStatus("");
       return;
-    } catch {
-      setLinksDesktopStatus("Aplicativo desktop nao estava ativo. Iniciando em background...");
+    } catch (err) {
+      console.warn("[Links] Falha ao conectar ao agente local via HTTP. Usando deep link...", err);
     }
 
     try {
-      await fetch("/api/desktop/start", { method: "POST" });
-      const agentReady = await waitForDesktopAgent();
-
-      if (!agentReady) {
-        throw new Error("Tempo esgotado ao iniciar o aplicativo desktop.");
-      }
-
-      await requestDesktopOpen(url, anchorRect);
+      const screen = getDesktopScreenHint(anchorRect);
+      const deepLinkUrl = `urlembeddiag://?url=${encodeURIComponent(url)}&x=${screen.x}&y=${screen.y}&width=${screen.width}&height=${screen.height}`;
+      
+      setLinksDesktopStatus("Iniciando/Integrando com o aplicativo desktop...");
+      window.location.href = deepLinkUrl;
+      
+      // Wait a little and clear status
+      await wait(2000);
       setLinksDesktopStatus("");
     } catch (error) {
-      console.warn("[Links] Falha ao abrir no desktop; usando nova aba como contingencia.", error);
-      setLinksDesktopStatus("Nao foi possivel iniciar o desktop automaticamente. Abrindo em nova aba.");
+      console.warn("[Links] Falha ao abrir via deep link; usando nova aba como contingencia.", error);
+      setLinksDesktopStatus("Não foi possível iniciar o desktop automaticamente. Abrindo em nova aba.");
       window.open(url, "_blank", "noopener,noreferrer");
     }
   }
