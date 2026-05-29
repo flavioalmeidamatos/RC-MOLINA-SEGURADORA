@@ -1,0 +1,15 @@
+{
+  "name": "url-embed-diagnostic-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Cliente desktop auxiliar para abrir URLs externas fora do iframe da aplicacao web.",
+  "main": "src/main.cjs",
+  "scripts": {
+    "dev": "set ELECTRON_RUN_AS_NODE=&& electron .",
+    "start": "set ELECTRON_RUN_AS_NODE=&& electron .",
+    "register-protocol": "set ELECTRON_RUN_AS_NODE=&& electron . --register-protocol"
+  },
+  "dependencies": {
+    "electron": "42.3.0"
+  }
+}

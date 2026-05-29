@@ -1,7 +1,7 @@
 {
   "name": "react-example",
   "private": true,
-  "version": "2.0.19",
+  "version": "2.0.20",
   "type": "module",
   "scripts": {
     "dev": "tsx watch server.ts",
@@ -9,6 +9,9 @@
     "dev:campanhas": "start http://localhost:3000/campanhas && npm run dev",
     "start": "tsx server.ts",
     "start:prod": "node --import tsx -e \"process.env.NODE_ENV='production'; import('./server.ts')\"",
+    "desktop:install": "cd desktop-client && npm install",
+    "desktop:dev": "cd desktop-client && npm run dev",
+    "desktop:register": "cd desktop-client && npm run register-protocol",
     "deploy:hostinger": "powershell -ExecutionPolicy Bypass -File scripts/deploy-hostinger.ps1",
     "build": "vite build",
     "preview": "vite preview",

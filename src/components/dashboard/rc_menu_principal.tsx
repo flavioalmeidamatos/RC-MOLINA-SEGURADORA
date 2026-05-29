@@ -38,6 +38,8 @@ const RCWebmail = React.lazy(async () => ({
   default: (await import("../webmail/rc_webmail")).RCWebmail,
 }));
 
+const DESKTOP_AGENT_ORIGIN = "http://127.0.0.1:43125";
+
 interface DashboardProps {
   session?: LocalAuthSession | null;
   perfil?: UsuarioPerfil | null;
@@ -272,6 +274,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const [showSimulatorChooser, setShowSimulatorChooser] = useState(false);
   const [showSistemasChooser, setShowSistemasChooser] = useState(false);
   const [showLinksChooser, setShowLinksChooser] = useState(false);
+  const [linksDesktopStatus, setLinksDesktopStatus] = useState("");
 
 
   const simulatorTimeoutRef = useRef<number | null>(null);
@@ -303,6 +306,89 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     const normalized = compactSender(value).trim();
     const firstAlphaNumeric = Array.from(normalized).find((character) => /[\p{L}\p{N}]/u.test(character));
     return firstAlphaNumeric?.toLocaleUpperCase("pt-BR") || "?";
+  }
+
+  async function waitForDesktopAgent(timeoutMs = 7000) {
+    const startedAt = Date.now();
+
+    while (Date.now() - startedAt < timeoutMs) {
+      try {
+        const response = await fetch(`${DESKTOP_AGENT_ORIGIN}/health`, { cache: "no-store" });
+        if (response.ok) return true;
+      } catch {
+        // O agente ainda pode estar subindo.
+      }
+
+      await new Promise((resolve) => window.setTimeout(resolve, 500));
+    }
+
+    return false;
+  }
+
+  function getDesktopScreenHint(anchorRect?: DOMRect) {
+    const browserChromeHeight = Math.max(0, window.outerHeight - window.innerHeight);
+
+    if (!anchorRect) {
+      return {
+        x: window.screenX + Math.round(window.outerWidth * 0.5),
+        y: window.screenY + browserChromeHeight + 80,
+      };
+    }
+
+    return {
+      anchorX: window.screenX + anchorRect.right,
+      anchorY: window.screenY + browserChromeHeight + anchorRect.top,
+      anchorWidth: anchorRect.width,
+      anchorHeight: anchorRect.height,
+      browserX: window.screenX,
+      browserY: window.screenY,
+      browserWidth: window.outerWidth,
+      browserHeight: window.outerHeight,
+      anchorSource: "links",
+    };
+  }
+
+  async function requestDesktopOpen(url: string, anchorRect?: DOMRect) {
+    const response = await fetch(`${DESKTOP_AGENT_ORIGIN}/open`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        url,
+        screen: getDesktopScreenHint(anchorRect),
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("O cliente desktop recusou a abertura da URL.");
+    }
+  }
+
+  async function openPortalInDesktop(url: string, anchorRect?: DOMRect) {
+    setLinksDesktopStatus("Abrindo portal no aplicativo desktop...");
+
+    try {
+      await requestDesktopOpen(url, anchorRect);
+      setLinksDesktopStatus("");
+      return;
+    } catch {
+      setLinksDesktopStatus("Aplicativo desktop nao estava ativo. Iniciando em background...");
+    }
+
+    try {
+      await fetch("/api/desktop/start", { method: "POST" });
+      const agentReady = await waitForDesktopAgent();
+
+      if (!agentReady) {
+        throw new Error("Tempo esgotado ao iniciar o aplicativo desktop.");
+      }
+
+      await requestDesktopOpen(url, anchorRect);
+      setLinksDesktopStatus("");
+    } catch (error) {
+      console.warn("[Links] Falha ao abrir no desktop; usando nova aba como contingencia.", error);
+      setLinksDesktopStatus("Nao foi possivel iniciar o desktop automaticamente. Abrindo em nova aba.");
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
   }
 
   useEffect(() => {
@@ -973,6 +1059,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     }
 
     if (line1 === "Links") {
+      setLinksDesktopStatus("");
       setShowLinksChooser(true);
       return;
     }
@@ -2169,13 +2256,22 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
               </div>
               <button
                 type="button"
-                onClick={() => setShowLinksChooser(false)}
+                onClick={() => {
+                  setLinksDesktopStatus("");
+                  setShowLinksChooser(false);
+                }}
                 aria-label="Fechar"
                 className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800"
               >
                 <X size={18} />
               </button>
             </div>
+
+            {linksDesktopStatus ? (
+              <div className="mx-6 mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
+                {linksDesktopStatus}
+              </div>
+            ) : null}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 p-6 overflow-y-auto custom-scrollbar">
               {[
@@ -2196,9 +2292,10 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                 <button
                   key={sys.name}
                   type="button"
-                  onClick={() => {
+                  onClick={(event) => {
+                    const anchorRect = event.currentTarget.getBoundingClientRect();
                     setShowLinksChooser(false);
-                    window.open(sys.url, "_blank", "noopener,noreferrer");
+                    void openPortalInDesktop(sys.url, anchorRect);
                   }}
                   className="group flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:-translate-y-1 hover:border-[#d4af37]/70 hover:shadow-md text-left w-full cursor-pointer"
                 >
@@ -2211,7 +2308,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                         {sys.name}
                       </p>
                       <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider block mt-0.5">
-                        Link Externo
+                        Abrir no desktop
                       </span>
                     </div>
                   </div>

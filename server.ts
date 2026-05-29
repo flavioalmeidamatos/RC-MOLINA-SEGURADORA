@@ -32,6 +32,8 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 dotenv.config({ path: path.join(__dirname, '.env.local') });
+const DESKTOP_CLIENT_LAUNCHER = path.join(__dirname, 'desktop-client', 'open-desktop.cmd');
+const DESKTOP_CLIENT_PORT = 43125;
 const SIMULATOR_ORIGIN = 'https://app.simuladoronline.com';
 const SIMULATOR_PROXY_PREFIX = '/simulador-proxy';
 const SIMULATOR_PROXY_PREFIX_ESCAPED = SIMULATOR_PROXY_PREFIX.replace(/\//g, '\\/');
@@ -688,6 +690,50 @@ async function startServer() {
 
   app.post('/api/send-login-code', sendLoginCodeHandler);
   registerWhatsAppBridgeRoutes(app);
+
+  app.post('/api/desktop/start', (_req, res) => {
+    if (process.env.ENABLE_LOCAL_DESKTOP_START === 'false') {
+      return res.status(403).json({
+        ok: false,
+        error: 'A inicializacao local do aplicativo desktop esta desabilitada neste ambiente.',
+      });
+    }
+
+    if (process.platform !== 'win32') {
+      return res.status(409).json({
+        ok: false,
+        error: 'O aplicativo desktop auxiliar so pode ser iniciado automaticamente no Windows.',
+      });
+    }
+
+    if (!fs.existsSync(DESKTOP_CLIENT_LAUNCHER)) {
+      return res.status(404).json({
+        ok: false,
+        error: 'Aplicativo desktop auxiliar nao encontrado no projeto.',
+      });
+    }
+
+    try {
+      const child = spawn('cmd.exe', ['/c', DESKTOP_CLIENT_LAUNCHER, '--background'], {
+        cwd: path.dirname(DESKTOP_CLIENT_LAUNCHER),
+        detached: true,
+        stdio: 'ignore',
+        windowsHide: true,
+      });
+      child.unref();
+
+      return res.json({
+        ok: true,
+        agentUrl: `http://127.0.0.1:${DESKTOP_CLIENT_PORT}`,
+      });
+    } catch (error) {
+      console.error('[DESKTOP] Falha ao iniciar cliente desktop:', error);
+      return res.status(500).json({
+        ok: false,
+        error: 'Nao foi possivel iniciar o aplicativo desktop auxiliar.',
+      });
+    }
+  });
 
   app.post('/api/clientes', createClienteHandler);
   app.get('/api/clientes', listClientesHandler);
