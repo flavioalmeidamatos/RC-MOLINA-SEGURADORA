@@ -1314,7 +1314,24 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const shouldBlockSidebarLinks = showLinksChooser || Boolean(linksDesktopStatus) || isLinksDesktopWindowOpen;
 
   return (
-    <div className="flex min-h-screen w-full flex-col bg-[#F0F4F8] font-sans lg:h-screen lg:flex-row lg:overflow-hidden">
+    <div className="relative flex min-h-screen w-full flex-col bg-[#F0F4F8] font-sans lg:h-screen lg:flex-row lg:overflow-hidden">
+      {isLinksDesktopWindowOpen && (
+        <div className="fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-slate-900/60 backdrop-blur-sm transition-all duration-300">
+          <div className="mx-4 max-w-md rounded-2xl border border-slate-700/50 bg-[#0c1826]/90 p-8 text-center text-white shadow-2xl backdrop-blur-md">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#b58c2a]/20 text-[#b58c2a]">
+              <Monitor size={32} strokeWidth={1.5} className="animate-pulse" />
+            </div>
+            <h3 className="mb-2 text-lg font-black tracking-tight text-[#d4af37]">Navegação Externa Ativa</h3>
+            <p className="text-xs text-gray-300 leading-relaxed mb-6">
+              Você está utilizando a janela integrada para preenchimentos e simulações. Feche a janela externa ou aperte <kbd className="rounded bg-slate-800 px-1.5 py-0.5 font-mono text-[10px] text-gray-400 border border-slate-700">ESC</kbd> para desbloquear o painel administrativo.
+            </p>
+            <div className="inline-flex items-center gap-2 rounded-full bg-slate-800/80 px-4 py-2 text-[11px] font-semibold text-gray-300 border border-slate-700/50">
+              <Loader2 size={12} className="animate-spin text-[#b58c2a]" />
+              Aguardando retorno...
+            </div>
+          </div>
+        </div>
+      )}
       <aside className="w-full flex-shrink-0 bg-[#0c1826] shadow-xl lg:w-48 lg:z-20 lg:flex lg:flex-col lg:justify-between lg:h-screen">
         <div className="lg:flex lg:flex-col lg:min-h-0 lg:flex-1">
           <div className="flex flex-col items-center justify-center bg-gradient-to-b from-[#b58c2a] to-[#806117] px-4 py-6 shadow-inner lg:h-44 lg:pt-4 lg:pb-2">
