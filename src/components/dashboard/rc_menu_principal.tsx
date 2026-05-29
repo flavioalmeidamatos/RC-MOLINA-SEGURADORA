@@ -82,6 +82,7 @@ const AGENDA_REMINDER_POLL_INTERVAL_MS = 30000;
 const AGENDA_REFRESH_INTERVAL_MS = 30000;
 const AGENDA_REMINDER_LEAD_MINUTES = 5;
 const AGENDA_REMINDER_STORAGE_KEY = "rc_molina_agenda_reminders";
+const DESKTOP_LINK_WINDOW_FRAME_OFFSET_X = 28;
 const BASE_SIMULATOR_IFRAME_ALLOW =
   "geolocation; microphone; camera; midi; vr; accelerometer; gyroscope; payment; ambient-light-sensor; encrypted-media; usb";
 const wait = (ms: number) =>
@@ -333,7 +334,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     const viewportLeftOnScreen = Math.max(0, (window.outerWidth - window.innerWidth) / 2);
     const viewportTopOnScreen = Math.max(0, window.outerHeight - window.innerHeight);
 
-    const x = Math.round(window.screenLeft + viewportLeftOnScreen + sidebarWidth);
+    const x = Math.round(window.screenLeft + viewportLeftOnScreen + sidebarWidth + DESKTOP_LINK_WINDOW_FRAME_OFFSET_X);
     const y = Math.round(window.screenTop + viewportTopOnScreen + headerBottom);
 
     const width = window.innerWidth - sidebarWidth;
