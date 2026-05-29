@@ -327,20 +327,21 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
   function getDesktopScreenHint(anchorRect?: DOMRect) {
     const cardEl = document.getElementById("card-meus-clientes");
-    let x = window.screenLeft + 192;
-    let y = window.screenTop + 64;
+    const dpr = window.devicePixelRatio || 1;
+    let x = window.screenLeft + Math.round(192 * dpr);
+    let y = window.screenTop + Math.round(64 * dpr);
 
     if (cardEl) {
       const rect = cardEl.getBoundingClientRect();
-      x = Math.round(window.screenLeft + rect.left);
-      y = Math.round(window.screenTop + rect.top);
+      x = Math.round(window.screenLeft + rect.left * dpr);
+      y = Math.round(window.screenTop + rect.top * dpr);
     } else {
       const sidebarEl = document.querySelector("aside");
       const sidebarWidth = sidebarEl ? Math.round(sidebarEl.getBoundingClientRect().width) : 192;
       const headerEl = document.querySelector("header");
       const headerHeight = headerEl ? Math.round(headerEl.getBoundingClientRect().height) : 64;
-      x = window.screenLeft + sidebarWidth;
-      y = window.screenTop + headerHeight;
+      x = window.screenLeft + Math.round(sidebarWidth * dpr);
+      y = window.screenTop + Math.round(headerHeight * dpr);
     }
 
     const sidebarEl = document.querySelector("aside");
