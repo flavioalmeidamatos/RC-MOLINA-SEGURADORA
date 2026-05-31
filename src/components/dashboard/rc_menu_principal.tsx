@@ -83,7 +83,6 @@ const AGENDA_REMINDER_POLL_INTERVAL_MS = 30000;
 const AGENDA_REFRESH_INTERVAL_MS = 30000;
 const AGENDA_REMINDER_LEAD_MINUTES = 5;
 const AGENDA_REMINDER_STORAGE_KEY = "rc_molina_agenda_reminders";
-const DESKTOP_LINK_WINDOW_VISIBLE_OFFSET_X = 0;
 const BASE_SIMULATOR_IFRAME_ALLOW =
   "geolocation; microphone; camera; midi; vr; accelerometer; gyroscope; payment; ambient-light-sensor; encrypted-media; usb";
 const wait = (ms: number) =>
@@ -331,26 +330,38 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   }
 
   function getDesktopScreenHint(anchorRect?: DOMRect) {
+    // devicePixelRatio converte pixels CSS (lógicos) → pixels físicos do monitor atual.
+    // Sem essa conversão, a janela fica deslocada em monitores com escala diferente (125%, 150%, etc.)
+    const dpr = window.devicePixelRatio || 1;
+
     const sidebarEl = document.querySelector("aside");
-    const sidebarWidth = sidebarEl ? Math.round(sidebarEl.getBoundingClientRect().width) : 192;
+    // Usamos .right para pegar a borda direita exata da sidebar (onde o conteúdo começa)
+    const sidebarRight = sidebarEl
+      ? Math.round(sidebarEl.getBoundingClientRect().right)
+      : 192;
+
     const headerEl = document.getElementById("main-dashboard-header");
-    const headerBottom = headerEl ? Math.round(headerEl.getBoundingClientRect().bottom) : 64;
+    const headerBottom = headerEl
+      ? Math.round(headerEl.getBoundingClientRect().bottom)
+      : 64;
+
+    // Largura da borda do navegador (chrome do browser) em pixels CSS
     const viewportLeftOnScreen = Math.max(0, (window.outerWidth - window.innerWidth) / 2);
     const viewportTopOnScreen = Math.max(0, window.outerHeight - window.innerHeight);
 
-    const linkWindowLeft = sidebarWidth + DESKTOP_LINK_WINDOW_VISIBLE_OFFSET_X;
+    // Coordenadas em pixels CSS → convertidas para pixels físicos com DPR
+    const x = Math.round((window.screenLeft + viewportLeftOnScreen + sidebarRight) * dpr);
+    const y = Math.round((window.screenTop + viewportTopOnScreen + headerBottom) * dpr);
 
-    const x = Math.round(window.screenLeft + viewportLeftOnScreen + linkWindowLeft);
-    const y = Math.round(window.screenTop + viewportTopOnScreen + headerBottom);
-
-    const width = window.innerWidth - linkWindowLeft;
-    const height = window.innerHeight - headerBottom;
+    const width = Math.round((window.innerWidth - sidebarRight) * dpr);
+    const height = Math.round((window.innerHeight - headerBottom) * dpr);
 
     return {
       x,
       y,
       width,
       height,
+      dpr,
       anchorSource: "links",
     };
   }
