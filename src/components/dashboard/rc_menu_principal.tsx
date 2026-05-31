@@ -2496,22 +2496,14 @@ timeout /t 5 >nul
                     const anchorRect = event.currentTarget.getBoundingClientRect();
                     setShowLinksChooser(false);
                     
-                    if (sys.name === "TESTE") {
-                      const hasWebview = !!((window as any).chrome && (window as any).chrome.webview);
-                      alert("Clicou em TESTE! Está dentro do WebView2? " + (hasWebview ? "SIM" : "NÃO"));
-                      
-                      if (hasWebview) {
-                        const sidebarWidth = Math.round(document.querySelector("aside")?.getBoundingClientRect().width || 192);
-                        const payload = {
-                            action: "open_external",
-                            url: sys.url,
-                            sidebarWidth: sidebarWidth
-                        };
-                        alert("Enviando postMessage: " + JSON.stringify(payload));
-                        (window as any).chrome.webview.postMessage(JSON.stringify(payload));
-                      } else {
-                        void openPortalInDesktop(sys.url, anchorRect);
-                      }
+                    if (sys.name === "TESTE" && (window as any).chrome && (window as any).chrome.webview) {
+                      const sidebarWidth = Math.round(document.querySelector("aside")?.getBoundingClientRect().width || 192);
+                      const payload = {
+                          action: "open_external",
+                          url: sys.url,
+                          sidebarWidth: sidebarWidth
+                      };
+                      (window as any).chrome.webview.postMessage(JSON.stringify(payload));
                     } else {
                       void openPortalInDesktop(sys.url, anchorRect);
                     }
