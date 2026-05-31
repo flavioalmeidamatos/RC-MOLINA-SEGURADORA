@@ -765,6 +765,51 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     };
   }, [canViewSystemUsers, perfil?.email, perfil?.id]);
 
+  const handleDownloadInstaller = () => {
+    const origin = window.location.origin;
+    const batContent = `@echo off
+chcp 65001 >nul
+echo Instalando RC Molina Companion...
+set "URL=${origin}/downloads/RCMolinaCompanion.zip"
+set "DEST_DIR=%LOCALAPPDATA%\\RCMolinaCompanion"
+set "ZIP_PATH=%TEMP%\\RCMolinaCompanion.zip"
+
+echo.
+echo Baixando arquivos (isso pode levar alguns instantes)...
+powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri '%URL%' -OutFile '%ZIP_PATH%'"
+
+echo.
+echo Extraindo arquivos e atualizando...
+powershell -Command "Expand-Archive -Path '%ZIP_PATH%' -DestinationPath '%DEST_DIR%' -Force"
+
+echo.
+echo Configurando atalhos do Windows...
+powershell -Command "$s=(New-Object -COM WScript.Shell).CreateShortcut('%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\RC Molina Companion.lnk');$s.TargetPath='%DEST_DIR%\\RC Molina Companion-win32-x64\\RC Molina Companion.exe';$s.Arguments='--background';$s.WindowStyle=7;$s.Save()"
+
+echo.
+echo Iniciando o Companion silenciosamente...
+start "" "%DEST_DIR%\\RC Molina Companion-win32-x64\\RC Molina Companion.exe" --background
+
+echo.
+echo Limpando arquivos temporarios...
+del "%ZIP_PATH%"
+
+echo.
+echo Instalacao concluida com sucesso! Esta janela se fechara automaticamente.
+timeout /t 5 >nul
+`;
+
+    const blob = new Blob([batContent], { type: "application/bat" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "InstalarCompanion.bat";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const clearSimulatorTimeout = () => {
     if (simulatorTimeoutRef.current !== null) {
       window.clearTimeout(simulatorTimeoutRef.current);
@@ -1491,18 +1536,17 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                     Integração de Links Desktop Inativa
                   </p>
                   <p className="text-[11px] text-amber-700/90 leading-normal">
-                    Para abrir portais externos e simuladores snappados abaixo do cabeçalho principal, baixe o aplicativo desktop integrado, extraia a pasta e execute-o uma vez.
+                    Para abrir portais externos e simuladores snappados abaixo do cabeçalho principal, baixe o script instalador e execute-o apenas uma vez.
                   </p>
                 </div>
               </div>
-              <a
-                href="/downloads/RCMolinaCompanion.zip"
-                download="RCMolinaCompanion.zip"
+              <button
+                onClick={handleDownloadInstaller}
                 className="inline-flex shrink-0 items-center gap-2 rounded-full bg-[#b58c2a] hover:bg-[#967320] px-4 py-2 text-xs font-bold text-white shadow-sm transition active:scale-95 text-center justify-center"
               >
                 <Download size={14} strokeWidth={2.5} />
-                Baixar Aplicativo Desktop
-              </a>
+                Baixar Instalador Automático
+              </button>
             </div>
           </div>
         )}
