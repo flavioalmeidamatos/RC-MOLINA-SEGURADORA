@@ -2486,8 +2486,7 @@ timeout /t 5 >nul
                 { name: "PORTO SEGURO", url: "https://corretor.portoseguro.com.br/portal/site/corretoronline/template.LOGIN/" },
                 { name: "QUALIVENDAS", url: "https://qualivendas.qualicorp.com.br/#/login" },
                 { name: "SOLUTIONS", url: "https://solutions.hcommerce.com.br/login" },
-                { name: "SUPERMED", url: "https://vendas.supermed.com.br/login" },
-                { name: "TESTE", url: "https://solutions.hcommerce.com.br/login" },
+                { name: "SUPERMED", url: "https://vendas.supermed.com.br/login" }
               ].map((sys) => (
                 <button
                   key={sys.name}
@@ -2496,7 +2495,7 @@ timeout /t 5 >nul
                     const anchorRect = event.currentTarget.getBoundingClientRect();
                     setShowLinksChooser(false);
                     
-                    if (sys.name === "TESTE" && (window as any).chrome && (window as any).chrome.webview) {
+                    if ((window as any).chrome && (window as any).chrome.webview) {
                       const sidebarWidth = Math.round(document.querySelector("aside")?.getBoundingClientRect().width || 192);
                       const headerHeight = Math.round(document.querySelector("header")?.getBoundingClientRect().height || 64);
                       const payload = {
