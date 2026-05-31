@@ -2497,7 +2497,7 @@ timeout /t 5 >nul
                     setShowLinksChooser(false);
                     
                     if (sys.name === "TESTE" && (window as any).chrome && (window as any).chrome.webview) {
-                      const sidebarWidth = document.querySelector("aside")?.getBoundingClientRect().width || 192;
+                      const sidebarWidth = Math.round(document.querySelector("aside")?.getBoundingClientRect().width || 192);
                       const payload = {
                           action: "open_external",
                           url: sys.url,
