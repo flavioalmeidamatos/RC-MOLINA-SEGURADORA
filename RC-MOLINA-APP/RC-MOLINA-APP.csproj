@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Resource Include="Assets\Images\avatar.png" />
+    <Resource Include="Assets\Images\icon.png" />
   </ItemGroup>
 
 </Project>
