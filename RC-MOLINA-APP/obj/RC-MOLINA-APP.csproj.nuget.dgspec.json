@@ -1,0 +1,85 @@
+{
+  "format": 1,
+  "restore": {
+    "D:\\APRENDIZADO APP\\RC-MOLINA-SEGURADORA\\RC-MOLINA-APP\\RC-MOLINA-APP.csproj": {}
+  },
+  "projects": {
+    "D:\\APRENDIZADO APP\\RC-MOLINA-SEGURADORA\\RC-MOLINA-APP\\RC-MOLINA-APP.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "D:\\APRENDIZADO APP\\RC-MOLINA-SEGURADORA\\RC-MOLINA-APP\\RC-MOLINA-APP.csproj",
+        "projectName": "RC-MOLINA-APP",
+        "projectPath": "D:\\APRENDIZADO APP\\RC-MOLINA-SEGURADORA\\RC-MOLINA-APP\\RC-MOLINA-APP.csproj",
+        "packagesPath": "C:\\Users\\FLAVIO ALMEIDA MATOS\\.nuget\\packages\\",
+        "outputPath": "D:\\APRENDIZADO APP\\RC-MOLINA-SEGURADORA\\RC-MOLINA-APP\\obj\\",
+        "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\FLAVIO ALMEIDA MATOS\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0-windows"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0-windows7.0": {
+            "targetAlias": "net8.0-windows",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        }
+      },
+      "frameworks": {
+        "net8.0-windows7.0": {
+          "targetAlias": "net8.0-windows",
+          "dependencies": {
+            "CommunityToolkit.Mvvm": {
+              "target": "Package",
+              "version": "[8.2.2, )"
+            },
+            "Microsoft.Web.WebView2": {
+              "target": "Package",
+              "version": "[1.0.2420.47, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            },
+            "Microsoft.WindowsDesktop.App.WPF": {
+              "privateAssets": "none"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.421/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

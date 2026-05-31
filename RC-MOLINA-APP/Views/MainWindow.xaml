@@ -1,0 +1,31 @@
+<Window x:Class="RCMolinaApp.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+        Title="Zodiaco App" Height="720" Width="1280"
+        MinWidth="1024" MinHeight="720"
+        WindowStartupLocation="CenterScreen"
+        WindowState="Maximized"
+        Background="#071423">
+    
+    <Grid>
+        <Grid.RowDefinitions>
+            <!-- Spacer para o header -->
+            <RowDefinition x:Name="HeaderSpacerRow" Height="0" />
+            <!-- Área do conteúdo principal -->
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        
+        <Grid.ColumnDefinitions>
+            <!-- Spacer dinâmico para a sidebar -->
+            <ColumnDefinition x:Name="SidebarSpacerColumn" Width="0" />
+            <!-- Área do ExternalWebView -->
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- WebView 1: Aplicação Web Base (Fundo) -->
+        <wv2:WebView2 x:Name="AppWebView" Grid.Row="0" Grid.RowSpan="2" Grid.Column="0" Grid.ColumnSpan="2" Panel.ZIndex="0" 
+                      CoreWebView2InitializationCompleted="AppWebView_CoreWebView2InitializationCompleted"/>
+    </Grid>
+</Window>
+

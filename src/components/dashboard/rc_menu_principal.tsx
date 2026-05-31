@@ -1165,10 +1165,16 @@ timeout /t 5 >nul
       clearLocalUiState();
       onLogout?.();
       navigate("/login", { replace: true });
+      if ((window as any).chrome && (window as any).chrome.webview) {
+        (window as any).chrome.webview.postMessage(JSON.stringify({ action: "close_app" }));
+      }
     } catch (_error) {
       clearLocalUiState();
       onLogout?.();
       navigate("/login", { replace: true });
+      if ((window as any).chrome && (window as any).chrome.webview) {
+        (window as any).chrome.webview.postMessage(JSON.stringify({ action: "close_app" }));
+      }
     } finally {
       setIsLoggingOut(false);
     }

@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "DD8ZDtHV7pY=",
+  "success": true,
+  "projectFilePath": "D:\\APRENDIZADO APP\\RC-MOLINA-SEGURADORA\\RC-MOLINA-APP\\RC-MOLINA-APP.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\FLAVIO ALMEIDA MATOS\\.nuget\\packages\\communitytoolkit.mvvm\\8.2.2\\communitytoolkit.mvvm.8.2.2.nupkg.sha512",
+    "C:\\Users\\FLAVIO ALMEIDA MATOS\\.nuget\\packages\\microsoft.web.webview2\\1.0.2420.47\\microsoft.web.webview2.1.0.2420.47.nupkg.sha512"
+  ],
+  "logs": []
+}
