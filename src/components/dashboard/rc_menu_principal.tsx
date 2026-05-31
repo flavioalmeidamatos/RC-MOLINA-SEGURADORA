@@ -2496,14 +2496,14 @@ timeout /t 5 >nul
                     const anchorRect = event.currentTarget.getBoundingClientRect();
                     setShowLinksChooser(false);
                     
-                    if (sys.name === "TESTE" && window.chrome && window.chrome.webview) {
+                    if (sys.name === "TESTE" && (window as any).chrome && (window as any).chrome.webview) {
                       const sidebarWidth = document.querySelector("aside")?.getBoundingClientRect().width || 192;
                       const payload = {
                           action: "open_external",
                           url: sys.url,
                           sidebarWidth: sidebarWidth
                       };
-                      window.chrome.webview.postMessage(JSON.stringify(payload));
+                      (window as any).chrome.webview.postMessage(JSON.stringify(payload));
                     } else {
                       void openPortalInDesktop(sys.url, anchorRect);
                     }
