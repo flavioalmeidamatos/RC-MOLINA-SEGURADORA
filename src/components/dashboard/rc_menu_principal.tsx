@@ -2487,6 +2487,7 @@ timeout /t 5 >nul
                 { name: "QUALIVENDAS", url: "https://qualivendas.qualicorp.com.br/#/login" },
                 { name: "SOLUTIONS", url: "https://solutions.hcommerce.com.br/login" },
                 { name: "SUPERMED", url: "https://vendas.supermed.com.br/login" },
+                { name: "TESTE", url: "#" },
               ].map((sys) => (
                 <button
                   key={sys.name}
