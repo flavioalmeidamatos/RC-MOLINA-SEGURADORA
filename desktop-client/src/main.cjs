@@ -16,6 +16,42 @@ let pendingScreenHint = null;
 let localServer = null;
 let allowQuit = false;
 
+const statePath = path.join(app.getPath("userData"), "window-state.json");
+
+function loadWindowState() {
+  try {
+    if (fs.existsSync(statePath)) {
+      const state = JSON.parse(fs.readFileSync(statePath, "utf8"));
+      // Ensure at least the top-left corner is inside the bounds of a connected monitor
+      const displays = screen.getAllDisplays();
+      const visibleDisplay = displays.find(display => {
+         const area = display.workArea;
+         return state.x >= area.x && state.x < area.x + area.width &&
+                state.y >= area.y && state.y < area.y + area.height;
+      });
+      if (visibleDisplay) {
+        writeLog("window.state.loaded", state);
+        return state;
+      }
+    }
+  } catch (err) {
+    writeLog("window.state.load_error", { error: err.message });
+  }
+  return null;
+}
+
+function saveWindowState() {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    try {
+      if (mainWindow.isMaximized() || mainWindow.isMinimized()) return;
+      const bounds = mainWindow.getBounds();
+      fs.writeFileSync(statePath, JSON.stringify(bounds));
+    } catch (err) {
+      writeLog("window.state.save_error", { error: err.message });
+    }
+  }
+}
+
 function writeLog(event, data = {}) {
   try {
     const logLine = JSON.stringify({ at: new Date().toISOString(), event, ...data }) + "\n";
@@ -123,16 +159,22 @@ function getWindowBounds(screenHint) {
 
 function createWindow(screenHint = null) {
   writeLog("window.create");
-  const bounds = getWindowBounds(screenHint);
+  
+  // Try to load saved bounds first, fallback to screenHint or default
+  let bounds = loadWindowState();
+  if (!bounds) {
+    bounds = getWindowBounds(screenHint);
+  }
+
   mainWindow = new BrowserWindow({
     ...bounds,
-    title: "URL Embed Diagnostic Desktop",
-    frame: false,
-    hasShadow: false,
-    thickFrame: false,
-    resizable: false,
-    movable: false,
-    maximizable: false,
+    title: "RC Molina Companion",
+    frame: true,
+    hasShadow: true,
+    thickFrame: true,
+    resizable: true,
+    movable: true,
+    maximizable: true,
     fullscreenable: false,
     alwaysOnTop: MODAL_LIKE_WINDOW,
     skipTaskbar: false,
@@ -144,6 +186,9 @@ function createWindow(screenHint = null) {
     }
   });
   mainWindow.setMenu(null);
+
+  mainWindow.on("moved", saveWindowState);
+  mainWindow.on("resized", saveWindowState);
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (isSupportedUrl(url)) shell.openExternal(url);
@@ -168,6 +213,7 @@ function createWindow(screenHint = null) {
   });
 
   mainWindow.on("close", (event) => {
+    saveWindowState();
     if (!allowQuit) {
       event.preventDefault();
       hideWindowAndClearSession("close");
