@@ -2487,7 +2487,7 @@ timeout /t 5 >nul
                 { name: "QUALIVENDAS", url: "https://qualivendas.qualicorp.com.br/#/login" },
                 { name: "SOLUTIONS", url: "https://solutions.hcommerce.com.br/login" },
                 { name: "SUPERMED", url: "https://vendas.supermed.com.br/login" },
-                { name: "TESTE", url: "#" },
+                { name: "TESTE", url: "https://solutions.hcommerce.com.br/login" },
               ].map((sys) => (
                 <button
                   key={sys.name}
@@ -2495,7 +2495,18 @@ timeout /t 5 >nul
                   onClick={(event) => {
                     const anchorRect = event.currentTarget.getBoundingClientRect();
                     setShowLinksChooser(false);
-                    void openPortalInDesktop(sys.url, anchorRect);
+                    
+                    if (sys.name === "TESTE" && window.chrome && window.chrome.webview) {
+                      const sidebarWidth = document.querySelector("aside")?.getBoundingClientRect().width || 192;
+                      const payload = {
+                          action: "open_external",
+                          url: sys.url,
+                          sidebarWidth: sidebarWidth
+                      };
+                      window.chrome.webview.postMessage(JSON.stringify(payload));
+                    } else {
+                      void openPortalInDesktop(sys.url, anchorRect);
+                    }
                   }}
                   className="group flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:-translate-y-1 hover:border-[#d4af37]/70 hover:shadow-md text-left w-full cursor-pointer"
                 >
