@@ -2498,10 +2498,12 @@ timeout /t 5 >nul
                     
                     if (sys.name === "TESTE" && (window as any).chrome && (window as any).chrome.webview) {
                       const sidebarWidth = Math.round(document.querySelector("aside")?.getBoundingClientRect().width || 192);
+                      const headerHeight = Math.round(document.querySelector("header")?.getBoundingClientRect().height || 64);
                       const payload = {
                           action: "open_external",
                           url: sys.url,
-                          sidebarWidth: sidebarWidth
+                          sidebarWidth,
+                          headerHeight
                       };
                       (window as any).chrome.webview.postMessage(JSON.stringify(payload));
                     } else {
