@@ -330,7 +330,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
   function getDesktopScreenHint(anchorRect?: DOMRect) {
     // Calculamos em coordenadas físicas absolutas da tela (multiplicando pelo DPR do navegador).
-    // Enviamos como 'isPhysical: true' para que o Electron converta com precisão usando screenToDipPoint.
+    // Enviamos como 'isPhysical: true' para que o agente desktop converta com precisão as coordenadas.
     // Isso elimina qualquer desalinhamento ou divergência de escala em múltiplos monitores com DPRs diferentes.
     const dpr = window.devicePixelRatio || 1;
 
