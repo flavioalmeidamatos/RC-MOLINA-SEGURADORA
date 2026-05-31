@@ -330,8 +330,9 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   }
 
   function getDesktopScreenHint(anchorRect?: DOMRect) {
-    // O Electron espera coordenadas e dimensões em pixels lógicos/CSS (DIPs - Device Independent Pixels).
-    // Multiplicar por DPR causava deslocamento duplo em monitores de alta densidade/escala (125%, 150%, etc.).
+    // Calculamos em coordenadas físicas absolutas da tela (multiplicando pelo DPR do navegador).
+    // Enviamos como 'isPhysical: true' para que o Electron converta com precisão usando screenToDipPoint.
+    // Isso elimina qualquer desalinhamento ou divergência de escala em múltiplos monitores com DPRs diferentes.
     const dpr = window.devicePixelRatio || 1;
 
     const sidebarEl = document.querySelector("aside");
@@ -349,12 +350,12 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     const viewportLeftOnScreen = Math.max(0, (window.outerWidth - window.innerWidth) / 2);
     const viewportTopOnScreen = Math.max(0, window.outerHeight - window.innerHeight);
 
-    // Coordenadas puras em pixels CSS lógicos
-    const x = Math.round(window.screenLeft + viewportLeftOnScreen + sidebarRight);
-    const y = Math.round(window.screenTop + viewportTopOnScreen + headerBottom);
+    // Coordenadas absolutas físicas da tela
+    const x = Math.round((window.screenLeft + viewportLeftOnScreen + sidebarRight) * dpr);
+    const y = Math.round((window.screenTop + viewportTopOnScreen + headerBottom) * dpr);
 
-    const width = Math.round(window.innerWidth - sidebarRight);
-    const height = Math.round(window.innerHeight - headerBottom);
+    const width = Math.round((window.innerWidth - sidebarRight) * dpr);
+    const height = Math.round((window.innerHeight - headerBottom) * dpr);
 
     return {
       x,
@@ -362,6 +363,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       width,
       height,
       dpr,
+      isPhysical: true,
       anchorSource: "links",
     };
   }

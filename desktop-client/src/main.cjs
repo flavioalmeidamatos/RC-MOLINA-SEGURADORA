@@ -72,12 +72,20 @@ function readTargetFromArgv(argv) {
 
 function getWindowBounds(screenHint) {
   if (screenHint && Number.isFinite(screenHint.x) && Number.isFinite(screenHint.y)) {
-    const startX = Math.round(screenHint.x);
-    const startY = Math.round(screenHint.y);
+    let startX = Math.round(screenHint.x);
+    let startY = Math.round(screenHint.y);
     
-    // Find the monitor/display nearest to the starting coordinate
+    // Se as coordenadas forem físicas (absolutas da tela), convertemos para DIPs lógicos do Electron
+    if (screenHint.isPhysical || screenHint.dpr) {
+      const physicalPoint = { x: startX, y: startY };
+      const dipPoint = screen.screenToDipPoint ? screen.screenToDipPoint(physicalPoint) : physicalPoint;
+      startX = Math.round(dipPoint.x);
+      startY = Math.round(dipPoint.y);
+    }
+    
+    // Encontra o monitor/display mais próximo usando a coordenada convertida em DIPs
     const display = screen.getDisplayNearestPoint({ x: startX, y: startY });
-    const area = display.workArea; // This excludes the Windows taskbar!
+    const area = display.workArea; // Exclui a barra de tarefas do Windows
     
     // Stretch to the right edge of the workArea
     const width = Math.max(MIN_WINDOW_WIDTH, area.x + area.width - startX);
