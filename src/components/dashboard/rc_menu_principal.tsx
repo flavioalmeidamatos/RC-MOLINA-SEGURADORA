@@ -277,7 +277,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const [showLinksChooser, setShowLinksChooser] = useState(false);
   const [linksDesktopStatus, setLinksDesktopStatus] = useState("");
   const [isLinksDesktopWindowOpen, setIsLinksDesktopWindowOpen] = useState(false);
-  const [isDesktopAgentConnected, setIsDesktopAgentConnected] = useState<boolean | null>(null);
 
 
   const simulatorTimeoutRef = useRef<number | null>(null);
@@ -459,34 +458,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   useEffect(() => {
     return () => {
       linksDesktopMonitorTokenRef.current += 1;
-    };
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-
-    const checkAgent = async () => {
-      try {
-        const response = await fetch(`${DESKTOP_AGENT_ORIGIN}/health`, { cache: "no-store" });
-        if (response.ok) {
-          if (active) setIsDesktopAgentConnected(true);
-          return;
-        }
-      } catch {
-        // Offline
-      }
-      if (active) setIsDesktopAgentConnected(false);
-    };
-
-    void checkAgent();
-
-    const intervalId = setInterval(() => {
-      void checkAgent();
-    }, 4000);
-
-    return () => {
-      active = false;
-      clearInterval(intervalId);
     };
   }, []);
 
@@ -764,51 +735,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       ignore = true;
     };
   }, [canViewSystemUsers, perfil?.email, perfil?.id]);
-
-  const handleDownloadInstaller = () => {
-    const origin = window.location.origin;
-    const batContent = `@echo off
-chcp 65001 >nul
-echo Instalando RC Molina Companion...
-set "URL=${origin}/downloads/RCMolinaCompanion.zip"
-set "DEST_DIR=%LOCALAPPDATA%\\RCMolinaCompanion"
-set "ZIP_PATH=%TEMP%\\RCMolinaCompanion.zip"
-
-echo.
-echo Baixando arquivos (isso pode levar alguns instantes)...
-powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri '%URL%' -OutFile '%ZIP_PATH%'"
-
-echo.
-echo Extraindo arquivos e atualizando...
-powershell -Command "Expand-Archive -Path '%ZIP_PATH%' -DestinationPath '%DEST_DIR%' -Force"
-
-echo.
-echo Configurando atalhos do Windows...
-powershell -Command "$s=(New-Object -COM WScript.Shell).CreateShortcut('%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\RC Molina Companion.lnk');$s.TargetPath='%DEST_DIR%\\RC Molina Companion-win32-x64\\RC Molina Companion.exe';$s.Arguments='--background';$s.WindowStyle=7;$s.Save()"
-
-echo.
-echo Iniciando o Companion silenciosamente...
-start "" "%DEST_DIR%\\RC Molina Companion-win32-x64\\RC Molina Companion.exe" --background
-
-echo.
-echo Limpando arquivos temporarios...
-del "%ZIP_PATH%"
-
-echo.
-echo Instalacao concluida com sucesso! Esta janela se fechara automaticamente.
-timeout /t 5 >nul
-`;
-
-    const blob = new Blob([batContent], { type: "application/bat" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "InstalarCompanion.bat";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
 
   const clearSimulatorTimeout = () => {
     if (simulatorTimeoutRef.current !== null) {
@@ -1529,33 +1455,6 @@ timeout /t 5 >nul
             </button>
           </div>
         </header>
-
-        {isDesktopAgentConnected === false && (
-          <div className="shrink-0 bg-gradient-to-r from-amber-50 to-orange-50 border-b border-amber-200 px-4 py-2.5 sm:px-6 md:px-8">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
-                  <Monitor size={18} strokeWidth={2} />
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-amber-900 leading-snug">
-                    Integração de Links Desktop Inativa
-                  </p>
-                  <p className="text-[11px] text-amber-700/90 leading-normal">
-                    Para abrir portais externos e simuladores snappados abaixo do cabeçalho principal, baixe o script instalador e execute-o apenas uma vez.
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={handleDownloadInstaller}
-                className="inline-flex shrink-0 items-center gap-2 rounded-full bg-[#b58c2a] hover:bg-[#967320] px-4 py-2 text-xs font-bold text-white shadow-sm transition active:scale-95 text-center justify-center"
-              >
-                <Download size={14} strokeWidth={2.5} />
-                Baixar Instalador Automático
-              </button>
-            </div>
-          </div>
-        )}
 
         <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden transition-all duration-300">
           <div className="flex min-h-0 min-w-0 flex-1 flex-col">
