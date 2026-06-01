@@ -622,6 +622,20 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     };
   }, [canViewSystemUsers, perfil?.email, perfil?.id]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && showLinksChooser) {
+        setShowLinksChooser(false);
+        setLinksDesktopStatus("");
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [showLinksChooser]);
+
 
   const handleLogout = async () => {
     if (isLoggingOut) {
@@ -1417,6 +1431,14 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
               >
                 <X size={18} />
               </button>
+            </div>
+
+            <div className="shrink-0 bg-blue-50 border-b border-blue-100 px-6 py-3 shadow-inner">
+              <div className="flex items-center justify-center">
+                <p className="text-sm font-bold text-blue-700 animate-pulse uppercase tracking-wide">
+                  Pressione ESC para retornar ao menu principal
+                </p>
+              </div>
             </div>
 
             {linksDesktopStatus ? (
