@@ -57,33 +57,16 @@ export interface AniversarianteMes {
   status_cliente: string | null;
 }
 
-type SimulatorMode = "idle" | "loading" | "embedded" | "external";
-type SimulatorBrowser = "chrome" | "edge" | "firefox" | "safari" | "other";
-type SimulatorExternalReason = "manual" | "iframe-error" | "timeout";
 
 const USERS_VIEWER_FULL_NAME = "ROSILENE RODRIGUES DE CARVALHO MOLINA";
 const normalizeFullName = (value: string) => value.trim().replace(/\s+/g, " ").toUpperCase();
 
-const SIMULATOR_ENTRY_URL = "https://app.simuladoronline.com/inicio";
-const SIMULATOR_LOGOUT_URL = "https://app.simuladoronline.com/logout";
-const SIMULATOR_PROXY_LOGIN_URL = "/simulador-proxy/login/4602";
-const SULAMERICA_SIMULATOR_URL = "https://os11.sulamerica.com.br/SaudeCotador/LoginVendedor.aspx";
-const SULAMERICA_PROXY_LOGIN_URL = "/sulamerica-proxy/SaudeCotador/LoginVendedor.aspx";
-const AMIL_SIMULATOR_URL = "https://portalcorretor.amil.com.br/portal/web/servicos/usuario/corretor/login";
-const AMIL_PROXY_LOGIN_URL = "/amil-proxy/portal/web/servicos/usuario/corretor/login";
-const MEDSENIOR_SIMULATOR_URL = "https://vendadigital.medsenior.com.br/";
-const KLINI_SIMULATOR_URL = "https://klinisaude.hcommerce.com.br/corretora/login";
-const AMIL_LOGIN = "77915445715";
-const AMIL_PASSWORD = "sqn0y3zqmo";
-const SIMULATOR_FALLBACK_WINDOW_NAME = "simulador_online_fallback_window";
-const CHROME_SIMULATOR_LOAD_TIMEOUT_MS = 18000;
 const GMAIL_INBOX_POLL_INTERVAL_MS = 5000;
 const AGENDA_REMINDER_POLL_INTERVAL_MS = 30000;
 const AGENDA_REFRESH_INTERVAL_MS = 30000;
 const AGENDA_REMINDER_LEAD_MINUTES = 5;
 const AGENDA_REMINDER_STORAGE_KEY = "rc_molina_agenda_reminders";
-const BASE_SIMULATOR_IFRAME_ALLOW =
-  "geolocation; microphone; camera; midi; vr; accelerometer; gyroscope; payment; ambient-light-sensor; encrypted-media; usb";
+
 const wait = (ms: number) =>
   new Promise<void>((resolve) => {
     window.setTimeout(resolve, ms);
@@ -149,87 +132,6 @@ const saveAgendaReminderState = (state: AgendaReminderState) => {
   window.localStorage.setItem(AGENDA_REMINDER_STORAGE_KEY, JSON.stringify(state));
 };
 
-const detectSimulatorBrowser = (): SimulatorBrowser => {
-  const userAgent = window.navigator.userAgent;
-
-  if (/Firefox\//i.test(userAgent)) {
-    return "firefox";
-  }
-
-  if (/Edg\//i.test(userAgent)) {
-    return "edge";
-  }
-
-  if (/Chrome\//i.test(userAgent) && !/OPR\/|Opera|SamsungBrowser/i.test(userAgent)) {
-    return "chrome";
-  }
-
-  if (/Safari\//i.test(userAgent) && !/Chrome\//i.test(userAgent)) {
-    return "safari";
-  }
-
-  return "other";
-};
-
-const isSimulatorSupportedBrowser = (browser: SimulatorBrowser) =>
-  browser === "chrome" || browser === "edge" || browser === "firefox";
-
-const usesSimulatorProxy = (browser: SimulatorBrowser) =>
-  browser === "chrome" || browser === "edge" || browser === "firefox";
-
-const getSimulatorBrowserLabel = (browser: SimulatorBrowser) => {
-  const labels: Record<SimulatorBrowser, string> = {
-    chrome: "Chrome",
-    edge: "Edge",
-    firefox: "Firefox",
-    safari: "Safari",
-    other: "este navegador",
-  };
-
-  return labels[browser];
-};
-
-const getSimulatorIframeAllow = (browser: SimulatorBrowser) =>
-  usesSimulatorProxy(browser)
-    ? `${BASE_SIMULATOR_IFRAME_ALLOW}; storage-access`
-    : BASE_SIMULATOR_IFRAME_ALLOW;
-
-const getSimulatorLoadingMessage = (browser: SimulatorBrowser) =>
-  usesSimulatorProxy(browser)
-    ? `Tentando carregar o simulador dentro da aplicação pelo proxy experimental do ${getSimulatorBrowserLabel(browser)}...`
-    : "Tentando carregar o simulador dentro da aplicação...";
-
-const getSimulatorFrameUrl = () => SIMULATOR_PROXY_LOGIN_URL;
-
-const getSimulatorExternalMessage = (
-  reason: SimulatorExternalReason,
-  browser: SimulatorBrowser
-) => {
-  if (reason === "manual") {
-    return `O simulador foi aberto em uma janela propria do ${getSimulatorBrowserLabel(browser)}.`;
-  }
-
-  if (!isSimulatorSupportedBrowser(browser)) {
-    return "O Simulador dentro do app esta disponivel somente no Chrome, Edge e Firefox.";
-  }
-
-  if (usesSimulatorProxy(browser)) {
-    return `${getSimulatorBrowserLabel(browser)} não manteve o simulador incorporado de forma estável. Use o botão abaixo para abrir o simulador em uma janela própria.`;
-  }
-
-  if (reason === "timeout") {
-    return `${getSimulatorBrowserLabel(browser)} não confirmou o carregamento estável do simulador incorporado. O sistema foi aberto automaticamente em uma nova janela.`;
-  }
-
-  return `Não foi possível manter o simulador incorporado no ${getSimulatorBrowserLabel(browser)}. O sistema foi aberto automaticamente em uma nova janela.`;
-};
-
-const getSimulatorExternalExplanation = (browser: SimulatorBrowser) =>
-  !isSimulatorSupportedBrowser(browser)
-    ? "Para evitar falhas de login e sessão, o acesso incorporado ao Simulador foi limitado aos navegadores Chrome, Edge e Firefox."
-    : usesSimulatorProxy(browser)
-    ? `O ${getSimulatorBrowserLabel(browser)} pode tratar cookies e armazenamento de sites externos dentro de iframes de forma mais restritiva. O proxy experimental tenta manter o simulador dentro do app usando o mesmo dominio local.`
-    : "Esse fallback é acionado quando o navegador ou o próprio simulador restringe algum recurso necessário para manter o site externo incorporado.";
 
 const WhatsAppIcon: React.FC<{ className?: string }> = ({ className }) => (
   <svg viewBox="0 0 448 512" fill="currentColor" aria-hidden="true" className={className}>
@@ -266,24 +168,10 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const [isLoadingSystemUsers, setIsLoadingSystemUsers] = useState(false);
   const [systemUsersError, setSystemUsersError] = useState("");
 
-  const [simulatorMode, setSimulatorMode] = useState<SimulatorMode>("idle");
-  const [simulatorFrameKey, setSimulatorFrameKey] = useState(0);
-  const [sulamericaFrameKey, setSulamericaFrameKey] = useState(0);
-  const [simulatorStatusMessage, setSimulatorStatusMessage] = useState("");
-  const [simulatorBrowser, setSimulatorBrowser] = useState<SimulatorBrowser>("other");
-  const [showSimulatorChooser, setShowSimulatorChooser] = useState(false);
-  const [showSistemasChooser, setShowSistemasChooser] = useState(false);
   const [showLinksChooser, setShowLinksChooser] = useState(false);
   const [linksDesktopStatus, setLinksDesktopStatus] = useState("");
   const [isLinksDesktopWindowOpen, setIsLinksDesktopWindowOpen] = useState(false);
 
-
-  const simulatorTimeoutRef = useRef<number | null>(null);
-  const simulatorWindowRef = useRef<Window | null>(null);
-  const simulatorIframeRef = useRef<HTMLIFrameElement | null>(null);
-  const simulatorIframeLoadedRef = useRef(false);
-  const amilIframeRef = useRef<HTMLIFrameElement | null>(null);
-  const amilLoginSubmittedRef = useRef(false);
   const linksDesktopMonitorTokenRef = useRef(0);
 
 
@@ -552,7 +440,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   useEffect(() => {
     if (forcedMenu) {
       setActiveMenu(forcedMenu);
-      setShowSimulatorChooser(false);
     }
   }, [forcedMenu]);
 
@@ -735,346 +622,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     };
   }, [canViewSystemUsers, perfil?.email, perfil?.id]);
 
-  const clearSimulatorTimeout = () => {
-    if (simulatorTimeoutRef.current !== null) {
-      window.clearTimeout(simulatorTimeoutRef.current);
-      simulatorTimeoutRef.current = null;
-    }
-  };
-
-  const openSimulatorExternally = (
-    reason: SimulatorExternalReason = "manual",
-    browser: SimulatorBrowser = detectSimulatorBrowser()
-  ) => {
-    const popup = simulatorWindowRef.current;
-
-    clearSimulatorTimeout();
-    setSimulatorBrowser(browser);
-    setSimulatorMode("external");
-    const shouldOpenWindowNow = reason === "manual" && isSimulatorSupportedBrowser(browser);
-    setSimulatorStatusMessage(getSimulatorExternalMessage(reason, browser));
-
-    if (!shouldOpenWindowNow) {
-      return;
-    }
-
-    try {
-      if (popup && !popup.closed) {
-        try {
-          popup.resizeTo(1280, 900);
-          popup.moveTo(
-            Math.max(0, (window.screen.width - 1280) / 2),
-            Math.max(0, (window.screen.height - 900) / 2)
-          );
-        } catch (_resizeError) {}
-
-        popup.location.href = SIMULATOR_ENTRY_URL;
-        popup.focus();
-        return;
-      }
-    } catch (_error) {
-    }
-
-    const newWindow = window.open(
-      SIMULATOR_ENTRY_URL,
-      SIMULATOR_FALLBACK_WINDOW_NAME,
-      "width=1280,height=900,resizable=yes,scrollbars=yes"
-    );
-
-    if (!newWindow) {
-      window.location.href = SIMULATOR_ENTRY_URL;
-    } else {
-      simulatorWindowRef.current = newWindow;
-      newWindow.focus();
-    }
-  };
-
-  const startSimulatorAttempt = (browser: SimulatorBrowser) => {
-    simulatorIframeLoadedRef.current = false;
-    setSimulatorBrowser(browser);
-    setActiveMenu("Simuladores");
-    setSimulatorFrameKey((prev) => prev + 1);
-
-    clearSimulatorTimeout();
-
-    if (!isSimulatorSupportedBrowser(browser)) {
-      setSimulatorStatusMessage(getSimulatorExternalMessage("iframe-error", browser));
-      setSimulatorMode("external");
-      return;
-    }
-
-    setSimulatorStatusMessage(getSimulatorLoadingMessage(browser));
-    setSimulatorMode("loading");
-
-    if (browser === "chrome") {
-      simulatorTimeoutRef.current = window.setTimeout(() => {
-        if (!simulatorIframeLoadedRef.current) {
-          openSimulatorExternally("timeout", browser);
-        }
-      }, CHROME_SIMULATOR_LOAD_TIMEOUT_MS);
-    }
-  };
-
-  const enterSimulator = async () => {
-    const browser = detectSimulatorBrowser();
-    setSimulatorBrowser(browser);
-    setShowSimulatorChooser(false);
-    setActiveMenu("Simuladores");
-
-    if (usesSimulatorProxy(browser)) {
-      startSimulatorAttempt(browser);
-      return;
-    }
-
-    startSimulatorAttempt(browser);
-  };
-
-  const openSimulatorChooser = () => {
-    setShowSimulatorChooser(true);
-  };
-
-  const enterSulamericaSimulator = () => {
-    cleanupSimulatorUi();
-    setShowSimulatorChooser(false);
-    setSulamericaFrameKey((prev) => prev + 1);
-    setActiveMenu("Simulador SulAmerica");
-  };
-
-  const enterAmilSimulator = () => {
-    cleanupSimulatorUi();
-    amilLoginSubmittedRef.current = false;
-    setShowSimulatorChooser(false);
-    setActiveMenu("Simulador Amil");
-  };
-
-  const enterMedseniorSimulator = () => {
-    cleanupSimulatorUi();
-    setShowSimulatorChooser(false);
-    setActiveMenu("Simulador Medsenior");
-  };
-
-  const enterKliniSimulator = () => {
-    cleanupSimulatorUi();
-    setShowSimulatorChooser(false);
-    setActiveMenu("Simulador Klini");
-  };
-
-
-
-  const fillAndSubmitAmilLogin = () => {
-    const frame = amilIframeRef.current;
-    if (!frame) {
-      return;
-    }
-
-    const applyCredentials = () => {
-      try {
-        const frameDocument = frame.contentDocument;
-        if (!frameDocument) {
-          return;
-        }
-
-        // Auto-accept cookies
-        try {
-          const oneTrustBtn = frameDocument.querySelector<HTMLElement>("#onetrust-accept-btn-handler");
-          if (oneTrustBtn) oneTrustBtn.click();
-
-          const buttons = Array.from(frameDocument.querySelectorAll("button, a"));
-          buttons.forEach((btn) => {
-            const htmlBtn = btn as HTMLElement;
-            const text = (htmlBtn.textContent || "").toLowerCase().trim();
-            if (
-              text === "aceitar todos" ||
-              text === "aceitar cookies" ||
-              text === "concordar e fechar"
-            ) {
-              htmlBtn.click();
-            }
-          });
-        } catch (e) {}
-
-        const loginInput = frameDocument.querySelector<HTMLInputElement>("#login");
-        const senhaInput = frameDocument.querySelector<HTMLInputElement>("#senha");
-        const perfilInput = frameDocument.querySelector<HTMLInputElement>("#perfilUsuario");
-        const entrarButton = frameDocument.querySelector<HTMLButtonElement>("#efetuarLogin");
-
-        if (!loginInput || !senhaInput) {
-          return;
-        }
-
-        const updateInput = (input: HTMLInputElement, value: string) => {
-          input.value = value;
-          input.setAttribute("autocomplete", "off");
-          input.setAttribute("data-lpignore", "true");
-          input.dispatchEvent(new Event("input", { bubbles: true }));
-          input.dispatchEvent(new Event("change", { bubbles: true }));
-        };
-
-        updateInput(loginInput, AMIL_LOGIN);
-        updateInput(senhaInput, AMIL_PASSWORD);
-
-        if (perfilInput && !perfilInput.value) {
-          updateInput(perfilInput, "CORRETOR");
-        }
-
-        if (amilLoginSubmittedRef.current) {
-          return;
-        }
-
-        amilLoginSubmittedRef.current = true;
-        senhaInput.focus();
-        ["keydown", "keypress", "keyup"].forEach((eventName) => {
-          senhaInput.dispatchEvent(
-            new KeyboardEvent(eventName, {
-              bubbles: true,
-              cancelable: true,
-              key: "Enter",
-              code: "Enter",
-              keyCode: 13,
-              which: 13,
-            })
-          );
-        });
-
-        window.setTimeout(() => {
-          entrarButton?.click();
-        }, 250);
-
-        window.setTimeout(() => {
-          const form = frameDocument.querySelector<HTMLFormElement>("#formLoginCorretor");
-          if (form && frame.contentWindow?.location.href.includes("/login")) {
-            form.submit();
-          }
-        }, 1400);
-      } catch (_error) {}
-    };
-
-    applyCredentials();
-    [350, 900, 1800, 3200].forEach((delay) => window.setTimeout(applyCredentials, delay));
-  };
-
-  const retrySimulatorInsideApp = () => {
-    const browser = detectSimulatorBrowser();
-    startSimulatorAttempt(browser);
-  };
-
-  const fillSimulatorProxyCredentials = () => {
-    if (!usesSimulatorProxy(simulatorBrowser)) {
-      return;
-    }
-
-    const frame = simulatorIframeRef.current;
-    if (!frame) {
-      return;
-    }
-
-    const applyCredentials = () => {
-      try {
-        const frameDocument = frame.contentDocument;
-        const loginInput = frameDocument?.querySelector<HTMLInputElement>("#login_usuario");
-        const senhaInput = frameDocument?.querySelector<HTMLInputElement>("#login_senha");
-
-        if (!loginInput || !senhaInput) {
-          return;
-        }
-
-        loginInput.value = credential.login;
-        senhaInput.value = credential.senha;
-        loginInput.setAttribute("autocomplete", "off");
-        senhaInput.setAttribute("autocomplete", "off");
-        loginInput.setAttribute("data-lpignore", "true");
-        senhaInput.setAttribute("data-lpignore", "true");
-        loginInput.dispatchEvent(new Event("input", { bubbles: true }));
-        senhaInput.dispatchEvent(new Event("input", { bubbles: true }));
-        loginInput.dispatchEvent(new Event("change", { bubbles: true }));
-        senhaInput.dispatchEvent(new Event("change", { bubbles: true }));
-      } catch (_error) {}
-    };
-
-    applyCredentials();
-    [150, 600, 1500].forEach((delay) => window.setTimeout(applyCredentials, delay));
-  };
-
-  const handleSimulatorIframeLoad = () => {
-    if (simulatorMode === "external") {
-      return;
-    }
-
-    fillSimulatorProxyCredentials();
-    simulatorIframeLoadedRef.current = true;
-    clearSimulatorTimeout();
-    setSimulatorMode("embedded");
-    setSimulatorStatusMessage("Simulador carregado dentro da aplicação.");
-  };
-
-  const handleSimulatorIframeError = () => {
-    openSimulatorExternally("iframe-error", simulatorBrowser);
-  };
-
-  const cleanupSimulatorUi = () => {
-    clearSimulatorTimeout();
-    simulatorIframeLoadedRef.current = false;
-    setSimulatorMode("idle");
-    setSimulatorStatusMessage("");
-    setSimulatorBrowser("other");
-  };
-
-  const resetSulamericaProxySession = async () => {
-    try {
-      await fetch("/sulamerica-proxy/__reset__", {
-        method: "POST",
-        credentials: "include",
-        cache: "no-store",
-      });
-    } catch (error) {
-      console.warn("Não foi possível resetar a sessão do proxy SulAmerica.", error);
-    } finally {
-      setSulamericaFrameKey((prev) => prev + 1);
-    }
-  };
-
-  const shouldResetSulamericaSession = (nextMenu?: string) =>
-    activeMenu === "Simulador SulAmerica" && nextMenu !== "Simulador SulAmerica";
-
-  const clearLocalUiState = () => {
-    setShowSimulatorChooser(false);
-    cleanupSimulatorUi();
-  };
-
-  const logoutRemoteSimulator = async () => {
-    clearSimulatorTimeout();
-    const popup = simulatorWindowRef.current;
-
-    if (popup && !popup.closed) {
-      try {
-        popup.location.href = SIMULATOR_LOGOUT_URL;
-        await wait(1600);
-        try {
-          popup.close();
-        } catch (_error) {}
-        simulatorWindowRef.current = null;
-        return;
-      } catch (_error) {}
-    }
-
-
-    try {
-      const logoutIframe = document.createElement("iframe");
-      logoutIframe.style.display = "none";
-      logoutIframe.src = SIMULATOR_LOGOUT_URL;
-      document.body.appendChild(logoutIframe);
-      await wait(1500);
-      document.body.removeChild(logoutIframe);
-    } catch (_error) {
-      console.warn("Não foi possível deslogar do simulador automaticamente.");
-    }
-  };
-
-  useEffect(() => {
-    return () => {
-      clearSimulatorTimeout();
-    };
-  }, []);
 
   const handleLogout = async () => {
     if (isLoggingOut) {
@@ -1083,18 +630,12 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
     setIsLoggingOut(true);
     try {
-      if (shouldResetSulamericaSession()) {
-        await resetSulamericaProxySession();
-      }
-      await logoutRemoteSimulator();
-      clearLocalUiState();
       onLogout?.();
       navigate("/login", { replace: true });
       if ((window as any).chrome && (window as any).chrome.webview) {
         (window as any).chrome.webview.postMessage(JSON.stringify({ action: "close_app" }));
       }
     } catch (_error) {
-      clearLocalUiState();
       onLogout?.();
       navigate("/login", { replace: true });
       if ((window as any).chrome && (window as any).chrome.webview) {
@@ -1104,85 +645,33 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       setIsLoggingOut(false);
     }
   };
-
   const handleMenuClick = async (title: string) => {
-    if (title === "Simuladores") {
-      if (shouldResetSulamericaSession("Simuladores")) {
-        await resetSulamericaProxySession();
-      }
-      cleanupSimulatorUi();
-      openSimulatorChooser();
-      return;
-    }
-
-    if (shouldResetSulamericaSession(title)) {
-      await resetSulamericaProxySession();
-    }
-
-    if (activeMenu === "Simuladores" || activeMenu === "Simulador SulAmerica" || activeMenu === "Simulador Amil" || activeMenu === "Simulador Medsenior" || activeMenu === "Simulador Klini") {
-      cleanupSimulatorUi();
-    }
-
-    setShowSimulatorChooser(false);
     setActiveMenu(title);
   };
 
   const handleCardClick = async (line1: string, line2: string) => {
-    if (line1 === "Sistemas") {
-      setShowSistemasChooser(true);
-      return;
-    }
-
-    if (line1 === "Links") {
+    if (line1 === "Links" || line1 === "Sistemas") {
       setLinksDesktopStatus("");
       setShowLinksChooser(true);
       return;
     }
 
-    if (line1 === "Simuladores") {
-      if (shouldResetSulamericaSession("Simuladores")) {
-        await resetSulamericaProxySession();
-      }
-      cleanupSimulatorUi();
-      openSimulatorChooser();
-      return;
-    }
-
     if (line1 === "Meus" && line2 === "clientes") {
-      if (shouldResetSulamericaSession("Meus clientes")) {
-        await resetSulamericaProxySession();
-      }
-      if (activeMenu === "Simuladores" || activeMenu === "Simulador SulAmerica" || activeMenu === "Simulador Amil" || activeMenu === "Simulador Medsenior" || activeMenu === "Simulador Klini") {
-        cleanupSimulatorUi();
-      }
-      setShowSimulatorChooser(false);
       setActiveMenu("Meus clientes");
       return;
     }
 
     if (line1 === "Agenda") {
-      if (shouldResetSulamericaSession("Agenda")) {
-        await resetSulamericaProxySession();
-      }
-      setShowSimulatorChooser(false);
       setActiveMenu("Agenda");
       return;
     }
 
     if (line1 === "Webmail") {
-      if (shouldResetSulamericaSession("Webmail")) {
-        await resetSulamericaProxySession();
-      }
-      setShowSimulatorChooser(false);
       setActiveMenu("Webmail");
       return;
     }
 
     if (line1 === "Campanhas") {
-      if (shouldResetSulamericaSession("Campanhas")) {
-        await resetSulamericaProxySession();
-      }
-      setShowSimulatorChooser(false);
       setActiveMenu("Campanhas");
       return;
     }
@@ -1192,7 +681,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     { title: "Home", icon: Home },
     { title: "Meus clientes", icon: Briefcase },
     { title: "Agenda", icon: Calendar },
-    { title: "Simuladores", icon: FolderOpen },
     { title: "Webmail", icon: Mail },
     { title: "Campanhas", icon: Megaphone },
     { title: "Financeiro", icon: Banknote },
@@ -1202,7 +690,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const cards = [
     { line1: "Meus", line2: "clientes", icon: Briefcase },
     { line1: "Agenda", line2: "", icon: Calendar },
-    { line1: "Simuladores", line2: "", icon: FolderOpen },
     { line1: "Links", line2: "", icon: Link2 },
     { line1: "Webmail", line2: "", icon: Mail },
     { line1: "Campanhas", line2: "", icon: Megaphone },
@@ -1290,11 +777,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     })
     .sort((a, b) => a.sortTime - b.sortTime);
 
-  const showSimulator = activeMenu === "Simuladores";
-  const showSulamericaSimulator = activeMenu === "Simulador SulAmerica";
-  const showAmilSimulator = activeMenu === "Simulador Amil";
-  const showMedseniorSimulator = activeMenu === "Simulador Medsenior";
-  const showKliniSimulator = activeMenu === "Simulador Klini";
+
   const showClientArea = activeMenu === "Meus clientes";
   const showAgendaArea = activeMenu === "Agenda";
   const showWebmailArea = activeMenu === "Webmail";
@@ -1396,7 +879,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-            {showClientArea || showSimulator || showSulamericaSimulator || showAmilSimulator || showMedseniorSimulator || showKliniSimulator || showAgendaArea || showWebmailArea || showCampanhasArea ? (
+            {showClientArea || showAgendaArea || showWebmailArea || showCampanhasArea ? (
               <button
                 type="button"
                 onClick={() => void handleMenuClick("Home")}
@@ -1456,260 +939,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
         <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden transition-all duration-300">
           <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-            {showSimulator ? (
-              <div
-                className="flex flex-1 flex-col bg-white"
-                style={{ height: "calc(100vh - 120px)" }}
-              >
-                <div className="flex flex-col border-b bg-gray-50 px-4 py-2 text-xs text-gray-500">
-                  <div className="flex items-center justify-between w-full">
-                    <span className="flex items-center gap-2">
-                      <FolderOpen size={14} />
-                      {simulatorMode === "embedded"
-                        ? "Simulador Online em execução"
-                        : simulatorMode === "loading"
-                          ? "Tentando carregar o Simulador Online"
-                          : simulatorMode === "external"
-                            ? isSimulatorSupportedBrowser(simulatorBrowser)
-                              ? "Simulador Online aberto externamente"
-                              : "Simulador Online disponivel no Chrome, Edge e Firefox"
-                            : "Simulador Online"}
-                    </span>
-
-                  </div>
-                </div>
-
-                {simulatorMode === "loading" || simulatorMode === "embedded" ? (
-                  <div className="relative w-full flex-1 overflow-hidden bg-gray-100">
-                    {simulatorMode === "loading" ? (
-                      <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 bg-white/70 backdrop-blur-[1px]">
-                        <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#b58c2a] border-t-transparent" />
-                        <div className="max-w-md px-6 text-center text-sm text-gray-600">
-                          {simulatorStatusMessage ||
-                            "Tentando abrir o simulador dentro da aplicação..."}
-                        </div>
-                      </div>
-                    ) : null}
-                    <iframe
-                      ref={simulatorIframeRef}
-                      key={simulatorFrameKey}
-                      src={getSimulatorFrameUrl()}
-                      title="Simulador Online"
-                      className="h-full w-full border-none"
-                      style={{
-                        display: "block",
-                        position: "relative",
-                        zIndex: 10,
-                      }}
-                      allow={getSimulatorIframeAllow(simulatorBrowser)}
-                      allowFullScreen
-                      onLoad={handleSimulatorIframeLoad}
-                      onError={handleSimulatorIframeError}
-                      sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-modals"
-                    />
-                  </div>
-                ) : simulatorMode === "idle" && (simulatorBrowser === "chrome" || simulatorBrowser === "edge") ? (
-                  <div className="flex-1 flex items-center justify-center bg-gray-50 p-4">
-                  </div>
-                ) : (
-                  <div
-                    className={
-                      "flex flex-1 items-center justify-center bg-gradient-to-br from-[#f8fafc] to-[#f1f5f9] p-6"
-                    }
-                  >
-                    <div
-                      className={
-                        "w-full max-w-2xl overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-2xl"
-                      }
-                    >
-                      <div className="h-2 bg-gradient-to-r from-[#b58c2a] to-[#d4af37]" />
-
-                      <div
-                        className={
-                          "p-10 text-center"
-                        }
-                      >
-                        <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-3xl bg-[#b58c2a]/10 text-[#b58c2a] ring-8 ring-[#b58c2a]/5">
-                          <ExternalLink size={44} strokeWidth={1.5} />
-                        </div>
-
-                        <h3 className="mb-4 text-2xl font-black tracking-tight text-[#0c1826]">
-                          {isSimulatorSupportedBrowser(simulatorBrowser)
-                            ? "Simulador Ativo em Janela Externa"
-                            : "Use Chrome, Edge ou Firefox para acessar o Simulador"}
-                        </h3>
-
-                        <p className="mx-auto mb-8 max-w-lg text-base leading-relaxed text-gray-600">
-                          {simulatorStatusMessage ||
-                            "Não foi possível manter o simulador incorporado neste navegador."}
-                        </p>
-
-                        {!isSimulatorSupportedBrowser(simulatorBrowser) ? (
-                          <div className="mb-8 grid w-full max-w-2xl grid-cols-1 gap-3 sm:grid-cols-2">
-                            <div className="rounded-2xl border border-gray-200 bg-white p-4 text-left shadow-sm">
-                              <p className="text-xs font-semibold uppercase text-gray-400">Compatibilidade</p>
-                              <p className="mt-1 font-bold text-[#0c1826]">Chrome, Edge e Firefox</p>
-                            </div>
-                            <div className="rounded-2xl border border-gray-200 bg-white p-4 text-left shadow-sm">
-                              <p className="text-xs font-semibold uppercase text-gray-400">Navegador atual</p>
-                              <p className="mt-1 font-bold text-[#0c1826]">
-                                {getSimulatorBrowserLabel(simulatorBrowser)}
-                              </p>
-                            </div>
-                          </div>
-                        ) : null}
-
-                        <div className="mb-10 rounded-2xl border border-amber-100 bg-amber-50/50 p-6 text-left">
-                          <div className="flex gap-3">
-                            <Info className="mt-0.5 flex-shrink-0 text-amber-600" size={18} />
-                            <div className="space-y-2 text-sm text-amber-900">
-                              <p className="font-semibold">Por que isso aconteceu?</p>
-                              <p className="opacity-80">
-                                {getSimulatorExternalExplanation(simulatorBrowser)}
-                              </p>
-                              <div className="mt-4 pt-4 border-t border-amber-200/50">
-                                <p className="text-[10px] font-bold text-amber-800 uppercase tracking-widest mb-2">Credenciais de Acesso</p>
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <p className="text-[10px] text-amber-600">LOGIN</p>
-                                    <p className="font-mono font-bold text-amber-950">Rosilene Rodrigues</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-[10px] text-amber-600">SENHA</p>
-                                    <p className="font-mono font-bold text-amber-950">123</p>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              cleanupSimulatorUi();
-                              setActiveMenu("Home");
-                            }}
-                            className="inline-flex min-h-11 items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
-                          >
-                            <Home size={17} />
-                            Menu Principal
-                          </button>
-                        </div>
-
-                        <p className="mt-8 text-xs font-medium text-gray-400">
-                          ID da Sessão: {simulatorFrameKey}-{Date.now().toString(36)}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : showSulamericaSimulator ? (
-              <div className="flex flex-1 flex-col bg-white" style={{ height: "calc(100vh - 120px)" }}>
-                <div className="flex items-center justify-between border-b bg-gray-50 px-4 py-2 text-xs text-gray-500">
-                  <span className="flex items-center gap-2">
-                    <ExternalLink size={14} />
-                    Simulador SulAmerica
-                  </span>
-                  <a
-                    href={SULAMERICA_SIMULATOR_URL}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-600 transition hover:border-[#b58c2a]/40 hover:text-[#b58c2a]"
-                  >
-                    Abrir em nova janela
-                    <ExternalLink size={13} />
-                  </a>
-                </div>
-                <iframe
-                  key={sulamericaFrameKey}
-                  src={SULAMERICA_PROXY_LOGIN_URL}
-                  title="Simulador SulAmerica"
-                  className="h-full w-full flex-1 border-none"
-                  allow="geolocation; microphone; camera; payment; encrypted-media"
-                  sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-modals"
-                />
-              </div>
-            ) : showAmilSimulator ? (
-              <div className="flex flex-1 flex-col bg-white" style={{ height: "calc(100vh - 120px)" }}>
-                <div className="flex items-center justify-between border-b bg-gray-50 px-4 py-2 text-xs text-gray-500">
-                  <span className="flex items-center gap-2">
-                    <ExternalLink size={14} />
-                    Simulador Amil
-                  </span>
-                  <a
-                    href={AMIL_SIMULATOR_URL}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-600 transition hover:border-[#b58c2a]/40 hover:text-[#b58c2a]"
-                  >
-                    Abrir portal Amil
-                    <ExternalLink size={13} />
-                  </a>
-                </div>
-                <iframe
-                  ref={amilIframeRef}
-                  src={AMIL_PROXY_LOGIN_URL}
-                  title="Simulador Amil"
-                  className="h-full w-full flex-1 border-none"
-                  allow="geolocation; microphone; camera; payment; encrypted-media"
-                  onLoad={fillAndSubmitAmilLogin}
-                  sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-modals"
-                />
-              </div>
-            ) : showMedseniorSimulator ? (
-              <div className="flex flex-1 flex-col bg-white" style={{ height: "calc(100vh - 120px)" }}>
-                <div className="flex items-center justify-between border-b bg-gray-50 px-4 py-2 text-xs text-gray-500">
-                  <span className="flex items-center gap-2">
-                    <ExternalLink size={14} />
-                    Simulador Medsenior
-                  </span>
-                  <a
-                    href={MEDSENIOR_SIMULATOR_URL}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-600 transition hover:border-[#b58c2a]/40 hover:text-[#b58c2a]"
-                  >
-                    Abrir portal Medsenior
-                    <ExternalLink size={13} />
-                  </a>
-                </div>
-                <iframe
-                  src={MEDSENIOR_SIMULATOR_URL}
-                  title="Simulador Medsenior"
-                  className="h-full w-full flex-1 border-none bg-white"
-                  allow="geolocation; microphone; camera; payment; encrypted-media"
-                  referrerPolicy="strict-origin-when-cross-origin"
-                />
-              </div>
-            ) : showKliniSimulator ? (
-              <div className="flex flex-1 flex-col bg-white" style={{ height: "calc(100vh - 120px)" }}>
-                <div className="flex items-center justify-between border-b bg-gray-50 px-4 py-2 text-xs text-gray-500">
-                  <span className="flex items-center gap-2">
-                    <ExternalLink size={14} />
-                    Simulador Klini
-                  </span>
-                  <a
-                    href={KLINI_SIMULATOR_URL}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-600 transition hover:border-[#b58c2a]/40 hover:text-[#b58c2a]"
-                  >
-                    Abrir portal Klini
-                    <ExternalLink size={13} />
-                  </a>
-                </div>
-                <iframe
-                  src={KLINI_SIMULATOR_URL}
-                  title="Simulador Klini"
-                  className="h-full w-full flex-1 border-none bg-white"
-                  allow="geolocation; microphone; camera; payment; encrypted-media"
-                  referrerPolicy="strict-origin-when-cross-origin"
-                />
-              </div>
-            ) : showClientArea ? (
+            {showClientArea ? (
               <div className="flex-1 overflow-y-auto px-4 pb-4 pt-2 sm:px-6 sm:pb-6 sm:pt-3 md:px-8 md:pb-8 md:pt-4">
                 <ClientRegistrationMultipage />
               </div>
@@ -2151,158 +1381,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
         </div>
       </div>
 
-      {showSimulatorChooser ? (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-xl overflow-hidden rounded-[28px] border border-white/70 bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
-              <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#b58c2a]">
-                  Simuladores
-                </p>
-                <h2 className="mt-1 text-2xl font-black text-[#0c1826]">Escolha seu Simulador</h2>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowSimulatorChooser(false)}
-                aria-label="Fechar"
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 p-6">
-              <a
-                href="#simulador-online"
-                onClick={(event) => {
-                  event.preventDefault();
-                  void enterSimulator();
-                }}
-                className="group relative flex h-32 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:border-[#d4af37]/70 hover:shadow-md"
-              >
-                <img src="/quer.svg" alt="Simulador Quer" className="max-h-20 max-w-[85%] object-contain opacity-90 transition-all duration-300 group-hover:scale-105 group-hover:opacity-100" />
-              </a>
-
-              <a
-                href={SULAMERICA_SIMULATOR_URL}
-                onClick={(event) => {
-                  event.preventDefault();
-                  enterSulamericaSimulator();
-                }}
-                className="group relative flex h-32 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:border-[#d4af37]/70 hover:shadow-md"
-              >
-                <img src="/sulamerica.svg" alt="Simulador SulAmérica" className="max-h-20 max-w-[85%] object-contain opacity-90 transition-all duration-300 group-hover:scale-105 group-hover:opacity-100" />
-              </a>
-
-              <a
-                href={AMIL_SIMULATOR_URL}
-                onClick={(event) => {
-                  event.preventDefault();
-                  enterAmilSimulator();
-                }}
-                className="group relative flex h-32 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:border-[#d4af37]/70 hover:shadow-md"
-              >
-                <img src="/amil.svg" alt="Simulador Amil" className="max-h-20 max-w-[85%] object-contain opacity-90 transition-all duration-300 group-hover:scale-105 group-hover:opacity-100" />
-              </a>
-
-              <a
-                href={MEDSENIOR_SIMULATOR_URL}
-                onClick={(event) => {
-                  event.preventDefault();
-                  enterMedseniorSimulator();
-                }}
-                className="group relative flex h-32 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:border-[#d4af37]/70 hover:shadow-md"
-              >
-                <img src="/medsenior.svg" alt="Simulador MedSênior" className="max-h-20 max-w-[85%] object-contain opacity-90 transition-all duration-300 group-hover:scale-105 group-hover:opacity-100" />
-              </a>
-
-              <a
-                href={KLINI_SIMULATOR_URL}
-                onClick={(event) => {
-                  event.preventDefault();
-                  enterKliniSimulator();
-                }}
-                className="group relative flex h-32 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:border-[#d4af37]/70 hover:shadow-md"
-              >
-                <img src="/klini.svg" alt="Simulador Klini" className="max-h-20 max-w-[85%] object-contain opacity-90 transition-all duration-300 group-hover:scale-105 group-hover:opacity-100" />
-              </a>
-
-              <a
-                href="#"
-                onClick={(event) => {
-                  event.preventDefault();
-                }}
-                className="group relative flex h-32 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:border-[#d4af37]/70 hover:shadow-md cursor-pointer"
-              >
-                <img src="/solutions.svg" alt="Simulador Solutions" className="max-h-20 max-w-[85%] object-contain opacity-90 transition-all duration-300 group-hover:scale-105 group-hover:opacity-100" />
-              </a>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      {showSistemasChooser ? (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-2xl overflow-hidden rounded-[28px] border border-white/70 bg-white shadow-2xl flex flex-col max-h-[85vh]">
-            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5 shrink-0">
-              <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#b58c2a]">
-                  Sistemas
-                </p>
-                <h2 className="mt-1 text-2xl font-black text-[#0c1826]">Escolha o Sistema</h2>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowSistemasChooser(false)}
-                aria-label="Fechar"
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-6 overflow-y-auto custom-scrollbar">
-              {[
-                { name: "AMIL", url: "https://comercial.amil.com.br/prweb/PRAuth/app/sales-experience/", type: "internal", action: enterAmilSimulator },
-                { name: "KLINI SAUDE", url: "https://klinisaude.hcommerce.com.br/corretora/login", type: "internal", action: enterKliniSimulator },
-                { name: "MEDSENIOR", url: "https://vendadigital.medsenior.com.br/", type: "internal", action: enterMedseniorSimulator },
-                { name: "SULAMERICA", url: "https://os11.sulamerica.com.br/SaudeCotador/LoginVendedor.aspx", type: "internal", action: enterSulamericaSimulator },
-              ].map((sys) => (
-                <button
-                  key={sys.name}
-                  type="button"
-                  onClick={() => {
-                    setShowSistemasChooser(false);
-                    if (sys.type === "internal" && sys.action) {
-                      sys.action();
-                    } else {
-                      window.open(sys.url, "_blank", "noopener,noreferrer");
-                    }
-                  }}
-                  className="group flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:-translate-y-1 hover:border-[#d4af37]/70 hover:shadow-md text-left w-full cursor-pointer"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#b58c2a]/10 text-[#b58c2a] font-bold text-sm tracking-wider">
-                      {sys.name.slice(0, 2)}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-bold text-[#0c1826] group-hover:text-[#b58c2a] transition-colors">
-                        {sys.name}
-                      </p>
-                      <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider block mt-0.5">
-                        Simulador Interno
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-400 group-hover:bg-[#b58c2a]/10 group-hover:text-[#b58c2a] transition-all">
-                    <ExternalLink size={14} />
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      ) : null}
 
       {showLinksChooser ? (
         <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
