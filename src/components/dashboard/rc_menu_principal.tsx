@@ -916,6 +916,14 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
               <span className="text-sm">Agenda</span>
             </button>
 
+            <button
+              onClick={() => void handleMenuClick("Links")}
+              className={`flex min-h-11 items-center gap-2 transition-colors hover:text-[#b58c2a] text-gray-500`}
+            >
+              <Link2 size={18} />
+              <span className="text-sm">Links</span>
+            </button>
+
             <div className="hidden h-8 w-px bg-gray-200 sm:block" />
 
             <div className="flex items-center gap-3">
@@ -1420,23 +1428,23 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
             <div className="overflow-y-auto custom-scrollbar p-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {[
-                  { name: "ALLCARE PORTAL", url: "https://portal.allcare.com.br/" },
-                  { name: "ALLCARE VENDAS", url: "https://vendas.allcare.com.br/AllTechLoginVendas" },
-                  { name: "ALLCARE WEB", url: "https://allcare.planium.io/web/login/entrar" },
-                  { name: "AMIL", url: "https://comercial.amil.com.br/prweb/PRAuth/app/sales-experience/" },
-                  { name: "ASSIM SAUDE", url: "https://assim.hcommerce.com.br/login" },
-                  { name: "CONTEM ADMINISTRADORA", url: "https://digitalsaude.com.br/canal/contem" },
-                  { name: "CORPE SAUDE", url: "https://contratacao.mktss.com.br/#/login" },
+                  { name: "ALLCARE PORTAL", url: "https://portal.allcare.com.br/", logo: "/portais/allcare.png" },
+                  { name: "ALLCARE VENDAS", url: "https://vendas.allcare.com.br/AllTechLoginVendas", logo: "/portais/allcare.png" },
+                  { name: "ALLCARE WEB", url: "https://allcare.planium.io/web/login/entrar", logo: "/portais/allcare.png" },
+                  { name: "AMIL", url: "https://comercial.amil.com.br/prweb/PRAuth/app/sales-experience/", logo: "/portais/amil.png" },
+                  { name: "ASSIM SAUDE", url: "https://assim.hcommerce.com.br/login", logo: "/portais/assim_saude.png" },
+                  { name: "CONTEM ADMINISTRADORA", url: "https://digitalsaude.com.br/canal/contem", logo: "/portais/contem.png" },
+                  { name: "CORPE SAUDE", url: "https://contratacao.mktss.com.br/#/login", logo: "/portais/corpe.png" },
                   { name: "HAPVIDA", url: "https://gndi.planium.io/web/login/" },
-                  { name: "KLINI SAUDE", url: "https://klinisaude.hcommerce.com.br/corretora/login" },
-                  { name: "LEVE SAUDE", url: "https://levesaude.planium.io/web/login/entrar" },
-                  { name: "MEDSENIOR", url: "https://vendadigital.medsenior.com.br/" },
-                  { name: "PLURAL", url: "https://plural.hcommerce.com.br/login" },
-                  { name: "PORTO SEGURO", url: "https://corretor.portoseguro.com.br/portal/site/corretoronline/template.LOGIN/" },
-                  { name: "QUALIVENDAS", url: "https://qualivendas.qualicorp.com.br/#/login" },
-                  { name: "SOLUTIONS", url: "https://solutions.hcommerce.com.br/login" },
-                  { name: "SULAMERICA", url: "https://os11.sulamerica.com.br/SaudeCotador/LoginVendedor.aspx" },
-                  { name: "SUPERMED", url: "https://vendas.supermed.com.br/login" },
+                  { name: "KLINI SAUDE", url: "https://klinisaude.hcommerce.com.br/corretora/login", logo: "/portais/klini.png" },
+                  { name: "LEVE SAUDE", url: "https://levesaude.planium.io/web/login/entrar", logo: "/portais/leve.png" },
+                  { name: "MEDSENIOR", url: "https://vendadigital.medsenior.com.br/", logo: "/portais/medsenior.png" },
+                  { name: "PLURAL", url: "https://plural.hcommerce.com.br/login", logo: "/portais/plural.png" },
+                  { name: "PORTO SEGURO", url: "https://corretor.portoseguro.com.br/portal/site/corretoronline/template.LOGIN/", logo: "/portais/porto_seguro.png" },
+                  { name: "QUALIVENDAS", url: "https://qualivendas.qualicorp.com.br/#/login", logo: "/portais/qualivendas.png" },
+                  { name: "SOLUTIONS", url: "https://solutions.hcommerce.com.br/login", logo: "/portais/solutions.png" },
+                  { name: "SULAMERICA", url: "https://os11.sulamerica.com.br/SaudeCotador/LoginVendedor.aspx", logo: "/portais/sulamerica.png" },
+                  { name: "SUPERMED", url: "https://vendas.supermed.com.br/login", logo: "/portais/supermed.png" },
                 ].map((sys) => (
                   <button
                     key={sys.name}
@@ -1460,8 +1468,12 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                     }}
                     className="group flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:-translate-y-1 hover:border-[#d4af37]/70 hover:shadow-md text-left w-full cursor-pointer"
                   >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#b58c2a]/10 text-[#b58c2a] font-bold text-sm tracking-wider">
-                      {sys.name.slice(0, 2)}
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#b58c2a]/10 overflow-hidden text-[#b58c2a] font-bold text-sm tracking-wider">
+                      {sys.logo ? (
+                        <img src={sys.logo} alt={sys.name} className="h-full w-full object-contain p-1" />
+                      ) : (
+                        sys.name.slice(0, 2)
+                      )}
                     </div>
                     <p className="truncate text-sm font-bold text-[#0c1826] group-hover:text-[#b58c2a] transition-colors min-w-0">
                       {sys.name}
