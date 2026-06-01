@@ -644,6 +644,28 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     };
   }, [showLinksChooser, isExternalWebviewOpen]);
 
+  useEffect(() => {
+    if (!isExternalWebviewOpen) return;
+
+    const clearState = () => setIsExternalWebviewOpen(false);
+    
+    // Give the native webview some time to open and steal focus
+    const timer = setTimeout(() => {
+      window.addEventListener("focus", clearState);
+      window.addEventListener("pointerdown", clearState);
+      window.addEventListener("click", clearState);
+      window.addEventListener("keydown", clearState);
+    }, 500);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("focus", clearState);
+      window.removeEventListener("pointerdown", clearState);
+      window.removeEventListener("click", clearState);
+      window.removeEventListener("keydown", clearState);
+    };
+  }, [isExternalWebviewOpen]);
+
 
   const handleLogout = async () => {
     if (isLoggingOut) {
@@ -974,12 +996,24 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
         </header>
 
         {isExternalWebviewOpen ? (
-          <div className="shrink-0 bg-blue-50 border-b border-blue-100 px-6 py-2 shadow-inner z-[99]">
-            <div className="flex items-center justify-center">
+          <div className="shrink-0 bg-blue-50 border-b border-blue-100 px-6 py-2 shadow-inner z-[99] flex justify-between items-center">
+            <div className="flex-1 flex items-center justify-center">
               <p className="text-xs font-bold text-blue-700 animate-pulse uppercase tracking-wide">
                 Pressione ESC para retornar ao menu principal
               </p>
             </div>
+            <button 
+              onClick={() => {
+                setIsExternalWebviewOpen(false);
+                if ((window as any).chrome && (window as any).chrome.webview) {
+                  (window as any).chrome.webview.postMessage(JSON.stringify({ action: "close_external" }));
+                }
+              }} 
+              className="text-blue-400 hover:text-blue-700 transition-colors ml-4"
+              aria-label="Fechar aviso"
+            >
+              <X size={16} />
+            </button>
           </div>
         ) : null}
 
