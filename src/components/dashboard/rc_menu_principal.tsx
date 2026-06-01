@@ -19,7 +19,6 @@ import {
   PartyPopper,
   User,
   Users,
-  Layers,
   Link2,
   Wrench,
   X,
@@ -1204,7 +1203,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     { line1: "Meus", line2: "clientes", icon: Briefcase },
     { line1: "Agenda", line2: "", icon: Calendar },
     { line1: "Simuladores", line2: "", icon: FolderOpen },
-    { line1: "Sistemas", line2: "", icon: Layers },
     { line1: "Links", line2: "", icon: Link2 },
     { line1: "Webmail", line2: "", icon: Mail },
     { line1: "Campanhas", line2: "", icon: Megaphone },
@@ -1742,38 +1740,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                   initialMessage={campanhaInitialMessage}
                   onConnectionGateClose={() => setActiveMenu("Home")}
                 />
-                {/*
-              <div className="flex flex-1 items-center justify-center bg-gradient-to-br from-[#f8fafc] to-[#f1f5f9] p-6">
-                <div className="w-full max-w-2xl overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-2xl">
-                  <div className="h-2 bg-gradient-to-r from-[#b58c2a] to-[#d4af37]" />
-                  <div className="p-10 text-center">
-                    <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-3xl bg-[#b58c2a]/10 text-[#b58c2a] ring-8 ring-[#b58c2a]/5">
-                      <Megaphone size={44} strokeWidth={1.5} />
-                    </div>
-                    <h3 className="mb-4 text-2xl font-black tracking-tight text-[#0c1826]">
-                      Campanhas
-                    </h3>
-                    <p className="mx-auto mb-8 max-w-lg text-base leading-relaxed text-gray-500">
-                      O módulo de campanhas está em desenvolvimento. Em breve você poderá criar e gerenciar campanhas de marketing direto para seus clientes.
-                    </p>
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                      <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-left">
-                        <p className="text-xs font-black uppercase tracking-widest text-[#b58c2a]">E-mail Marketing</p>
-                        <p className="mt-1 text-sm text-slate-500">Envio em massa para sua base de clientes</p>
-                      </div>
-                      <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-left">
-                        <p className="text-xs font-black uppercase tracking-widest text-[#b58c2a]">WhatsApp</p>
-                        <p className="mt-1 text-sm text-slate-500">Disparos automáticos via WhatsApp Business</p>
-                      </div>
-                      <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-left">
-                        <p className="text-xs font-black uppercase tracking-widest text-[#b58c2a]">Aniversários</p>
-                        <p className="mt-1 text-sm text-slate-500">Parabéns automático para clientes</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-                */}
               </div>
             ) : activeMenu === "Agenda" ? (
               <div className="flex min-h-0 flex-1 overflow-hidden">
@@ -1787,7 +1753,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
             ) : (
               <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-5">
                 <div className="flex flex-col gap-3">
-                  <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5 xl:grid-cols-9">
+                  <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5 xl:grid-cols-8">
                     {cards.map((card) => {
                       const Icon = card.icon;
 
@@ -1824,7 +1790,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                   <div className="flex flex-col gap-3 lg:flex-row">
                     <section className="flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm max-w-sm h-[360px]">
                       <div className="flex flex-col h-full">
-                        {/* Header Section */}
                         <div className="relative overflow-hidden bg-[#0c1826] p-3 text-white shrink-0">
                           <div className="absolute -right-8 -top-10 h-28 w-28 rounded-full bg-[#d4af37]/10 blur-3xl" />
                           <div className="relative flex items-center justify-between">
@@ -1848,7 +1813,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                           </div>
                         </div>
 
-                        {/* List Section */}
                         <div className="custom-scrollbar flex-1 overflow-y-auto bg-slate-50/50 p-2">
                           {(() => {
                             const currentMonth = new Date().getMonth();
@@ -1952,7 +1916,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
                     <section className="flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm max-w-sm h-[360px]">
                       <div className="flex flex-col h-full">
-                        {/* Header Section */}
                         <div className="relative overflow-hidden bg-[#0c1826] p-4 text-white shrink-0">
                           <div className="absolute -right-8 -top-10 h-28 w-28 rounded-full bg-[#d4af37]/10 blur-3xl" />
                           <div className="relative flex items-center justify-between">
@@ -1971,7 +1934,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                           </div>
                         </div>
 
-                        {/* List Section */}
                         <div className="custom-scrollbar flex-1 overflow-y-auto bg-slate-50/50 p-2.5">
                           <div className="flex flex-col gap-2">
                             {agendaItems.length === 0 ? (
@@ -2037,7 +1999,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                     
                     <section className="flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm max-w-sm h-[360px]">
                       <div className="flex flex-col h-full">
-                        {/* Header Section */}
                         <div className="relative overflow-hidden bg-[#0c1826] p-4 text-white shrink-0">
                           <div className="absolute -right-8 -top-10 h-28 w-28 rounded-full bg-[#d4af37]/10 blur-3xl" />
                           <div className="relative flex items-center justify-between">
@@ -2056,10 +2017,8 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                           </div>
                         </div>
 
-                        {/* List Section */}
                         <div className="custom-scrollbar flex-1 overflow-y-auto bg-slate-50/50 p-2.5">
                           <div className="flex flex-col gap-2">
-                            {/* Ativos */}
                             <div className="group relative overflow-hidden rounded-xl border border-white bg-white p-3 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#25D366]/30 hover:shadow-md">
                               <div className="flex items-center gap-3">
                                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#25D366]/10 text-[#128C7E] transition-all duration-300 group-hover:bg-[#25D366]/20">
@@ -2076,7 +2035,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                   </div>
                                 </div>
                               </div>
-                              {/* Barra de progresso visual */}
                               <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-slate-100">
                                 <div 
                                   className="h-full bg-[#25D366] transition-all duration-1000" 
@@ -2085,7 +2043,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                               </div>
                             </div>
                             
-                            {/* Inativos */}
                             <div className="group relative overflow-hidden rounded-xl border border-white bg-white p-3 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-red-400/30 hover:shadow-md">
                               <div className="flex items-center gap-3">
                                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-500 transition-all duration-300 group-hover:bg-red-100">
@@ -2102,7 +2059,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                   </div>
                                 </div>
                               </div>
-                              {/* Barra de progresso visual */}
                               <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-slate-100">
                                 <div 
                                   className="h-full bg-red-400 transition-all duration-1000" 
@@ -2377,63 +2333,103 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
               </div>
             ) : null}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 p-6 overflow-y-auto custom-scrollbar">
-              {[
-                { name: "ALLCARE PORTAL", url: "https://portal.allcare.com.br/" },
-                { name: "ALLCARE VENDAS", url: "https://vendas.allcare.com.br/AllTechLoginVendas" },
-                { name: "ALLCARE WEB", url: "https://allcare.planium.io/web/login/entrar" },
-                { name: "ASSIM SAUDE", url: "https://assim.hcommerce.com.br/login" },
-                { name: "CONTEM ADMINISTRADORA", url: "https://digitalsaude.com.br/canal/contem" },
-                { name: "CORPE SAUDE", url: "https://contratacao.mktss.com.br/#/login" },
-                { name: "HAPVIDA", url: "https://gndi.planium.io/web/login/" },
-                { name: "LEVE SAUDE", url: "https://levesaude.planium.io/web/login/entrar" },
-                { name: "PLURAL", url: "https://plural.hcommerce.com.br/login" },
-                { name: "PORTO SEGURO", url: "https://corretor.portoseguro.com.br/portal/site/corretoronline/template.LOGIN/" },
-                { name: "QUALIVENDAS", url: "https://qualivendas.qualicorp.com.br/#/login" },
-                { name: "SOLUTIONS", url: "https://solutions.hcommerce.com.br/login" },
-                { name: "SUPERMED", url: "https://vendas.supermed.com.br/login" }
-              ].map((sys) => (
-                <button
-                  key={sys.name}
-                  type="button"
-                  onClick={(event) => {
-                    const anchorRect = event.currentTarget.getBoundingClientRect();
-                    setShowLinksChooser(false);
-                    
-                    if ((window as any).chrome && (window as any).chrome.webview) {
-                      const sidebarWidth = Math.round(document.querySelector("aside")?.getBoundingClientRect().width || 192);
-                      const headerHeight = Math.round(document.querySelector("header")?.getBoundingClientRect().height || 64);
-                      const payload = {
-                          action: "open_external",
-                          url: sys.url,
-                          sidebarWidth,
-                          headerHeight
-                      };
-                      (window as any).chrome.webview.postMessage(JSON.stringify(payload));
-                    } else {
-                      void openPortalInDesktop(sys.url, anchorRect);
-                    }
-                  }}
-                  className="group flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:-translate-y-1 hover:border-[#d4af37]/70 hover:shadow-md text-left w-full cursor-pointer"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#b58c2a]/10 text-[#b58c2a] font-bold text-sm tracking-wider">
-                      {sys.name.slice(0, 2)}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-bold text-[#0c1826] group-hover:text-[#b58c2a] transition-colors">
-                        {sys.name}
-                      </p>
-                      <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider block mt-0.5">
-                        Abrir no desktop
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-400 group-hover:bg-[#b58c2a]/10 group-hover:text-[#b58c2a] transition-all">
-                    <ExternalLink size={14} />
-                  </div>
-                </button>
-              ))}
+            <div className="overflow-y-auto custom-scrollbar p-6 flex flex-col gap-6">
+              <div>
+                <p className="mb-3 text-[10px] font-black uppercase tracking-[0.22em] text-[#b58c2a]">Simuladores Internos</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {[
+                    { name: "AMIL", subtitle: "Simulador Interno", action: () => { setShowLinksChooser(false); enterAmilSimulator(); } },
+                    { name: "KLINI SAUDE", subtitle: "Simulador Interno", action: () => { setShowLinksChooser(false); enterKliniSimulator(); } },
+                    { name: "MEDSENIOR", subtitle: "Simulador Interno", action: () => { setShowLinksChooser(false); enterMedseniorSimulator(); } },
+                    { name: "SULAMERICA", subtitle: "Simulador Interno", action: () => { setShowLinksChooser(false); enterSulamericaSimulator(); } },
+                  ].map((sys) => (
+                    <button
+                      key={sys.name}
+                      type="button"
+                      onClick={sys.action}
+                      className="group flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:-translate-y-1 hover:border-[#d4af37]/70 hover:shadow-md text-left w-full cursor-pointer"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#b58c2a]/10 text-[#b58c2a] font-bold text-sm tracking-wider">
+                          {sys.name.slice(0, 2)}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-bold text-[#0c1826] group-hover:text-[#b58c2a] transition-colors">
+                            {sys.name}
+                          </p>
+                          <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider block mt-0.5">
+                            {sys.subtitle}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-400 group-hover:bg-[#b58c2a]/10 group-hover:text-[#b58c2a] transition-all">
+                        <ExternalLink size={14} />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="mb-3 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Portais Externos</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                  {[
+                    { name: "ALLCARE PORTAL", url: "https://portal.allcare.com.br/" },
+                    { name: "ALLCARE VENDAS", url: "https://vendas.allcare.com.br/AllTechLoginVendas" },
+                    { name: "ALLCARE WEB", url: "https://allcare.planium.io/web/login/entrar" },
+                    { name: "ASSIM SAUDE", url: "https://assim.hcommerce.com.br/login" },
+                    { name: "CONTEM ADMINISTRADORA", url: "https://digitalsaude.com.br/canal/contem" },
+                    { name: "CORPE SAUDE", url: "https://contratacao.mktss.com.br/#/login" },
+                    { name: "HAPVIDA", url: "https://gndi.planium.io/web/login/" },
+                    { name: "LEVE SAUDE", url: "https://levesaude.planium.io/web/login/entrar" },
+                    { name: "PLURAL", url: "https://plural.hcommerce.com.br/login" },
+                    { name: "PORTO SEGURO", url: "https://corretor.portoseguro.com.br/portal/site/corretoronline/template.LOGIN/" },
+                    { name: "QUALIVENDAS", url: "https://qualivendas.qualicorp.com.br/#/login" },
+                    { name: "SOLUTIONS", url: "https://solutions.hcommerce.com.br/login" },
+                    { name: "SUPERMED", url: "https://vendas.supermed.com.br/login" }
+                  ].map((sys) => (
+                    <button
+                      key={sys.name}
+                      type="button"
+                      onClick={(event) => {
+                        const anchorRect = event.currentTarget.getBoundingClientRect();
+                        setShowLinksChooser(false);
+                        if ((window as any).chrome && (window as any).chrome.webview) {
+                          const sidebarWidth = Math.round(document.querySelector("aside")?.getBoundingClientRect().width || 192);
+                          const headerHeight = Math.round(document.querySelector("header")?.getBoundingClientRect().height || 64);
+                          const payload = {
+                            action: "open_external",
+                            url: sys.url,
+                            sidebarWidth,
+                            headerHeight
+                          };
+                          (window as any).chrome.webview.postMessage(JSON.stringify(payload));
+                        } else {
+                          void openPortalInDesktop(sys.url, anchorRect);
+                        }
+                      }}
+                      className="group flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:-translate-y-1 hover:border-[#d4af37]/70 hover:shadow-md text-left w-full cursor-pointer"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#b58c2a]/10 text-[#b58c2a] font-bold text-sm tracking-wider">
+                          {sys.name.slice(0, 2)}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-bold text-[#0c1826] group-hover:text-[#b58c2a] transition-colors">
+                            {sys.name}
+                          </p>
+                          <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider block mt-0.5">
+                            Abrir no desktop
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-400 group-hover:bg-[#b58c2a]/10 group-hover:text-[#b58c2a] transition-all">
+                        <ExternalLink size={14} />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>
