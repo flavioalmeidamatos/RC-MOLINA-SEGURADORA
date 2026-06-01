@@ -646,6 +646,11 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     }
   };
   const handleMenuClick = async (title: string) => {
+    if (title === "Links") {
+      setLinksDesktopStatus("");
+      setShowLinksChooser(true);
+      return;
+    }
     setActiveMenu(title);
   };
 
@@ -681,6 +686,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     { title: "Home", icon: Home },
     { title: "Meus clientes", icon: Briefcase },
     { title: "Agenda", icon: Calendar },
+    { title: "Links", icon: Link2 },
     { title: "Webmail", icon: Mail },
     { title: "Campanhas", icon: Megaphone },
     { title: "Financeiro", icon: Banknote },
