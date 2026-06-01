@@ -1502,7 +1502,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                   { name: "CONTEM ADMINISTRADORA", url: "https://digitalsaude.com.br/canal/contem", logo: "/portais/contem.webp" },
                   { name: "CORPE SAUDE", url: "https://contratacao.mktss.com.br/#/login", logo: "/portais/corpe.webp" },
                   { name: "DIXMED", url: "https://dixmed.hcommerce.com.br", logo: "/portais/dixmed_circulo_borda.webp" },
-                  { name: "HAPVIDA", url: "https://gndi.planium.io/web/login/" },
+                  { name: "HAPVIDA", url: "https://gndi.planium.io/web/login/", logo: "/portais/hapvida.webp" },
                   { name: "KLINI SAUDE", url: "https://klinisaude.hcommerce.com.br/corretora/login", logo: "/portais/klini.webp" },
                   { name: "LEVE SAUDE", url: "https://levesaude.planium.io/web/login/entrar", logo: "/portais/leve.webp" },
                   { name: "MEDSENIOR", url: "https://vendadigital.medsenior.com.br/", logo: "/portais/medsenior.webp" },
