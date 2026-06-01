@@ -192,8 +192,8 @@ export const FooterAdmin: React.FC = () => {
 
             {/* PASSWORD MODAL */}
             {showPasswordModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-                    <div className="bg-[#1a1a1a] shadow-2xl border border-gray-800 rounded-2xl p-8 max-w-sm w-full flex flex-col items-center animate-in fade-in zoom-in duration-300 relative">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 pointer-events-auto" onClick={(e) => e.stopPropagation()}>
+                    <div className="bg-[#1a1a1a] shadow-2xl border border-gray-800 rounded-2xl p-8 max-w-sm w-full flex flex-col items-center animate-in fade-in zoom-in duration-300 relative pointer-events-auto" onClick={(e) => e.stopPropagation()}>
                         <button
                             onClick={() => { setShowPasswordModal(false); setPasswordError(''); setAdminPassword(''); }}
                             className="absolute top-4 right-4 text-gray-500 hover:text-white"
@@ -224,7 +224,6 @@ export const FooterAdmin: React.FC = () => {
                                 placeholder="E-mail Administrativo"
                                 autoComplete="username"
                                 className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 focus:outline-none focus:border-[#ccff00] transition"
-                                autoFocus
                             />
                             <input
                                 id="admin_secret_key"
@@ -249,8 +248,8 @@ export const FooterAdmin: React.FC = () => {
 
             {/* ADMIN PANEL MODAL */}
             {showAdminPanel && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
-                    <div className="bg-[#1a1a1a] shadow-2xl border border-gray-800 rounded-2xl p-6 md:p-8 max-w-lg w-full relative my-8">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto pointer-events-auto" onClick={(e) => e.stopPropagation()}>
+                    <div className="bg-[#1a1a1a] shadow-2xl border border-gray-800 rounded-2xl p-6 md:p-8 max-w-lg w-full relative my-8 pointer-events-auto" onClick={(e) => e.stopPropagation()}>
                         <button
                             onClick={() => {
                                 setAdminToken('');
