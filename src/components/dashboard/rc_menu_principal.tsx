@@ -2338,15 +2338,31 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                 <p className="mb-3 text-[10px] font-black uppercase tracking-[0.22em] text-[#b58c2a]">Simuladores Internos</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {[
-                    { name: "AMIL", subtitle: "Simulador Interno", action: () => { setShowLinksChooser(false); enterAmilSimulator(); } },
-                    { name: "KLINI SAUDE", subtitle: "Simulador Interno", action: () => { setShowLinksChooser(false); enterKliniSimulator(); } },
-                    { name: "MEDSENIOR", subtitle: "Simulador Interno", action: () => { setShowLinksChooser(false); enterMedseniorSimulator(); } },
-                    { name: "SULAMERICA", subtitle: "Simulador Interno", action: () => { setShowLinksChooser(false); enterSulamericaSimulator(); } },
+                    { name: "AMIL", subtitle: "Simulador Interno", url: "https://comercial.amil.com.br/prweb/PRAuth/app/sales-experience/" },
+                    { name: "KLINI SAUDE", subtitle: "Simulador Interno", url: "https://klinisaude.hcommerce.com.br/corretora/login" },
+                    { name: "MEDSENIOR", subtitle: "Simulador Interno", url: "https://vendadigital.medsenior.com.br/" },
+                    { name: "SULAMERICA", subtitle: "Simulador Interno", url: "https://os11.sulamerica.com.br/SaudeCotador/LoginVendedor.aspx" },
                   ].map((sys) => (
                     <button
                       key={sys.name}
                       type="button"
-                      onClick={sys.action}
+                      onClick={(event) => {
+                        const anchorRect = event.currentTarget.getBoundingClientRect();
+                        setShowLinksChooser(false);
+                        if ((window as any).chrome && (window as any).chrome.webview) {
+                          const sidebarWidth = Math.round(document.querySelector("aside")?.getBoundingClientRect().width || 192);
+                          const headerHeight = Math.round(document.querySelector("header")?.getBoundingClientRect().height || 64);
+                          const payload = {
+                            action: "open_external",
+                            url: sys.url,
+                            sidebarWidth,
+                            headerHeight
+                          };
+                          (window as any).chrome.webview.postMessage(JSON.stringify(payload));
+                        } else {
+                          void openPortalInDesktop(sys.url, anchorRect);
+                        }
+                      }}
                       className="group flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:-translate-y-1 hover:border-[#d4af37]/70 hover:shadow-md text-left w-full cursor-pointer"
                     >
                       <div className="flex items-center gap-3 min-w-0">
