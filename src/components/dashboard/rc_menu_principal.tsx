@@ -170,6 +170,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
   const [showLinksChooser, setShowLinksChooser] = useState(false);
   const [linksDesktopStatus, setLinksDesktopStatus] = useState("");
+  const [isExternalWebviewOpen, setIsExternalWebviewOpen] = useState(false);
   const [isLinksDesktopWindowOpen, setIsLinksDesktopWindowOpen] = useState(false);
 
   const linksDesktopMonitorTokenRef = useRef(0);
@@ -624,9 +625,16 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && showLinksChooser) {
-        setShowLinksChooser(false);
-        setLinksDesktopStatus("");
+      if (e.key === "Escape") {
+        if (showLinksChooser) {
+          setShowLinksChooser(false);
+          setLinksDesktopStatus("");
+        } else if (isExternalWebviewOpen) {
+          setIsExternalWebviewOpen(false);
+          if ((window as any).chrome && (window as any).chrome.webview) {
+            (window as any).chrome.webview.postMessage(JSON.stringify({ action: "close_external" }));
+          }
+        }
       }
     };
 
@@ -634,7 +642,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [showLinksChooser]);
+  }, [showLinksChooser, isExternalWebviewOpen]);
 
 
   const handleLogout = async () => {
@@ -964,6 +972,16 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
             </button>
           </div>
         </header>
+
+        {isExternalWebviewOpen ? (
+          <div className="shrink-0 bg-blue-50 border-b border-blue-100 px-6 py-2 shadow-inner z-[99]">
+            <div className="flex items-center justify-center">
+              <p className="text-xs font-bold text-blue-700 animate-pulse uppercase tracking-wide">
+                Pressione ESC para retornar ao menu principal
+              </p>
+            </div>
+          </div>
+        ) : null}
 
         <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden transition-all duration-300">
           <div className="flex min-h-0 min-w-0 flex-1 flex-col">
@@ -1433,14 +1451,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
               </button>
             </div>
 
-            <div className="shrink-0 bg-blue-50 border-b border-blue-100 px-6 py-3 shadow-inner">
-              <div className="flex items-center justify-center">
-                <p className="text-sm font-bold text-blue-700 animate-pulse uppercase tracking-wide">
-                  Pressione ESC para retornar ao menu principal
-                </p>
-              </div>
-            </div>
-
             {linksDesktopStatus ? (
               <div className="mx-6 mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
                 {linksDesktopStatus}
@@ -1475,15 +1485,18 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                       const anchorRect = event.currentTarget.getBoundingClientRect();
                       setShowLinksChooser(false);
                       if ((window as any).chrome && (window as any).chrome.webview) {
-                        const sidebarWidth = Math.round(document.querySelector("aside")?.getBoundingClientRect().width || 192);
-                        const headerHeight = Math.round(document.querySelector("header")?.getBoundingClientRect().height || 64);
-                        const payload = {
-                          action: "open_external",
-                          url: sys.url,
-                          sidebarWidth,
-                          headerHeight
-                        };
-                        (window as any).chrome.webview.postMessage(JSON.stringify(payload));
+                        setIsExternalWebviewOpen(true);
+                        setTimeout(() => {
+                          const sidebarWidth = Math.round(document.querySelector("aside")?.getBoundingClientRect().width || 192);
+                          const headerHeight = Math.round(document.querySelector("header")?.getBoundingClientRect().height || 64) + 33; // +33 for the banner
+                          const payload = {
+                            action: "open_external",
+                            url: sys.url,
+                            sidebarWidth,
+                            headerHeight
+                          };
+                          (window as any).chrome.webview.postMessage(JSON.stringify(payload));
+                        }, 50);
                       } else {
                         void openPortalInDesktop(sys.url, anchorRect);
                       }
