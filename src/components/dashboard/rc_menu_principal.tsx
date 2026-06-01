@@ -1411,118 +1411,60 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
               </div>
             ) : null}
 
-            <div className="overflow-y-auto custom-scrollbar p-6 flex flex-col gap-6">
-              <div>
-                <p className="mb-3 text-[10px] font-black uppercase tracking-[0.22em] text-[#b58c2a]">Simuladores Internos</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {[
-                    { name: "AMIL", subtitle: "Simulador Interno", url: "https://comercial.amil.com.br/prweb/PRAuth/app/sales-experience/" },
-                    { name: "KLINI SAUDE", subtitle: "Simulador Interno", url: "https://klinisaude.hcommerce.com.br/corretora/login" },
-                    { name: "MEDSENIOR", subtitle: "Simulador Interno", url: "https://vendadigital.medsenior.com.br/" },
-                    { name: "SULAMERICA", subtitle: "Simulador Interno", url: "https://os11.sulamerica.com.br/SaudeCotador/LoginVendedor.aspx" },
-                  ].map((sys) => (
-                    <button
-                      key={sys.name}
-                      type="button"
-                      onClick={(event) => {
-                        const anchorRect = event.currentTarget.getBoundingClientRect();
-                        setShowLinksChooser(false);
-                        if ((window as any).chrome && (window as any).chrome.webview) {
-                          const sidebarWidth = Math.round(document.querySelector("aside")?.getBoundingClientRect().width || 192);
-                          const headerHeight = Math.round(document.querySelector("header")?.getBoundingClientRect().height || 64);
-                          const payload = {
-                            action: "open_external",
-                            url: sys.url,
-                            sidebarWidth,
-                            headerHeight
-                          };
-                          (window as any).chrome.webview.postMessage(JSON.stringify(payload));
-                        } else {
-                          void openPortalInDesktop(sys.url, anchorRect);
-                        }
-                      }}
-                      className="group flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:-translate-y-1 hover:border-[#d4af37]/70 hover:shadow-md text-left w-full cursor-pointer"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#b58c2a]/10 text-[#b58c2a] font-bold text-sm tracking-wider">
-                          {sys.name.slice(0, 2)}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-bold text-[#0c1826] group-hover:text-[#b58c2a] transition-colors">
-                            {sys.name}
-                          </p>
-                          <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider block mt-0.5">
-                            {sys.subtitle}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-400 group-hover:bg-[#b58c2a]/10 group-hover:text-[#b58c2a] transition-all">
-                        <ExternalLink size={14} />
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <p className="mb-3 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Portais Externos</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                  {[
-                    { name: "ALLCARE PORTAL", url: "https://portal.allcare.com.br/" },
-                    { name: "ALLCARE VENDAS", url: "https://vendas.allcare.com.br/AllTechLoginVendas" },
-                    { name: "ALLCARE WEB", url: "https://allcare.planium.io/web/login/entrar" },
-                    { name: "ASSIM SAUDE", url: "https://assim.hcommerce.com.br/login" },
-                    { name: "CONTEM ADMINISTRADORA", url: "https://digitalsaude.com.br/canal/contem" },
-                    { name: "CORPE SAUDE", url: "https://contratacao.mktss.com.br/#/login" },
-                    { name: "HAPVIDA", url: "https://gndi.planium.io/web/login/" },
-                    { name: "LEVE SAUDE", url: "https://levesaude.planium.io/web/login/entrar" },
-                    { name: "PLURAL", url: "https://plural.hcommerce.com.br/login" },
-                    { name: "PORTO SEGURO", url: "https://corretor.portoseguro.com.br/portal/site/corretoronline/template.LOGIN/" },
-                    { name: "QUALIVENDAS", url: "https://qualivendas.qualicorp.com.br/#/login" },
-                    { name: "SOLUTIONS", url: "https://solutions.hcommerce.com.br/login" },
-                    { name: "SUPERMED", url: "https://vendas.supermed.com.br/login" }
-                  ].map((sys) => (
-                    <button
-                      key={sys.name}
-                      type="button"
-                      onClick={(event) => {
-                        const anchorRect = event.currentTarget.getBoundingClientRect();
-                        setShowLinksChooser(false);
-                        if ((window as any).chrome && (window as any).chrome.webview) {
-                          const sidebarWidth = Math.round(document.querySelector("aside")?.getBoundingClientRect().width || 192);
-                          const headerHeight = Math.round(document.querySelector("header")?.getBoundingClientRect().height || 64);
-                          const payload = {
-                            action: "open_external",
-                            url: sys.url,
-                            sidebarWidth,
-                            headerHeight
-                          };
-                          (window as any).chrome.webview.postMessage(JSON.stringify(payload));
-                        } else {
-                          void openPortalInDesktop(sys.url, anchorRect);
-                        }
-                      }}
-                      className="group flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:-translate-y-1 hover:border-[#d4af37]/70 hover:shadow-md text-left w-full cursor-pointer"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#b58c2a]/10 text-[#b58c2a] font-bold text-sm tracking-wider">
-                          {sys.name.slice(0, 2)}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-bold text-[#0c1826] group-hover:text-[#b58c2a] transition-colors">
-                            {sys.name}
-                          </p>
-                          <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider block mt-0.5">
-                            Abrir no desktop
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-400 group-hover:bg-[#b58c2a]/10 group-hover:text-[#b58c2a] transition-all">
-                        <ExternalLink size={14} />
-                      </div>
-                    </button>
-                  ))}
-                </div>
+            <div className="overflow-y-auto custom-scrollbar p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {[
+                  { name: "ALLCARE PORTAL", url: "https://portal.allcare.com.br/" },
+                  { name: "ALLCARE VENDAS", url: "https://vendas.allcare.com.br/AllTechLoginVendas" },
+                  { name: "ALLCARE WEB", url: "https://allcare.planium.io/web/login/entrar" },
+                  { name: "AMIL", url: "https://comercial.amil.com.br/prweb/PRAuth/app/sales-experience/" },
+                  { name: "ASSIM SAUDE", url: "https://assim.hcommerce.com.br/login" },
+                  { name: "CONTEM ADMINISTRADORA", url: "https://digitalsaude.com.br/canal/contem" },
+                  { name: "CORPE SAUDE", url: "https://contratacao.mktss.com.br/#/login" },
+                  { name: "HAPVIDA", url: "https://gndi.planium.io/web/login/" },
+                  { name: "KLINI SAUDE", url: "https://klinisaude.hcommerce.com.br/corretora/login" },
+                  { name: "LEVE SAUDE", url: "https://levesaude.planium.io/web/login/entrar" },
+                  { name: "MEDSENIOR", url: "https://vendadigital.medsenior.com.br/" },
+                  { name: "PLURAL", url: "https://plural.hcommerce.com.br/login" },
+                  { name: "PORTO SEGURO", url: "https://corretor.portoseguro.com.br/portal/site/corretoronline/template.LOGIN/" },
+                  { name: "QUALIVENDAS", url: "https://qualivendas.qualicorp.com.br/#/login" },
+                  { name: "SOLUTIONS", url: "https://solutions.hcommerce.com.br/login" },
+                  { name: "SULAMERICA", url: "https://os11.sulamerica.com.br/SaudeCotador/LoginVendedor.aspx" },
+                  { name: "SUPERMED", url: "https://vendas.supermed.com.br/login" },
+                ].map((sys) => (
+                  <button
+                    key={sys.name}
+                    type="button"
+                    onClick={(event) => {
+                      const anchorRect = event.currentTarget.getBoundingClientRect();
+                      setShowLinksChooser(false);
+                      if ((window as any).chrome && (window as any).chrome.webview) {
+                        const sidebarWidth = Math.round(document.querySelector("aside")?.getBoundingClientRect().width || 192);
+                        const headerHeight = Math.round(document.querySelector("header")?.getBoundingClientRect().height || 64);
+                        const payload = {
+                          action: "open_external",
+                          url: sys.url,
+                          sidebarWidth,
+                          headerHeight
+                        };
+                        (window as any).chrome.webview.postMessage(JSON.stringify(payload));
+                      } else {
+                        void openPortalInDesktop(sys.url, anchorRect);
+                      }
+                    }}
+                    className="group flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:-translate-y-1 hover:border-[#d4af37]/70 hover:shadow-md text-left w-full cursor-pointer"
+                  >
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#b58c2a]/10 text-[#b58c2a] font-bold text-sm tracking-wider">
+                      {sys.name.slice(0, 2)}
+                    </div>
+                    <p className="truncate text-sm font-bold text-[#0c1826] group-hover:text-[#b58c2a] transition-colors min-w-0">
+                      {sys.name}
+                    </p>
+                    <div className="ml-auto flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-400 group-hover:bg-[#b58c2a]/10 group-hover:text-[#b58c2a] transition-all">
+                      <ExternalLink size={14} />
+                    </div>
+                  </button>
+                ))}
               </div>
             </div>
           </div>
