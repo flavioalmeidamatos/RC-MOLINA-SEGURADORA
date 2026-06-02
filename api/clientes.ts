@@ -334,13 +334,13 @@ export const searchClientesHandler = async (req: express.Request, res: express.R
     const searchTerm = `%${query.trim().toLowerCase()}%`;
     const result = await pool.query(`
       ${clienteSelect}
-      WHERE lower(c.nome_completo) LIKE $1 
+      WHERE unaccent(lower(c.nome_completo)) LIKE unaccent($1) 
          OR c.codigo LIKE $1
          OR c.cpf LIKE $1
          OR c.cnpj LIKE $1
          OR EXISTS (
            SELECT 1 FROM "RCMOLINASEGUROS"."CLIENTES_CONTATOS" ct
-           WHERE ct.id_cliente = c.id_cliente AND ct.valor LIKE $1
+           WHERE ct.id_cliente = c.id_cliente AND unaccent(lower(ct.valor)) LIKE unaccent($1)
          )
       ORDER BY c.data_cadastro DESC
       LIMIT 15

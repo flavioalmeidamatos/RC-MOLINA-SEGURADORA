@@ -42,6 +42,7 @@ let initPromise: Promise<void> | null = null;
 const schemaSql = `
 create schema if not exists "RCMOLINASEGUROS";
 create extension if not exists pgcrypto;
+create extension if not exists unaccent;
 
 create table if not exists "RCMOLINASEGUROS"."USUARIOS" (
   id uuid primary key default gen_random_uuid(),
