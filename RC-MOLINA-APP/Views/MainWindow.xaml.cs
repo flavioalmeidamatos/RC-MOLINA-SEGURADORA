@@ -61,7 +61,7 @@ namespace RCMolinaApp.Views
 
         private void CloseExternalWindow()
         {
-            if (_overlayWindow != null && _overlayWindow.IsVisible)
+            if (_overlayWindow != null)
             {
                 _overlayWindow.Hide();
                 if (_overlayWebView?.CoreWebView2 != null)

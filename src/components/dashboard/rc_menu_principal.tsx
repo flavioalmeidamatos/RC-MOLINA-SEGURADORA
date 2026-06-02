@@ -996,7 +996,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
         </header>
 
         {isExternalWebviewOpen ? (
-          <div className="shrink-0 bg-blue-50 border-b border-blue-100 px-6 py-2 shadow-inner z-[99] flex justify-between items-center">
+          <div id="blue-banner-webview" className="shrink-0 bg-blue-50 border-b border-blue-100 px-6 py-2 shadow-inner z-[99] flex justify-between items-center">
             <div className="flex-1 flex items-center justify-center">
               <p className="text-xs font-bold text-blue-700 animate-pulse uppercase tracking-wide">
                 Pressione ESC para retornar ao menu principal
@@ -1524,7 +1524,8 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                         setIsExternalWebviewOpen(true);
                         setTimeout(() => {
                           const sidebarWidth = Math.round(document.querySelector("aside")?.getBoundingClientRect().width || 192);
-                          const headerHeight = Math.round(document.querySelector("header")?.getBoundingClientRect().height || 64) + 33; // +33 for the banner
+                          const banner = document.getElementById("blue-banner-webview");
+                          const headerHeight = banner ? Math.round(banner.getBoundingClientRect().bottom) : Math.round(document.querySelector("header")?.getBoundingClientRect().height || 64) + 45;
                           const payload = {
                             action: "open_external",
                             url: sys.url,
