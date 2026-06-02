@@ -1509,7 +1509,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                   { name: "PLURAL", url: "https://plural.hcommerce.com.br/login", logo: "/portais/plural.webp" },
                   { name: "PORTO SEGURO", url: "https://corretor.portoseguro.com.br/portal/site/corretoronline/template.LOGIN/", logo: "/portais/porto_seguro.webp" },
                   { name: "QUALIVENDAS", url: "https://qualivendas.qualicorp.com.br/#/login", logo: "/portais/qualivendas.webp" },
-                  { name: "QUER", url: "https://app.simuladoronline.com/login/", logo: "/portais/quer.webp", executeScript: "setTimeout(() => { const u = document.getElementById('login_usuario'); const p = document.getElementById('login_senha'); if(u) u.value = 'rosilenerodrigues'; if(p) p.value = '123'; }, 1000);" },
+                  { name: "QUER", url: "https://app.simuladoronline.com/login/", logo: "/portais/quer.webp", executeScript: "setTimeout(() => { const u = document.getElementById('login_usuario'); const p = document.getElementById('login_senha'); if(u) u.value = 'Rosilene Rodrigues'; if(p) p.value = '123'; }, 1000);" },
                   { name: "SOLUTIONS", url: "https://solutions.hcommerce.com.br/login", logo: "/portais/solutions.webp" },
                   { name: "SULAMERICA", url: "https://os11.sulamerica.com.br/SaudeCotador/LoginVendedor.aspx", logo: "/portais/sulamerica.webp" },
                   { name: "SUPERMED", url: "https://vendas.supermed.com.br/login", logo: "/portais/supermed.webp" },

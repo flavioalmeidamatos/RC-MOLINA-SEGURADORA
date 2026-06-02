@@ -16,6 +16,7 @@ namespace RCMolinaApp.Views
         private Microsoft.Web.WebView2.Wpf.WebView2? _overlayWebView;
         private int _sidebarWidth = 192;
         private int _headerHeight = 64;
+        private string? _pendingExecuteScript;
 
         public MainWindow()
         {
@@ -106,11 +107,27 @@ namespace RCMolinaApp.Views
                 if (_overlayWebView != null) 
                 {
                     await _overlayWebView.EnsureCoreWebView2Async(env);
+                    _overlayWebView.CoreWebView2.NavigationCompleted += OverlayWebView_NavigationCompleted;
                 }
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Erro ao inicializar o WebView2: {ex.Message}");
+            }
+        }
+
+        private async void OverlayWebView_NavigationCompleted(object? sender, CoreWebView2NavigationCompletedEventArgs e)
+        {
+            if (e.IsSuccess && !string.IsNullOrEmpty(_pendingExecuteScript))
+            {
+                try
+                {
+                    await _overlayWebView!.CoreWebView2.ExecuteScriptAsync(_pendingExecuteScript);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Erro ao executar script: {ex.Message}");
+                }
             }
         }
 
@@ -159,6 +176,15 @@ namespace RCMolinaApp.Views
                     if (root.TryGetProperty("headerHeight", out var hh))
                     {
                         _headerHeight = hh.GetInt32();
+                    }
+
+                    if (root.TryGetProperty("executeScript", out var es))
+                    {
+                        _pendingExecuteScript = es.GetString();
+                    }
+                    else
+                    {
+                        _pendingExecuteScript = null;
                     }
 
                     if (_overlayWebView?.CoreWebView2 != null)
