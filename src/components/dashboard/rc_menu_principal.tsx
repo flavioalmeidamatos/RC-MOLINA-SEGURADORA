@@ -903,18 +903,18 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       </aside>
 
       <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
-        <header id="main-dashboard-header" className="flex flex-col gap-4 bg-white px-4 py-4 shadow-sm sm:px-6 md:px-8 lg:h-16 lg:flex-row lg:items-center lg:justify-between lg:gap-0 lg:py-0">
+        <header id="main-dashboard-header" className="flex flex-col gap-4 bg-[#0c1826] border-b border-slate-800 px-4 py-4 shadow-sm sm:px-6 md:px-8 lg:h-16 lg:flex-row lg:items-center lg:justify-between lg:gap-0 lg:py-0">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-            <div className="flex flex-col items-start bg-white px-2 py-1">
+            <div className="flex flex-col items-start px-2 py-1">
               <div className="text-xl font-bold leading-none tracking-widest text-[#d4af37]">
                 RC MOLINA
               </div>
-              <div className="mt-1 text-center text-[10px] font-bold tracking-[0.3em] text-[#0c1826]">
+              <div className="mt-1 text-center text-[10px] font-bold tracking-[0.3em] text-white/80">
                 SEGUROS
               </div>
             </div>
 
-            <span className="border-l border-gray-200 pl-4 text-sm text-gray-400">
+            <span className="border-l border-slate-700 pl-4 text-sm text-slate-400">
               {activeMenu === "Home" ? "Painel Administrativo" : activeMenu}
             </span>
           </div>
@@ -924,7 +924,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
               <button
                 type="button"
                 onClick={() => void handleMenuClick("Home")}
-                className="flex min-h-11 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-slate-600 transition-colors hover:border-[#b58c2a]/40 hover:text-[#b58c2a]"
+                className="flex min-h-11 items-center gap-2 rounded-full border border-slate-700 bg-transparent px-4 py-2 text-slate-300 transition-colors hover:border-[#b58c2a]/40 hover:text-[#b58c2a]"
               >
                 <Home size={18} />
                 <span className="text-sm font-semibold">Menu Principal</span>
@@ -959,17 +959,17 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
               <span className="text-sm">Links</span>
             </button>
 
-            <div className="hidden h-8 w-px bg-gray-200 sm:block" />
+            <div className="hidden h-8 w-px bg-slate-700 sm:block" />
 
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-gray-100 shadow-sm">
+              <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-slate-600 bg-slate-800 shadow-sm">
                 {avatarUrl ? (
                   <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
                 ) : (
-                  <User size={16} className="text-gray-400" />
+                  <User size={16} className="text-slate-400" />
                 )}
               </div>
-              <span className="hidden text-sm font-medium text-gray-700 md:inline">
+              <span className="hidden text-sm font-medium text-slate-200 md:inline">
                 {userName}
               </span>
             </div>
@@ -978,7 +978,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
               type="button"
               onClick={handleLogout}
               disabled={isLoggingOut}
-              className="flex min-h-11 items-center gap-2 text-gray-500 transition-colors hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex min-h-11 items-center gap-2 text-slate-400 transition-colors hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isLoggingOut ? <Loader2 size={18} className="animate-spin" /> : <LogOut size={18} />}
               <span className="text-sm">{isLoggingOut ? "Saindo..." : "Sair"}</span>
