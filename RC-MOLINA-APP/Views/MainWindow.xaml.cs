@@ -4,36 +4,44 @@ using System.IO;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace RCMolinaApp.Views
 {
     public partial class MainWindow : Window
     {
-        // ⚠️ ALERTA: Altere aqui para a URL raiz da sua Aplicação Web Real ⚠️
-        private readonly string _myWebAppUrl = "https://rcmolinaseguros.resolveplanilhas.com.br"; 
-        
+        private readonly string _myWebAppUrl = "https://rcmolinaseguros.resolveplanilhas.com.br";
+        private readonly string _userDataFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RCMolinaApp");
+        private const int OverlayToolbarHeight = 45;
+
         private Window? _overlayWindow;
         private Microsoft.Web.WebView2.Wpf.WebView2? _overlayWebView;
         private int _sidebarWidth = 192;
         private int _headerHeight = 64;
         private string? _pendingExecuteScript;
+        private bool _isClosingOverlay;
 
         public MainWindow()
         {
             InitializeComponent();
-            
-            this.Loaded += MainWindow_Loaded;
-            
-            this.LocationChanged += MainWindow_LocationChanged;
-            this.SizeChanged += MainWindow_SizeChanged;
-            this.StateChanged += MainWindow_StateChanged;
+
+            Loaded += MainWindow_Loaded;
+            LocationChanged += MainWindow_LocationChanged;
+            SizeChanged += MainWindow_SizeChanged;
+            StateChanged += MainWindow_StateChanged;
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            // Pré-inicializa o overlay após a MainWindow já estar criada na tela
-            CreateOverlayWindow();
             InitializeAsync();
+        }
+
+        private Microsoft.Web.WebView2.Wpf.CoreWebView2CreationProperties CreateWebViewCreationProperties()
+        {
+            return new Microsoft.Web.WebView2.Wpf.CoreWebView2CreationProperties
+            {
+                UserDataFolder = _userDataFolder
+            };
         }
 
         private void CreateOverlayWindow()
@@ -46,11 +54,60 @@ namespace RCMolinaApp.Views
                 ShowInTaskbar = false,
                 Owner = this
             };
-            
-            _overlayWebView = new Microsoft.Web.WebView2.Wpf.WebView2();
-            _overlayWindow.Content = _overlayWebView;
 
-            _overlayWindow.PreviewKeyDown += (s, ev) => 
+            var layout = new Grid();
+            layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(OverlayToolbarHeight) });
+            layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+
+            var toolbar = new Grid
+            {
+                Background = new SolidColorBrush(Color.FromRgb(239, 246, 255))
+            };
+            toolbar.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            toolbar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            var instruction = new TextBlock
+            {
+                Text = "Pressione ESC para retornar ao menu principal",
+                Foreground = new SolidColorBrush(Color.FromRgb(29, 78, 216)),
+                FontSize = 12,
+                FontWeight = FontWeights.Bold,
+                TextAlignment = TextAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            Grid.SetColumn(instruction, 0);
+            toolbar.Children.Add(instruction);
+
+            var closeButton = new Button
+            {
+                Content = "X",
+                Width = 36,
+                Height = 30,
+                Margin = new Thickness(0, 0, 12, 0),
+                Padding = new Thickness(0),
+                Foreground = new SolidColorBrush(Color.FromRgb(29, 78, 216)),
+                Background = Brushes.Transparent,
+                BorderBrush = Brushes.Transparent,
+                FontWeight = FontWeights.Bold,
+                VerticalAlignment = VerticalAlignment.Center,
+                Cursor = System.Windows.Input.Cursors.Hand
+            };
+            closeButton.Click += (s, ev) => CloseExternalWindow();
+            Grid.SetColumn(closeButton, 1);
+            toolbar.Children.Add(closeButton);
+            Grid.SetRow(toolbar, 0);
+            layout.Children.Add(toolbar);
+
+            _overlayWebView = new Microsoft.Web.WebView2.Wpf.WebView2
+            {
+                CreationProperties = CreateWebViewCreationProperties()
+            };
+            Grid.SetRow(_overlayWebView, 1);
+            layout.Children.Add(_overlayWebView);
+
+            _overlayWindow.Content = layout;
+
+            _overlayWindow.PreviewKeyDown += (s, ev) =>
             {
                 if (ev.Key == System.Windows.Input.Key.Escape)
                 {
@@ -59,16 +116,71 @@ namespace RCMolinaApp.Views
             };
         }
 
-        private void CloseExternalWindow()
+        private async void CloseExternalWindow()
         {
-            if (_overlayWindow != null)
+            if (_overlayWindow == null || _isClosingOverlay)
             {
-                _overlayWindow.Hide();
-                if (_overlayWebView?.CoreWebView2 != null)
+                return;
+            }
+
+            _isClosingOverlay = true;
+            var win = _overlayWindow;
+            var wv = _overlayWebView;
+            _overlayWindow = null;
+            _overlayWebView = null;
+            _pendingExecuteScript = null;
+            NotifyExternalWindowClosed();
+
+            try
+            {
+                win.Hide();
+
+                if (wv != null)
                 {
-                    _overlayWebView.CoreWebView2.Navigate("about:blank");
+                    if (wv.CoreWebView2 != null)
+                    {
+                        try
+                        {
+                            wv.CoreWebView2.NavigationCompleted -= OverlayWebView_NavigationCompleted;
+                            wv.CoreWebView2.NewWindowRequested -= OverlayWebView_NewWindowRequested;
+                            wv.CoreWebView2.Stop();
+                            wv.CoreWebView2.Navigate("about:blank");
+                        }
+                        catch { }
+                    }
+
+                    await System.Threading.Tasks.Task.Delay(100);
+                    try
+                    {
+                        wv.Dispose();
+                    }
+                    catch { }
                 }
             }
+            catch { }
+            finally
+            {
+                try
+                {
+                    win.Content = null;
+                    win.Close();
+                }
+                catch { }
+
+                _isClosingOverlay = false;
+            }
+        }
+
+        private async void NotifyExternalWindowClosed()
+        {
+            try
+            {
+                if (AppWebView.CoreWebView2 != null)
+                {
+                    await AppWebView.CoreWebView2.ExecuteScriptAsync("window.dispatchEvent(new CustomEvent('rc-external-webview-closed'));");
+                }
+            }
+            catch { }
         }
 
         private void MainWindow_LocationChanged(object? sender, EventArgs e) => UpdateOverlayPosition();
@@ -87,11 +199,12 @@ namespace RCMolinaApp.Views
                 double dpiX = source.CompositionTarget.TransformToDevice.M11;
                 double dpiY = source.CompositionTarget.TransformToDevice.M22;
 
-                Point pt = AppWebView.PointToScreen(new Point(_sidebarWidth, _headerHeight));
+                int overlayTopOffset = Math.Max(0, _headerHeight - OverlayToolbarHeight);
+                Point pt = AppWebView.PointToScreen(new Point(_sidebarWidth, overlayTopOffset));
                 _overlayWindow.Left = pt.X / dpiX;
                 _overlayWindow.Top = pt.Y / dpiY;
                 _overlayWindow.Width = Math.Max(0, AppWebView.ActualWidth - _sidebarWidth);
-                _overlayWindow.Height = Math.Max(0, AppWebView.ActualHeight - _headerHeight);
+                _overlayWindow.Height = Math.Max(0, AppWebView.ActualHeight - overlayTopOffset);
             }
             catch { }
         }
@@ -100,15 +213,8 @@ namespace RCMolinaApp.Views
         {
             try
             {
-                var userDataFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RCMolinaApp");
-                var env = await CoreWebView2Environment.CreateAsync(null, userDataFolder);
-                
-                await AppWebView.EnsureCoreWebView2Async(env);
-                if (_overlayWebView != null) 
-                {
-                    await _overlayWebView.EnsureCoreWebView2Async(env);
-                    _overlayWebView.CoreWebView2.NavigationCompleted += OverlayWebView_NavigationCompleted;
-                }
+                AppWebView.CreationProperties ??= CreateWebViewCreationProperties();
+                await AppWebView.EnsureCoreWebView2Async();
             }
             catch (Exception ex)
             {
@@ -116,13 +222,31 @@ namespace RCMolinaApp.Views
             }
         }
 
+        private async System.Threading.Tasks.Task EnsureOverlayWebViewInitializedAsync()
+        {
+            if (_overlayWindow == null || _overlayWebView == null)
+            {
+                CreateOverlayWindow();
+            }
+
+            UpdateOverlayPosition();
+            _overlayWindow?.Show();
+
+            if (_overlayWebView?.CoreWebView2 == null)
+            {
+                await _overlayWebView!.EnsureCoreWebView2Async();
+                _overlayWebView.CoreWebView2.NavigationCompleted += OverlayWebView_NavigationCompleted;
+                _overlayWebView.CoreWebView2.NewWindowRequested += OverlayWebView_NewWindowRequested;
+            }
+        }
+
         private async void OverlayWebView_NavigationCompleted(object? sender, CoreWebView2NavigationCompletedEventArgs e)
         {
-            if (e.IsSuccess && !string.IsNullOrEmpty(_pendingExecuteScript))
+            if (e.IsSuccess && !_isClosingOverlay && _overlayWebView != null && !string.IsNullOrEmpty(_pendingExecuteScript))
             {
                 try
                 {
-                    await _overlayWebView!.CoreWebView2.ExecuteScriptAsync(_pendingExecuteScript);
+                    await _overlayWebView.CoreWebView2.ExecuteScriptAsync(_pendingExecuteScript);
                 }
                 catch (Exception ex)
                 {
@@ -131,18 +255,29 @@ namespace RCMolinaApp.Views
             }
         }
 
+        private void OverlayWebView_NewWindowRequested(object? sender, CoreWebView2NewWindowRequestedEventArgs ev)
+        {
+            ev.Handled = true;
+            _overlayWebView?.CoreWebView2.Navigate(ev.Uri);
+        }
+
         private void AppWebView_CoreWebView2InitializationCompleted(object sender, CoreWebView2InitializationCompletedEventArgs e)
         {
             if (!e.IsSuccess) return;
 
             AppWebView.CoreWebView2.Settings.IsScriptEnabled = true;
             AppWebView.CoreWebView2.Settings.IsWebMessageEnabled = true;
+            AppWebView.CoreWebView2.Profile.ClearBrowsingDataAsync(CoreWebView2BrowsingDataKinds.CacheStorage | CoreWebView2BrowsingDataKinds.DiskCache);
 
-            // Inscreve no evento que vai escutar as postMessages vindas do Javascript
+            AppWebView.CoreWebView2.NewWindowRequested += (s, ev) =>
+            {
+                ev.Handled = true;
+                AppWebView.CoreWebView2.Navigate(ev.Uri);
+            };
+
             AppWebView.CoreWebView2.WebMessageReceived += AppWebView_WebMessageReceived;
-            
-            // Adiciona PreviewKeyDown no próprio AppWebView para pegar o ESC
-            AppWebView.PreviewKeyDown += (s, ev) => 
+
+            AppWebView.PreviewKeyDown += (s, ev) =>
             {
                 if (ev.Key == System.Windows.Input.Key.Escape)
                 {
@@ -150,11 +285,10 @@ namespace RCMolinaApp.Views
                 }
             };
 
-            // Carrega a sua aplicação Web inicial
             AppWebView.CoreWebView2.Navigate(_myWebAppUrl);
         }
 
-        private void AppWebView_WebMessageReceived(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
+        private async void AppWebView_WebMessageReceived(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
         {
             try
             {
@@ -167,7 +301,7 @@ namespace RCMolinaApp.Views
                 if (action == "open_external" && root.TryGetProperty("url", out var urlProp))
                 {
                     string url = urlProp.GetString() ?? "about:blank";
-                    
+
                     if (root.TryGetProperty("sidebarWidth", out var sw))
                     {
                         _sidebarWidth = sw.GetInt32();
@@ -178,26 +312,12 @@ namespace RCMolinaApp.Views
                         _headerHeight = hh.GetInt32();
                     }
 
-                    if (root.TryGetProperty("executeScript", out var es))
-                    {
-                        _pendingExecuteScript = es.GetString();
-                    }
-                    else
-                    {
-                        _pendingExecuteScript = null;
-                    }
+                    _pendingExecuteScript = root.TryGetProperty("executeScript", out var es)
+                        ? es.GetString()
+                        : null;
 
-                    if (_overlayWebView?.CoreWebView2 != null)
-                    {
-                        _overlayWebView.CoreWebView2.Navigate(url);
-                    }
-                    else if (_overlayWebView != null)
-                    {
-                        _overlayWebView.Source = new Uri(url);
-                    }
-                    
-                    UpdateOverlayPosition();
-                    _overlayWindow?.Show();
+                    await EnsureOverlayWebViewInitializedAsync();
+                    _overlayWebView?.CoreWebView2?.Navigate(url);
                 }
                 else if (action == "close_external")
                 {
@@ -210,11 +330,9 @@ namespace RCMolinaApp.Views
             }
             catch (Exception ex)
             {
-                // Mostra o erro na tela para podermos debugar
                 MessageBox.Show($"Erro interno do C#: {ex.Message}\nStack: {ex.StackTrace}", "Erro no App", MessageBoxButton.OK, MessageBoxImage.Error);
                 System.Diagnostics.Debug.WriteLine($"Erro ao processar mensagem do WebView: {ex.Message}");
             }
         }
     }
 }
-

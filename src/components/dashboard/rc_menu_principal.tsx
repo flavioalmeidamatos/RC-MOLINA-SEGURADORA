@@ -630,10 +630,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
           setShowLinksChooser(false);
           setLinksDesktopStatus("");
         } else if (isExternalWebviewOpen) {
-          setIsExternalWebviewOpen(false);
-          if ((window as any).chrome && (window as any).chrome.webview) {
-            (window as any).chrome.webview.postMessage(JSON.stringify({ action: "close_external" }));
-          }
+          closeExternalWebview();
         }
       }
     };
@@ -645,26 +642,20 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   }, [showLinksChooser, isExternalWebviewOpen]);
 
   useEffect(() => {
-    if (!isExternalWebviewOpen) return;
+    const clearExternalWebviewState = () => setIsExternalWebviewOpen(false);
 
-    const clearState = () => setIsExternalWebviewOpen(false);
-    
-    // Give the native webview some time to open and steal focus
-    const timer = setTimeout(() => {
-      window.addEventListener("focus", clearState);
-      window.addEventListener("pointerdown", clearState);
-      window.addEventListener("click", clearState);
-      window.addEventListener("keydown", clearState);
-    }, 500);
-
+    window.addEventListener("rc-external-webview-closed", clearExternalWebviewState);
     return () => {
-      clearTimeout(timer);
-      window.removeEventListener("focus", clearState);
-      window.removeEventListener("pointerdown", clearState);
-      window.removeEventListener("click", clearState);
-      window.removeEventListener("keydown", clearState);
+      window.removeEventListener("rc-external-webview-closed", clearExternalWebviewState);
     };
-  }, [isExternalWebviewOpen]);
+  }, []);
+
+  const closeExternalWebview = () => {
+    if ((window as any).chrome && (window as any).chrome.webview) {
+      (window as any).chrome.webview.postMessage(JSON.stringify({ action: "close_external" }));
+    }
+    setIsExternalWebviewOpen(false);
+  };
 
 
   const handleLogout = async () => {
@@ -1003,12 +994,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
               </p>
             </div>
             <button 
-              onClick={() => {
-                setIsExternalWebviewOpen(false);
-                if ((window as any).chrome && (window as any).chrome.webview) {
-                  (window as any).chrome.webview.postMessage(JSON.stringify({ action: "close_external" }));
-                }
-              }} 
+              onClick={closeExternalWebview}
               className="text-blue-400 hover:text-blue-700 transition-colors ml-4"
               aria-label="Fechar aviso"
             >

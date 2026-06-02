@@ -119,7 +119,7 @@ export function WhatsAppConnectionGateModal({
 
         <section className="relative bg-[linear-gradient(180deg,#fdfdfd_0%,#f6f8fb_100%)] px-6 py-7 sm:px-8 lg:px-9">
           <div className="space-y-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 pr-10 sm:pr-12">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#b58c2a]">
                   Conexão
