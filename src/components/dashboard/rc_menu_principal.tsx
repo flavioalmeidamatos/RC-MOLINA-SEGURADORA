@@ -1497,7 +1497,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                   { name: "ALLCARE PORTAL", url: "https://portal.allcare.com.br/", logo: "/portais/allcare.webp" },
                   { name: "ALLCARE VENDAS", url: "https://vendas.allcare.com.br/AllTechLoginVendas", logo: "/portais/allcare.webp" },
                   { name: "ALLCARE WEB", url: "https://allcare.planium.io/web/login/entrar", logo: "/portais/allcare.webp" },
-                  { name: "AMIL", url: "https://comercial.amil.com.br/prweb/PRAuth/app/sales-experience/", logo: "/portais/amil.webp" },
+                  { name: "AMIL", url: "https://comercial.amil.com.br/prweb/PRAuth/app/sales-experience/", logo: "/portais/amil.webp", executeScript: "setTimeout(() => { const u = document.getElementById('txtUserID'); const p = document.getElementById('txtPassword'); if(u) u.value = '77915445715'; if(p) p.value = 'sqn0y3zqmo'; }, 1000);" },
                   { name: "ASSIM SAUDE", url: "https://assim.hcommerce.com.br/login", logo: "/portais/assim_saude.webp" },
                   { name: "CONTEM ADMINISTRADORA", url: "https://digitalsaude.com.br/canal/contem", logo: "/portais/contem.webp" },
                   { name: "CORPE SAUDE", url: "https://contratacao.mktss.com.br/#/login", logo: "/portais/corpe.webp" },
