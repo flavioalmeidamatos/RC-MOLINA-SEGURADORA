@@ -58,8 +58,20 @@ export default defineConfig(() => {
               return 'webmail-shell';
             }
 
-            if (normalizedId.includes('react-router-dom') || normalizedId.includes('react-dom') || normalizedId.includes('react')) {
+            if (
+              normalizedId.includes('/node_modules/react/') ||
+              normalizedId.includes('/node_modules/react-dom/') ||
+              normalizedId.includes('/node_modules/scheduler/')
+            ) {
               return 'react-vendor';
+            }
+
+            if (
+              normalizedId.includes('/node_modules/react-router/') ||
+              normalizedId.includes('/node_modules/react-router-dom/') ||
+              normalizedId.includes('/node_modules/@remix-run/')
+            ) {
+              return 'router-vendor';
             }
 
             if (normalizedId.includes('lucide-react') || normalizedId.includes('motion')) {
@@ -70,6 +82,7 @@ export default defineConfig(() => {
           },
         },
       },
+      chunkSizeWarningLimit: 1000,
     },
     server: {
       hmr: true,
