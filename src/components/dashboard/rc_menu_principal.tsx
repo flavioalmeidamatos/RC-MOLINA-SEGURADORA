@@ -943,7 +943,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
             <button
               onClick={() => void handleMenuClick("Agenda")}
-              className={`flex min-h-11 items-center gap-2 transition-colors hover:text-[#b58c2a] ${activeMenu === "Agenda" ? "text-[#b58c2a]" : "text-gray-500"}`}
+              className={`flex min-h-11 items-center gap-2 transition-colors hover:text-[#b58c2a] ${activeMenu === "Agenda" ? "text-[#b58c2a]" : "text-white"}`}
             >
               <Calendar size={18} />
               <span className="text-sm">Agenda</span>
@@ -951,7 +951,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
             <button
               onClick={() => void handleMenuClick("Links")}
-              className={`flex min-h-11 items-center gap-2 transition-colors hover:text-[#b58c2a] text-gray-500`}
+              className={`flex min-h-11 items-center gap-2 transition-colors hover:text-[#b58c2a] text-white`}
             >
               <Link2 size={18} />
               <span className="text-sm">Links</span>
