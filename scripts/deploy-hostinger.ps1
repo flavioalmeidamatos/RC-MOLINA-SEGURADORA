@@ -24,6 +24,15 @@ if (Test-Path $versionFile) {
         $minor = [int]$Matches[2]
         $patch = [int]$Matches[3]
         $patch++
+        if ($patch -gt 50) {
+            $patch = 0
+            $minor++
+        }
+        if ($minor -ge 10) {
+            $minor = 0
+            $major++
+        }
+        
         $newVersion = "$major.$minor.$patch"
         
         # Write back to version.ts
