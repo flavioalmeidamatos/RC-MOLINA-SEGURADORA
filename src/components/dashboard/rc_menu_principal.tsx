@@ -1049,7 +1049,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
             ) : (
               <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-5">
                 <div className="flex flex-col gap-3">
-                  <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5 xl:grid-cols-8">
+                  <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5 xl:grid-cols-7">
                     {cards.map((card) => {
                       const Icon = card.icon;
 
