@@ -17,19 +17,77 @@ export default defineConfig(() => {
           manualChunks(id) {
             const normalizedId = id.replace(/\\/g, '/');
 
-            if (normalizedId.includes('node_modules/')) {
-              return normalizedId.split('node_modules/')[1].split('/')[0].replace('@', '');
-            }
-
             if (normalizedId.includes('/src/components/webmail/')) {
               return 'webmail-module';
+            }
+
+            if (!normalizedId.includes('node_modules/')) {
+              return undefined;
+            }
+
+            if (
+              normalizedId.includes('/node_modules/react/') ||
+              normalizedId.includes('/node_modules/react-dom/') ||
+              normalizedId.includes('/node_modules/scheduler/')
+            ) {
+              return 'react-vendor';
+            }
+
+            if (
+              normalizedId.includes('/node_modules/react-router/') ||
+              normalizedId.includes('/node_modules/react-router-dom/')
+            ) {
+              return 'router-vendor';
+            }
+
+            if (normalizedId.includes('/node_modules/tinymce/plugins/')) {
+              return 'tinymce-plugins';
+            }
+
+            if (normalizedId.includes('/node_modules/tinymce/icons/')) {
+              return 'tinymce-icons';
+            }
+
+            if (normalizedId.includes('/node_modules/tinymce/models/')) {
+              return 'tinymce-models';
+            }
+
+            if (normalizedId.includes('/node_modules/tinymce/themes/')) {
+              return 'tinymce-themes';
+            }
+
+            if (normalizedId.includes('/node_modules/tinymce/skins/')) {
+              return 'tinymce-skins';
+            }
+
+            if (normalizedId.includes('/node_modules/@tinymce/tinymce-react/')) {
+              return 'tinymce-react';
+            }
+
+            if (
+              normalizedId.includes('/node_modules/tinymce/') ||
+              normalizedId.includes('/node_modules/@tinymce/')
+            ) {
+              return 'tinymce-core';
+            }
+
+            if (normalizedId.includes('/node_modules/emoji-picker-react/')) {
+              return 'emoji-picker';
+            }
+
+            if (
+              normalizedId.includes('/node_modules/lucide-react/') ||
+              normalizedId.includes('/node_modules/date-fns/') ||
+              normalizedId.includes('/node_modules/framer-motion/') ||
+              normalizedId.includes('/node_modules/motion/')
+            ) {
+              return 'ui-vendor';
             }
 
             return undefined;
           },
         },
       },
-      chunkSizeWarningLimit: 2500,
     },
     server: {
       hmr: true,

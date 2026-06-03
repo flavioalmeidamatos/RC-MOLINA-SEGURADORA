@@ -115,7 +115,7 @@ export default function App() {
   }
 
   if (loading) {
-    return <div className="min-h-screen bg-[#121212]" />;
+    return <div className="h-full min-h-0 bg-[#121212]" />;
   }
 
   return (

@@ -229,7 +229,7 @@ export const RecuperarSenha: React.FC = () => {
     <div
       id="SCR-004"
       data-name="recriasenha"
-      className="flex flex-col items-center justify-center min-h-screen bg-[#121212] text-white p-4"
+      className="flex h-full min-h-0 flex-col items-center justify-start overflow-y-auto bg-[#121212] px-4 py-4 text-white sm:py-6"
     >
       <div className="w-full max-w-md bg-[#1a1a1a] p-8 rounded-2xl shadow-2xl border border-gray-800">
         <div className="flex flex-col items-center mb-8">

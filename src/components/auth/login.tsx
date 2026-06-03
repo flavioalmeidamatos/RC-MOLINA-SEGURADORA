@@ -31,8 +31,8 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
     ? 'Inicie sessão na sua conta para continuar.'
     : 'Acesso rápido e seguro sem senhas.';
   const wrapperClassName = embedded
-    ? 'flex min-h-full flex-col items-center justify-center p-4 text-white sm:p-6 lg:p-8'
-    : 'flex min-h-screen flex-col items-center justify-center bg-[#121212] p-4 text-white';
+    ? 'flex h-full min-h-0 flex-col items-center overflow-y-auto p-4 text-white sm:p-6 lg:p-8'
+    : 'flex h-full min-h-0 flex-col items-center justify-start overflow-y-auto bg-[#121212] px-4 py-4 text-white sm:py-6';
   const cardClassName = embedded
     ? 'w-full max-w-md rounded-2xl border border-[#243447] bg-[#121212] p-6 shadow-2xl sm:p-8'
     : 'w-full max-w-md rounded-2xl border border-gray-800 bg-[#1a1a1a] p-8 shadow-2xl';
