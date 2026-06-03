@@ -326,10 +326,10 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       const screen = getDesktopScreenHint(anchorRect);
       const scriptParam = executeScript ? `&executeScript=${encodeURIComponent(executeScript)}` : "";
       const deepLinkUrl = `urlembeddiag://?url=${encodeURIComponent(url)}${scriptParam}&x=${screen.x}&y=${screen.y}&width=${screen.width}&height=${screen.height}`;
-      
+
       setLinksDesktopStatus("Iniciando/Integrando com o aplicativo desktop...");
       window.location.href = deepLinkUrl;
-      
+
       // Wait a little and clear status
       await wait(2000);
       setLinksDesktopStatus("");
@@ -878,11 +878,10 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                   type="button"
                   disabled={shouldBlockSidebarLinks}
                   onClick={() => void handleMenuClick(item.title)}
-                  className={`flex min-w-max items-center justify-between gap-3 rounded-2xl border-l-4 px-4 py-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-45 lg:w-full lg:rounded-none lg:px-6 ${
-                    isActive
+                  className={`flex min-w-max items-center justify-between gap-3 rounded-2xl border-l-4 px-4 py-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-45 lg:w-full lg:rounded-none lg:px-6 ${isActive
                       ? "border-[#b58c2a] bg-[#152a42] text-white"
                       : "border-transparent text-gray-400 hover:bg-[#112338] hover:text-white"
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center gap-3">
                     <Icon size={18} className={isActive ? "text-[#b58c2a]" : "text-gray-500"} />
@@ -935,9 +934,8 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
               type="button"
               aria-label="WhatsApp"
               onClick={() => void handleMenuClick("Campanhas")}
-              className={`flex min-h-11 items-center gap-2 rounded-full border border-[#25D366]/25 bg-[#25D366]/10 px-4 py-2 text-[#128C7E] transition-all hover:bg-[#25D366]/20 active:scale-95 cursor-pointer ${
-                activeMenu === "Campanhas" ? "ring-2 ring-[#25D366] ring-offset-2" : ""
-              }`}
+              className={`flex min-h-11 items-center gap-2 rounded-full border border-[#25D366]/25 bg-[#25D366]/10 px-4 py-2 text-[#128C7E] transition-all hover:bg-[#25D366]/20 active:scale-95 cursor-pointer ${activeMenu === "Campanhas" ? "ring-2 ring-[#25D366] ring-offset-2" : ""
+                }`}
             >
               <WhatsAppIcon className="h-5 w-5" />
               <span className="text-sm font-semibold">WhatsApp</span>
@@ -993,7 +991,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                 Pressione ESC para retornar ao menu principal
               </p>
             </div>
-            <button 
+            <button
               onClick={closeExternalWebview}
               className="text-blue-400 hover:text-blue-700 transition-colors ml-4"
               aria-label="Fechar aviso"
@@ -1098,9 +1096,9 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                 {isLoadingAniversariantes
                                   ? "Carregando registros..."
                                   : `${aniversariantesMes.filter(c => {
-                                      const d = new Date(c.data_nascimento);
-                                      return !isNaN(d.getTime()) && d.getUTCMonth() === new Date().getMonth();
-                                    }).length} clientes celebram este mês`}
+                                    const d = new Date(c.data_nascimento);
+                                    return !isNaN(d.getTime()) && d.getUTCMonth() === new Date().getMonth();
+                                  }).length} clientes celebram este mês`}
                               </p>
                             </div>
                             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-[#d4af37] ring-1 ring-white/10 backdrop-blur-sm">
@@ -1121,14 +1119,14 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                 const dayA = new Date(a.data_nascimento).getUTCDate();
                                 const dayB = new Date(b.data_nascimento).getUTCDate();
                                 const today = new Date().getDate();
-                                
+
                                 const distA = Math.abs(dayA - today);
                                 const distB = Math.abs(dayB - today);
-                                
+
                                 if (distA === distB) {
                                   return dayA >= today ? -1 : 1;
                                 }
-                                
+
                                 return distA - distB;
                               });
 
@@ -1149,7 +1147,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                 {filtered.map((cliente) => {
                                   const bDate = new Date(cliente.data_nascimento);
                                   const isToday = bDate.getUTCDate() === new Date().getDate() && bDate.getUTCMonth() === currentMonth;
-                                  
+
                                   return (
                                     <div
                                       key={cliente.codigo}
@@ -1165,14 +1163,13 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                               return lower.charAt(0).toUpperCase() + lower.slice(1);
                                             })
                                             .join(" ");
-                                            
+
                                           setCampanhaInitialMessage(`Olá, *${nomeFormatado}* `);
                                           handleMenuClick("Campanhas");
                                         }
                                       }}
-                                      className={`group relative overflow-hidden rounded-lg border border-white bg-white px-2.5 py-2 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#d4af37]/30 hover:shadow-md ${
-                                        isToday ? "ring-2 ring-[#d4af37]/20 bg-[#fffaf0]/50 cursor-pointer" : ""
-                                      }`}
+                                      className={`group relative overflow-hidden rounded-lg border border-white bg-white px-2.5 py-2 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#d4af37]/30 hover:shadow-md ${isToday ? "ring-2 ring-[#d4af37]/20 bg-[#fffaf0]/50 cursor-pointer" : ""
+                                        }`}
                                     >
                                       {isToday && (
                                         <div className="absolute right-0 top-0 rounded-bl-xl bg-[#d4af37] px-2 py-1 text-[8px] font-black uppercase tracking-wider text-white animate-pulse">
@@ -1180,9 +1177,8 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                         </div>
                                       )}
                                       <div className="flex items-center gap-2.5">
-                                        <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all duration-300 ${
-                                          isToday ? "bg-[#d4af37] text-white shadow-lg shadow-[#d4af37]/20" : "bg-[#d4af37]/10 text-[#a2812a] group-hover:bg-[#d4af37]/20"
-                                        }`}>
+                                        <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all duration-300 ${isToday ? "bg-[#d4af37] text-white shadow-lg shadow-[#d4af37]/20" : "bg-[#d4af37]/10 text-[#a2812a] group-hover:bg-[#d4af37]/20"
+                                          }`}>
                                           <PartyPopper size={14} />
                                         </div>
                                         <div className="min-w-0 flex-1">
@@ -1245,11 +1241,10 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                               <div
                                 key={item.id}
                                 onClick={() => handleMenuClick("Agenda")}
-                                className={`group relative hover:z-30 rounded-xl border border-white bg-white p-3 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md cursor-pointer ${
-                                  item.highlight 
-                                    ? "ring-2 ring-red-500/20 bg-red-50/50 hover:border-red-300" 
+                                className={`group relative hover:z-30 rounded-xl border border-white bg-white p-3 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md cursor-pointer ${item.highlight
+                                    ? "ring-2 ring-red-500/20 bg-red-50/50 hover:border-red-300"
                                     : "hover:border-[#d4af37]/30"
-                                }`}
+                                  }`}
                               >
                                 {item.highlight && (
                                   <div className="absolute right-0 top-0 rounded-tr-xl rounded-bl-xl bg-red-500 px-2 py-1 text-[8px] font-black uppercase tracking-wider text-white animate-pulse">
@@ -1257,19 +1252,17 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                   </div>
                                 )}
                                 <div className="flex items-center gap-3">
-                                  <div className={`flex h-8 w-8 shrink-0 flex-col items-center justify-center rounded-full transition-all duration-300 ${
-                                    item.highlight 
-                                      ? "bg-red-500 text-white shadow-lg shadow-red-500/20" 
+                                  <div className={`flex h-8 w-8 shrink-0 flex-col items-center justify-center rounded-full transition-all duration-300 ${item.highlight
+                                      ? "bg-red-500 text-white shadow-lg shadow-red-500/20"
                                       : "bg-[#d4af37]/10 text-[#a2812a] group-hover:bg-[#d4af37]/20"
-                                  }`}>
+                                    }`}>
                                     <User size={14} />
                                   </div>
                                   <div className="min-w-0 flex-1">
                                     <div className={`max-w-full ${item.highlight ? "pr-16" : ""}`}>
                                       <p
-                                        className={`truncate text-[11px] font-bold leading-4 transition-colors ${
-                                          item.highlight ? "text-red-700" : "text-[#0c1826] group-hover:text-[#a2812a]"
-                                        }`}
+                                        className={`truncate text-[11px] font-bold leading-4 transition-colors ${item.highlight ? "text-red-700" : "text-[#0c1826] group-hover:text-[#a2812a]"
+                                          }`}
                                       >
                                         {item.name}
                                       </p>
@@ -1292,7 +1285,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                         </div>
                       </div>
                     </section>
-                    
+
                     <section className="flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm max-w-sm h-[360px]">
                       <div className="flex flex-col h-full">
                         <div className="relative overflow-hidden bg-[#0c1826] p-4 text-white shrink-0">
@@ -1332,13 +1325,13 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                 </div>
                               </div>
                               <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-slate-100">
-                                <div 
-                                  className="h-full bg-[#25D366] transition-all duration-1000" 
+                                <div
+                                  className="h-full bg-[#25D366] transition-all duration-1000"
                                   style={{ width: `${clientStats.total > 0 ? (clientStats.ativos / clientStats.total) * 100 : 0}%` }}
                                 />
                               </div>
                             </div>
-                            
+
                             <div className="group relative overflow-hidden rounded-xl border border-white bg-white p-3 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-red-400/30 hover:shadow-md">
                               <div className="flex items-center gap-3">
                                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-500 transition-all duration-300 group-hover:bg-red-100">
@@ -1356,8 +1349,8 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                 </div>
                               </div>
                               <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-slate-100">
-                                <div 
-                                  className="h-full bg-red-400 transition-all duration-1000" 
+                                <div
+                                  className="h-full bg-red-400 transition-all duration-1000"
                                   style={{ width: `${clientStats.total > 0 ? (clientStats.inativos / clientStats.total) * 100 : 0}%` }}
                                 />
                               </div>
@@ -1620,107 +1613,107 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
       {activeAgendaReminder
         ? createPortal(
-            <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-950/45 px-4 backdrop-blur-sm">
-              <div className="w-full max-w-lg overflow-hidden rounded-lg border border-slate-700 bg-[#242424] text-white shadow-2xl">
-                <div className="flex items-center justify-between border-b border-white/10 bg-[#202020] px-4 py-2">
-                  <div className="flex items-center gap-2">
-                    <Bell size={16} className="text-[#d4af37]" />
-                    <span className="text-sm font-semibold">1 Lembrete(s)</span>
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-950/45 px-4 backdrop-blur-sm">
+            <div className="w-full max-w-lg overflow-hidden rounded-lg border border-slate-700 bg-[#242424] text-white shadow-2xl">
+              <div className="flex items-center justify-between border-b border-white/10 bg-[#202020] px-4 py-2">
+                <div className="flex items-center gap-2">
+                  <Bell size={16} className="text-[#d4af37]" />
+                  <span className="text-sm font-semibold">1 Lembrete(s)</span>
+                </div>
+                <button
+                  type="button"
+                  aria-label="Fechar lembrete"
+                  onClick={closeAgendaReminder}
+                  className="rounded p-1 text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+                >
+                  <X size={17} />
+                </button>
+              </div>
+
+              <div className="px-5 py-4">
+                <div className="flex items-start gap-3">
+                  <div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center border border-white/70 text-white">
+                    <Calendar size={23} />
                   </div>
+                  <div className="min-w-0">
+                    <h3 className="truncate text-xl font-medium leading-tight animate-pulse-attention">
+                      {activeAgendaReminder.agendamento.observacao ||
+                        activeAgendaReminder.agendamento.cliente_nome ||
+                        "Compromisso da agenda"}
+                    </h3>
+                    <p className="mt-1 text-xs font-semibold text-white">
+                      {formatReminderDate(activeAgendaReminder.appointmentAt)}
+                    </p>
+                    <p className="mt-2 text-sm text-white/75">
+                      {activeAgendaReminder.phase === "before"
+                        ? `Faltam ${Math.max(
+                          1,
+                          Math.ceil((activeAgendaReminder.appointmentAt.getTime() - Date.now()) / 60000)
+                        )} minutos para o compromisso.`
+                        : "O horario marcado para este compromisso chegou."}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-5 min-h-[112px] border border-white/35 bg-[#1f1f1f]">
+                  <div className="flex items-center justify-between bg-[#0078d4] px-2 py-1 text-xs font-bold">
+                    <div className="flex min-w-0 items-center gap-1.5">
+                      <Calendar size={13} />
+                      <span className="truncate">
+                        {activeAgendaReminder.agendamento.cliente_nome || "Cliente"}
+                      </span>
+                    </div>
+                    <span className="shrink-0 pl-3">
+                      {activeAgendaReminder.agendamento.hora_inicio?.slice(0, 5)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-3 flex justify-end">
                   <button
                     type="button"
-                    aria-label="Fechar lembrete"
                     onClick={closeAgendaReminder}
-                    className="rounded p-1 text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+                    className="rounded border border-white/30 px-5 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-white/10"
                   >
-                    <X size={17} />
+                    Descartar
                   </button>
                 </div>
 
-                <div className="px-5 py-4">
-                  <div className="flex items-start gap-3">
-                    <div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center border border-white/70 text-white">
-                      <Calendar size={23} />
-                    </div>
-                    <div className="min-w-0">
-                      <h3 className="truncate text-xl font-medium leading-tight animate-pulse-attention">
-                        {activeAgendaReminder.agendamento.observacao ||
-                          activeAgendaReminder.agendamento.cliente_nome ||
-                          "Compromisso da agenda"}
-                      </h3>
-                      <p className="mt-1 text-xs font-semibold text-white">
-                        {formatReminderDate(activeAgendaReminder.appointmentAt)}
-                      </p>
-                      <p className="mt-2 text-sm text-white/75">
-                        {activeAgendaReminder.phase === "before"
-                          ? `Faltam ${Math.max(
-                              1,
-                              Math.ceil((activeAgendaReminder.appointmentAt.getTime() - Date.now()) / 60000)
-                            )} minutos para o compromisso.`
-                          : "O horario marcado para este compromisso chegou."}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-5 min-h-[112px] border border-white/35 bg-[#1f1f1f]">
-                    <div className="flex items-center justify-between bg-[#0078d4] px-2 py-1 text-xs font-bold">
-                      <div className="flex min-w-0 items-center gap-1.5">
-                        <Calendar size={13} />
-                        <span className="truncate">
-                          {activeAgendaReminder.agendamento.cliente_nome || "Cliente"}
-                        </span>
-                      </div>
-                      <span className="shrink-0 pl-3">
-                        {activeAgendaReminder.agendamento.hora_inicio?.slice(0, 5)}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="mt-3 flex justify-end">
-                    <button
-                      type="button"
-                      onClick={closeAgendaReminder}
-                      className="rounded border border-white/30 px-5 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-white/10"
-                    >
-                      Descartar
-                    </button>
-                  </div>
-
-                  <div className="mt-3 text-xs font-semibold text-white">
-                    Clique em Adiar para ser lembrado novamente em:
-                  </div>
-                  <div className="mt-1 flex flex-wrap items-center gap-2">
-                    <select
-                      value={reminderSnoozeMinutes}
-                      onChange={(event) => setReminderSnoozeMinutes(event.target.value)}
-                      className="h-8 min-w-[220px] rounded border border-white/40 bg-[#1f1f1f] px-2 text-xs font-semibold text-white outline-none"
-                    >
-                      <option value="5">5 minutos</option>
-                      <option value="10">10 minutos</option>
-                      <option value="15">15 minutos</option>
-                      <option value="30">30 minutos</option>
-                      <option value="60">1 hora</option>
-                    </select>
-                    <button
-                      type="button"
-                      onClick={snoozeAgendaReminder}
-                      className="h-8 rounded border border-white/40 px-3 text-xs font-semibold text-white transition-colors hover:bg-white/10"
-                    >
-                      Adiar
-                    </button>
-                    <button
-                      type="button"
-                      onClick={discardAllAgendaReminders}
-                      className="ml-auto h-8 rounded border border-white/40 px-3 text-xs font-semibold text-white transition-colors hover:bg-white/10"
-                    >
-                      Descartar Tudo
-                    </button>
-                  </div>
+                <div className="mt-3 text-xs font-semibold text-white">
+                  Clique em Adiar para ser lembrado novamente em:
+                </div>
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                  <select
+                    value={reminderSnoozeMinutes}
+                    onChange={(event) => setReminderSnoozeMinutes(event.target.value)}
+                    className="h-8 min-w-[220px] rounded border border-white/40 bg-[#1f1f1f] px-2 text-xs font-semibold text-white outline-none"
+                  >
+                    <option value="5">5 minutos</option>
+                    <option value="10">10 minutos</option>
+                    <option value="15">15 minutos</option>
+                    <option value="30">30 minutos</option>
+                    <option value="60">1 hora</option>
+                  </select>
+                  <button
+                    type="button"
+                    onClick={snoozeAgendaReminder}
+                    className="h-8 rounded border border-white/40 px-3 text-xs font-semibold text-white transition-colors hover:bg-white/10"
+                  >
+                    Adiar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={discardAllAgendaReminders}
+                    className="ml-auto h-8 rounded border border-white/40 px-3 text-xs font-semibold text-white transition-colors hover:bg-white/10"
+                  >
+                    Descartar Tudo
+                  </button>
                 </div>
               </div>
-            </div>,
-            document.body
-          )
+            </div>
+          </div>,
+          document.body
+        )
         : null}
 
       <style>{`

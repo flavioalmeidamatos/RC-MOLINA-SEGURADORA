@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("RC-MOLINA-APP")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6eea552ff7279fc040081be75ac04c20c8ff229e")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+511e96c3c073bde7eac64208349477e0518638e6")]
 [assembly: System.Reflection.AssemblyProductAttribute("RC-MOLINA-APP")]
 [assembly: System.Reflection.AssemblyTitleAttribute("RC-MOLINA-APP")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

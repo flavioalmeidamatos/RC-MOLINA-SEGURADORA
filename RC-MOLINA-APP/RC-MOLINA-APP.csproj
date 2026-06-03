@@ -6,6 +6,7 @@
     <RootNamespace>RCMolinaApp</RootNamespace>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
+    <ApplicationIcon>Assets\Images\icon.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>

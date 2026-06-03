@@ -29,6 +29,7 @@ namespace RCMolinaApp.Views
             LocationChanged += MainWindow_LocationChanged;
             SizeChanged += MainWindow_SizeChanged;
             StateChanged += MainWindow_StateChanged;
+            Closing += MainWindow_Closing;
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -325,7 +326,7 @@ namespace RCMolinaApp.Views
                 }
                 else if (action == "close_app")
                 {
-                    Application.Current.Shutdown();
+                    Close();
                 }
             }
             catch (Exception ex)
@@ -333,6 +334,54 @@ namespace RCMolinaApp.Views
                 MessageBox.Show($"Erro interno do C#: {ex.Message}\nStack: {ex.StackTrace}", "Erro no App", MessageBoxButton.OK, MessageBoxImage.Error);
                 System.Diagnostics.Debug.WriteLine($"Erro ao processar mensagem do WebView: {ex.Message}");
             }
+        }
+        private bool _isClosingApp = false;
+
+        private async void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+        {
+            if (!_isClosingApp)
+            {
+                e.Cancel = true;
+                _isClosingApp = true;
+                await CleanupAndExitAsync();
+            }
+        }
+
+        private async System.Threading.Tasks.Task CleanupAndExitAsync()
+        {
+            try
+            {
+                if (AppWebView?.CoreWebView2?.Profile != null)
+                {
+                    await AppWebView.CoreWebView2.Profile.ClearBrowsingDataAsync(CoreWebView2BrowsingDataKinds.AllProfile);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Erro ao limpar dados de navegação: {ex.Message}");
+            }
+
+            try
+            {
+                var processes = System.Diagnostics.Process.GetProcessesByName("node");
+                foreach (var process in processes)
+                {
+                    try
+                    {
+                        process.Kill();
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Erro ao encerrar processo node: {ex.Message}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Erro ao buscar processos node: {ex.Message}");
+            }
+
+            Application.Current.Shutdown();
         }
     }
 }
