@@ -558,25 +558,27 @@ export const ClientRegistrationMultipage: React.FC = () => {
 
   const activeTabIndex = tabs.findIndex((tab) => tab.id === activeTab);
   const produtosFiltrados = useMemo(() => {
-    const termo = formState.produtoComercializado.trim().toLocaleLowerCase('pt-BR');
+    const normalizeSearch = (str: string) => str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR');
+    const termo = normalizeSearch(formState.produtoComercializado.trim());
 
     if (!termo) {
       return produtosComercializados;
     }
 
     return produtosComercializados.filter((produto) =>
-      produto.toLocaleLowerCase('pt-BR').includes(termo),
+      normalizeSearch(produto).includes(termo),
     );
   }, [formState.produtoComercializado]);
   const statusNegociacaoFiltrados = useMemo(() => {
-    const termo = formState.statusNegociacao.trim().toLocaleLowerCase('pt-BR');
+    const normalizeSearch = (str: string) => str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR');
+    const termo = normalizeSearch(formState.statusNegociacao.trim());
 
     if (!termo) {
       return statusNegociacaoOptions;
     }
 
     return statusNegociacaoOptions.filter((status) =>
-      status.toLocaleLowerCase('pt-BR').includes(termo),
+      normalizeSearch(status).includes(termo),
     );
   }, [formState.statusNegociacao]);
 

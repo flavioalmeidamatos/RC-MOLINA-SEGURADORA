@@ -840,7 +840,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
         onClickCapture={blockSidebarMouseEvent}
         onMouseDownCapture={blockSidebarMouseEvent}
         onPointerDownCapture={blockSidebarMouseEvent}
-        className={`relative w-full flex-shrink-0 overflow-hidden bg-[#0c1826] shadow-xl lg:w-48 lg:z-20 lg:flex lg:flex-col lg:justify-between lg:h-screen transition-all duration-300 ${
+        className={`relative w-full flex-shrink-0 overflow-hidden bg-black shadow-xl lg:w-48 lg:z-20 lg:flex lg:flex-col lg:justify-between lg:h-screen transition-all duration-300 ${
         shouldBlockSidebarLinks ? "opacity-55 select-none filter grayscale-[30%]" : ""
       }`}
       >
@@ -905,7 +905,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       </aside>
 
       <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
-        <header id="main-dashboard-header" className="flex flex-col gap-4 bg-[#0c1826] border-b border-slate-800 px-4 py-4 shadow-sm sm:px-6 md:px-8 lg:h-16 lg:flex-row lg:items-center lg:justify-between lg:gap-0 lg:py-0">
+        <header id="main-dashboard-header" className="flex flex-col gap-4 bg-black border-b border-slate-800 px-4 py-4 shadow-sm sm:px-6 md:px-8 lg:h-16 lg:flex-row lg:items-center lg:justify-between lg:gap-0 lg:py-0">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
             <div className="flex flex-col items-start px-2 py-1">
               <div className="text-xl font-bold leading-none tracking-widest text-[#d4af37]">
@@ -1486,7 +1486,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                   { name: "ALLCARE VENDAS", url: "https://vendas.allcare.com.br/AllTechLoginVendas", logo: "/portais/allcare.webp" },
                   { name: "ALLCARE WEB", url: "https://allcare.planium.io/web/login/entrar", logo: "/portais/allcare.webp" },
                   { name: "AMIL", url: "https://comercial.amil.com.br/prweb/PRAuth/app/sales-experience/", logo: "/portais/amil.webp", executeScript: "(function(){setTimeout(() => { const u = document.getElementById('txtUserID'); const p = document.getElementById('txtPassword'); if(u) u.value = '77915445715'; if(p) p.value = 'sqn0y3zqmo'; }, 1000);})();" },
-                  { name: "ASSIM SAUDE", url: "https://assim.hcommerce.com.br/login", logo: "/portais/assim_saude.webp", executeScript: "(function(){let attempts=0;let interval=setInterval(function(){let user=document.querySelector('input[type=\"text\"], input[type=\"email\"], input[name*=\"login\"], input[name*=\"user\"], input[name*=\"usuario\"], #login, #usuario, #login_usuario');let pass=document.querySelector('input[type=\"password\"], input[name*=\"senha\"], input[name*=\"pass\"], #senha, #password, #login_senha');if(user&&pass){let setValue=function(el,value){let setter=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value');if(setter&&setter.set){setter.set.call(el,value);}else{el.value=value;}el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));};setValue(user,'77915445715');setValue(pass,'cfqqho');clearInterval(interval);}attempts++;if(attempts>15){clearInterval(interval);}},1000);})();" },
+                  { name: "ASSIM SAUDE", url: "https://assim.hcommerce.com.br/login", logo: "/portais/assim_saude.webp", executeScript: "(function(){let attempts=0;let interval=setInterval(function(){let user=document.querySelector('input[type=\"text\"], input[type=\"email\"], input[name*=\"login\"], input[name*=\"user\"], input[name*=\"usuario\"], input[name*=\"cpf\"], #login, #usuario, #login_usuario, #cpf, [placeholder*=\"CPF\"], [placeholder*=\"Usuário\"]');let pass=document.querySelector('input[type=\"password\"], input[name*=\"senha\"], input[name*=\"pass\"], #senha, #password, #login_senha, [placeholder*=\"Senha\"]');if(user&&pass){let setValue=function(el,value){let setter=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value');if(setter&&setter.set){setter.set.call(el,value);}else{el.value=value;}el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));};setValue(user,'77915445715');setValue(pass,'cfqqho');setTimeout(()=>{let btn=document.querySelector('button[type=\"submit\"], input[type=\"submit\"], button[class*=\"login\"], button[class*=\"entrar\"], #btnLogar');if(btn)btn.click();},500);clearInterval(interval);}attempts++;if(attempts>45){clearInterval(interval);}},1000);})();" },
                   { name: "CONTEM ADMINISTRADORA", url: "https://digitalsaude.com.br/canal/contem", logo: "/portais/contem.webp" },
                   { name: "CORPE SAUDE", url: "https://contratacao.mktss.com.br/#/login", logo: "/portais/corpe.webp" },
                   { name: "DIXMED", url: "https://dixmed.hcommerce.com.br", logo: "/portais/dixmed_circulo_borda.webp" },
