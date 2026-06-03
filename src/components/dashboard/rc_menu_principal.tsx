@@ -840,9 +840,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
         onClickCapture={blockSidebarMouseEvent}
         onMouseDownCapture={blockSidebarMouseEvent}
         onPointerDownCapture={blockSidebarMouseEvent}
-        className={`relative w-full flex-shrink-0 overflow-hidden bg-black shadow-xl lg:w-48 lg:z-20 lg:flex lg:flex-col lg:justify-between lg:h-screen transition-all duration-300 ${
-          showMobileMenu ? "h-[50vh] sm:h-auto" : "h-0 lg:h-screen"
-        } ${shouldBlockSidebarLinks ? "opacity-55 select-none filter grayscale-[30%]" : ""}`}
+        className={`relative w-full flex-shrink-0 overflow-hidden bg-black shadow-xl lg:w-48 lg:z-20 lg:flex lg:flex-col lg:justify-between lg:h-screen transition-all duration-300 ${shouldBlockSidebarLinks ? "opacity-55 select-none filter grayscale-[30%]" : ""}`}
       >
         {shouldBlockSidebarLinks ? (
           <div
