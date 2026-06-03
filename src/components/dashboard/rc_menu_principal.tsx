@@ -255,13 +255,14 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     };
   }
 
-  async function requestDesktopOpen(url: string, anchorRect?: DOMRect) {
+  async function requestDesktopOpen(url: string, anchorRect?: DOMRect, executeScript?: string) {
     const response = await fetch(`${DESKTOP_AGENT_ORIGIN}/open`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         url,
         screen: getDesktopScreenHint(anchorRect),
+        ...(executeScript ? { executeScript } : {})
       }),
     });
 
@@ -309,11 +310,11 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     })();
   }
 
-  async function openPortalInDesktop(url: string, anchorRect?: DOMRect) {
+  async function openPortalInDesktop(url: string, anchorRect?: DOMRect, executeScript?: string) {
     setLinksDesktopStatus("Abrindo portal no aplicativo desktop...");
 
     try {
-      await requestDesktopOpen(url, anchorRect);
+      await requestDesktopOpen(url, anchorRect, executeScript);
       setLinksDesktopStatus("");
       monitorLinksDesktopWindow();
       return;
@@ -323,7 +324,8 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
     try {
       const screen = getDesktopScreenHint(anchorRect);
-      const deepLinkUrl = `urlembeddiag://?url=${encodeURIComponent(url)}&x=${screen.x}&y=${screen.y}&width=${screen.width}&height=${screen.height}`;
+      const scriptParam = executeScript ? `&executeScript=${encodeURIComponent(executeScript)}` : "";
+      const deepLinkUrl = `urlembeddiag://?url=${encodeURIComponent(url)}${scriptParam}&x=${screen.x}&y=${screen.y}&width=${screen.width}&height=${screen.height}`;
       
       setLinksDesktopStatus("Iniciando/Integrando com o aplicativo desktop...");
       window.location.href = deepLinkUrl;
@@ -1483,8 +1485,8 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                   { name: "ALLCARE PORTAL", url: "https://portal.allcare.com.br/", logo: "/portais/allcare.webp" },
                   { name: "ALLCARE VENDAS", url: "https://vendas.allcare.com.br/AllTechLoginVendas", logo: "/portais/allcare.webp" },
                   { name: "ALLCARE WEB", url: "https://allcare.planium.io/web/login/entrar", logo: "/portais/allcare.webp" },
-                  { name: "AMIL", url: "https://comercial.amil.com.br/prweb/PRAuth/app/sales-experience/", logo: "/portais/amil.webp", executeScript: "setTimeout(() => { const u = document.getElementById('txtUserID'); const p = document.getElementById('txtPassword'); if(u) u.value = '77915445715'; if(p) p.value = 'sqn0y3zqmo'; }, 1000);" },
-                  { name: "ASSIM SAUDE", url: "https://assim.hcommerce.com.br/login", logo: "/portais/assim_saude.webp", executeScript: "let attempts = 0; const interval = setInterval(() => { const user = document.querySelector('input[type=\"text\"], input[type=\"email\"], input[name*=\"login\"], input[name*=\"user\"], input[name*=\"usuario\"], #login, #usuario, #login_usuario'); const pass = document.querySelector('input[type=\"password\"], input[name*=\"senha\"], input[name*=\"pass\"], #senha, #password, #login_senha'); if (user && pass) { const setValue = (el, value) => { const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set; setter ? setter.call(el, value) : el.value = value; el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); }; setValue(user, '77915445715'); setValue(pass, 'cfqqho'); clearInterval(interval); } attempts++; if (attempts > 15) clearInterval(interval); }, 1000);" },
+                  { name: "AMIL", url: "https://comercial.amil.com.br/prweb/PRAuth/app/sales-experience/", logo: "/portais/amil.webp", executeScript: "(function(){setTimeout(() => { const u = document.getElementById('txtUserID'); const p = document.getElementById('txtPassword'); if(u) u.value = '77915445715'; if(p) p.value = 'sqn0y3zqmo'; }, 1000);})();" },
+                  { name: "ASSIM SAUDE", url: "https://assim.hcommerce.com.br/login", logo: "/portais/assim_saude.webp", executeScript: "(function(){let attempts=0;let interval=setInterval(function(){let user=document.querySelector('input[type=\"text\"], input[type=\"email\"], input[name*=\"login\"], input[name*=\"user\"], input[name*=\"usuario\"], #login, #usuario, #login_usuario');let pass=document.querySelector('input[type=\"password\"], input[name*=\"senha\"], input[name*=\"pass\"], #senha, #password, #login_senha');if(user&&pass){let setValue=function(el,value){let setter=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value');if(setter&&setter.set){setter.set.call(el,value);}else{el.value=value;}el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));};setValue(user,'77915445715');setValue(pass,'cfqqho');clearInterval(interval);}attempts++;if(attempts>15){clearInterval(interval);}},1000);})();" },
                   { name: "CONTEM ADMINISTRADORA", url: "https://digitalsaude.com.br/canal/contem", logo: "/portais/contem.webp" },
                   { name: "CORPE SAUDE", url: "https://contratacao.mktss.com.br/#/login", logo: "/portais/corpe.webp" },
                   { name: "DIXMED", url: "https://dixmed.hcommerce.com.br", logo: "/portais/dixmed_circulo_borda.webp" },
@@ -1495,7 +1497,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                   { name: "PLURAL", url: "https://plural.hcommerce.com.br/login", logo: "/portais/plural.webp" },
                   { name: "PORTO SEGURO", url: "https://corretor.portoseguro.com.br/portal/site/corretoronline/template.LOGIN/", logo: "/portais/porto_seguro.webp" },
                   { name: "QUALIVENDAS", url: "https://qualivendas.qualicorp.com.br/#/login", logo: "/portais/qualivendas.webp" },
-                  { name: "QUER", url: "https://app.simuladoronline.com/login/", logo: "/portais/quer.webp", executeScript: "setTimeout(() => { const u = document.getElementById('login_usuario'); const p = document.getElementById('login_senha'); if(u) u.value = 'Rosilene Rodrigues'; if(p) p.value = '123'; }, 1000);" },
+                  { name: "QUER", url: "https://app.simuladoronline.com/login/", logo: "/portais/quer.webp", executeScript: "(function(){setTimeout(() => { const u = document.getElementById('login_usuario'); const p = document.getElementById('login_senha'); if(u) u.value = 'Rosilene Rodrigues'; if(p) p.value = '123'; }, 1000);})();" },
                   { name: "SOLUTIONS", url: "https://solutions.hcommerce.com.br/login", logo: "/portais/solutions.webp" },
                   { name: "SULAMERICA", url: "https://os11.sulamerica.com.br/SaudeCotador/LoginVendedor.aspx", logo: "/portais/sulamerica.webp" },
                   { name: "SUPERMED", url: "https://vendas.supermed.com.br/login", logo: "/portais/supermed.webp" },
@@ -1522,7 +1524,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                           (window as any).chrome.webview.postMessage(JSON.stringify(payload));
                         }, 50);
                       } else {
-                        void openPortalInDesktop(sys.url, anchorRect);
+                        void openPortalInDesktop(sys.url, anchorRect, sys.executeScript);
                       }
                     }}
                     className="group flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:-translate-y-1 hover:border-[#d4af37]/70 hover:shadow-md text-left w-full cursor-pointer"
