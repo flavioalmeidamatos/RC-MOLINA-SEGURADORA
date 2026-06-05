@@ -113,8 +113,9 @@ export const initializeLocalWhatsAppConnector = async () => {
         ],
       },
       webVersionCache: {
-        type: 'local',
-        path: path.join(resolveCacheDir(), 'web-cache.html'),
+        type: 'remote',
+        remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/{version}.html',
+        strict: false,
       },
     });
 
