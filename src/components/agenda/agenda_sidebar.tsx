@@ -26,13 +26,13 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = React.memo(({
 }) => {
   const dateInputRef = useRef<HTMLInputElement>(null);
   const clientInputRef = useRef<HTMLInputElement>(null);
+  const skipClientSearchForValueRef = useRef<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [phone, setPhone] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [justSelected, setJustSelected] = useState(false);
   const [statusNegociacao, setStatusNegociacao] = useState("");
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
 
@@ -71,10 +71,11 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = React.memo(({
     setIsEditingSelected(false);
 
     if (selectedAgendamento) {
-      setJustSelected(true);
       setShowSuggestions(false);
       setSuggestions([]);
-      setSearchTerm(selectedAgendamento.cliente_nome || "");
+      const clienteNome = selectedAgendamento.cliente_nome || "";
+      skipClientSearchForValueRef.current = clienteNome;
+      setSearchTerm(clienteNome);
       setSelectedClientId(selectedAgendamento.id_cliente);
       setPhone(selectedAgendamento.telefone_celular || selectedAgendamento.telefone_residencial || "");
       setBirthDate(""); // Can't easily get it here unless passed or fetched, leaving blank for edit is ok
@@ -202,8 +203,8 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = React.memo(({
   }, [agendaTime, agendaDuration, availableDurationOptions]);
 
   useEffect(() => {
-    if (justSelected) {
-      setJustSelected(false);
+    if (skipClientSearchForValueRef.current === searchTerm) {
+      skipClientSearchForValueRef.current = null;
       return;
     }
 
@@ -236,7 +237,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = React.memo(({
   };
 
   const handleSelectClient = (client: any) => {
-    setJustSelected(true);
+    skipClientSearchForValueRef.current = client.nome_completo;
     setSelectedClientId(client.id_cliente);
     setSearchTerm(client.nome_completo);
     
