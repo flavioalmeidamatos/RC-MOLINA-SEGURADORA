@@ -1269,15 +1269,13 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                         {item.name}
                                       </p>
                                     </div>
-                                    <div className="mt-0.5 flex items-center justify-between text-[11px] font-semibold text-slate-500">
-                                      <div className="flex items-center gap-1">
+                                    <div className="mt-0.5 grid grid-cols-[115px_40px_1fr] items-center gap-x-2 text-[11px] font-semibold text-slate-500">
+                                      <div className="flex items-center gap-1 min-w-0">
                                         <Phone size={11} className={item.highlight ? "text-red-400" : ""} />
-                                        <span className={`whitespace-nowrap ${item.highlight ? "text-red-600" : "text-slate-500"}`}>{item.phone}</span>
+                                        <span className={`whitespace-nowrap truncate ${item.highlight ? "text-red-600" : "text-slate-500"}`}>{item.phone}</span>
                                       </div>
-                                      <div className="flex items-center gap-2">
-                                        <span className={`font-bold ${item.highlight ? "text-red-600" : "text-[#a2812a]"}`}>{item.time}</span>
-                                        <span className={`max-w-[92px] truncate ${item.highlight ? "text-red-500" : "text-slate-400"}`}>{item.status}</span>
-                                      </div>
+                                      <span className={`font-bold ${item.highlight ? "text-red-600" : "text-[#a2812a]"}`}>{item.time}</span>
+                                      <span className={`truncate ${item.highlight ? "text-red-500" : "text-slate-400"}`} title={item.status}>{item.status}</span>
                                     </div>
                                   </div>
                                 </div>
