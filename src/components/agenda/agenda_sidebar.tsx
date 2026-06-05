@@ -488,14 +488,14 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = React.memo(({
               }}
               onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
               disabled={isSaving || isFormLockedForEdit}
-              className="w-full pl-3 pr-10 py-2 border border-black rounded text-sm outline-none focus:border-black disabled:cursor-not-allowed disabled:bg-gray-100 disabled:opacity-50"
+              className="w-full pl-3 pr-10 py-2 border border-black rounded text-sm text-black outline-none focus:border-black disabled:cursor-not-allowed disabled:bg-gray-100 disabled:opacity-50"
             />
             <div className="absolute right-0 top-0 bottom-0 flex items-center pr-2">
               <User size={14} className="text-black" />
             </div>
             
             {showSuggestions && (
-              <div className="absolute z-50 w-full mt-1 bg-white border border-black rounded shadow-xl max-h-60 overflow-y-auto">
+              <div className="absolute z-50 w-full mt-1 bg-white border border-black rounded shadow-xl max-h-60 overflow-y-auto text-black">
                 {isLoading ? (
                   <div className="p-2 text-sm text-gray-500 italic">Buscando...</div>
                 ) : suggestions.length > 0 ? (
@@ -527,7 +527,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = React.memo(({
             value={phone}
             readOnly={true}
             disabled={true}
-            className="flex-1 min-w-0 px-3 py-2 border border-black rounded text-sm italic outline-none focus:border-black disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
+            className="flex-1 min-w-0 px-3 py-2 border border-black rounded text-sm text-black italic outline-none focus:border-black disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
           />
           <input 
             type="text" 
@@ -535,7 +535,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = React.memo(({
             value={birthDate}
             readOnly={true}
             disabled={true}
-            className="w-[120px] min-w-0 px-3 py-2 border border-black rounded text-sm outline-none focus:border-black disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
+            className="w-[120px] min-w-0 px-3 py-2 border border-black rounded text-sm text-black outline-none focus:border-black disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
           />
         </div>
 
@@ -546,7 +546,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = React.memo(({
             value={statusNegociacao}
             readOnly={true}
             disabled={true}
-            className="flex-1 px-3 py-2 border border-black rounded text-sm outline-none focus:border-black disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
+            className="flex-1 px-3 py-2 border border-black rounded text-sm text-black outline-none focus:border-black disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
           />
           <button disabled={isFormDisabled} className="p-2 bg-[#00B5AD] text-white rounded shadow-sm hover:bg-[#009d96] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#00B5AD]">
             <Plus size={16} />
@@ -563,17 +563,17 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = React.memo(({
             value={agendaDate}
             onChange={(e) => setAgendaDate(e.target.value)}
             disabled={isFormDisabled}
-            className="flex-1 px-3 py-2 border border-black rounded text-sm outline-none focus:border-black bg-white uppercase text-center disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
+            className="flex-1 px-3 py-2 border border-black rounded text-sm text-black outline-none focus:border-black bg-white uppercase text-center disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
           />
           <select 
             value={agendaTime}
             onChange={(e) => setAgendaTime(e.target.value)}
             disabled={isFormDisabled}
-            className="w-[85px] px-2 py-2 border border-black rounded text-sm text-center outline-none focus:border-black appearance-none bg-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
+            className="w-[85px] px-2 py-2 border border-black rounded text-sm text-black text-center outline-none focus:border-black appearance-none bg-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
           >
-            <option value="" disabled>Hora</option>
+            <option value="" disabled className="text-black">Hora</option>
             {availableTimeOptions.map((time) => (
-              <option key={time} value={time}>{time}</option>
+              <option key={time} value={time} className="text-black">{time}</option>
             ))}
           </select>
         </div>
@@ -583,11 +583,11 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = React.memo(({
             value={agendaDuration}
             onChange={(e) => setAgendaDuration(e.target.value)}
             disabled={isFormDisabled || !agendaTime} 
-            className="w-full px-3 py-2 border border-black rounded text-sm outline-none appearance-none bg-white focus:border-black disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
+            className="w-full px-3 py-2 border border-black rounded text-sm text-black outline-none appearance-none bg-white focus:border-black disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
           >
-            <option value="" disabled>Duração...</option>
+            <option value="" disabled className="text-black">Duração...</option>
             {availableDurationOptions.map((time) => (
-              <option key={time} value={time}>Até {time}</option>
+              <option key={time} value={time} className="text-black font-semibold text-slate-700">Até {time}</option>
             ))}
           </select>
         </div>
@@ -600,7 +600,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = React.memo(({
             value={observacao}
             onChange={(e) => setObservacao(e.target.value)}
             disabled={isFormDisabled}
-            className="w-full px-3 py-2 border border-black rounded text-sm outline-none h-20 resize-none focus:border-black disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
+            className="w-full px-3 py-2 border border-black rounded text-sm text-black outline-none h-20 resize-none focus:border-black disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
           />
         </div>
 
