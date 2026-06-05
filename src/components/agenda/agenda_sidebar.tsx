@@ -12,7 +12,12 @@ interface AgendaSidebarProps {
   setSelectedAgendamento?: (agendamento: Agendamento | null) => void;
 }
 
-export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
+const getTodayStr = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+export const AgendaSidebar: React.FC<AgendaSidebarProps> = React.memo(({
   setCurrentDate,
   setActiveView,
   onAgendamentosChanged,
@@ -31,9 +36,8 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
   const [statusNegociacao, setStatusNegociacao] = useState("");
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
 
-  const today = new Date();
-  const todayStr = today.toLocaleDateString('en-CA'); // "YYYY-MM-DD" local time
-  const [agendaDate, setAgendaDate] = useState(todayStr);
+  const todayStr = getTodayStr();
+  const [agendaDate, setAgendaDate] = useState(() => getTodayStr());
   const [agendaTime, setAgendaTime] = useState("");
   const [agendaDuration, setAgendaDuration] = useState("");
   const [observacao, setObservacao] = useState("");
@@ -91,12 +95,12 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
       setPhone("");
       setBirthDate("");
       setStatusNegociacao("");
-      setAgendaDate(todayStr);
+      setAgendaDate(getTodayStr());
       setAgendaTime("");
       setAgendaDuration("");
       setObservacao("");
     }
-  }, [selectedAgendamento, todayStr]);
+  }, [selectedAgendamento]);
 
   const applySelectedAgendamentoToForm = () => {
     if (!selectedAgendamento) return;
@@ -127,6 +131,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
   const getFilteredTimeOptions = () => {
     const options = generateTimeOptions();
     if (agendaDate === todayStr) {
+      const today = new Date();
       const currentHour = today.getHours();
       const currentMinute = today.getMinutes();
       return options.filter((time) => {
@@ -139,7 +144,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
     return options;
   };
 
-  const availableTimeOptions = getFilteredTimeOptions();
+  const availableTimeOptions = React.useMemo(() => getFilteredTimeOptions(), [agendaDate, todayStr]);
   const isFormLockedForEdit = Boolean(selectedAgendamento && !isEditingSelected);
   const isFormDisabled = !selectedClientId || isFormLockedForEdit;
 
@@ -156,7 +161,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
     });
   };
 
-  const availableDurationOptions = getFilteredDurationOptions();
+  const availableDurationOptions = React.useMemo(() => getFilteredDurationOptions(), [agendaTime]);
 
   const clearFormForNextAppointment = () => {
     setSearchTerm("");
@@ -633,4 +638,4 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = ({
     </aside>
     </>
   );
-};
+});

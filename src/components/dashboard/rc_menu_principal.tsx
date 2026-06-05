@@ -1039,9 +1039,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
               <div className="flex min-h-0 flex-1 overflow-hidden">
                 <Agenda
                   aniversariantesMes={aniversariantesMes}
-                  onAgendamentosChanged={() => {
-                    void (window as any).__rcMolinaRefreshAgendamentos?.();
-                  }}
+                  onAgendamentosChanged={handleAgendamentosChanged}
                 />
               </div>
             ) : (
