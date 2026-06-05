@@ -26,6 +26,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = React.memo(({
 }) => {
   const dateInputRef = useRef<HTMLInputElement>(null);
   const clientInputRef = useRef<HTMLInputElement>(null);
+  const preserveClientSearchOnSelectionResetRef = useRef(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -90,7 +91,11 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = React.memo(({
       setObservacao(selectedAgendamento.observacao || "");
     } else {
       // Clear form
-      setSearchTerm("");
+      if (preserveClientSearchOnSelectionResetRef.current) {
+        preserveClientSearchOnSelectionResetRef.current = false;
+      } else {
+        setSearchTerm("");
+      }
       setSelectedClientId(null);
       setPhone("");
       setBirthDate("");
@@ -162,6 +167,19 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = React.memo(({
   };
 
   const availableDurationOptions = React.useMemo(() => getFilteredDurationOptions(), [agendaTime]);
+
+  const resetSelectionForClientSearch = () => {
+    if (selectedAgendamento && !isEditingSelected) {
+      preserveClientSearchOnSelectionResetRef.current = true;
+      setSelectedAgendamento?.(null);
+    }
+  };
+
+  const handleClientSearchChange = (value: string) => {
+    resetSelectionForClientSearch();
+    setSearchTerm(value);
+    if (selectedClientId) setSelectedClientId(null);
+  };
 
   const clearFormForNextAppointment = () => {
     setSearchTerm("");
@@ -475,13 +493,14 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = React.memo(({
               ref={clientInputRef}
               placeholder="Cliente..." 
               value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                if (selectedClientId) setSelectedClientId(null);
-              }}
+              onChange={(e) => handleClientSearchChange(e.target.value)}
               onKeyDown={handleKeyDown}
-              onFocus={() => searchTerm.length >= 2 && setShowSuggestions(true)} onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-              disabled={isFormLockedForEdit}
+              onFocus={() => {
+                resetSelectionForClientSearch();
+                if (searchTerm.length >= 2) setShowSuggestions(true);
+              }}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+              disabled={isSaving}
               className="w-full pl-3 pr-10 py-2 border border-black rounded text-sm outline-none focus:border-black"
             />
             <div className="absolute right-0 top-0 bottom-0 flex items-center pr-2">
