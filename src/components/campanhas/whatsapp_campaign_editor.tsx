@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Bold, Code, Italic, Mic, Paperclip, Smartphone, SmilePlus, Square, Strikethrough, Wifi } from "lucide-react";
+import { AlertCircle, Bold, Code, Italic, Mic, MicOff, Paperclip, Smartphone, SmilePlus, Square, Strikethrough, Wifi, X } from "lucide-react";
+import { createPortal } from "react-dom";
 import EmojiPicker, { Categories, type CategoryConfig, type EmojiClickData } from "emoji-picker-react";
 
 import type { WhatsAppBridgeStatus } from "../../types/whatsapp_campaign";
@@ -52,12 +53,24 @@ export function WhatsAppCampaignEditor({
   const audioChunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<number | null>(null);
 
-  const startRecording = async () => {
+  interface MicPopupState {
+    isOpen: boolean;
+    type: "request" | "error" | "unsupported";
+  }
+  const [micPopup, setMicPopup] = useState<MicPopupState>({
+    isOpen: false,
+    type: "request",
+  });
+
+  const startRecording = () => {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) {
-      alert("O seu navegador ou sistema operacional não suporta gravação de áudio.");
+      setMicPopup({ isOpen: true, type: "unsupported" });
       return;
     }
+    setMicPopup({ isOpen: true, type: "request" });
+  };
 
+  const triggerRecordCapture = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream);
@@ -95,7 +108,7 @@ export function WhatsAppCampaignEditor({
       }, 1000);
     } catch (err) {
       console.error("Erro ao acessar microfone:", err);
-      alert("Não foi possível acessar o microfone. Verifique as permissões de áudio do seu navegador.");
+      setMicPopup({ isOpen: true, type: "error" });
     }
   };
 
@@ -122,6 +135,112 @@ export function WhatsAppCampaignEditor({
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  const renderMicPopup = () => {
+    if (!micPopup.isOpen || typeof document === "undefined") return null;
+
+    const getIcon = () => {
+      switch (micPopup.type) {
+        case "request":
+          return <Mic size={32} className="text-[#a2812a]" />;
+        case "error":
+          return <MicOff size={32} className="text-rose-500" />;
+        case "unsupported":
+          return <AlertCircle size={32} className="text-amber-500" />;
+      }
+    };
+
+    const getTitle = () => {
+      switch (micPopup.type) {
+        case "request":
+          return "Autorização de Microfone";
+        case "error":
+          return "Acesso Negado ao Microfone";
+        case "unsupported":
+          return "Gravação não Suportada";
+      }
+    };
+
+    const getDescription = () => {
+      switch (micPopup.type) {
+        case "request":
+          return "Para gravar mensagens de voz diretamente no sistema e anexá-las à sua campanha, precisamos da sua permissão para acessar o microfone do dispositivo.";
+        case "error":
+          return "Não foi possível acessar o microfone. Certifique-se de que o dispositivo está conectado e que você permitiu o acesso ao áudio nas configurações do seu navegador para este site.";
+        case "unsupported":
+          return "O seu navegador ou sistema operacional não suporta a gravação direta de áudio. Tente utilizar uma versão mais recente ou outro navegador.";
+      }
+    };
+
+    return createPortal(
+      <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-950/65 p-4 backdrop-blur-sm animate-fade-in">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,#d4af3712,transparent_45%)]" />
+
+        <div className="relative w-full max-w-[440px] overflow-hidden rounded-[32px] border border-white/70 bg-white/95 p-7 shadow-[0_32px_80px_rgba(15,23,42,0.25)] transform transition-all animate-scale-in">
+          <button
+            type="button"
+            onClick={() => setMicPopup({ isOpen: false, type: "request" })}
+            className="absolute right-5 top-5 flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-400 hover:border-slate-300 hover:text-slate-800 transition"
+            aria-label="Fechar"
+          >
+            <X size={16} />
+          </button>
+
+          <div className="flex flex-col items-center text-center">
+            <div className={`mb-5 flex h-16 w-16 items-center justify-center rounded-full ring-4 ${
+              micPopup.type === "request" 
+                ? "bg-[#d4af37]/10 ring-[#d4af37]/10 border border-[#d4af37]/20" 
+                : micPopup.type === "error"
+                ? "bg-rose-50 ring-rose-50 border border-rose-100"
+                : "bg-amber-50 ring-amber-50 border border-amber-100"
+            }`}>
+              {getIcon()}
+            </div>
+
+            <h3 className="text-lg font-black text-[#0c1826] tracking-tight">
+              {getTitle()}
+            </h3>
+            <p className="mt-3 text-xs font-semibold leading-relaxed text-slate-500 px-1">
+              {getDescription()}
+            </p>
+
+            <div className="mt-6 flex w-full flex-col gap-2">
+              {micPopup.type === "request" ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setMicPopup({ isOpen: false, type: "request" });
+                      await triggerRecordCapture();
+                    }}
+                    className="flex w-full items-center justify-center rounded-full bg-[#a2812a] px-4 py-3 text-xs font-black uppercase tracking-[0.14em] text-white transition hover:bg-[#8f7124]"
+                  >
+                    Permitir e Gravar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMicPopup({ isOpen: false, type: "request" })}
+                    className="flex w-full items-center justify-center rounded-full border border-slate-200 bg-white px-4 py-3 text-xs font-black uppercase tracking-[0.14em] text-slate-600 transition hover:bg-slate-50 hover:text-slate-800"
+                  >
+                    Cancelar
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setMicPopup({ isOpen: false, type: "request" })}
+                  className="flex w-full items-center justify-center rounded-full bg-[#0c1826] px-4 py-3 text-xs font-black uppercase tracking-[0.14em] text-white transition hover:bg-slate-800"
+                >
+                  Entendido
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>,
+      document.body
+    );
   };
 
   useEffect(() => {
@@ -363,6 +482,7 @@ export function WhatsAppCampaignEditor({
             <span>{message.length} caracteres</span>
           </div>
       </div>
+      {renderMicPopup()}
     </section>
   );
 }
