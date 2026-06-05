@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Bold, Code, Italic, Paperclip, Smartphone, SmilePlus, Strikethrough, Wifi } from "lucide-react";
+import { Bold, Code, Italic, Mic, Paperclip, Smartphone, SmilePlus, Square, Strikethrough, Wifi } from "lucide-react";
 import EmojiPicker, { Categories, type CategoryConfig, type EmojiClickData } from "emoji-picker-react";
 
 import type { WhatsAppBridgeStatus } from "../../types/whatsapp_campaign";
@@ -15,6 +15,7 @@ interface WhatsAppCampaignEditorProps {
   onPickMedia: () => void;
   onOptInChange: (checked: boolean) => void;
   onTemplateChange: (checked: boolean) => void;
+  onAudioRecorded?: (file: File, dataUrl: string) => void;
 }
 
 const emojiCategories: CategoryConfig[] = [
@@ -40,9 +41,88 @@ export function WhatsAppCampaignEditor({
   onPickMedia,
   onOptInChange,
   onTemplateChange,
+  onAudioRecorded,
 }: WhatsAppCampaignEditorProps) {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const timerRef = useRef<number | null>(null);
+
+  const startRecording = async () => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) {
+      alert("O seu navegador ou sistema operacional não suporta gravação de áudio.");
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        stream.getTracks().forEach((track) => track.stop());
+
+        const file = new File([audioBlob], `gravacao-${Date.now()}.webm`, {
+          type: "audio/webm",
+        });
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const dataUrl = String(reader.result || "");
+          onAudioRecorded?.(file, dataUrl);
+        };
+        reader.readAsDataURL(file);
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      setRecordingTime(0);
+
+      timerRef.current = window.setInterval(() => {
+        setRecordingTime((prev) => prev + 1);
+      }, 1000);
+    } catch (err) {
+      console.error("Erro ao acessar microfone:", err);
+      alert("Não foi possível acessar o microfone. Verifique as permissões de áudio do seu navegador.");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop();
+    }
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    setIsRecording(false);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, []);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
 
   useEffect(() => {
     if (!showEmojiPicker) {
@@ -214,10 +294,33 @@ export function WhatsAppCampaignEditor({
                 ) : null}
               </div>
 
+              {isRecording ? (
+                <button
+                  type="button"
+                  onClick={stopRecording}
+                  className="ml-auto inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.14em] text-red-600 transition hover:border-red-400 hover:bg-red-100 animate-pulse"
+                  title="Parar Gravação"
+                >
+                  <Square size={14} className="fill-red-600" />
+                  <span>Parar ({formatTime(recordingTime)})</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={startRecording}
+                  className="ml-auto inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.14em] text-slate-600 transition hover:border-[#d4af37]/40 hover:bg-[#fff8e1] hover:text-[#9a7418]"
+                  title="Gravar Áudio"
+                >
+                  <Mic size={14} />
+                  <span>Gravar Áudio</span>
+                </button>
+              )}
+
               <button
                 type="button"
+                disabled={isRecording}
                 onClick={onPickMedia}
-                className="ml-auto inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.14em] text-slate-600 transition hover:border-[#d4af37]/40 hover:bg-[#fff8e1] hover:text-[#9a7418]"
+                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.14em] text-slate-600 transition hover:border-[#d4af37]/40 hover:bg-[#fff8e1] hover:text-[#9a7418] disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Selecionar imagens, videos ou PDF"
               >
                 <Paperclip size={14} />

@@ -491,6 +491,37 @@ export function CampanhasShell({ userId, userEmail, initialMessage, onConnection
               onPickMedia={handlePickFiles}
               onOptInChange={(checked) => setDraft((current) => ({ ...current, optInChecked: checked }))}
               onTemplateChange={(checked) => setDraft((current) => ({ ...current, templateChecked: checked }))}
+              onAudioRecorded={(file, dataUrl) => {
+                const newAttachment = {
+                  id: crypto.randomUUID(),
+                  kind: "file" as const,
+                  name: file.name,
+                  sizeLabel: formatCampaignFileSize(file.size),
+                  sizeBytes: file.size,
+                  mimeType: file.type || "audio/webm",
+                  fileUrl: dataUrl,
+                  uploadedAt: new Date().toISOString(),
+                };
+
+                setDraft((current) => {
+                  const lastImageIndex = [...current.attachments].reverse().findIndex(att => att.kind === "image");
+                  let updatedAttachments;
+                  if (lastImageIndex !== -1) {
+                    const index = current.attachments.length - 1 - lastImageIndex;
+                    updatedAttachments = [...current.attachments];
+                    updatedAttachments.splice(index + 1, 0, newAttachment);
+                  } else {
+                    updatedAttachments = [...current.attachments, newAttachment];
+                  }
+
+                  return {
+                    ...current,
+                    attachments: updatedAttachments,
+                  };
+                });
+
+                setCampaignStatus("Áudio gravado e anexado com sucesso.");
+              }}
             />
 
             <WhatsAppRecipientFields
