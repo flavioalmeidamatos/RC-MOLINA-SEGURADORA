@@ -833,6 +833,10 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     event.stopPropagation();
   };
 
+  const handleAgendamentosChanged = useCallback(() => {
+    void (window as any).__rcMolinaRefreshAgendamentos?.();
+  }, []);
+
   return (
     <div className="relative flex min-h-screen w-full flex-col bg-[#F0F4F8] font-sans lg:h-screen lg:flex-row lg:overflow-hidden">
       <aside
