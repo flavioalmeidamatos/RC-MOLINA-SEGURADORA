@@ -79,7 +79,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = React.memo(({
       setPhone(selectedAgendamento.telefone_celular || selectedAgendamento.telefone_residencial || "");
       setBirthDate(""); // Can't easily get it here unless passed or fetched, leaving blank for edit is ok
       setStatusNegociacao(""); // Same
-      setAgendaDate(selectedAgendamento.data_agendamento.split('T')[0]);
+      setAgendaDate(selectedAgendamento.data_agendamento ? String(selectedAgendamento.data_agendamento).split('T')[0] : getTodayStr());
       setAgendaTime(selectedAgendamento.hora_inicio);
       
       if (selectedAgendamento.duracao_minutos && selectedAgendamento.hora_inicio) {
@@ -110,7 +110,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = React.memo(({
     setPhone(selectedAgendamento.telefone_celular || selectedAgendamento.telefone_residencial || "");
     setBirthDate("");
     setStatusNegociacao("");
-    setAgendaDate(selectedAgendamento.data_agendamento.split('T')[0]);
+    setAgendaDate(selectedAgendamento.data_agendamento ? String(selectedAgendamento.data_agendamento).split('T')[0] : getTodayStr());
     setAgendaTime(selectedAgendamento.hora_inicio);
     setAgendaDuration(selectedAgendamento.hora_fim || "");
     setObservacao(selectedAgendamento.observacao || "");
@@ -480,7 +480,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = React.memo(({
                 if (selectedClientId) setSelectedClientId(null);
               }}
               onKeyDown={handleKeyDown}
-              onFocus={() => searchTerm.length >= 2 && setShowSuggestions(true)}
+              onFocus={() => searchTerm.length >= 2 && setShowSuggestions(true)} onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
               disabled={isFormLockedForEdit}
               className="w-full pl-3 pr-10 py-2 border border-black rounded text-sm outline-none focus:border-black"
             />

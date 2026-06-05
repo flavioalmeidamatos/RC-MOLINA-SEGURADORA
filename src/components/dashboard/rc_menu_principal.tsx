@@ -456,7 +456,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
         const response = await fetch("/api/clientes/aniversariantes-mes");
         if (!response.ok) throw new Error("Falha ao carregar aniversariantes.");
         const data = (await response.json()) as AniversarianteMes[];
-        if (!ignore) setAniversariantesMes(data);
+        if (!ignore) setAniversariantesMes(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error("Erro ao carregar aniversariantes do mes:", error);
         if (!ignore) setAniversariantesMes([]);
