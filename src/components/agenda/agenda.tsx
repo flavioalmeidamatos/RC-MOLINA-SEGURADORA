@@ -58,8 +58,9 @@ export const Agenda: React.FC<AgendaProps> = ({ aniversariantesMes = [], onAgend
     onAgendamentosChanged?.();
   }, [fetchAgendamentos, onAgendamentosChanged]);
 
-  const handleSelectAgendamento = useCallback(async (agendamento: Agendamento) => {
+  const handleSelectAgendamento = useCallback(async (agendamento: Agendamento | null) => {
     setSelectedAgendamento(agendamento);
+    if (!agendamento) return;
 
     try {
       const res = await fetch(`/api/agendamentos/${agendamento.id_agendamento}`);

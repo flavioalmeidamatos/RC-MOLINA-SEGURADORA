@@ -503,7 +503,10 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = React.memo(({
                     <div 
                       key={client.id_cliente}
                       className="p-2 hover:bg-gray-100 cursor-pointer text-sm border-b border-gray-100 last:border-0"
-                      onClick={() => handleSelectClient(client)}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        handleSelectClient(client);
+                      }}
                     >
                       <div className="font-bold">{client.nome_completo}</div>
                       <div className="text-xs text-gray-500">{client.cpf || client.cnpj || client.codigo}</div>

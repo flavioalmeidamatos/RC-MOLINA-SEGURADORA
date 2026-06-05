@@ -10,7 +10,7 @@ interface WeekViewProps {
   holidays: Holiday[];
   aniversariantesMes?: AniversarianteMes[];
   agendamentos?: Agendamento[];
-  onSelectAgendamento?: (agendamento: Agendamento) => void;
+  onSelectAgendamento?: (agendamento: Agendamento | null) => void;
 }
 
 const birthMonthDay = (value: string) => String(value || "").slice(5, 10);
@@ -128,7 +128,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
                     return (
                       <div 
                         key={`${day}-${time}`}
-                        onClick={() => agendamento && onSelectAgendamento?.(agendamento)}
+                        onClick={() => onSelectAgendamento?.(agendamento || null)}
                         className={`flex-1 border-b border-black last:border-b-0 transition-colors p-0.5 min-h-0 flex items-stretch ${
                           agendamento 
                             ? (atrasado ? "bg-red-50/50 hover:bg-red-100/50 cursor-pointer" : "bg-blue-50/50 hover:bg-blue-100/50 cursor-pointer")

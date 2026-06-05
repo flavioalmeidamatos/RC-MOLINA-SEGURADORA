@@ -10,7 +10,7 @@ interface DayViewProps {
   holidays: Holiday[];
   aniversariantesMes?: AniversarianteMes[];
   agendamentos?: Agendamento[];
-  onSelectAgendamento?: (agendamento: Agendamento) => void;
+  onSelectAgendamento?: (agendamento: Agendamento | null) => void;
 }
 
 const birthMonthDay = (value: string) => String(value || "").slice(5, 10);
@@ -103,7 +103,7 @@ export const DayView: React.FC<DayViewProps> = ({
                 return (
                   <div 
                     key={time}
-                    onClick={() => agendamento && onSelectAgendamento?.(agendamento)}
+                    onClick={() => onSelectAgendamento?.(agendamento || null)}
                     className={`flex-1 border-black transition-colors p-0.5 min-h-0 flex items-stretch ${
                       index !== timeSlots.length - 1 ? 'border-b' : ''
                     } ${

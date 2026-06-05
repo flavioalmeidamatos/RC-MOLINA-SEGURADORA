@@ -13,7 +13,7 @@ interface MonthViewProps {
   holidays: Holiday[];
   aniversariantesMes?: AniversarianteMes[];
   agendamentos?: Agendamento[];
-  onSelectAgendamento?: (agendamento: Agendamento) => void;
+  onSelectAgendamento?: (agendamento: Agendamento | null) => void;
   onMoveAgendamento?: (id: string, newDate: string) => Promise<void>;
   setCurrentDate: (date: Date) => void;
   setActiveView: (view: CalendarView) => void;
@@ -100,7 +100,10 @@ export const MonthView: React.FC<MonthViewProps> = ({
           return (
             <div 
               key={i} 
-              onClick={() => setCurrentDate(day)}
+              onClick={() => {
+                setCurrentDate(day);
+                onSelectAgendamento?.(null);
+              }}
               onDragOver={(e) => {
                 e.preventDefault();
                 e.dataTransfer.dropEffect = "move";
