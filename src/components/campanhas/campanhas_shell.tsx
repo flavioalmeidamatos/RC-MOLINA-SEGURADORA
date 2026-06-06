@@ -507,7 +507,7 @@ export function CampanhasShell({ userId, userEmail, initialMessage, onConnection
                   name: file.name,
                   sizeLabel: formatCampaignFileSize(file.size),
                   sizeBytes: file.size,
-                  mimeType: file.type || "audio/webm",
+                  mimeType: file.type || "audio/mp4",
                   fileUrl: dataUrl,
                   uploadedAt: new Date().toISOString(),
                 };

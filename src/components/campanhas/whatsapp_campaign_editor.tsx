@@ -84,11 +84,11 @@ export function WhatsAppCampaignEditor({
       };
 
       mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/mp4" });
         stream.getTracks().forEach((track) => track.stop());
 
-        const file = new File([audioBlob], `gravacao-${Date.now()}.webm`, {
-          type: "audio/webm",
+        const file = new File([audioBlob], `gravacao-${Date.now()}.mp4`, {
+          type: "audio/mp4",
         });
 
         const reader = new FileReader();
