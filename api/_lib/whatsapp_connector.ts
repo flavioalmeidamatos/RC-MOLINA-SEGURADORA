@@ -233,14 +233,17 @@ export const sendLocalWhatsAppBridgeMessage = async (
       );
 
       const options: any = {};
-      if (index === 0 && message) {
-        options.caption = message;
-      }
       if (mediaItem.type.startsWith('audio/')) {
         options.sendAudioAsVoice = true;
       }
 
       responses.push(await client.sendMessage(chatId, media, options));
+    }
+
+    if (message) {
+      // Wait 1.5 seconds before sending the text message separately to ensure order and readability
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      responses.push(await client.sendMessage(chatId, message));
     }
   } else {
     responses.push(await client.sendMessage(chatId, message));

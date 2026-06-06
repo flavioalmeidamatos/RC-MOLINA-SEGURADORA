@@ -190,7 +190,7 @@ const mergeImageAndAudioToVideo = async (
     // We use -loop 1 for the image and -shortest to match the audio length.
     // -pix_fmt yuv420p is required for compatibility with mobile devices.
     await execAsync(
-      `ffmpeg -loop 1 -i "${imagePath}" -i "${audioPath}" -c:v libx264 -tune stillimage -c:a aac -b:a 192k -pix_fmt yuv420p -shortest -y "${videoPath}"`,
+      `ffmpeg -loop 1 -i "${imagePath}" -i "${audioPath}" -c:v libx264 -tune stillimage -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -c:a aac -b:a 192k -pix_fmt yuv420p -shortest -y "${videoPath}"`,
     );
 
     const videoBuffer = await fs.readFile(videoPath);
