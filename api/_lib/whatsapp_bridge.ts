@@ -209,6 +209,46 @@ const mergeImageAndAudioToVideo = async (
   }
 };
 
+const convertAudioToOggOpus = async (
+  audioMedia: BridgeMediaItem,
+): Promise<BridgeMediaItem> => {
+  const uploadRoot = getUploadRoot();
+  const tempId = crypto.randomUUID();
+  const tempDir = path.join(uploadRoot, 'temp_merge');
+  await fs.mkdir(tempDir, { recursive: true });
+
+  const audioExt = audioMedia.type.split('/')[1] || 'mp4';
+  const audioPath = path.join(tempDir, `audio_in_${tempId}.${audioExt}`);
+  const oggPath = path.join(tempDir, `audio_out_${tempId}.ogg`);
+
+  const audioBuffer = Buffer.from(
+    audioMedia.base64.includes(';base64,') ? audioMedia.base64.split(';base64,')[1] : audioMedia.base64,
+    'base64',
+  );
+
+  await fs.writeFile(audioPath, audioBuffer);
+
+  try {
+    // Convert to ogg opus
+    await execAsync(
+      `ffmpeg -i "${audioPath}" -c:a libopus -b:a 64k -y "${oggPath}"`
+    );
+
+    const oggBuffer = await fs.readFile(oggPath);
+    const oggBase64 = `data:audio/ogg;codecs=opus;base64,${oggBuffer.toString('base64')}`;
+
+    return {
+      base64: oggBase64,
+      type: 'audio/ogg;codecs=opus',
+      name: `gravacao_${Date.now()}.ogg`,
+    };
+  } finally {
+    // Clean up temporary files
+    await fs.unlink(audioPath).catch(() => {});
+    await fs.unlink(oggPath).catch(() => {});
+  }
+};
+
 export const getWhatsAppBridgeStatus = async (): Promise<WhatsAppBridgeStatus> => {
   if (!useExternalBridge()) {
     const localStatus = await getLocalWhatsAppBridgeStatus();
@@ -301,6 +341,18 @@ export const sendCampaignToWhatsAppBridge = async (
     } catch (error) {
       console.error('[WHATSAPP] Erro ao fundir imagem e audio em video:', error);
       // Fallback: keep media as-is
+    }
+  } else if (audios.length === 1 && images.length === 0) {
+    // Only one audio, convert it to standard OGG/Opus voice note format
+    try {
+      const audioMedia = audios[0];
+      const oggMedia = await convertAudioToOggOpus(audioMedia);
+      
+      // Replace the audio item with the compiled ogg/opus file
+      media = media.map((item) => item === audioMedia ? oggMedia : item);
+    } catch (error) {
+      console.error('[WHATSAPP] Erro ao converter audio para ogg opus:', error);
+      // Fallback: keep audio as-is
     }
   }
 
