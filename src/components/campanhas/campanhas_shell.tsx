@@ -14,6 +14,7 @@ import {
 import type {
   WhatsAppBridgeStatus,
   WhatsAppCampaignDraft,
+  CampaignAttachment,
 } from "../../types/whatsapp_campaign";
 import { WhatsAppCampaignEditor } from "./whatsapp_campaign_editor";
 import { WhatsAppConnectionGateModal } from "./whatsapp_connection_gate_modal";
@@ -39,6 +40,14 @@ const createEmptyDraft = (): WhatsAppCampaignDraft => ({
   optInChecked: true,
   templateChecked: true,
 });
+
+const sortCampaignAttachments = (atts: CampaignAttachment[]): CampaignAttachment[] => {
+  return [...atts].sort((a, b) => {
+    if (a.kind === "image" && b.kind !== "image") return -1;
+    if (a.kind !== "image" && b.kind === "image") return 1;
+    return 0;
+  });
+};
 
 const BRIDGE_STATUS_POLL_MS = 4000;
 
@@ -282,7 +291,7 @@ export function CampanhasShell({ userId, userEmail, initialMessage, onConnection
 
       setDraft((current) => ({
         ...current,
-        attachments: [...current.attachments, ...newAttachments],
+        attachments: sortCampaignAttachments([...current.attachments, ...newAttachments]),
       }));
 
       setCampaignStatus(`${selectedFiles.length} anexo(s) carregado(s) com sucesso.`);
@@ -503,22 +512,10 @@ export function CampanhasShell({ userId, userEmail, initialMessage, onConnection
                   uploadedAt: new Date().toISOString(),
                 };
 
-                setDraft((current) => {
-                  const lastImageIndex = [...current.attachments].reverse().findIndex(att => att.kind === "image");
-                  let updatedAttachments;
-                  if (lastImageIndex !== -1) {
-                    const index = current.attachments.length - 1 - lastImageIndex;
-                    updatedAttachments = [...current.attachments];
-                    updatedAttachments.splice(index + 1, 0, newAttachment);
-                  } else {
-                    updatedAttachments = [...current.attachments, newAttachment];
-                  }
-
-                  return {
-                    ...current,
-                    attachments: updatedAttachments,
-                  };
-                });
+                setDraft((current) => ({
+                  ...current,
+                  attachments: sortCampaignAttachments([...current.attachments, newAttachment]),
+                }));
 
                 setCampaignStatus("Áudio gravado e anexado com sucesso.");
               }}
