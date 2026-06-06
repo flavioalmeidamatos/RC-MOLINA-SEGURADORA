@@ -1889,6 +1889,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                     <option>2 - Google</option>
                     <option>3 - Instagram</option>
                     <option>4 - Evento</option>
+                    <option>5 - Remalho</option>
                   </select>
                 </div>
 

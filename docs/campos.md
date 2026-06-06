@@ -122,7 +122,7 @@ Fonte: `src/components/ClientRegistrationMultipage.tsx`
 
 | Campo | Estado/chave | Tipo | Obrigatorio | Validacao/mascara | Destino/uso |
 |---|---|---|---|---|---|
-| Como nos conheceu? | `formState.comoConheceu` | `select` | Nao | Opcoes: `0 - Nao informado`, `1 - Indicacao`, `2 - Google`, `3 - Instagram`, `4 - Evento` | Estado local |
+| Como nos conheceu? | `formState.comoConheceu` | `select` | Nao | Opcoes: `0 - Nao informado`, `1 - Indicacao`, `2 - Google`, `3 - Instagram`, `4 - Evento`, `5 - Remalho` | Estado local |
 | Permite agendar online? | `formState.permiteAgendarOnline` | Botao booleano | Nao | `true`/`false`; padrao `true` | Estado local |
 | Status | `formState.status` | Botao enum | Nao | `ATIVO` ou `INATIVO`; padrao `ATIVO` | Estado local |
 | Data de atualizacao | `formState.dataAtualizacao` | `text` | Nao | Placeholder `dd/mm/aaaa`; sem mascara aplicada no codigo atual | Estado local |
