@@ -216,6 +216,11 @@ export const sendLocalWhatsAppBridgeMessage = async (
 
   if (Array.isArray(mediaItems) && mediaItems.length > 0) {
     for (let index = 0; index < mediaItems.length; index += 1) {
+      if (index > 0) {
+        // Wait 2.5 seconds between sending consecutive media files to prevent congestion
+        await new Promise((resolve) => setTimeout(resolve, 2500));
+      }
+
       const mediaItem = mediaItems[index];
       const base64Data = mediaItem.base64.includes(';base64,')
         ? mediaItem.base64.split(';base64,')[1]
@@ -227,11 +232,15 @@ export const sendLocalWhatsAppBridgeMessage = async (
         mediaItem.name || 'arquivo',
       );
 
+      const options: any = {};
       if (index === 0 && message) {
-        responses.push(await client.sendMessage(chatId, media, { caption: message }));
-      } else {
-        responses.push(await client.sendMessage(chatId, media));
+        options.caption = message;
       }
+      if (mediaItem.type.startsWith('audio/')) {
+        options.sendAudioAsVoice = true;
+      }
+
+      responses.push(await client.sendMessage(chatId, media, options));
     }
   } else {
     responses.push(await client.sendMessage(chatId, message));
