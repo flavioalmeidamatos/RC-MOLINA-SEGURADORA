@@ -1,6 +1,17 @@
 import fs from 'fs/promises';
 import { createRequire } from 'module';
 import path from 'path';
+import crypto from 'crypto';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
+
+type BridgeMediaItem = {
+  base64: string;
+  type: string;
+  name: string;
+};
 
 import type { WhatsAppBridgeStatus, WhatsAppDispatchPayload, WhatsAppDispatchRecipientResult, WhatsAppDispatchResult } from '../../src/types/whatsapp_campaign';
 import {
@@ -147,6 +158,57 @@ const mapAttachmentsToBridgeMedia = async (attachments: WhatsAppDispatchPayload[
   return media;
 };
 
+const mergeImageAndAudioToVideo = async (
+  imageMedia: BridgeMediaItem,
+  audioMedia: BridgeMediaItem,
+): Promise<BridgeMediaItem> => {
+  const uploadRoot = getUploadRoot();
+  const tempId = crypto.randomUUID();
+  const tempDir = path.join(uploadRoot, 'temp_merge');
+  await fs.mkdir(tempDir, { recursive: true });
+
+  const imageExt = imageMedia.type.split('/')[1] || 'png';
+  const audioExt = audioMedia.type.split('/')[1] || 'mp4';
+
+  const imagePath = path.join(tempDir, `image_${tempId}.${imageExt}`);
+  const audioPath = path.join(tempDir, `audio_${tempId}.${audioExt}`);
+  const videoPath = path.join(tempDir, `video_${tempId}.mp4`);
+
+  const imageBuffer = Buffer.from(
+    imageMedia.base64.includes(';base64,') ? imageMedia.base64.split(';base64,')[1] : imageMedia.base64,
+    'base64',
+  );
+  const audioBuffer = Buffer.from(
+    audioMedia.base64.includes(';base64,') ? audioMedia.base64.split(';base64,')[1] : audioMedia.base64,
+    'base64',
+  );
+
+  await fs.writeFile(imagePath, imageBuffer);
+  await fs.writeFile(audioPath, audioBuffer);
+
+  try {
+    // We use -loop 1 for the image and -shortest to match the audio length.
+    // -pix_fmt yuv420p is required for compatibility with mobile devices.
+    await execAsync(
+      `ffmpeg -loop 1 -i "${imagePath}" -i "${audioPath}" -c:v libx264 -tune stillimage -c:a aac -b:a 192k -pix_fmt yuv420p -shortest -y "${videoPath}"`,
+    );
+
+    const videoBuffer = await fs.readFile(videoPath);
+    const videoBase64 = `data:video/mp4;base64,${videoBuffer.toString('base64')}`;
+
+    return {
+      base64: videoBase64,
+      type: 'video/mp4',
+      name: `campanha_${Date.now()}.mp4`,
+    };
+  } finally {
+    // Clean up temporary files
+    await fs.unlink(imagePath).catch(() => {});
+    await fs.unlink(audioPath).catch(() => {});
+    await fs.unlink(videoPath).catch(() => {});
+  }
+};
+
 export const getWhatsAppBridgeStatus = async (): Promise<WhatsAppBridgeStatus> => {
   if (!useExternalBridge()) {
     const localStatus = await getLocalWhatsAppBridgeStatus();
@@ -222,7 +284,25 @@ export const sendCampaignToWhatsAppBridge = async (
     throw new Error('Informe ao menos um destinatario valido antes do disparo.');
   }
 
-  const media = await mapAttachmentsToBridgeMedia(payload.attachments || []);
+  let media = await mapAttachmentsToBridgeMedia(payload.attachments || []);
+
+  const images = media.filter((item) => item.type.startsWith('image/'));
+  const audios = media.filter((item) => item.type.startsWith('audio/'));
+
+  if (images.length === 1 && audios.length === 1) {
+    try {
+      const imageMedia = images[0];
+      const audioMedia = audios[0];
+      const videoMedia = await mergeImageAndAudioToVideo(imageMedia, audioMedia);
+      
+      // Filter out the merged image and audio, then add the video
+      media = media.filter((item) => item !== imageMedia && item !== audioMedia);
+      media.push(videoMedia);
+    } catch (error) {
+      console.error('[WHATSAPP] Erro ao fundir imagem e audio em video:', error);
+      // Fallback: keep media as-is
+    }
+  }
 
   const results: WhatsAppDispatchRecipientResult[] = [];
 
