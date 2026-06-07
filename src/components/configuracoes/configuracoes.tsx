@@ -167,7 +167,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
       nome = nome.replace(/[^a-zA-ZáàâãéèêíïóôõöúçñÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ\s]/g, '');
 
       // 7. Limpar novamente múltiplos espaços no nome gerados pela limpeza
-      nome = nome.replace(/\s+/g, ' ').trim();
+      nome = nome.replace(/\s+/g, ' ').trim().toUpperCase();
 
       // Salva apenas se sobrou nome ou celular válido
       if (nome || celular) {
@@ -432,21 +432,21 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
                         <p className="text-xs text-slate-500 mt-2">{ocrProgress}%</p>
                       </div>
                     ) : extractedData.length > 0 ? (
-                      <div className="flex-1 overflow-auto border border-slate-200 rounded-lg bg-white max-h-[40vh]">
-                        <table className="w-full text-sm text-left whitespace-nowrap">
-                          <thead className="bg-slate-100 sticky top-0 text-slate-600 text-xs uppercase shadow-sm">
+                      <div className="flex-1 overflow-auto border-2 border-black rounded-lg bg-white max-h-[40vh]">
+                        <table className="w-full text-sm text-left whitespace-nowrap border-collapse border border-black">
+                          <thead className="bg-slate-200 sticky top-0 text-slate-800 text-xs uppercase shadow-sm border-b-2 border-black">
                             <tr>
-                              <th className="px-4 py-3 font-semibold border-b border-slate-200">Nome</th>
-                              <th className="px-4 py-3 font-semibold border-b border-slate-200">Celular</th>
-                              <th className="px-4 py-3 font-semibold border-b border-slate-200">Importado</th>
+                              <th className="px-4 py-3 font-bold border border-black">Nome</th>
+                              <th className="px-4 py-3 font-bold border border-black">Celular</th>
+                              <th className="px-4 py-3 font-bold border border-black">Importado</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-100">
+                          <tbody>
                             {extractedData.map((row, idx) => (
-                              <tr key={idx} className="hover:bg-slate-50 transition-colors">
-                                <td className="px-4 py-2 text-slate-700">{row.nome}</td>
-                                <td className="px-4 py-2 text-slate-600 font-mono text-xs">{row.celular}</td>
-                                <td className="px-4 py-2"></td>
+                              <tr key={idx} className="hover:bg-slate-100 transition-colors">
+                                <td className="px-4 py-2 text-black font-medium border border-black">{row.nome}</td>
+                                <td className="px-4 py-2 text-black font-mono text-xs border border-black">{row.celular}</td>
+                                <td className="px-4 py-2 border border-black"></td>
                               </tr>
                             ))}
                           </tbody>
