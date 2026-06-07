@@ -295,7 +295,6 @@ namespace RCMolinaApp.Views
             try
             {
                 string message = e.TryGetWebMessageAsString();
-                if (AppWebView?.CoreWebView2 != null) AppWebView.CoreWebView2.ExecuteScriptAsync($"alert('C# Recebeu: {message.Replace("'", "\\'")}');");
                 
                 var payload = JsonDocument.Parse(message);
                 var root = payload.RootElement;
