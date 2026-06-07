@@ -126,14 +126,25 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
     const lines = text.split('\n');
     const data: Array<{nome: string, celular: string, importado: string}> = [];
     
-    const patternVmc = /\s*-\s*VMC Multimarcas Form\.Inst\.?/gi;
+    // Expressão regular para remover a marca VMC e variações
+    const patternVmc = /VMC\s*Multimarcas(\s*Form\.?Inst\.?)?/gi;
 
     for (let i = 0; i < lines.length; i++) {
       let line = lines[i].trim();
       if (!line) continue;
 
+      // 1. Remover a assinatura da VMC
       line = line.replace(patternVmc, '');
 
+      // 2. Limpar caracteres indesejados (hífen, colchetes, chaves, parênteses, underscore)
+      line = line.replace(/[-\[\](){}_]/g, ' ');
+
+      // 3. Limpar múltiplos espaços
+      line = line.replace(/\s+/g, ' ').trim();
+
+      if (!line) continue;
+
+      // 4. Capturar número (8 dígitos ou mais) que esteja no final da linha
       const match = line.match(/(.*?)\s+(\d{8,})$/);
       let nome = '';
       let celular = '';
@@ -146,13 +157,20 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
         celular = '';
       }
 
+      // 5. Se o nome contiver números soltos, remove-os e os adiciona ao celular
       const numerosNome = nome.match(/\d+/g);
       if (numerosNome) {
         celular = (celular + numerosNome.join('')).trim();
         nome = nome.replace(/\d+/g, '').trim();
       }
 
-      data.push({ nome, celular, importado: '' });
+      // 6. Limpar novamente múltiplos espaços no nome gerados pela limpeza
+      nome = nome.replace(/\s+/g, ' ').trim();
+
+      // Salva apenas se sobrou nome ou celular válido
+      if (nome || celular) {
+        data.push({ nome, celular, importado: '' });
+      }
     }
 
     setExtractedData(data);
