@@ -234,7 +234,41 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
               )}
             </div>
 
-            {scannedImage && (
+            {isScanning && (
+              <div className="mt-8 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-2">
+                  <Loader2 size={14} className="animate-spin" />
+                  Digitalizando Documento...
+                </p>
+                <div className="relative flex justify-center bg-white border border-slate-200 shadow-sm rounded-lg p-2 h-[400px] overflow-hidden">
+                  <style>{`
+                    @keyframes scanLaser {
+                      0% { top: 0%; }
+                      50% { top: 100%; }
+                      100% { top: 0%; }
+                    }
+                    .animate-laser {
+                      animation: scanLaser 3s ease-in-out infinite;
+                    }
+                  `}</style>
+                  {/* Placeholder de papel */}
+                  <div className="w-full max-w-md h-full bg-slate-50/50 flex flex-col gap-4 p-8 opacity-30 mx-auto">
+                    <div className="w-3/4 h-4 bg-slate-300 rounded"></div>
+                    <div className="w-full h-4 bg-slate-300 rounded"></div>
+                    <div className="w-5/6 h-4 bg-slate-300 rounded"></div>
+                    <div className="w-full h-4 bg-slate-300 rounded"></div>
+                    <div className="w-2/4 h-4 bg-slate-300 rounded mt-4"></div>
+                  </div>
+                  
+                  {/* Feixe de luz verde */}
+                  <div className="absolute left-0 right-0 h-1 bg-green-500 shadow-[0_0_20px_5px_rgba(34,197,94,0.6)] animate-laser z-10" />
+                  {/* Rastro do laser */}
+                  <div className="absolute left-0 right-0 h-32 bg-gradient-to-t from-green-500/20 to-transparent animate-laser z-0" style={{ marginTop: '-8rem' }} />
+                </div>
+              </div>
+            )}
+
+            {scannedImage && !isScanning && (
               <div className="mt-8 rounded-xl border border-slate-200 bg-slate-50 p-4">
                 <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
                   Preview da Digitalização

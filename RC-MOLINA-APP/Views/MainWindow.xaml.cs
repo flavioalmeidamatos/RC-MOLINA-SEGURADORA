@@ -631,13 +631,15 @@ namespace RCMolinaApp.Views
                     
                     if (imageFile != null)
                     {
-                        var imageBytes = (byte[])imageFile.FileData.get_BinaryData();
+                        var imageBytes = (byte[])imageFile.FileData.BinaryData;
                         string ext = "";
                         try { ext = imageFile.FileExtension.ToString().ToLower(); } catch { }
                         
                         string mimeType = "image/png";
                         if (ext == "bmp") mimeType = "image/bmp";
                         else if (ext == "jpg" || ext == "jpeg") mimeType = "image/jpeg";
+                        else if (ext == "gif") mimeType = "image/gif";
+                        else if (ext == "tif" || ext == "tiff") mimeType = "image/tiff";
                         
                         base64Image = $"data:{mimeType};base64," + Convert.ToBase64String(imageBytes);
                     }
