@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Scanner as ScannerIcon, Download, Loader2 } from "lucide-react";
+import { Scan as ScannerIcon, Download, Loader2 } from "lucide-react";
 
 export const Configuracoes: React.FC = () => {
   const [scanners, setScanners] = useState<string[]>([]);
