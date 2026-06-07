@@ -161,10 +161,12 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
       const numerosNome = nome.match(/\d+/g);
       if (numerosNome) {
         celular = (celular + numerosNome.join('')).trim();
-        nome = nome.replace(/\d+/g, '').trim();
       }
 
-      // 6. Limpar novamente múltiplos espaços no nome gerados pela limpeza
+      // 6. O campo nome deve conter SOMENTE caracteres alfabéticos (incluindo acentos) e espaços
+      nome = nome.replace(/[^a-zA-ZáàâãéèêíïóôõöúçñÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ\s]/g, '');
+
+      // 7. Limpar novamente múltiplos espaços no nome gerados pela limpeza
       nome = nome.replace(/\s+/g, ' ').trim();
 
       // Salva apenas se sobrou nome ou celular válido
