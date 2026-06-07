@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Scan as ScannerIcon, Download, Loader2, Network, X, Table, FileSpreadsheet } from "lucide-react";
 import Tesseract from 'tesseract.js';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 
 declare global {
   interface Window {
@@ -175,16 +176,67 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
     }
   };
 
-  const downloadExcel = () => {
-    const wsData = [
-      ["Nome", "Celular", "Importado"],
-      ...extractedData.map(d => [d.nome, d.celular, d.importado])
+  const downloadExcel = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Contatos');
+
+    // Definir colunas com auto-fit
+    worksheet.columns = [
+      { header: 'Nome', key: 'nome', width: 45 },
+      { header: 'Celular', key: 'celular', width: 25 },
+      { header: 'Importado', key: 'importado', width: 15 }
     ];
 
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Contatos");
-    XLSX.writeFile(wb, "contatos_vmcmultimarcas_final.xlsx");
+    // Estilizar cabeçalho
+    worksheet.getRow(1).eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: 'FF000000' } };
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFD9D9D9' }
+      };
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FF000000' } },
+        left: { style: 'thin', color: { argb: 'FF000000' } },
+        bottom: { style: 'thin', color: { argb: 'FF000000' } },
+        right: { style: 'thin', color: { argb: 'FF000000' } }
+      };
+    });
+
+    // Adicionar e estilizar linhas
+    extractedData.forEach((row, index) => {
+      const addedRow = worksheet.addRow({
+        nome: row.nome,
+        celular: row.celular,
+        importado: row.importado
+      });
+
+      const isZebra = index % 2 === 0;
+      const fgColor = isZebra ? 'FFFFFFFF' : 'FFF2F2F2';
+
+      addedRow.eachCell((cell, colNumber) => {
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: fgColor }
+        };
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FF000000' } },
+          left: { style: 'thin', color: { argb: 'FF000000' } },
+          bottom: { style: 'thin', color: { argb: 'FF000000' } },
+          right: { style: 'thin', color: { argb: 'FF000000' } }
+        };
+
+        if (colNumber === 2 && row.celular.length < 11) {
+          cell.font = { color: { argb: 'FFFF0000' }, bold: true };
+        } else {
+          cell.font = { color: { argb: 'FF000000' } };
+        }
+      });
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    saveAs(new Blob([buffer]), 'contatos_vmcmultimarcas_final.xlsx');
   };
 
   const escanearDocumento = () => {
