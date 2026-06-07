@@ -240,7 +240,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
                   <Loader2 size={14} className="animate-spin" />
                   Digitalizando Documento...
                 </p>
-                <div className="relative flex justify-center bg-white border border-slate-200 shadow-sm rounded-lg p-2 h-[400px] overflow-hidden">
+                <div className="relative flex justify-center bg-white border border-slate-200 shadow-sm rounded-lg p-2 mx-auto overflow-hidden aspect-[210/297] max-h-[55vh]">
                   <style>{`
                     @keyframes scanLaser {
                       0% { top: 0%; }
@@ -248,16 +248,16 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
                       100% { top: 0%; }
                     }
                     .animate-laser {
-                      animation: scanLaser 3s ease-in-out infinite;
+                      animation: scanLaser 3s linear infinite;
                     }
                   `}</style>
                   {/* Placeholder de papel */}
-                  <div className="w-full max-w-md h-full bg-slate-50/50 flex flex-col gap-4 p-8 opacity-30 mx-auto">
-                    <div className="w-3/4 h-4 bg-slate-300 rounded"></div>
-                    <div className="w-full h-4 bg-slate-300 rounded"></div>
-                    <div className="w-5/6 h-4 bg-slate-300 rounded"></div>
-                    <div className="w-full h-4 bg-slate-300 rounded"></div>
-                    <div className="w-2/4 h-4 bg-slate-300 rounded mt-4"></div>
+                  <div className="w-full h-full bg-slate-50/50 flex flex-col gap-4 p-8 opacity-30 mx-auto">
+                    <div className="w-3/4 h-3 bg-slate-300 rounded"></div>
+                    <div className="w-full h-3 bg-slate-300 rounded"></div>
+                    <div className="w-5/6 h-3 bg-slate-300 rounded"></div>
+                    <div className="w-full h-3 bg-slate-300 rounded"></div>
+                    <div className="w-2/4 h-3 bg-slate-300 rounded mt-4"></div>
                   </div>
                   
                   {/* Feixe de luz verde */}
@@ -273,11 +273,11 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
                 <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
                   Preview da Digitalização
                 </p>
-                <div className="flex justify-center bg-white border border-slate-200 shadow-sm rounded-lg p-2 min-h-[300px]">
+                <div className="flex justify-center bg-white border border-slate-200 shadow-sm rounded-lg p-2 mx-auto aspect-[210/297] max-h-[55vh]">
                   <img
                     src={scannedImage}
                     alt="Documento escaneado"
-                    className="max-w-full max-h-[600px] object-contain"
+                    className="w-full h-full object-contain"
                   />
                 </div>
               </div>
