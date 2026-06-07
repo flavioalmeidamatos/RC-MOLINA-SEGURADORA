@@ -1,38 +1,98 @@
-import React, { useState } from "react";
-import { Scan as ScannerIcon, Download, Loader2 } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Scan as ScannerIcon, Download, Loader2, Network } from "lucide-react";
+
+declare global {
+  interface Window {
+    chrome?: {
+      webview?: {
+        postMessage: (message: any) => void;
+        addEventListener: (type: string, listener: (event: any) => void) => void;
+        removeEventListener: (type: string, listener: (event: any) => void) => void;
+      };
+    };
+  }
+}
 
 export const Configuracoes: React.FC = () => {
   const [scanners, setScanners] = useState<string[]>([]);
   const [selectedScanner, setSelectedScanner] = useState<string>("");
+  const [useIpScanner, setUseIpScanner] = useState<boolean>(false);
+  const [scannerIp, setScannerIp] = useState<string>("");
+  
   const [isScanning, setIsScanning] = useState(false);
   const [scannedImage, setScannedImage] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
 
+  useEffect(() => {
+    const handleMessage = (event: any) => {
+      try {
+        if (event.data && typeof event.data === "string") {
+          const payload = JSON.parse(event.data);
+          if (payload.action === "scanner_list_result") {
+            setScanners(payload.scanners || []);
+            if (payload.scanners && payload.scanners.length > 0) {
+              setSelectedScanner(payload.scanners[0]);
+            }
+            setIsSearching(false);
+          } else if (payload.action === "scanner_scan_result") {
+            if (payload.success) {
+              setScannedImage(payload.image);
+            } else {
+              alert("Erro ao escanear: " + payload.error);
+            }
+            setIsScanning(false);
+          }
+        }
+      } catch (err) {
+        console.error("Erro ao fazer parse da mensagem do WebView2", err);
+      }
+    };
+
+    if (window.chrome && window.chrome.webview) {
+      window.chrome.webview.addEventListener("message", handleMessage);
+    }
+
+    return () => {
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.removeEventListener("message", handleMessage);
+      }
+    };
+  }, []);
+
   const buscarScanners = async () => {
     setIsSearching(true);
-    // TODO: Implementar chamada real para o agente desktop ou host C#
-    // Mockando para testes
-    setTimeout(() => {
-      setScanners([
-        "Scanner Brother MFC-L2740DW",
-        "Epson L3150 Series",
-        "HP DeskJet 2700"
-      ]);
-      setSelectedScanner("Scanner Brother MFC-L2740DW");
-      setIsSearching(false);
-    }, 1500);
+    if (window.chrome && window.chrome.webview) {
+      window.chrome.webview.postMessage(JSON.stringify({ action: "list_scanners" }));
+    } else {
+      // Mocking fallback
+      setTimeout(() => {
+        setScanners([
+          "Scanner Local (Mock)",
+          "Epson L3150 (Mock)",
+        ]);
+        setSelectedScanner("Scanner Local (Mock)");
+        setIsSearching(false);
+      }, 1500);
+    }
   };
 
   const escanearDocumento = async () => {
-    if (!selectedScanner) return;
+    if ((!useIpScanner && !selectedScanner) || (useIpScanner && !scannerIp)) return;
     setIsScanning(true);
-    // TODO: Implementar chamada real para o agente desktop ou host C#
-    // Mockando para testes
-    setTimeout(() => {
-      // Fake base64 image (um pequeno pixel cinza para preview mockado)
-      setScannedImage("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==");
-      setIsScanning(false);
-    }, 3000);
+    
+    if (window.chrome && window.chrome.webview) {
+      window.chrome.webview.postMessage(JSON.stringify({ 
+        action: "scan_document",
+        useIp: useIpScanner,
+        scannerId: useIpScanner ? scannerIp : selectedScanner
+      }));
+    } else {
+      // Mocking fallback
+      setTimeout(() => {
+        setScannedImage("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==");
+        setIsScanning(false);
+      }, 3000);
+    }
   };
 
   const salvarImagem = () => {
@@ -64,52 +124,85 @@ export const Configuracoes: React.FC = () => {
 
       <div className="flex-1 overflow-y-auto p-6">
         <div className="max-w-3xl">
-          <div className="mb-8 border-b border-slate-100 pb-4">
-            <h2 className="text-lg font-bold text-slate-800">Digitalização de Documentos</h2>
-            <p className="text-sm text-slate-500">
-              Busque scanners conectados ao computador para digitalizar documentos físicos diretamente para o sistema.
-            </p>
+          <div className="mb-8 border-b border-slate-100 pb-4 flex justify-between items-end">
+            <div>
+              <h2 className="text-lg font-bold text-slate-800">Digitalização de Documentos</h2>
+              <p className="text-sm text-slate-500 mt-1">
+                Busque scanners locais (WIA) ou configure um IP para digitalizar diretamente para o sistema.
+              </p>
+            </div>
+            
+            <label className="flex items-center gap-2 cursor-pointer bg-slate-50 border border-slate-200 px-4 py-2 rounded-xl">
+              <input 
+                type="checkbox" 
+                className="w-4 h-4 rounded text-[#b58c2a] focus:ring-[#b58c2a]"
+                checked={useIpScanner}
+                onChange={(e) => setUseIpScanner(e.target.checked)}
+              />
+              <span className="text-sm font-semibold text-slate-700 flex items-center gap-1">
+                <Network size={16} className="text-slate-500"/>
+                Scanner de Rede (IP)
+              </span>
+            </label>
           </div>
 
           <div className="space-y-6">
-            <div className="flex items-end gap-4">
-              <div className="flex-1">
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Scanner Selecionado
-                </label>
-                <select
-                  value={selectedScanner}
-                  onChange={(e) => setSelectedScanner(e.target.value)}
-                  disabled={scanners.length === 0 || isSearching || isScanning}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition-all focus:border-[#b58c2a] focus:ring-1 focus:ring-[#b58c2a] disabled:opacity-60"
+            {!useIpScanner ? (
+              <div className="flex items-end gap-4">
+                <div className="flex-1">
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Scanner Local (WIA)
+                  </label>
+                  <select
+                    value={selectedScanner}
+                    onChange={(e) => setSelectedScanner(e.target.value)}
+                    disabled={scanners.length === 0 || isSearching || isScanning}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-black outline-none transition-all focus:border-[#b58c2a] focus:ring-1 focus:ring-[#b58c2a] disabled:opacity-60"
+                  >
+                    {scanners.length === 0 ? (
+                      <option value="">Nenhum scanner encontrado (Clique em Buscar)</option>
+                    ) : (
+                      scanners.map((s) => (
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                </div>
+                <button
+                  type="button"
+                  onClick={buscarScanners}
+                  disabled={isSearching || isScanning}
+                  className="flex h-[42px] items-center gap-2 rounded-xl bg-[#0c1826] px-5 text-sm font-semibold text-white transition-colors hover:bg-[#1a2e44] disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  {scanners.length === 0 ? (
-                    <option value="">Nenhum scanner encontrado</option>
-                  ) : (
-                    scanners.map((s) => (
-                      <option key={s} value={s}>
-                        {s}
-                      </option>
-                    ))
-                  )}
-                </select>
+                  {isSearching ? <Loader2 size={16} className="animate-spin" /> : <ScannerIcon size={16} />}
+                  Buscar Scanners
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={buscarScanners}
-                disabled={isSearching || isScanning}
-                className="flex h-11 items-center gap-2 rounded-xl bg-[#0c1826] px-5 text-sm font-semibold text-white transition-colors hover:bg-[#1a2e44] disabled:cursor-not-allowed disabled:opacity-70"
-              >
-                {isSearching ? <Loader2 size={16} className="animate-spin" /> : <ScannerIcon size={16} />}
-                Buscar Scanners
-              </button>
-            </div>
+            ) : (
+              <div className="flex items-end gap-4">
+                <div className="flex-1">
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Endereço IP do Scanner
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ex: 192.168.1.100"
+                    value={scannerIp}
+                    onChange={(e) => setScannerIp(e.target.value)}
+                    disabled={isScanning}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-black outline-none transition-all focus:border-[#b58c2a] focus:ring-1 focus:ring-[#b58c2a] disabled:opacity-60"
+                  />
+                </div>
+              </div>
+            )}
 
-            <div className="flex gap-4">
+            <div className="flex gap-4 pt-2">
               <button
                 type="button"
                 onClick={escanearDocumento}
-                disabled={!selectedScanner || isScanning}
+                disabled={(!useIpScanner && !selectedScanner) || (useIpScanner && !scannerIp) || isScanning}
                 className="flex h-11 items-center gap-2 rounded-xl bg-[#b58c2a] px-5 text-sm font-semibold text-white transition-colors hover:bg-[#a27d25] disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {isScanning ? <Loader2 size={16} className="animate-spin" /> : <ScannerIcon size={16} />}

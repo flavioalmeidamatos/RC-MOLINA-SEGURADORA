@@ -328,6 +328,16 @@ namespace RCMolinaApp.Views
                 {
                     Close();
                 }
+                else if (action == "list_scanners")
+                {
+                    ListScanners();
+                }
+                else if (action == "scan_document")
+                {
+                    bool useIp = root.TryGetProperty("useIp", out var useIpProp) && useIpProp.GetBoolean();
+                    string scannerId = root.TryGetProperty("scannerId", out var scannerIdProp) ? scannerIdProp.GetString() ?? "" : "";
+                    ScanDocument(useIp, scannerId);
+                }
             }
             catch (Exception ex)
             {
@@ -382,6 +392,114 @@ namespace RCMolinaApp.Views
             }
 
             Application.Current.Shutdown();
+        }
+
+        private async void ListScanners()
+        {
+            try
+            {
+                Type? t = Type.GetTypeFromProgID("WIA.DeviceManager");
+                if (t == null) throw new Exception("WIA não está instalado neste computador.");
+                dynamic deviceManager = Activator.CreateInstance(t)!;
+                var scanners = new System.Collections.Generic.List<string>();
+                
+                foreach (dynamic info in deviceManager.DeviceInfos)
+                {
+                    if (info.Type == 1) // WiaDeviceType.ScannerDeviceType
+                    {
+                        var name = info.Properties["Name"].get_Value()?.ToString() ?? "Unknown Scanner";
+                        var id = info.DeviceID;
+                        scanners.Add($"{name} ({id})");
+                    }
+                }
+                
+                var payload = new { action = "scanner_list_result", scanners };
+                string json = JsonSerializer.Serialize(payload);
+                if (AppWebView.CoreWebView2 != null)
+                {
+                    AppWebView.CoreWebView2.PostWebMessageAsJson(json);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Erro ao listar scanners: {ex.Message}");
+                var payload = new { action = "scanner_list_result", scanners = new string[0], error = ex.Message };
+                if (AppWebView.CoreWebView2 != null)
+                {
+                    AppWebView.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(payload));
+                }
+            }
+        }
+
+        private async void ScanDocument(bool useIp, string scannerId)
+        {
+            try
+            {
+                string? base64Image = null;
+
+                if (useIp)
+                {
+                    throw new Exception("Escaneamento por IP direto via rede precisa ser configurado com o driver do Windows (Adicionar Impressora/Scanner). Use a opção local após adicionar.");
+                }
+                else
+                {
+                    string deviceId = scannerId;
+                    int start = scannerId.LastIndexOf('(');
+                    int end = scannerId.LastIndexOf(')');
+                    if (start >= 0 && end > start)
+                    {
+                        deviceId = scannerId.Substring(start + 1, end - start - 1);
+                    }
+
+                    Type? t = Type.GetTypeFromProgID("WIA.DeviceManager");
+                    if (t == null) throw new Exception("WIA não está instalado.");
+                    dynamic deviceManager = Activator.CreateInstance(t)!;
+                    
+                    dynamic? selectedDevice = null;
+                    foreach (dynamic info in deviceManager.DeviceInfos)
+                    {
+                        if (info.DeviceID == deviceId)
+                        {
+                            selectedDevice = info;
+                            break;
+                        }
+                    }
+
+                    if (selectedDevice == null)
+                        throw new Exception("Scanner não encontrado.");
+
+                    dynamic device = selectedDevice.Connect();
+                    dynamic item = device.Items[1];
+                    Type? tDialog = Type.GetTypeFromProgID("WIA.CommonDialog");
+                    dynamic dialog = Activator.CreateInstance(tDialog!)!;
+                    
+                    dynamic imageFile = dialog.ShowTransfer(item, "{B96B3CAF-0728-11D3-9D7B-0000F81EF32E}", true);
+                    
+                    if (imageFile != null)
+                    {
+                        var imageBytes = (byte[])imageFile.FileData.get_BinaryData();
+                        base64Image = "data:image/png;base64," + Convert.ToBase64String(imageBytes);
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(base64Image))
+                {
+                    var payload = new { action = "scanner_scan_result", success = true, image = base64Image };
+                    if (AppWebView.CoreWebView2 != null)
+                    {
+                        AppWebView.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(payload));
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Erro ao escanear: {ex.Message}");
+                var payload = new { action = "scanner_scan_result", success = false, error = ex.Message };
+                if (AppWebView.CoreWebView2 != null)
+                {
+                    AppWebView.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(payload));
+                }
+            }
         }
     }
 }
