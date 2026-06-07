@@ -1055,7 +1055,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
               </div>
             ) : showConfigurarArea ? (
               <div className="flex-1 p-4 sm:p-6 md:p-8">
-                <Configuracoes />
+                <Configuracoes onClose={() => void handleMenuClick("Home")} />
               </div>
             ) : (
               <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-5">

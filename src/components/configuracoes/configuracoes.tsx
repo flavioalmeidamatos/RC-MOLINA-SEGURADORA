@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Scan as ScannerIcon, Download, Loader2, Network } from "lucide-react";
+import { Scan as ScannerIcon, Download, Loader2, Network, X } from "lucide-react";
 
 declare global {
   interface Window {
@@ -13,7 +13,7 @@ declare global {
   }
 }
 
-export const Configuracoes: React.FC = () => {
+export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
   const [scanners, setScanners] = useState<string[]>([]);
   const [selectedScanner, setSelectedScanner] = useState<string>("");
   const [useIpScanner, setUseIpScanner] = useState<boolean>(false);
@@ -120,6 +120,16 @@ export const Configuracoes: React.FC = () => {
             </p>
           </div>
         </div>
+
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute top-6 right-6 flex h-10 w-10 items-center justify-center rounded-full bg-white/5 text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
+          >
+            <X size={20} />
+          </button>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto p-6">
