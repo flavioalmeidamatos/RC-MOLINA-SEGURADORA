@@ -28,6 +28,7 @@ import { ClientRegistrationMultipage } from "../clientes/client_registration_mul
 import { Agenda } from "../agenda/agenda";
 import type { Agendamento } from "../agenda/agenda";
 import { CampanhasShell } from "../campanhas/campanhas_shell";
+import { Configuracoes } from "../configuracoes/configuracoes";
 import { apiListVisibleUsers } from "../../lib/local_api";
 import type { LocalAuthSession, UsuarioPerfil } from "../../lib/local_auth";
 import { createGmailApi, type MessageSummary } from "../../lib/gmail_api";
@@ -717,6 +718,11 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       setActiveMenu("Campanhas");
       return;
     }
+
+    if (line1 === "Configurar" || line1 === "Configurações") {
+      setActiveMenu("Configurações");
+      return;
+    }
   };
 
   const menuItems = [
@@ -825,6 +831,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const showAgendaArea = activeMenu === "Agenda";
   const showWebmailArea = activeMenu === "Webmail";
   const showCampanhasArea = activeMenu === "Campanhas";
+  const showConfigurarArea = activeMenu === "Configurações" || activeMenu === "Configurar";
   const shouldBlockSidebarLinks = showLinksChooser || Boolean(linksDesktopStatus) || isLinksDesktopWindowOpen;
   const blockSidebarMouseEvent = (event: React.SyntheticEvent) => {
     if (!shouldBlockSidebarLinks) return;
@@ -1045,6 +1052,10 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                   aniversariantesMes={aniversariantesMes}
                   onAgendamentosChanged={handleAgendamentosChanged}
                 />
+              </div>
+            ) : showConfigurarArea ? (
+              <div className="flex-1 p-4 sm:p-6 md:p-8">
+                <Configuracoes />
               </div>
             ) : (
               <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-5">
