@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Linq;
 
 namespace RCMolinaApp.Views
 {
@@ -394,29 +395,98 @@ namespace RCMolinaApp.Views
             Application.Current.Shutdown();
         }
 
+        private async System.Threading.Tasks.Task<System.Collections.Generic.List<string>> DiscoverNetworkScannersFastAsync()
+        {
+            var scanners = new System.Collections.Generic.List<string>();
+            try
+            {
+                var localIps = System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces()
+                    .Where(n => n.OperationalStatus == System.Net.NetworkInformation.OperationalStatus.Up)
+                    .SelectMany(n => n.GetIPProperties().UnicastAddresses)
+                    .Where(a => a.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                    .Select(a => a.Address.ToString())
+                    .ToList();
+
+                var tasks = new System.Collections.Generic.List<System.Threading.Tasks.Task>();
+                var httpClient = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromMilliseconds(2000) };
+
+                foreach (var ip in localIps)
+                {
+                    if (ip == "127.0.0.1") continue;
+                    var lastDot = ip.LastIndexOf('.');
+                    if (lastDot < 0) continue;
+                    var subnet = ip.Substring(0, lastDot + 1);
+
+                    for (int i = 1; i <= 254; i++)
+                    {
+                        var targetIp = subnet + i;
+                        tasks.Add(System.Threading.Tasks.Task.Run(async () =>
+                        {
+                            try
+                            {
+                                var response = await httpClient.GetAsync($"http://{targetIp}/eSCL/ScannerCapabilities");
+                                if (response.IsSuccessStatusCode)
+                                {
+                                    var content = await response.Content.ReadAsStringAsync();
+                                    string model = "Scanner Rede (eSCL)";
+                                    int start = content.IndexOf("<pwg:MakeAndModel>");
+                                    if (start > 0)
+                                    {
+                                        start += 18;
+                                        int end = content.IndexOf("</pwg:MakeAndModel>", start);
+                                        if (end > start)
+                                            model = content.Substring(start, end - start);
+                                    }
+                                    lock (scanners)
+                                    {
+                                        scanners.Add($"{model} [REDE] ({targetIp})");
+                                    }
+                                }
+                            }
+                            catch { } 
+                        }));
+                    }
+                }
+                await System.Threading.Tasks.Task.WhenAll(tasks);
+            }
+            catch { }
+            return scanners;
+        }
+
         private async void ListScanners()
         {
             try
             {
-                Type? t = Type.GetTypeFromProgID("WIA.DeviceManager");
-                if (t == null) throw new Exception("WIA não está instalado neste computador.");
-                dynamic deviceManager = Activator.CreateInstance(t)!;
                 var scanners = new System.Collections.Generic.List<string>();
-                
-                foreach (dynamic info in deviceManager.DeviceInfos)
+
+                // 1. Buscar WIA (Local/USB ou Instalados na Rede)
+                try
                 {
-                    try 
+                    Type? t = Type.GetTypeFromProgID("WIA.DeviceManager");
+                    if (t != null)
                     {
-                        var name = info.Properties["Name"].get_Value()?.ToString() ?? "Unknown Device";
-                        var id = info.DeviceID;
-                        var type = info.Type;
-                        scanners.Add($"{name} [Tipo {type}] ({id})");
-                    }
-                    catch (Exception)
-                    {
-                        // Ignore devices that throw errors when reading properties
+                        dynamic deviceManager = Activator.CreateInstance(t)!;
+                        foreach (dynamic info in deviceManager.DeviceInfos)
+                        {
+                            try 
+                            {
+                                var name = info.Properties["Name"].get_Value()?.ToString() ?? "Unknown Device";
+                                var id = info.DeviceID;
+                                var type = info.Type;
+                                scanners.Add($"{name} [Tipo {type}] ({id})");
+                            }
+                            catch (Exception) { }
+                        }
                     }
                 }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Aviso WIA: {ex.Message}");
+                }
+
+                // 2. Buscar eSCL (Rede Wi-Fi / Ethernet - Todas as interfaces)
+                var networkScanners = await DiscoverNetworkScannersFastAsync();
+                scanners.AddRange(networkScanners);
                 
                 var payload = new { action = "scanner_list_result", scanners };
                 string json = JsonSerializer.Serialize(payload);
@@ -428,12 +498,55 @@ namespace RCMolinaApp.Views
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Erro ao listar scanners: {ex.Message}");
-                var payload = new { action = "scanner_list_result", scanners = new string[0], error = ex.Message };
+                var payload = new { action = "scanner_list_result", scanners = new System.Collections.Generic.List<string>(), error = ex.Message };
                 if (AppWebView.CoreWebView2 != null)
                 {
                     AppWebView.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(payload));
                 }
             }
+        }
+
+        private async System.Threading.Tasks.Task<string?> ScanEsclAsync(string ip)
+        {
+            var httpClient = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+            string xml = @"<?xml version=""1.0"" encoding=""UTF-8""?>
+<scan:ScanSettings xmlns:pwg=""http://www.pwg.org/schemas/2010/12/sm"" xmlns:scan=""http://schemas.hp.com/imaging/escl/2011/05/empty/v1.0"">
+  <pwg:Version>2.0</pwg:Version>
+  <scan:Intent>Document</scan:Intent>
+  <pwg:ScanRegions>
+    <pwg:ScanRegion>
+      <pwg:XOffset>0</pwg:XOffset>
+      <pwg:YOffset>0</pwg:YOffset>
+      <pwg:Width>2550</pwg:Width>
+      <pwg:Height>3300</pwg:Height>
+    </pwg:ScanRegion>
+  </pwg:ScanRegions>
+  <scan:DocumentFormat>image/jpeg</scan:DocumentFormat>
+  <scan:ColorMode>RGB24</scan:ColorMode>
+  <scan:XResolution>300</scan:XResolution>
+  <scan:YResolution>300</scan:YResolution>
+</scan:ScanSettings>";
+
+            var content = new System.Net.Http.StringContent(xml, System.Text.Encoding.UTF8, "text/xml");
+            var response = await httpClient.PostAsync($"http://{ip}/eSCL/ScanJobs", content);
+            if (!response.IsSuccessStatusCode)
+                throw new Exception($"Scanner na rede rejeitou o pedido (eSCL). Código: {response.StatusCode}");
+
+            string location = response.Headers.Location?.ToString() ?? "";
+            if (string.IsNullOrEmpty(location))
+                throw new Exception("Scanner não retornou o local da imagem.");
+            if (!location.StartsWith("http")) location = $"http://{ip}{location}";
+
+            // Dá um tempo pro scanner puxar o papel/scanear
+            await System.Threading.Tasks.Task.Delay(3000);
+
+            var imageResponse = await httpClient.GetAsync($"{location}/NextDocument");
+            if (imageResponse.IsSuccessStatusCode)
+            {
+                var bytes = await imageResponse.Content.ReadAsByteArrayAsync();
+                return "data:image/jpeg;base64," + Convert.ToBase64String(bytes);
+            }
+            throw new Exception("Scanner falhou em retornar os dados da imagem.");
         }
 
         private async void ScanDocument(bool useIp, string scannerId)
@@ -442,9 +555,20 @@ namespace RCMolinaApp.Views
             {
                 string? base64Image = null;
 
-                if (useIp)
+                bool isNetwork = useIp || scannerId.Contains("[REDE]");
+
+                if (isNetwork)
                 {
-                    throw new Exception("Escaneamento por IP direto via rede precisa ser configurado com o driver do Windows (Adicionar Impressora/Scanner). Use a opção local após adicionar.");
+                    string targetIp = scannerId;
+                    if (!useIp)
+                    {
+                        int start = scannerId.LastIndexOf('(');
+                        int end = scannerId.LastIndexOf(')');
+                        if (start >= 0 && end > start)
+                            targetIp = scannerId.Substring(start + 1, end - start - 1);
+                    }
+                    
+                    base64Image = await ScanEsclAsync(targetIp);
                 }
                 else
                 {
@@ -471,7 +595,7 @@ namespace RCMolinaApp.Views
                     }
 
                     if (selectedDevice == null)
-                        throw new Exception("Scanner não encontrado.");
+                        throw new Exception("Scanner USB/WIA não encontrado.");
 
                     dynamic device = selectedDevice.Connect();
                     dynamic item = device.Items[1];
