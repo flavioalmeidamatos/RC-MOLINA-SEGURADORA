@@ -236,7 +236,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
     });
 
     const buffer = await workbook.xlsx.writeBuffer();
-    saveAs(new Blob([buffer]), 'contatos_vmcmultimarcas_final.xlsx');
+    saveAs(new Blob([buffer]), 'REMALHO.XLSX');
   };
 
   const escanearDocumento = () => {
