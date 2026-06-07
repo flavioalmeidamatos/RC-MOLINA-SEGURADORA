@@ -136,42 +136,31 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
       // 1. Remover a assinatura da VMC
       line = line.replace(patternVmc, '');
 
-      // 2. Limpar caracteres indesejados (hífen, colchetes, chaves, parênteses, underscore)
-      line = line.replace(/[-\[\](){}_]/g, ' ');
-
-      // 3. Limpar múltiplos espaços
-      line = line.replace(/\s+/g, ' ').trim();
-
-      if (!line) continue;
-
-      // 4. Capturar número (8 dígitos ou mais) que esteja no final da linha
-      const match = line.match(/(.*?)\s+(\d{8,})$/);
-      let nome = '';
-      let celular = '';
-
-      if (match) {
-        nome = match[1].trim();
-        celular = match[2].trim();
-      } else {
-        nome = line.trim();
-        celular = '';
-      }
-
-      // 5. Se o nome contiver números soltos, remove-os e os adiciona ao celular
-      const numerosNome = nome.match(/\d+/g);
-      if (numerosNome) {
-        celular = (celular + numerosNome.join('')).trim();
-      }
-
-      // 6. O campo nome deve conter SOMENTE caracteres alfabéticos (incluindo acentos) e espaços
-      nome = nome.replace(/[^a-zA-ZáàâãéèêíïóôõöúçñÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ\s]/g, '');
-
-      // 7. Limpar novamente múltiplos espaços no nome gerados pela limpeza
+      // 2. Extrair APENAS letras (e espaços) para formar o nome
+      // O campo nome deve conter SOMENTE caracteres alfabéticos (incluindo acentos) e espaços
+      let nome = line.replace(/[^a-zA-ZáàâãéèêíïóôõöúçñÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ\s]/g, '');
       nome = nome.replace(/\s+/g, ' ').trim().toUpperCase();
 
-      // Salva apenas se sobrou nome ou celular válido
-      if (nome || celular) {
-        data.push({ nome, celular, importado: '' });
+      // 3. Extrair APENAS números e a barra '/' para formar os telefones.
+      // A regex /[^\d/]/g remove tudo que não for dígito ou barra (ex: espaços, hifens, parênteses)
+      let telefonesStr = line.replace(/[^\d/]/g, '');
+
+      // 4. Separar pelos caracteres de barra '/' para o caso de múltiplos números na mesma linha
+      let telefones = telefonesStr.split('/').filter(t => t.length > 0);
+
+      // 5. Adicionar à tabela
+      if (telefones.length === 0) {
+        // Se não tem telefone, mas tem nome
+        if (nome) {
+          data.push({ nome, celular: '', importado: '' });
+        }
+      } else {
+        // Se tem telefones, cria uma linha para cada um mantendo o mesmo nome
+        telefones.forEach(celular => {
+          if (nome || celular) {
+            data.push({ nome, celular, importado: '' });
+          }
+        });
       }
     }
 
