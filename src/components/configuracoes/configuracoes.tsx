@@ -235,12 +235,12 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
             </div>
 
             {isScanning && (
-              <div className="mt-8 rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
                 <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-2">
                   <Loader2 size={14} className="animate-spin" />
                   Digitalizando Documento...
                 </p>
-                <div className="relative flex justify-center bg-white border border-slate-200 shadow-sm rounded-lg p-2 mx-auto overflow-hidden aspect-[210/297] max-h-[55vh]">
+                <div className="relative flex justify-center bg-white border border-slate-200 shadow-sm rounded-lg p-2 mx-auto overflow-hidden aspect-[210/297] max-h-[40vh]">
                   <style>{`
                     @keyframes scanLaser {
                       0% { top: 0%; }
@@ -269,11 +269,11 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
             )}
 
             {scannedImage && !isScanning && (
-              <div className="mt-8 rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
                 <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
                   Preview da Digitalização
                 </p>
-                <div className="flex justify-center bg-white border border-slate-200 shadow-sm rounded-lg p-2 mx-auto aspect-[210/297] max-h-[55vh]">
+                <div className="flex justify-center bg-white border border-slate-200 shadow-sm rounded-lg p-2 mx-auto aspect-[210/297] max-h-[40vh]">
                   <img
                     src={scannedImage}
                     alt="Documento escaneado"

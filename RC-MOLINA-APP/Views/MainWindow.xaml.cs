@@ -465,7 +465,6 @@ namespace RCMolinaApp.Views
         {
             try
             {
-                if (AppWebView?.CoreWebView2 != null) AppWebView.CoreWebView2.ExecuteScriptAsync("alert('C# Iniciou ListScanners');");
                 var scanners = new System.Collections.Generic.List<string>();
 
                 // 1. Buscar WIA (Local/USB ou Instalados na Rede)
@@ -498,8 +497,6 @@ namespace RCMolinaApp.Views
                     System.Diagnostics.Debug.WriteLine($"Aviso WIA: {ex.Message}");
                     scanners.Add($"ERRO WIA: {ex.Message}");
                 }
-
-                if (AppWebView?.CoreWebView2 != null) AppWebView.CoreWebView2.ExecuteScriptAsync($"alert('C# WIA finalizado. Encontrados: {scanners.Count}');");
 
                 // Enviar scanners WIA imediatamente para a UI
                 var payload = new { action = "scanner_list_result", scanners = scanners, success = true };
