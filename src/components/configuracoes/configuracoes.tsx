@@ -33,6 +33,9 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
             if (payload.scanners && payload.scanners.length > 0) {
               setSelectedScanner(payload.scanners[0]);
             }
+            if (payload.error) {
+              alert("Erro ao buscar scanners: " + payload.error);
+            }
             setIsSearching(false);
           } else if (payload.action === "scanner_scan_result") {
             if (payload.success) {

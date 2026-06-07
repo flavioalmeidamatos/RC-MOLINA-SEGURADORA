@@ -405,11 +405,16 @@ namespace RCMolinaApp.Views
                 
                 foreach (dynamic info in deviceManager.DeviceInfos)
                 {
-                    if (info.Type == 1) // WiaDeviceType.ScannerDeviceType
+                    try 
                     {
-                        var name = info.Properties["Name"].get_Value()?.ToString() ?? "Unknown Scanner";
+                        var name = info.Properties["Name"].get_Value()?.ToString() ?? "Unknown Device";
                         var id = info.DeviceID;
-                        scanners.Add($"{name} ({id})");
+                        var type = info.Type;
+                        scanners.Add($"{name} [Tipo {type}] ({id})");
+                    }
+                    catch (Exception)
+                    {
+                        // Ignore devices that throw errors when reading properties
                     }
                 }
                 
