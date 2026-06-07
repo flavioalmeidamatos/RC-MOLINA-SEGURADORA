@@ -294,8 +294,10 @@ namespace RCMolinaApp.Views
         {
             try
             {
-                var messageJson = e.TryGetWebMessageAsString();
-                var payload = JsonDocument.Parse(messageJson);
+                string message = e.TryGetWebMessageAsString();
+                if (AppWebView?.CoreWebView2 != null) AppWebView.CoreWebView2.ExecuteScriptAsync($"alert('C# Recebeu: {message.Replace("'", "\\'")}');");
+                
+                var payload = JsonDocument.Parse(message);
                 var root = payload.RootElement;
 
                 string action = root.GetProperty("action").GetString() ?? "";
@@ -408,7 +410,8 @@ namespace RCMolinaApp.Views
                     .ToList();
 
                 var tasks = new System.Collections.Generic.List<System.Threading.Tasks.Task>();
-                var httpClient = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromMilliseconds(2000) };
+                var httpClient = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromMilliseconds(500) };
+                var semaphore = new System.Threading.SemaphoreSlim(20);
 
                 foreach (var ip in localIps)
                 {
@@ -422,6 +425,7 @@ namespace RCMolinaApp.Views
                         var targetIp = subnet + i;
                         tasks.Add(System.Threading.Tasks.Task.Run(async () =>
                         {
+                            await semaphore.WaitAsync();
                             try
                             {
                                 var response = await httpClient.GetAsync($"http://{targetIp}/eSCL/ScannerCapabilities");
@@ -443,7 +447,11 @@ namespace RCMolinaApp.Views
                                     }
                                 }
                             }
-                            catch { } 
+                            catch { }
+                            finally
+                            {
+                                semaphore.Release();
+                            }
                         }));
                     }
                 }
@@ -457,6 +465,7 @@ namespace RCMolinaApp.Views
         {
             try
             {
+                if (AppWebView?.CoreWebView2 != null) AppWebView.CoreWebView2.ExecuteScriptAsync("alert('C# Iniciou ListScanners');");
                 var scanners = new System.Collections.Generic.List<string>();
 
                 // 1. Buscar WIA (Local/USB ou Instalados na Rede)
@@ -470,29 +479,45 @@ namespace RCMolinaApp.Views
                         {
                             try 
                             {
-                                var name = info.Properties["Name"].get_Value()?.ToString() ?? "Unknown Device";
-                                var id = info.DeviceID;
-                                var type = info.Type;
+                                string name = "Scanner WIA";
+                                try { name = info.Properties.Item("Name").Value.ToString(); } catch { }
+                                
+                                string id = info.DeviceID;
+                                string type = info.Type.ToString();
                                 scanners.Add($"{name} [Tipo {type}] ({id})");
                             }
-                            catch (Exception) { }
+                            catch (Exception innerEx) 
+                            { 
+                                scanners.Add($"Erro ao ler scanner: {innerEx.Message}");
+                            }
                         }
                     }
                 }
                 catch (Exception ex)
                 {
                     System.Diagnostics.Debug.WriteLine($"Aviso WIA: {ex.Message}");
+                    scanners.Add($"ERRO WIA: {ex.Message}");
                 }
 
-                // 2. Buscar eSCL (Rede Wi-Fi / Ethernet - Todas as interfaces)
-                var networkScanners = await DiscoverNetworkScannersFastAsync();
-                scanners.AddRange(networkScanners);
-                
-                var payload = new { action = "scanner_list_result", scanners };
-                string json = JsonSerializer.Serialize(payload);
+                if (AppWebView?.CoreWebView2 != null) AppWebView.CoreWebView2.ExecuteScriptAsync($"alert('C# WIA finalizado. Encontrados: {scanners.Count}');");
+
+                // Enviar scanners WIA imediatamente para a UI
+                var payload = new { action = "scanner_list_result", scanners = scanners, success = true };
                 if (AppWebView.CoreWebView2 != null)
                 {
-                    AppWebView.CoreWebView2.PostWebMessageAsJson(json);
+                    AppWebView.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(payload));
+                }
+
+                // 2. Buscar eSCL (Rede Wi-Fi / Ethernet) no fundo
+                var networkScanners = await DiscoverNetworkScannersFastAsync();
+                if (networkScanners.Count > 0)
+                {
+                    scanners.AddRange(networkScanners);
+                    var payload2 = new { action = "scanner_list_result", scanners = scanners, success = true };
+                    if (AppWebView.CoreWebView2 != null)
+                    {
+                        AppWebView.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(payload2));
+                    }
                 }
             }
             catch (Exception ex)
@@ -607,7 +632,14 @@ namespace RCMolinaApp.Views
                     if (imageFile != null)
                     {
                         var imageBytes = (byte[])imageFile.FileData.get_BinaryData();
-                        base64Image = "data:image/png;base64," + Convert.ToBase64String(imageBytes);
+                        string ext = "";
+                        try { ext = imageFile.FileExtension.ToString().ToLower(); } catch { }
+                        
+                        string mimeType = "image/png";
+                        if (ext == "bmp") mimeType = "image/bmp";
+                        else if (ext == "jpg" || ext == "jpeg") mimeType = "image/jpeg";
+                        
+                        base64Image = $"data:{mimeType};base64," + Convert.ToBase64String(imageBytes);
                     }
                 }
 
@@ -632,3 +664,5 @@ namespace RCMolinaApp.Views
         }
     }
 }
+
+

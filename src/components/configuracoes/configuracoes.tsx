@@ -26,8 +26,8 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
   useEffect(() => {
     const handleMessage = (event: any) => {
       try {
-        if (event.data && typeof event.data === "string") {
-          const payload = JSON.parse(event.data);
+        if (event.data) {
+          const payload = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
           if (payload.action === "scanner_list_result") {
             setScanners(payload.scanners || []);
             if (payload.scanners && payload.scanners.length > 0) {
