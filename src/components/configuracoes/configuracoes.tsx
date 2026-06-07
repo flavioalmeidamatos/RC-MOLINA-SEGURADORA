@@ -29,6 +29,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
   const [ocrProgress, setOcrProgress] = useState<number>(0);
   const [isOcrProcessing, setIsOcrProcessing] = useState<boolean>(false);
   const [extractedData, setExtractedData] = useState<Array<{nome: string, celular: string, importado: string}>>([]);
+  const [showWarningPopup, setShowWarningPopup] = useState<boolean>(false);
 
   useEffect(() => {
     const handleMessage = (event: any) => {
@@ -166,6 +167,12 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
 
     setExtractedData(data);
     setOcrStatus('Extração concluída com sucesso!');
+
+    const hasInvalidNumbers = data.some(d => d.celular.length < 11);
+    if (hasInvalidNumbers) {
+      setShowWarningPopup(true);
+      setTimeout(() => setShowWarningPopup(false), 10000);
+    }
   };
 
   const downloadExcel = () => {
@@ -432,9 +439,9 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
                           </thead>
                           <tbody>
                             {extractedData.map((row, idx) => (
-                              <tr key={idx} className="hover:bg-slate-100 transition-colors">
+                              <tr key={idx} className={`transition-colors ${idx % 2 === 0 ? 'bg-white hover:bg-slate-50' : 'bg-slate-100 hover:bg-slate-200'}`}>
                                 <td className="px-4 py-2 text-black font-medium border border-black">{row.nome}</td>
-                                <td className="px-4 py-2 text-black font-mono text-xs border border-black">{row.celular}</td>
+                                <td className={`px-4 py-2 font-mono text-xs border border-black ${row.celular.length < 11 ? 'text-red-600 font-bold' : 'text-black'}`}>{row.celular}</td>
                                 <td className="px-4 py-2 border border-black"></td>
                               </tr>
                             ))}
@@ -459,6 +466,29 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
           </div>
         </div>
       </div>
+
+      {/* Popup de Aviso (Números Inválidos) */}
+      {showWarningPopup && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full mx-4 border border-red-100 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-100 mb-4 mx-auto">
+              <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-bold text-center text-slate-800 mb-2">Atenção aos Números</h3>
+            <p className="text-center text-slate-600 mb-6">
+              Existem números de telefone com menos de 11 dígitos destacados em <span className="font-bold text-red-600">vermelho</span>. Eles estão fora do padrão para o envio de WhatsApp e precisarão ser tratados manualmente.
+            </p>
+            <button 
+              onClick={() => setShowWarningPopup(false)}
+              className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-4 rounded-xl transition-colors"
+            >
+              Ciente
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
