@@ -31,6 +31,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
   const [isOcrProcessing, setIsOcrProcessing] = useState<boolean>(false);
   const [extractedData, setExtractedData] = useState<Array<{nome: string, celular: string, importado: string}>>([]);
   const [showWarningPopup, setShowWarningPopup] = useState<boolean>(false);
+  const [showScannerOffPopup, setShowScannerOffPopup] = useState<boolean>(false);
 
   useEffect(() => {
     const handleMessage = (event: any) => {
@@ -39,11 +40,12 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
           const payload = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
           if (payload.action === "scanner_list_result") {
             setScanners(payload.scanners || []);
-            if (payload.scanners && payload.scanners.length > 0) {
+            if (payload.error || !payload.scanners || payload.scanners.length === 0) {
+              setShowScannerOffPopup(true);
+              setTimeout(() => setShowScannerOffPopup(false), 5000);
+            } else {
+              setScanners(payload.scanners);
               setSelectedScanner(payload.scanners[0]);
-            }
-            if (payload.error) {
-              alert("Erro ao buscar scanners: " + payload.error);
             }
             setIsSearching(false);
           } else if (payload.action === "scanner_scan_result") {
@@ -78,11 +80,14 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
     } else {
       // Mocking fallback
       setTimeout(() => {
-        setScanners([
-          "Scanner Local (Mock)",
-          "Epson L3150 (Mock)",
-        ]);
-        setSelectedScanner("Scanner Local (Mock)");
+        // setScanners([
+        //   "Scanner Local (Mock)",
+        //   "Epson L3150 (Mock)",
+        // ]);
+        // setSelectedScanner("Scanner Local (Mock)");
+        setScanners([]);
+        setShowScannerOffPopup(true);
+        setTimeout(() => setShowScannerOffPopup(false), 5000);
         setIsSearching(false);
       }, 1500);
     }
@@ -538,6 +543,20 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
             >
               Ciente
             </button>
+          </div>
+        </div>
+      )}
+      {/* Popup de Aviso (Scanner Desligado) */}
+      {showScannerOffPopup && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full mx-4 border border-orange-100 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-orange-100 mb-4 mx-auto">
+              <ScannerIcon className="w-6 h-6 text-orange-600" />
+            </div>
+            <h3 className="text-xl font-bold text-center text-slate-800 mb-2">Scanner não detectado</h3>
+            <p className="text-center text-slate-600 mb-6">
+              Não foi possível localizar o scanner. Verifique se o equipamento está <span className="font-bold text-orange-600">ligado</span> e conectado corretamente.
+            </p>
           </div>
         </div>
       )}
