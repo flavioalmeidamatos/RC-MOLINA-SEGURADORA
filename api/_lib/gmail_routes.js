@@ -18,7 +18,7 @@ import {
   listExistingContacts,
   importContactsToGoogle,
 } from './gmail_service.js';
-import { logEvent, query } from './gmail_db.js';
+import { logEvent, query, withTransaction } from './gmail_db.js';
 import { gmailConfig } from './gmail_config.js';
 import { normalizeUploadedFiles, normalizeUtf8Text } from './gmail_text_encoding.js';
 import { validateRecipientFields } from './gmail_email_address.js';
@@ -722,6 +722,61 @@ registerRoute('post', ['/email/import-contacts', '/gmail/import-contacts'], asyn
   if (validContacts.length > 0) {
     const result = await importContactsToGoogle(accountEmail, validContacts, actor);
     importedCount = result.importedCount;
+
+    try {
+      await withTransaction(async (client) => {
+        await client.query(`select pg_advisory_xact_lock(hashtext('RCMOLINASEGUROS.CLIENTES.codigo'))`);
+        
+        const maxResult = await client.query(`
+          select coalesce(max(regexp_replace(codigo, '\\D', '', 'g')::integer), 0) as max_codigo
+          from "RCMOLINASEGUROS"."CLIENTES"
+          where codigo ~ '^\\d{1,7}$'
+        `);
+        let nextNumber = Number(maxResult.rows[0]?.max_codigo || 0) + 1;
+
+        for (const contact of validContacts) {
+          let candidate;
+          while (true) {
+            candidate = String(nextNumber).padStart(7, '0');
+            const exists = await client.query(
+              `select 1 from "RCMOLINASEGUROS"."CLIENTES" where codigo = $1 limit 1`,
+              [candidate]
+            );
+            if (exists.rowCount === 0) {
+              break;
+            }
+            nextNumber++;
+          }
+
+          const clienteResult = await client.query(
+            `INSERT INTO "RCMOLINASEGUROS"."CLIENTES" 
+             (nome_completo, codigo, status_cliente, como_conheceu, permite_agendar_online)
+             VALUES ($1, $2, 'ATIVO', '5 - Remalho', true)
+             RETURNING id_cliente`,
+            [contact.name, candidate]
+          );
+
+          const idCliente = clienteResult.rows[0].id_cliente;
+
+          const rawPhone = String(contact.phone).replace(/\D/g, '');
+          const cleanPhone = rawPhone.startsWith('55') && rawPhone.length > 11 ? rawPhone.slice(2) : rawPhone;
+          const phoneValue = cleanPhone.length === 11 
+            ? `(${cleanPhone.substring(0,2)}) ${cleanPhone.substring(2,7)}-${cleanPhone.substring(7)}`
+            : `(${cleanPhone.substring(0,2)}) ${cleanPhone.substring(2,6)}-${cleanPhone.substring(6)}`;
+
+          await client.query(
+            `INSERT INTO "RCMOLINASEGUROS"."CLIENTES_CONTATOS"
+             (id_cliente, tipo, valor, preferencial)
+             VALUES ($1, 'celular', $2, true)`,
+            [idCliente, phoneValue]
+          );
+          
+          nextNumber++;
+        }
+      });
+    } catch (dbError) {
+      console.error('Falha ao importar contatos para o banco local:', dbError);
+    }
   }
 
   res.json({
