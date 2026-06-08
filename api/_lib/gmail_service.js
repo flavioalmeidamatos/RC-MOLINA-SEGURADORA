@@ -914,7 +914,7 @@ export async function importContactsToGoogle(accountEmail, contactsToImport, act
   }
 
   const normalizedActor = normalizeActor(actor);
-  await logEvent(accountEmail, 'import_contacts', 'Contatos importados', { importedCount }, 'info', normalizedActor.userId);
+  await logEvent(accountEmail, 'sync', 'Contatos importados', { importedCount }, 'info', normalizedActor.userId);
 
   return { importedCount };
 }
