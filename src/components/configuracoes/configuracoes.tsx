@@ -328,7 +328,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
     });
 
     const buffer = await workbook.xlsx.writeBuffer();
-    saveAs(new Blob([buffer]), 'REMALHO.XLSX');
+    saveAs(new Blob([buffer]), 'REMALHO_PROBLEMATICO.XLSX');
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -755,14 +755,14 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
                 <span className="text-lg font-bold text-green-700">{importStats.imported}</span>
               </div>
               <div className="flex justify-between items-center p-3 rounded-lg bg-red-50 border border-red-100">
-                <span className="text-sm font-semibold text-red-700">Recusados/Duplicados:</span>
+                <span className="text-sm font-semibold text-red-700">Recusado(s)/Duplicado(s):</span>
                 <span className="text-lg font-bold text-red-700">{importStats.rejected}</span>
               </div>
             </div>
 
             {importStats.rejected > 0 && (
               <p className="text-xs text-center text-slate-500 mb-6 px-4">
-                Uma planilha chamada <span className="font-bold">REMALHO.XLSX</span> foi baixada automaticamente apenas com os registros problemáticos.
+                Uma planilha chamada <span className="font-bold">REMALHO_PROBLEMATICO.XLSX</span> foi baixada automaticamente apenas com os registros problemáticos.
               </p>
             )}
 
