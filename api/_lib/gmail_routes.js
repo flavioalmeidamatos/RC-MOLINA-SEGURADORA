@@ -750,8 +750,8 @@ registerRoute('post', ['/email/import-contacts', '/gmail/import-contacts'], asyn
 
           const clienteResult = await client.query(
             `INSERT INTO "RCMOLINASEGUROS"."CLIENTES" 
-             (nome_completo, codigo, status_cliente, como_conheceu, permite_agendar_online)
-             VALUES ($1, $2, 'ATIVO', '5 - Remalho', true)
+             (nome_completo, codigo, status_cliente, como_conheceu, permite_agendar_online, data_cadastro, data_atualizacao)
+             VALUES ($1, $2, 'ATIVO', '5 - Remalho', true, current_date, current_date)
              RETURNING id_cliente`,
             [contact.name, candidate]
           );
@@ -775,7 +775,9 @@ registerRoute('post', ['/email/import-contacts', '/gmail/import-contacts'], asyn
         }
       });
     } catch (dbError) {
+      console.error('============================');
       console.error('Falha ao importar contatos para o banco local:', dbError);
+      console.error('============================');
     }
   }
 
