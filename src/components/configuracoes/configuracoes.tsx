@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Scan as ScannerIcon, Download, Loader2, Network, X, Table, FileSpreadsheet } from "lucide-react";
+import { Scan as ScannerIcon, Download, Loader2, Network, X, Table, FileSpreadsheet, UploadCloud } from "lucide-react";
 import Tesseract from 'tesseract.js';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
@@ -32,6 +32,10 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
   const [extractedData, setExtractedData] = useState<Array<{nome: string, celular: string, importado: string}>>([]);
   const [showWarningPopup, setShowWarningPopup] = useState<boolean>(false);
   const [showScannerOffPopup, setShowScannerOffPopup] = useState<boolean>(false);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isImporting, setIsImporting] = useState<boolean>(false);
+  const [importStats, setImportStats] = useState<{ total: number, imported: number, rejected: number } | null>(null);
 
   useEffect(() => {
     const handleMessage = (event: any) => {
@@ -260,6 +264,144 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
     saveAs(new Blob([buffer]), 'REMALHO.XLSX');
   };
 
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const downloadRejectedExcel = async (rejectedContacts: any[]) => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Problemas');
+
+    worksheet.columns = [
+      { header: 'Nome Original (Importado)', key: 'name', width: 45 },
+      { header: 'Celular', key: 'phone', width: 25 },
+      { header: 'Motivo', key: 'reason', width: 45 }
+    ];
+
+    worksheet.getRow(1).eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEF4444' } };
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FF000000' } },
+        left: { style: 'thin', color: { argb: 'FF000000' } },
+        bottom: { style: 'thin', color: { argb: 'FF000000' } },
+        right: { style: 'thin', color: { argb: 'FF000000' } }
+      };
+    });
+
+    rejectedContacts.forEach((contact, index) => {
+      const addedRow = worksheet.addRow({
+        name: contact.name,
+        phone: contact.phone,
+        reason: contact.reason
+      });
+
+      const isZebra = index % 2 === 0;
+      const fgColor = isZebra ? 'FFFFFFFF' : 'FFF2F2F2';
+
+      addedRow.eachCell((cell) => {
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: fgColor }
+        };
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FF000000' } },
+          left: { style: 'thin', color: { argb: 'FF000000' } },
+          bottom: { style: 'thin', color: { argb: 'FF000000' } },
+          right: { style: 'thin', color: { argb: 'FF000000' } }
+        };
+      });
+    });
+
+    worksheet.columns.forEach((column) => {
+      let maxLength = 0;
+      if (column.eachCell) {
+        column.eachCell({ includeEmpty: true }, (cell) => {
+          const columnLength = cell.value ? cell.value.toString().length : 10;
+          if (columnLength > maxLength) {
+            maxLength = columnLength;
+          }
+        });
+        column.width = maxLength < 10 ? 10 : maxLength + 2;
+      }
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    saveAs(new Blob([buffer]), 'REMALHO.XLSX');
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    try {
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(await file.arrayBuffer());
+      const worksheet = workbook.getWorksheet(1);
+      
+      const contactsToImport: { name: string, phone: string }[] = [];
+
+      if (worksheet) {
+        worksheet.eachRow((row, rowNumber) => {
+          if (rowNumber > 1) { 
+            const importado = row.getCell(3).text?.trim(); 
+            const celular = row.getCell(2).text?.trim();   
+            
+            if (importado) {
+               contactsToImport.push({
+                 name: importado,
+                 phone: celular || ''
+               });
+            }
+          }
+        });
+      }
+
+      if (contactsToImport.length === 0) {
+        alert("Nenhum dado válido encontrado na planilha.");
+        setIsImporting(false);
+        return;
+      }
+
+      const response = await fetch('/api/gmail/import-contacts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contacts: contactsToImport })
+      });
+
+      const result = await response.json();
+      
+      if (response.ok && result.success) {
+        setImportStats({
+          total: result.totalReceived,
+          imported: result.importedCount,
+          rejected: result.rejectedContacts.length
+        });
+
+        if (result.rejectedContacts.length > 0) {
+           await downloadRejectedExcel(result.rejectedContacts);
+        }
+      } else {
+        if (result.error === 'Conta Gmail nao conectada.' || result.code === 'gmail_account_not_connected') {
+           alert("Por favor, conecte ou reconecte seu Gmail na tela de e-mails para autorizar o Google Contatos.");
+        } else if (result.error && result.error.includes("insufficient_scope")) {
+           alert("O sistema requer uma nova permissão (Contatos) no seu Gmail. Por favor, desconecte e conecte o Gmail novamente.");
+        } else {
+           alert("Erro na importação: " + (result.error || "Erro desconhecido."));
+        }
+      }
+    } catch (err: any) {
+      alert("Falha ao processar arquivo: " + err.message);
+    } finally {
+      setIsImporting(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   const escanearDocumento = () => {
     if ((!useIpScanner && !selectedScanner) || (useIpScanner && !scannerIp)) return;
     setIsScanning(true);
@@ -413,6 +555,23 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
                   Salvar Imagem
                 </button>
               )}
+
+              <input 
+                type="file" 
+                accept=".xlsx" 
+                ref={fileInputRef} 
+                onChange={handleFileUpload} 
+                className="hidden" 
+              />
+              <button
+                type="button"
+                onClick={handleImportClick}
+                disabled={isImporting}
+                className="flex h-11 items-center gap-2 rounded-xl bg-[#0078d4] px-5 text-sm font-semibold text-white transition-colors hover:bg-[#006cbd] disabled:opacity-70 disabled:cursor-not-allowed ml-auto"
+              >
+                {isImporting ? <Loader2 size={16} className="animate-spin" /> : <UploadCloud size={16} />}
+                Importar Contatos para Conta Outlook
+              </button>
             </div>
 
             {(isScanning || scannedImage) && (
@@ -573,6 +732,46 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
             <p className="text-center text-slate-600 mb-6">
               Não foi possível localizar o scanner. Verifique se o equipamento está <span className="font-bold text-orange-600">ligado</span> e conectado corretamente.
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Estatísticas da Importação */}
+      {importStats && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full mx-4 border border-slate-100 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-center w-16 h-16 rounded-full bg-blue-50 mb-4 mx-auto">
+              <UploadCloud className="w-8 h-8 text-blue-600" />
+            </div>
+            <h3 className="text-2xl font-bold text-center text-slate-800 mb-6">Resultado da Importação</h3>
+            
+            <div className="space-y-4 mb-8">
+              <div className="flex justify-between items-center p-3 rounded-lg bg-slate-50 border border-slate-100">
+                <span className="text-sm font-semibold text-slate-600">Total Analisado:</span>
+                <span className="text-lg font-bold text-slate-800">{importStats.total}</span>
+              </div>
+              <div className="flex justify-between items-center p-3 rounded-lg bg-green-50 border border-green-100">
+                <span className="text-sm font-semibold text-green-700">Sucesso:</span>
+                <span className="text-lg font-bold text-green-700">{importStats.imported}</span>
+              </div>
+              <div className="flex justify-between items-center p-3 rounded-lg bg-red-50 border border-red-100">
+                <span className="text-sm font-semibold text-red-700">Recusados/Duplicados:</span>
+                <span className="text-lg font-bold text-red-700">{importStats.rejected}</span>
+              </div>
+            </div>
+
+            {importStats.rejected > 0 && (
+              <p className="text-xs text-center text-slate-500 mb-6 px-4">
+                Uma planilha chamada <span className="font-bold">REMALHO.XLSX</span> foi baixada automaticamente apenas com os registros problemáticos.
+              </p>
+            )}
+
+            <button 
+              onClick={() => setImportStats(null)}
+              className="w-full bg-[#0078d4] hover:bg-[#006cbd] text-white font-semibold py-3 px-4 rounded-xl transition-colors"
+            >
+              OK
+            </button>
           </div>
         </div>
       )}

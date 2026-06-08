@@ -20,6 +20,7 @@ export const GMAIL_SCOPES = [
   'https://www.googleapis.com/auth/gmail.modify',
   'https://www.googleapis.com/auth/gmail.compose',
   'https://www.googleapis.com/auth/gmail.labels',
+  'https://www.googleapis.com/auth/contacts',
 ];
 
 export const GMAIL_TRASH_SCOPES = ['https://mail.google.com/'];
@@ -812,4 +813,108 @@ export async function emptyTrash(accountEmail, actor = {}) {
   const normalizedActor = normalizeActor(actor);
   await logEvent(accountEmail, 'trash', 'Lixeira esvaziada', { deletedCount }, 'info', normalizedActor.userId);
   return { deletedCount };
+}
+
+export async function getAuthedPeople(accountEmail, actorOrOptions = {}, maybeOptions = {}) {
+  const actor = maybeOptions && Object.keys(maybeOptions).length > 0 ? actorOrOptions : {};
+  ensureAllowedAccount(accountEmail);
+  ensureGmailOAuthConfig();
+
+  const account = await findAccountRecord(accountEmail, actor);
+  if (!account) {
+    const error = new Error('Conta Gmail nao conectada.');
+    error.status = 404;
+    error.code = 'gmail_account_not_connected';
+    throw error;
+  }
+
+  const missingScopes = getMissingGmailScopes(account.scope);
+  if (missingScopes.length > 0) {
+    throw buildInsufficientScopeError(missingScopes);
+  }
+
+  const oauth2Client = createOAuthClient();
+  oauth2Client.setCredentials({
+    access_token: decryptText(account.access_token_enc),
+    refresh_token: decryptText(account.refresh_token_enc),
+    expiry_date: account.expiry_date ? new Date(account.expiry_date).getTime() : undefined,
+    scope: account.scope,
+    token_type: account.token_type,
+  });
+
+  oauth2Client.on('tokens', async (tokens) => {
+    try {
+      await upsertAccountTokens(accountEmail, account.google_user_id, tokens);
+    } catch (error) {
+      console.error('Falha ao atualizar tokens do Gmail:', error);
+    }
+  });
+
+  return google.people({ version: 'v1', auth: oauth2Client });
+}
+
+export async function listExistingContacts(accountEmail, actor = {}) {
+  const people = await getAuthedPeople(accountEmail, actor);
+  const existingPhones = new Set();
+  let pageToken;
+
+  do {
+    const response = await people.people.connections.list({
+      resourceName: 'people/me',
+      pageSize: 1000,
+      personFields: 'phoneNumbers',
+      pageToken,
+    });
+
+    const connections = response.data.connections || [];
+    for (const person of connections) {
+      if (person.phoneNumbers) {
+        for (const phone of person.phoneNumbers) {
+          if (phone.value) {
+            const digits = phone.value.replace(/\D/g, '');
+            if (digits) existingPhones.add(digits);
+          }
+        }
+      }
+    }
+
+    pageToken = response.data.nextPageToken;
+  } while (pageToken);
+
+  return existingPhones;
+}
+
+export async function importContactsToGoogle(accountEmail, contactsToImport, actor = {}) {
+  const people = await getAuthedPeople(accountEmail, actor);
+  let importedCount = 0;
+
+  for (const contact of contactsToImport) {
+    try {
+      await people.people.createContact({
+        requestBody: {
+          names: [
+            {
+              givenName: contact.name,
+            },
+          ],
+          phoneNumbers: contact.phone ? [
+            {
+              value: contact.phone,
+              type: 'mobile',
+            },
+          ] : [],
+        },
+      });
+      importedCount++;
+      // Atraso de 250ms para não estourar a cota da Google People API
+      await new Promise(resolve => setTimeout(resolve, 250));
+    } catch (err) {
+      console.error(`Falha ao importar contato ${contact.name}:`, err.message);
+    }
+  }
+
+  const normalizedActor = normalizeActor(actor);
+  await logEvent(accountEmail, 'import_contacts', 'Contatos importados', { importedCount }, 'info', normalizedActor.userId);
+
+  return { importedCount };
 }

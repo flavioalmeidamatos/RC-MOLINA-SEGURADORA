@@ -15,6 +15,8 @@ import {
   listMessages,
   modifyMessage,
   sendMessage,
+  listExistingContacts,
+  importContactsToGoogle,
 } from './gmail_service.js';
 import { logEvent, query } from './gmail_db.js';
 import { gmailConfig } from './gmail_config.js';
@@ -674,6 +676,60 @@ registerRoute('post', '/gmail/messages/:id/restore', async (req, res) => {
 
 registerRoute('post', '/email/sync/recent', async (_req, res) => {
   res.json({ success: true, message: 'Sync not implemented yet.' });
+});
+
+registerRoute('post', ['/email/import-contacts', '/gmail/import-contacts'], async (req, res) => {
+  const accountEmail = requireAccountEmail(req);
+  const actor = requestActorFrom(req);
+  const { contacts } = req.body;
+
+  if (!Array.isArray(contacts)) {
+    const error = new Error('Lista de contatos inválida.');
+    error.status = 400;
+    throw error;
+  }
+
+  const existingPhones = await listExistingContacts(accountEmail, actor);
+  
+  const validContacts = [];
+  const rejectedContacts = [];
+
+  for (const contact of contacts) {
+    if (!contact.name || !contact.phone) {
+      rejectedContacts.push({ ...contact, reason: 'Falta nome ou telefone' });
+      continue;
+    }
+
+    const rawPhone = String(contact.phone).trim();
+    const digits = rawPhone.replace(/\D/g, '');
+    
+    // O usuário solicitou "desde que tenha 14 digitos". Assumindo 14 caracteres com o '+' (ex: +5511999999999) ou 14 números
+    if (rawPhone.length !== 14 && digits.length !== 14) {
+      rejectedContacts.push({ ...contact, reason: 'Telefone não possui 14 caracteres/dígitos' });
+      continue;
+    }
+
+    if (existingPhones.has(digits)) {
+      rejectedContacts.push({ ...contact, reason: 'Telefone já importado' });
+      continue;
+    }
+
+    validContacts.push(contact);
+    existingPhones.add(digits);
+  }
+
+  let importedCount = 0;
+  if (validContacts.length > 0) {
+    const result = await importContactsToGoogle(accountEmail, validContacts, actor);
+    importedCount = result.importedCount;
+  }
+
+  res.json({
+    success: true,
+    importedCount,
+    rejectedContacts,
+    totalReceived: contacts.length
+  });
 });
 
 gmailRouter.use(async (error, req, res, _next) => {
