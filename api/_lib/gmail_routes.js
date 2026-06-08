@@ -749,7 +749,7 @@ gmailRouter.use(async (error, req, res, _next) => {
   }
 
   try {
-    await logEvent(accountEmail, 'error', error.message || 'Erro inesperado no webmail', {
+    await logEvent(accountEmail, 'sync', error.message || 'Erro inesperado no webmail', {
       path: req.path,
       method: req.method,
     }, 'error', actor.userId);
