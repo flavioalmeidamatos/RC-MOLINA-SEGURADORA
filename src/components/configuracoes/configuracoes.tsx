@@ -501,7 +501,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
                               <tr key={idx} className={`transition-colors ${idx % 2 === 0 ? 'bg-white hover:bg-slate-50' : 'bg-slate-100 hover:bg-slate-200'}`}>
                                 <td className="px-4 py-2 text-black font-medium border border-black">{row.nome}</td>
                                 <td className={`px-4 py-2 font-mono text-xs border border-black ${row.celular.length > 0 && row.celular.replace('+55', '').length < 11 ? 'text-red-600 font-bold' : 'text-black'}`}>{row.celular}</td>
-                                <td className="px-4 py-2 border border-black">{row.importado}</td>
+                                <td className="px-4 py-2 text-black font-medium border border-black">{row.importado}</td>
                               </tr>
                             ))}
                           </tbody>
