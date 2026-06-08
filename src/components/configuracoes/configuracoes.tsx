@@ -155,17 +155,19 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
       // 4. Separar pelos caracteres de barra '/' para o caso de múltiplos números na mesma linha
       let telefones = telefonesStr.split('/').filter(t => t.length > 0);
 
+      const importadoText = nome ? `${nome} - REMALHO` : '';
+
       // 5. Adicionar à tabela
       if (telefones.length === 0) {
         // Se não tem telefone, mas tem nome
         if (nome) {
-          data.push({ nome, celular: '', importado: '' });
+          data.push({ nome, celular: '', importado: importadoText });
         }
       } else {
         // Se tem telefones, cria uma linha para cada um mantendo o mesmo nome
         telefones.forEach(celular => {
           if (nome || celular) {
-            data.push({ nome, celular, importado: '' });
+            data.push({ nome, celular: `+55${celular}`, importado: importadoText });
           }
         });
       }
@@ -174,7 +176,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
     setExtractedData(data);
     setOcrStatus('Extração concluída com sucesso!');
 
-    const hasInvalidNumbers = data.some(d => d.celular.length < 11);
+    const hasInvalidNumbers = data.some(d => d.celular.length > 0 && d.celular.replace('+55', '').length < 11);
     if (hasInvalidNumbers) {
       setShowWarningPopup(true);
       setTimeout(() => setShowWarningPopup(false), 10000);
@@ -232,7 +234,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
           right: { style: 'thin', color: { argb: 'FF000000' } }
         };
 
-        if (colNumber === 2 && row.celular.length < 11) {
+        if (colNumber === 2 && row.celular.length > 0 && row.celular.replace('+55', '').length < 11) {
           cell.font = { color: { argb: 'FFFF0000' }, bold: true };
         } else {
           cell.font = { color: { argb: 'FF000000' } };
@@ -498,8 +500,8 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
                             {extractedData.map((row, idx) => (
                               <tr key={idx} className={`transition-colors ${idx % 2 === 0 ? 'bg-white hover:bg-slate-50' : 'bg-slate-100 hover:bg-slate-200'}`}>
                                 <td className="px-4 py-2 text-black font-medium border border-black">{row.nome}</td>
-                                <td className={`px-4 py-2 font-mono text-xs border border-black ${row.celular.length < 11 ? 'text-red-600 font-bold' : 'text-black'}`}>{row.celular}</td>
-                                <td className="px-4 py-2 border border-black"></td>
+                                <td className={`px-4 py-2 font-mono text-xs border border-black ${row.celular.length > 0 && row.celular.replace('+55', '').length < 11 ? 'text-red-600 font-bold' : 'text-black'}`}>{row.celular}</td>
+                                <td className="px-4 py-2 border border-black">{row.importado}</td>
                               </tr>
                             ))}
                           </tbody>
