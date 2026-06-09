@@ -1563,14 +1563,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                       { name: "SULAMERICA", url: "https://os11.sulamerica.com.br/SaudeCotador/LoginVendedor.aspx", logo: "/portais/sulamerica.webp", executeScript: "(function(){let attempts=0;let interval=setInterval(function(){let users=Array.from(document.querySelectorAll('input[type=\"text\"], input[type=\"email\"], input[name*=\"login\"], input[name*=\"user\"], input[name*=\"usuario\"], input[name*=\"cpf\"], #login, #usuario, #login_usuario, #cpf, [placeholder*=\"CPF\"], [placeholder*=\"Usuário\"]'));let passes=Array.from(document.querySelectorAll('input[type=\"password\"], input[name*=\"senha\"], input[name*=\"pass\"], #senha, #password, #login_senha, [placeholder*=\"Senha\"]'));let user=users.find(u=>u.offsetParent!==null&&!u.disabled&&u.type!=='hidden');let pass=passes.find(p=>p.offsetParent!==null&&!p.disabled&&p.type!=='hidden');if(user&&pass){let setValue=function(el,value){let setter=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value');if(setter&&setter.set){setter.set.call(el,value);}else{el.value=value;}el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));};setValue(user,'77915445715');setValue(pass,'Benj@min88');clearInterval(interval);}attempts++;if(attempts>45){clearInterval(interval);}},1000);})();" },
                       { name: "SUPERMED", url: "https://vendas.supermed.com.br/login", logo: "/portais/supermed.webp", executeScript: "(function(){let attempts=0;let interval=setInterval(function(){let users=Array.from(document.querySelectorAll('input[type=\"text\"], input[type=\"email\"], input[name*=\"login\"], input[name*=\"user\"], input[name*=\"usuario\"], input[name*=\"cpf\"], #login, #usuario, #login_usuario, #cpf, [placeholder*=\"CPF\"], [placeholder*=\"Usuário\"]'));let passes=Array.from(document.querySelectorAll('input[type=\"password\"], input[name*=\"senha\"], input[name*=\"pass\"], #senha, #password, #login_senha, [placeholder*=\"Senha\"]'));let user=users.find(u=>u.offsetParent!==null&&!u.disabled&&u.type!=='hidden');let pass=passes.find(p=>p.offsetParent!==null&&!p.disabled&&p.type!=='hidden');if(user&&pass){let setValue=function(el,value){let setter=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value');if(setter&&setter.set){setter.set.call(el,value);}else{el.value=value;}el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));};setValue(user,'77915445715');setValue(pass,'Benj@min88');clearInterval(interval);}attempts++;if(attempts>45){clearInterval(interval);}},1000);})();" },
                     ]
-                  : [
-                      { name: "PORTO SEGURO CONSÓRCIO", url: "https://www.portoseguro.com.br/consorcio", logo: "/portais/porto_seguro.webp" },
-                      { name: "CONSÓRCIO RODOBENS", url: "https://www.rodobens.com.br/consorcio", logo: "" },
-                      { name: "EMBRACON CONSÓRCIO", url: "https://www.embracon.com.br/", logo: "" },
-                      { name: "CAIXA CONSÓRCIO", url: "https://www.caixaconsorcio.com.br/", logo: "" },
-                      { name: "HS CONSÓRCIOS", url: "https://www.hsconsorcios.com.br/", logo: "" },
-                      { name: "ITAÚ CONSÓRCIO", url: "https://www.itau.com.br/consorcios", logo: "" }
-                    ]).map((sys) => (
+                  : []).map((sys) => (
                   <button
                     key={sys.name}
                     type="button"
@@ -1613,6 +1606,12 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                     </div>
                   </button>
                 ))}
+
+                {activeLinkTab === 'consorcios' && (
+                  <div className="col-span-full py-16 text-center text-slate-400 font-semibold text-sm">
+                    Nenhum portal de consórcios cadastrado por enquanto.
+                  </div>
+                )}
               </div>
             </div>
           </div>
