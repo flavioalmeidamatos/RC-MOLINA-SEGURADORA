@@ -2163,7 +2163,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                       <p className="text-sm leading-5 text-slate-500">
                         {isClientFormLocked
                           ? 'Clique em Novo Cliente antes de anexar arquivos.'
-                          : 'Aceita imagens, PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, TXT e CSV.'}
+                          : 'Aceita imagens, PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, TXT, CSV, MP4 e AVI.'}
                       </p>
                     </div>
                     <button
@@ -2251,6 +2251,13 @@ export const ClientRegistrationMultipage: React.FC = () => {
                                 title={documento.name}
                                 src={`${documento.previewUrl}#toolbar=0&navpanes=0&scrollbar=0`}
                                 className="h-full w-full border-0"
+                              />
+                            ) : documento.previewKind === 'video' ? (
+                              <video
+                                src={documento.previewUrl}
+                                className="h-full w-full object-cover"
+                                muted
+                                playsInline
                               />
                             ) : (
                               <div className="flex h-full flex-col items-center justify-center gap-3 px-4 text-center">
@@ -2385,6 +2392,15 @@ export const ClientRegistrationMultipage: React.FC = () => {
                       title={selectedDocumentPreview.name}
                       src={selectedDocumentPreview.previewUrl}
                       className="h-[72vh] w-full border-0"
+                    />
+                  </div>
+                ) : selectedDocumentPreview.previewKind === 'video' ? (
+                  <div className="overflow-hidden rounded-[24px] bg-slate-100 flex justify-center items-center">
+                    <video
+                      src={selectedDocumentPreview.previewUrl}
+                      controls
+                      autoPlay
+                      className="max-h-[72vh] w-full object-contain"
                     />
                   </div>
                 ) : (
