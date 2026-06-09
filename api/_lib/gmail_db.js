@@ -117,7 +117,7 @@ let pool = null;
 let initPromise = null;
 
 function getPoolConfig() {
-  const databaseUrl = process.env.GMAIL_DATABASE_URL || process.env.DATABASE_URL || '';
+  const databaseUrl = process.env.DATABASE_URL || '';
 
   return databaseUrl
     ? { connectionString: databaseUrl }

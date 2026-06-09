@@ -767,7 +767,7 @@ registerRoute('post', ['/email/import-contacts', '/gmail/import-contacts'], asyn
           await client.query(
             `INSERT INTO "RCMOLINASEGUROS"."CLIENTES_CONTATOS"
              (id_cliente, tipo, valor, preferencial)
-             VALUES ($1, 'celular', $2, true)`,
+             VALUES ($1, 'Celular', $2, true)`,
             [idCliente, phoneValue]
           );
           
