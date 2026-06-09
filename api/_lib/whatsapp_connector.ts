@@ -112,9 +112,6 @@ export const initializeLocalWhatsAppConnector = async () => {
           '--disable-gpu',
         ],
       },
-      webVersionCache: {
-        type: 'local',
-      },
     });
 
     client.on('qr', (qrValue: string) => {
