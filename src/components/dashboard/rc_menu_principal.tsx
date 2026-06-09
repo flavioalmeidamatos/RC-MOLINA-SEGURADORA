@@ -157,6 +157,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const [activeMenu, setActiveMenu] = useState(forcedMenu || "Home");
   const [campanhaInitialMessage, setCampanhaInitialMessage] = useState("");
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [showLogoutConfirmModal, setShowLogoutConfirmModal] = useState(false);
   const [aniversariantesMes, setAniversariantesMes] = useState<AniversarianteMes[]>([]);
   const [isLoadingAniversariantes, setIsLoadingAniversariantes] = useState(false);
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
@@ -985,7 +986,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
             <button
               type="button"
-              onClick={handleLogout}
+              onClick={() => setShowLogoutConfirmModal(true)}
               disabled={isLoggingOut}
               className="flex min-h-11 items-center gap-2 text-slate-400 transition-colors hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-60"
             >
@@ -1768,6 +1769,41 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
           animation: fade-in 0.5s ease-out forwards;
         }
       `}</style>
+      {showLogoutConfirmModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="flex w-full max-w-md flex-col overflow-hidden rounded-[24px] border border-white/60 bg-white shadow-2xl scale-in-95 duration-200 p-8 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100 text-red-600 shadow-sm">
+              <LogOut size={32} strokeWidth={2.5} />
+            </div>
+            <h3 className="mb-2 text-2xl font-black text-[#0c1826]">
+              Sair do sistema
+            </h3>
+            <p className="mb-8 text-slate-500 leading-relaxed font-medium">
+              Tem certeza de que deseja sair? Você precisará fazer login novamente para acessar sua conta.
+            </p>
+            <div className="flex gap-4">
+              <button
+                type="button"
+                onClick={() => setShowLogoutConfirmModal(false)}
+                className="flex-1 rounded-xl bg-slate-100 py-3 font-bold text-slate-600 transition hover:bg-slate-200"
+              >
+                Não, voltar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowLogoutConfirmModal(false);
+                  void handleLogout();
+                }}
+                className="flex-1 rounded-xl bg-[#b58c2a] py-3 font-bold text-white transition hover:bg-[#a17c1f] shadow-md shadow-[#b58c2a]/20"
+              >
+                Sim, sair agora
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

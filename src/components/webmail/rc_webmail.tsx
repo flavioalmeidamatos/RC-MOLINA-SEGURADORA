@@ -10,6 +10,7 @@ import {
   MailOpen,
   MailPlus,
   RefreshCcw,
+  Reply,
   Search,
   Send,
   Settings2,
@@ -672,6 +673,35 @@ export function RCWebmail({
     if (result) {
       await reloadWorkspace(successMessage);
     }
+  }
+
+  function handleReply() {
+    if (!selectedMessage) return;
+
+    const replySubject = selectedMessage.subject?.toLowerCase().startsWith('re:') 
+      ? selectedMessage.subject 
+      : `Re: ${selectedMessage.subject || ''}`;
+
+    const quotedContent = `
+      <br>
+      <div style="border-top:1px solid #e1e1e1; margin-top: 15px; padding-top: 10px;">
+        <b>De:</b> ${compactSender(selectedMessage.from)}<br>
+        <b>Enviado em:</b> ${formatDateTime(selectedMessage.internalDate)}<br>
+        <b>Para:</b> ${selectedMessage.to || ''}<br>
+        <b>Assunto:</b> ${selectedMessage.subject || ''}<br>
+      </div>
+      <blockquote style="margin: 0 0 0 10px; border-left: 2px solid #000000; padding-left: 10px;">
+        ${selectedMessage.bodyHtml || selectedMessage.bodyText || ''}
+      </blockquote>
+    `;
+
+    patchCompose({
+      to: compactSender(selectedMessage.from),
+      subject: replySubject,
+      bodyHtml: quotedContent,
+    });
+
+    navigate('/email/compose?folder=' + encodeURIComponent(activeFolder));
   }
 
   async function sendDraftHandler() {
@@ -1463,6 +1493,14 @@ export function RCWebmail({
                           >
                             <Mail size={14} />
                             Não lida
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleReply()}
+                            className="inline-flex min-h-10 items-center gap-2 rounded-full border border-[#b58c2a] bg-[#b58c2a]/10 px-4 py-2 text-xs font-bold text-[#b58c2a] transition hover:bg-[#b58c2a] hover:text-white"
+                          >
+                            <Reply size={14} />
+                            Responder
                           </button>
                           {activeFolder !== 'trash' ? (
                             <>
