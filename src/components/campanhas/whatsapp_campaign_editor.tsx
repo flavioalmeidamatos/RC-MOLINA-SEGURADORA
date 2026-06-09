@@ -359,7 +359,14 @@ export function WhatsAppCampaignEditor({
                 <input
                   type="text"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    if (e.target.value.length >= 2) {
+                      setShowSearchResults(true);
+                    } else {
+                      setShowSearchResults(false);
+                    }
+                  }}
                   onFocus={() => searchQuery.length >= 2 && setShowSearchResults(true)}
                   onBlur={() => setTimeout(() => setShowSearchResults(false), 200)}
                   placeholder="Localizar cliente..."
