@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { AlertCircle, Bold, Code, Italic, Mic, MicOff, Paperclip, Smartphone, SmilePlus, Square, Strikethrough, Wifi, X } from "lucide-react";
+import { AlertCircle, Bold, Code, Italic, Mic, MicOff, Paperclip, Search, Smartphone, SmilePlus, Square, Strikethrough, Wifi, X, Loader2 } from "lucide-react";
 import { createPortal } from "react-dom";
 import EmojiPicker, { Categories, type CategoryConfig, type EmojiClickData } from "emoji-picker-react";
 
