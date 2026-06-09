@@ -8,7 +8,6 @@ test-results/
 .env*
 !.env.example
 .v*
-supabase/.temp/
 .whatsapp_auth/
 .whatsapp_cache/
 
