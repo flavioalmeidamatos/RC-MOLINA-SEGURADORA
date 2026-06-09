@@ -519,6 +519,29 @@ export function CampanhasShell({ userId, userEmail, initialMessage, onConnection
 
                 setCampaignStatus("Áudio gravado e anexado com sucesso.");
               }}
+              onPhoneSelected={(phone) => {
+                setDraft((current) => {
+                  const cleaned = phone.replace(/\D/g, '');
+                  const emptyIndex = current.recipients.findIndex(r => !r || r.replace(/\D/g, '').length === 0);
+                  
+                  if (emptyIndex >= 0) {
+                    return {
+                      ...current,
+                      recipients: replaceRecipientAt(current.recipients, emptyIndex, cleaned)
+                    };
+                  }
+                  
+                  if (current.recipients.length < MAX_WHATSAPP_RECIPIENTS) {
+                    return {
+                      ...current,
+                      recipients: normalizeRecipientState([...current.recipients, cleaned])
+                    };
+                  }
+                  
+                  return current;
+                });
+                setCampaignStatus(`Telefone ${phone} adicionado aos destinatários.`);
+              }}
             />
 
             <WhatsAppRecipientFields

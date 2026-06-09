@@ -17,6 +17,7 @@ interface WhatsAppCampaignEditorProps {
   onOptInChange: (checked: boolean) => void;
   onTemplateChange: (checked: boolean) => void;
   onAudioRecorded?: (file: File, dataUrl: string) => void;
+  onPhoneSelected?: (phone: string) => void;
 }
 
 const emojiCategories: CategoryConfig[] = [
@@ -43,9 +44,38 @@ export function WhatsAppCampaignEditor({
   onOptInChange,
   onTemplateChange,
   onAudioRecorded,
+  onPhoneSelected,
 }: WhatsAppCampaignEditorProps) {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+
+  useEffect(() => {
+    if (searchQuery.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const response = await fetch(`/api/clientes/search?q=${encodeURIComponent(searchQuery)}`);
+        const data = await response.json();
+        setSearchResults(data);
+      } catch (error) {
+        console.error("Erro ao buscar clientes:", error);
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
@@ -319,6 +349,51 @@ export function WhatsAppCampaignEditor({
               Editor de Mensagem
             </span>
             
+            {/* Search Input */}
+            <div className="relative flex-1 max-w-[280px] ml-auto mr-2">
+              <div className="relative">
+                <Search size={13} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                {isSearching && (
+                  <Loader2 size={13} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-[#d4af37]" />
+                )}
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={() => searchQuery.length >= 2 && setShowSearchResults(true)}
+                  onBlur={() => setTimeout(() => setShowSearchResults(false), 200)}
+                  placeholder="Localizar cliente..."
+                  className="h-8 w-full rounded-full border border-slate-200 bg-white pl-8 pr-8 text-xs text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#d4af37] focus:ring-2 focus:ring-[#d4af37]/20"
+                />
+              </div>
+              {showSearchResults && searchResults.length > 0 && (
+                <ul className="absolute left-0 right-0 top-full z-[100] mt-1 max-h-48 overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-xl">
+                  {searchResults.map((c) => (
+                    <li key={c.id_cliente}>
+                      <button
+                        type="button"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          const phone = c.contatos?.find((ct: any) => ct.tipo_contato === "Celular")?.valor || c.contatos?.[0]?.valor;
+                          if (phone && onPhoneSelected) {
+                            onPhoneSelected(phone);
+                            setSearchQuery("");
+                            setShowSearchResults(false);
+                          }
+                        }}
+                        className="flex w-full flex-col gap-0.5 px-3 py-2 text-left transition hover:bg-[#d4af37]/5"
+                      >
+                        <span className="text-xs font-bold text-slate-800">{c.nome_completo}</span>
+                        <span className="text-[10px] text-slate-500">
+                          {c.contatos?.find((ct: any) => ct.tipo_contato === "Celular")?.valor || c.contatos?.[0]?.valor || "Sem número"}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
             {isBridgeConnected ? (
               <div className="flex flex-wrap items-center gap-2 shrink-0">
                 <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#a2ebd3] bg-[#e6fcf5] px-3.5 py-1 text-[11px] font-black uppercase tracking-[0.08em] text-[#0ca678] shadow-sm">
