@@ -112,6 +112,10 @@ export const initializeLocalWhatsAppConnector = async () => {
           '--disable-gpu',
         ],
       },
+      webVersionCache: {
+        type: 'remote',
+        remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/bab41edffee88eac3e47e53077f350b66208c363/html/2.3000.1015901307-alpha.html',
+      },
     });
 
     client.on('qr', (qrValue: string) => {
