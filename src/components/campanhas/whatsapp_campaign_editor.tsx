@@ -12,12 +12,14 @@ interface WhatsAppCampaignEditorProps {
   activeCampaignId?: string | null;
   isBridgeConnected?: boolean;
   status?: WhatsAppBridgeStatus | null;
+  sentPhones?: string[];
   onMessageChange: (value: string) => void;
   onPickMedia: () => void;
   onOptInChange: (checked: boolean) => void;
   onTemplateChange: (checked: boolean) => void;
   onAudioRecorded?: (file: File, dataUrl: string) => void;
   onPhoneSelected?: (phone: string) => void;
+  onPhonesSelected?: (phones: string[]) => void;
 }
 
 const emojiCategories: CategoryConfig[] = [
@@ -39,12 +41,14 @@ export function WhatsAppCampaignEditor({
   activeCampaignId,
   isBridgeConnected,
   status,
+  sentPhones = [],
   onMessageChange,
   onPickMedia,
   onOptInChange,
   onTemplateChange,
   onAudioRecorded,
   onPhoneSelected,
+  onPhonesSelected,
 }: WhatsAppCampaignEditorProps) {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -53,6 +57,7 @@ export function WhatsAppCampaignEditor({
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [selectedSearchPhones, setSelectedSearchPhones] = useState<string[]>([]);
 
   useEffect(() => {
     if (searchQuery.length < 2) {
@@ -368,36 +373,70 @@ export function WhatsAppCampaignEditor({
                     }
                   }}
                   onFocus={() => searchQuery.length >= 2 && setShowSearchResults(true)}
-                  onBlur={() => setTimeout(() => setShowSearchResults(false), 200)}
                   placeholder="Localizar cliente..."
                   className="h-8 w-full rounded-full border border-slate-200 bg-white pl-8 pr-8 text-xs text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#d4af37] focus:ring-2 focus:ring-[#d4af37]/20"
                 />
               </div>
               {showSearchResults && searchResults.length > 0 && (
-                <ul className="absolute left-0 right-0 top-full z-[100] mt-1 max-h-48 overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-xl">
-                  {searchResults.map((c) => (
-                    <li key={c.id_cliente}>
-                      <button
-                        type="button"
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          const phone = c.contatos?.find((ct: any) => ct.tipo_contato === "Celular")?.valor || c.contatos?.[0]?.valor;
-                          if (phone && onPhoneSelected) {
-                            onPhoneSelected(phone);
-                            setSearchQuery("");
-                            setShowSearchResults(false);
-                          }
-                        }}
-                        className="flex w-full flex-col gap-0.5 px-3 py-2 text-left transition hover:bg-[#d4af37]/5"
-                      >
-                        <span className="text-xs font-bold text-slate-800">{c.nome_completo}</span>
-                        <span className="text-[10px] text-slate-500">
-                          {c.contatos?.find((ct: any) => ct.tipo_contato === "Celular")?.valor || c.contatos?.[0]?.valor || "Sem número"}
-                        </span>
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-[4px] p-4">
+                  <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-xl flex flex-col max-h-[80vh]">
+                    <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+                      <h3 className="font-bold text-slate-800">Selecionar Destinatários</h3>
+                      <button onClick={() => { setShowSearchResults(false); setSelectedSearchPhones([]); }} className="text-slate-400 hover:text-slate-600">
+                        <X size={20} />
                       </button>
-                    </li>
-                  ))}
-                </ul>
+                    </div>
+                    <div className="overflow-y-auto p-2">
+                      {searchResults.map((c) => {
+                        const phone = c.contatos?.find((ct: any) => ct.tipo_contato === "Celular")?.valor || c.contatos?.[0]?.valor;
+                        const isSent = phone && sentPhones.includes(phone);
+                        const isSelected = phone && selectedSearchPhones.includes(phone);
+                        return (
+                          <label key={c.id_cliente} className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 transition ${isSent ? 'opacity-50 cursor-not-allowed bg-slate-50' : 'cursor-pointer hover:bg-[#d4af37]/5'}`}>
+                            <input 
+                              type="checkbox" 
+                              disabled={isSent || (!isSelected && selectedSearchPhones.length >= 10)}
+                              checked={isSelected || false}
+                              onChange={(e) => {
+                                if (!phone) return;
+                                if (e.target.checked) {
+                                  if (selectedSearchPhones.length < 10) setSelectedSearchPhones([...selectedSearchPhones, phone]);
+                                } else {
+                                  setSelectedSearchPhones(selectedSearchPhones.filter(p => p !== phone));
+                                }
+                              }}
+                              className="h-4 w-4 rounded border-slate-300 text-[#d4af37] focus:ring-[#d4af37]"
+                            />
+                            <div className="flex flex-col">
+                              <span className="text-sm font-bold text-slate-800">
+                                {c.nome_completo} 
+                                {isSent && <span className="ml-2 text-[10px] uppercase text-green-600 font-bold bg-green-100 px-2 py-0.5 rounded-full">Já enviado</span>}
+                              </span>
+                              <span className="text-xs text-slate-500">{phone || "Sem número"}</span>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                    <div className="border-t border-slate-100 p-4 flex justify-between items-center bg-slate-50">
+                      <span className="text-sm text-slate-600 font-medium">{selectedSearchPhones.length} / 10 selecionados</span>
+                      <button 
+                        onClick={() => {
+                          if (onPhonesSelected && selectedSearchPhones.length > 0) {
+                            onPhonesSelected(selectedSearchPhones);
+                          }
+                          setShowSearchResults(false);
+                          setSelectedSearchPhones([]);
+                          setSearchQuery("");
+                        }}
+                        disabled={selectedSearchPhones.length === 0}
+                        className="rounded-lg bg-[#d4af37] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#c4a133] disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Adicionar Selecionados
+                      </button>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
 

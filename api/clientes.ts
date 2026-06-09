@@ -260,6 +260,33 @@ export const createClienteHandler = async (req: express.Request, res: express.Re
   }
 };
 
+export const addClienteAnexoHandler = async (req: express.Request, res: express.Response) => {
+  await initLocalDatabase();
+  const pool = getPool();
+  const client = await pool.connect();
+  try {
+    const idCliente = req.params.id;
+    const anexo = req.body;
+    
+    const saved = await saveClienteAnexo(idCliente, anexo);
+    if (!saved) return res.status(400).json({ error: 'Falha ao salvar anexo' });
+
+    await client.query(
+      `INSERT INTO "RCMOLINASEGUROS"."CLIENTES_ANEXOS"
+       (id_cliente, nome_arquivo, caminho_arquivo, tamanho_bytes, tipo_mime)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [idCliente, saved.nomeArquivo, saved.caminhoArquivo, saved.tamanhoBytes, saved.tipoMime],
+    );
+
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error('Error adding anexo:', error);
+    res.status(500).json({ error: error.message });
+  } finally {
+    client.release();
+  }
+};
+
 export const listClientesHandler = async (req: express.Request, res: express.Response) => {
   await initLocalDatabase();
   const pool = getPool();

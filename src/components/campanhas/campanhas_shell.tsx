@@ -72,6 +72,7 @@ export function CampanhasShell({ userId, userEmail, initialMessage, onConnection
   const [isSendingCampaign, setIsSendingCampaign] = useState(false);
   const [isUploadingAttachments, setIsUploadingAttachments] = useState(false);
   const [isConnectionGateDismissed, setIsConnectionGateDismissed] = useState(false);
+  const [sentPhones, setSentPhones] = useState<string[]>([]);
   const [feedback, setFeedback] = useState<{
     show: boolean;
     type: "success" | "error";
@@ -417,6 +418,40 @@ export function CampanhasShell({ userId, userEmail, initialMessage, onConnection
         `Disparo concluído: ${summary.sent}/${summary.attempted} enviado(s), ${summary.failed} falha(s).`,
       );
 
+      const successfulPhones = summary.results.filter((r: any) => r.success).map((r: any) => r.number);
+      if (successfulPhones.length > 0) {
+        setSentPhones((prev) => [...prev, ...successfulPhones]);
+        
+        try {
+          const content = `Data do Disparo: ${new Date().toLocaleString('pt-BR')}\nCampanha: ${draft.campaignName || 'Campanha WhatsApp'}\n\nMensagem:\n${draft.message}`;
+          const base64Content = btoa(unescape(encodeURIComponent(content)));
+          const filename = `Campanha_WhatsApp_${new Date().toISOString().slice(0,10).replace(/-/g,'')}.txt`;
+          
+          for (const phone of successfulPhones) {
+            const searchResponse = await fetch(`/api/clientes/search?q=${phone}`);
+            if (!searchResponse.ok) continue;
+            const searchData = await searchResponse.json();
+            const client = searchData.find((c: any) => 
+              c.contatos?.some((ct: any) => ct.valor.replace(/\D/g, '').includes(phone))
+            );
+            
+            if (client) {
+              await fetch(`/api/clientes/${client.id_cliente}/anexos`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  nome: filename,
+                  tipoMime: 'text/plain',
+                  dataUrl: `data:text/plain;base64,${base64Content}`
+                })
+              });
+            }
+          }
+        } catch (err) {
+          console.error("Failed to save campaign history to client attachments", err);
+        }
+      }
+
       if (summary.failed > 0 && summary.sent === 0) {
         setFeedback({
           show: true,
@@ -541,6 +576,28 @@ export function CampanhasShell({ userId, userEmail, initialMessage, onConnection
                   return current;
                 });
                 setCampaignStatus(`Telefone ${phone} adicionado aos destinatários.`);
+              }}
+              sentPhones={sentPhones}
+              onPhonesSelected={(phones) => {
+                setDraft((current) => {
+                  let newRecipients = [...current.recipients];
+                  
+                  for (const phone of phones) {
+                    const cleaned = phone.replace(/\D/g, '');
+                    const emptyIndex = newRecipients.findIndex(r => !r || r.replace(/\D/g, '').length === 0);
+                    
+                    if (emptyIndex >= 0) {
+                      newRecipients = replaceRecipientAt(newRecipients, emptyIndex, cleaned);
+                    } else if (newRecipients.length < MAX_WHATSAPP_RECIPIENTS) {
+                      newRecipients.push(cleaned);
+                    }
+                  }
+                  
+                  return {
+                    ...current,
+                    recipients: normalizeRecipientState(newRecipients)
+                  };
+                });
               }}
             />
 
