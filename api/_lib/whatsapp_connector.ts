@@ -110,6 +110,9 @@ export const initializeLocalWhatsAppConnector = async () => {
           '--no-first-run',
           '--no-zygote',
           '--disable-gpu',
+          '--ignore-certificate-errors',
+          '--disable-web-security',
+          '--disable-features=IsolateOrigins,site-per-process'
         ],
       },
       webVersionCache: {
