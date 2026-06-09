@@ -408,6 +408,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
         
         const progress = Math.min(100, Math.round(((i + chunk.length) / contactsToImport.length) * 100));
         setImportProgress(progress);
+        await new Promise(r => setTimeout(r, 50)); // Permite que a UI renderize a progressbar
       }
 
       if (hasConnectionError) {
@@ -417,6 +418,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
       } else if (lastErrorMsg) {
          alert("Erro na importação: " + lastErrorMsg);
       } else {
+        await new Promise(r => setTimeout(r, 500)); // Mantém o 100% visível brevemente
         setImportStats({
           total: contactsToImport.length,
           imported: totalImported,
@@ -612,7 +614,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
                   )}
                   <span className="relative z-10 flex items-center gap-2">
                     {isImporting ? <Loader2 size={16} className="animate-spin" /> : <UploadCloud size={16} />}
-                    {isImporting ? `Importando... ${importProgress}%` : 'Importar Contatos para Conta Outlook'}
+                    {isImporting ? `Importando... ${importProgress}%` : 'Importar Contatos para o Google Contacts'}
                   </span>
                 </button>
             </div>
