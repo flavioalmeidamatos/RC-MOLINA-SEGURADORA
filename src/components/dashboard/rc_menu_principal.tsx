@@ -161,6 +161,16 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const [aniversariantesMes, setAniversariantesMes] = useState<AniversarianteMes[]>([]);
   const [isLoadingAniversariantes, setIsLoadingAniversariantes] = useState(false);
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
   const [agendaReminderState, setAgendaReminderState] = useState<AgendaReminderState>({});
   const [activeAgendaReminder, setActiveAgendaReminder] = useState<ActiveAgendaReminder | null>(null);
   const [reminderSnoozeMinutes, setReminderSnoozeMinutes] = useState("5");
