@@ -6,7 +6,10 @@ import { getWhatsAppBridgeStatus, logoutWhatsAppBridge, sendCampaignToWhatsAppBr
 const asyncRoute =
   (handler: express.RequestHandler): express.RequestHandler =>
   (req, res, next) => {
-    Promise.resolve(handler(req, res, next)).catch(next);
+    Promise.resolve(handler(req, res, next)).catch((err) => {
+      console.error('[WHATSAPP API ERROR]', err);
+      res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+    });
   };
 
 export const registerWhatsAppBridgeRoutes = (app: express.Express) => {
