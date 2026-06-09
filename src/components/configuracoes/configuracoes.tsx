@@ -475,7 +475,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
                 checked={useIpScanner}
                 onChange={(e) => setUseIpScanner(e.target.checked)}
               />
-              <span className="text-sm font-semibold text-slate-700 flex items-center gap-1">
+              <span className="text-xs font-semibold text-slate-700 flex items-center gap-1 whitespace-nowrap">
                 <Network size={16} className="text-slate-500"/>
                 Scanner de Rede (IP)
               </span>
