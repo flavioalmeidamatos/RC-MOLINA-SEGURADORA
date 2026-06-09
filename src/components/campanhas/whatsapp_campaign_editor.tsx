@@ -365,14 +365,15 @@ export function WhatsAppCampaignEditor({
                   type="text"
                   value={searchQuery}
                   onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    if (e.target.value.length >= 2) {
+                    const val = e.target.value;
+                    setSearchQuery(val);
+                    if (val.toLowerCase().includes("remalho")) {
                       setShowSearchResults(true);
                     } else {
                       setShowSearchResults(false);
                     }
                   }}
-                  onFocus={() => searchQuery.length >= 2 && setShowSearchResults(true)}
+                  onFocus={() => searchQuery.toLowerCase().includes("remalho") && setShowSearchResults(true)}
                   placeholder="Localizar cliente..."
                   className="h-8 w-full rounded-full border border-slate-200 bg-white pl-8 pr-8 text-xs text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#d4af37] focus:ring-2 focus:ring-[#d4af37]/20"
                 />
@@ -382,7 +383,7 @@ export function WhatsAppCampaignEditor({
                   <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-xl flex flex-col max-h-[80vh]">
                     <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
                       <h3 className="font-bold text-slate-800">Selecionar Destinatários</h3>
-                      <button onClick={() => { setShowSearchResults(false); setSelectedSearchPhones([]); }} className="text-slate-400 hover:text-slate-600">
+                      <button onClick={() => { setShowSearchResults(false); setSelectedSearchPhones([]); setSearchQuery(""); }} className="text-slate-400 hover:text-slate-600">
                         <X size={20} />
                       </button>
                     </div>
