@@ -1,0 +1,12 @@
+D:\APRENDIZADO APP\RC-MOLINA-SEGURADORA\RC-MOLINA-APP\bin\Release\net8.0-windows\publish\RC-MOLINA-APP.exe
+D:\APRENDIZADO APP\RC-MOLINA-SEGURADORA\RC-MOLINA-APP\bin\Release\net8.0-windows\publish\runtimes\win-x86\native\WebView2Loader.dll
+D:\APRENDIZADO APP\RC-MOLINA-SEGURADORA\RC-MOLINA-APP\bin\Release\net8.0-windows\publish\runtimes\win-x64\native\WebView2Loader.dll
+D:\APRENDIZADO APP\RC-MOLINA-SEGURADORA\RC-MOLINA-APP\bin\Release\net8.0-windows\publish\runtimes\win-arm64\native\WebView2Loader.dll
+D:\APRENDIZADO APP\RC-MOLINA-SEGURADORA\RC-MOLINA-APP\bin\Release\net8.0-windows\publish\RC-MOLINA-APP.dll
+D:\APRENDIZADO APP\RC-MOLINA-SEGURADORA\RC-MOLINA-APP\bin\Release\net8.0-windows\publish\RC-MOLINA-APP.deps.json
+D:\APRENDIZADO APP\RC-MOLINA-SEGURADORA\RC-MOLINA-APP\bin\Release\net8.0-windows\publish\RC-MOLINA-APP.runtimeconfig.json
+D:\APRENDIZADO APP\RC-MOLINA-SEGURADORA\RC-MOLINA-APP\bin\Release\net8.0-windows\publish\RC-MOLINA-APP.pdb
+D:\APRENDIZADO APP\RC-MOLINA-SEGURADORA\RC-MOLINA-APP\bin\Release\net8.0-windows\publish\CommunityToolkit.Mvvm.dll
+D:\APRENDIZADO APP\RC-MOLINA-SEGURADORA\RC-MOLINA-APP\bin\Release\net8.0-windows\publish\Microsoft.Web.WebView2.Core.dll
+D:\APRENDIZADO APP\RC-MOLINA-SEGURADORA\RC-MOLINA-APP\bin\Release\net8.0-windows\publish\Microsoft.Web.WebView2.WinForms.dll
+D:\APRENDIZADO APP\RC-MOLINA-SEGURADORA\RC-MOLINA-APP\bin\Release\net8.0-windows\publish\Microsoft.Web.WebView2.Wpf.dll

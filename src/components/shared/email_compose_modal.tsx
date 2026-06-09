@@ -179,9 +179,13 @@ export function EmailComposeModal({
   }
 
   function isValidEmail(email: string) {
-    // Stricter regex to enforce TLD and valid format
-    const regex = /^[\w!#$%&'*+/=?^_{|}~.-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    return regex.test(email.trim());
+    let cleanEmail = email.trim();
+    const match = cleanEmail.match(/<([^>]+)>/);
+    if (match) {
+      cleanEmail = match[1].trim();
+    }
+    const regex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+    return regex.test(cleanEmail);
   }
 
   function validateEmails(emails: string) {

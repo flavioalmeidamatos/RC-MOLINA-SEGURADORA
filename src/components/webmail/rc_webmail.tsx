@@ -696,7 +696,7 @@ export function RCWebmail({
     `;
 
     patchCompose({
-      to: compactSender(selectedMessage.from),
+      to: selectedMessage.from,
       subject: replySubject,
       bodyHtml: quotedContent,
     });
@@ -775,8 +775,13 @@ export function RCWebmail({
   }
 
   function isValidEmail(email: string) {
+    let cleanEmail = email.trim();
+    const match = cleanEmail.match(/<([^>]+)>/);
+    if (match) {
+      cleanEmail = match[1].trim();
+    }
     const regex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
-    return regex.test(email.trim());
+    return regex.test(cleanEmail);
   }
 
   function validateEmails(emails: string) {

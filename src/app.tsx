@@ -98,6 +98,30 @@ export default function App() {
     syncSession();
   }, []);
 
+  useEffect(() => {
+    const handleMessage = (e: MessageEvent) => {
+      try {
+        const payload = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
+        if (payload.action === 'request_close') {
+          const currentSession = getStoredSession();
+          if (!currentSession) {
+             if ((window as any).chrome && (window as any).chrome.webview) {
+               (window as any).chrome.webview.postMessage(JSON.stringify({ action: "close_app" }));
+             }
+          }
+        }
+      } catch { }
+    };
+    if ((window as any).chrome && (window as any).chrome.webview) {
+      (window as any).chrome.webview.addEventListener('message', handleMessage);
+    }
+    return () => {
+      if ((window as any).chrome && (window as any).chrome.webview) {
+        (window as any).chrome.webview.removeEventListener('message', handleMessage);
+      }
+    };
+  }, []);
+
   const handleLogin = (nextPerfil: UsuarioPerfil) => {
     const nextSession = storeSession(nextPerfil);
     setSession(nextSession);

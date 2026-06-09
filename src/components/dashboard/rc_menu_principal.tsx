@@ -171,6 +171,25 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, []);
+
+  useEffect(() => {
+    const handleMessage = (e: MessageEvent) => {
+      try {
+        const payload = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
+        if (payload.action === 'request_close') {
+          setShowLogoutConfirmModal(true);
+        }
+      } catch { }
+    };
+    if ((window as any).chrome && (window as any).chrome.webview) {
+      (window as any).chrome.webview.addEventListener('message', handleMessage);
+    }
+    return () => {
+      if ((window as any).chrome && (window as any).chrome.webview) {
+        (window as any).chrome.webview.removeEventListener('message', handleMessage);
+      }
+    };
+  }, []);
   const [agendaReminderState, setAgendaReminderState] = useState<AgendaReminderState>({});
   const [activeAgendaReminder, setActiveAgendaReminder] = useState<ActiveAgendaReminder | null>(null);
   const [reminderSnoozeMinutes, setReminderSnoozeMinutes] = useState("5");

@@ -328,6 +328,7 @@ namespace RCMolinaApp.Views
                 }
                 else if (action == "close_app")
                 {
+                    _isCloseConfirmed = true;
                     Close();
                 }
                 else if (action == "list_scanners")
@@ -347,14 +348,29 @@ namespace RCMolinaApp.Views
                 System.Diagnostics.Debug.WriteLine($"Erro ao processar mensagem do WebView: {ex.Message}");
             }
         }
-        private bool _isClosingApp = false;
+        private bool _isCloseConfirmed = false;
+        private bool _isCleaningUp = false;
 
         private async void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
         {
-            if (!_isClosingApp)
+            if (!_isCloseConfirmed)
             {
                 e.Cancel = true;
-                _isClosingApp = true;
+                if (AppWebView.CoreWebView2 != null)
+                {
+                    AppWebView.CoreWebView2.PostWebMessageAsJson("{\"action\": \"request_close\"}");
+                }
+                else
+                {
+                    _isCloseConfirmed = true;
+                    _isCleaningUp = true;
+                    await CleanupAndExitAsync();
+                }
+            }
+            else if (!_isCleaningUp)
+            {
+                e.Cancel = true;
+                _isCleaningUp = true;
                 await CleanupAndExitAsync();
             }
         }
