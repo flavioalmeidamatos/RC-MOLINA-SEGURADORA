@@ -365,31 +365,60 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
         return;
       }
 
-      const response = await fetch('/api/gmail/import-contacts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contacts: contactsToImport })
-      });
+      const chunkSize = 50;
+      let totalImported = 0;
+      let allRejected = [];
+      let hasScopeError = false;
+      let hasConnectionError = false;
+      let lastErrorMsg = "";
 
-      const result = await response.json();
-      
-      if (response.ok && result.success) {
-        setImportStats({
-          total: result.totalReceived,
-          imported: result.importedCount,
-          rejected: result.rejectedContacts.length
+      for (let i = 0; i < contactsToImport.length; i += chunkSize) {
+        const chunk = contactsToImport.slice(i, i + chunkSize);
+        const response = await fetch('/api/gmail/import-contacts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contacts: chunk })
         });
 
-        if (result.rejectedContacts.length > 0) {
-           await downloadRejectedExcel(result.rejectedContacts);
+        let result;
+        try {
+          result = await response.json();
+        } catch (e) {
+          throw new Error(`Timeout ou erro no servidor (Status ${response.status}). O lote foi muito grande ou o servidor falhou.`);
         }
-      } else {
-        if (result.error === 'Conta Gmail nao conectada.' || result.code === 'gmail_account_not_connected') {
-           alert("Por favor, conecte ou reconecte seu Gmail na tela de e-mails para autorizar o Google Contatos.");
-        } else if (result.error && result.error.includes("insufficient_scope")) {
-           alert("O sistema requer uma nova permissão (Contatos) no seu Gmail. Por favor, desconecte e conecte o Gmail novamente.");
+        
+        if (response.ok && result.success) {
+          totalImported += result.importedCount || 0;
+          if (result.rejectedContacts) {
+             allRejected = allRejected.concat(result.rejectedContacts);
+          }
         } else {
-           alert("Erro na importação: " + (result.error || "Erro desconhecido."));
+          if (result.error === 'Conta Gmail nao conectada.' || result.code === 'gmail_account_not_connected') {
+             hasConnectionError = true;
+          } else if (result.error && result.error.includes("insufficient_scope")) {
+             hasScopeError = true;
+          } else {
+             lastErrorMsg = result.error || "Erro desconhecido.";
+          }
+          break; // Stop processing further chunks on error
+        }
+      }
+
+      if (hasConnectionError) {
+         alert("Por favor, conecte ou reconecte seu Gmail na tela de e-mails para autorizar o Google Contatos.");
+      } else if (hasScopeError) {
+         alert("O sistema requer uma nova permissão (Contatos) no seu Gmail. Por favor, desconecte e conecte o Gmail novamente.");
+      } else if (lastErrorMsg) {
+         alert("Erro na importação: " + lastErrorMsg);
+      } else {
+        setImportStats({
+          total: contactsToImport.length,
+          imported: totalImported,
+          rejected: allRejected.length
+        });
+
+        if (allRejected.length > 0) {
+           await downloadRejectedExcel(allRejected);
         }
       }
     } catch (err: any) {
