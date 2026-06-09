@@ -333,7 +333,9 @@ export const searchClientesHandler = async (req: express.Request, res: express.R
   try {
     const searchTerm = `%${query.trim()}%`;
     const result = await pool.query(`
-      ${clienteSelect}
+      SELECT c.id_cliente, c.nome_completo,
+        COALESCE((SELECT json_agg(row_to_json(cc)) FROM "RCMOLINASEGUROS"."CLIENTES_CONTATOS" cc WHERE cc.id_cliente = c.id_cliente), '[]'::json) as contatos
+      FROM "RCMOLINASEGUROS"."CLIENTES" c
       WHERE c.nome_completo ILIKE $1 
          OR c.codigo ILIKE $1
          OR c.cpf ILIKE $1
@@ -342,7 +344,6 @@ export const searchClientesHandler = async (req: express.Request, res: express.R
            SELECT 1 FROM "RCMOLINASEGUROS"."CLIENTES_CONTATOS" ct
            WHERE ct.id_cliente = c.id_cliente AND ct.valor ILIKE $1
          )
-      ORDER BY c.data_cadastro DESC
       LIMIT 15
     `, [searchTerm]);
     

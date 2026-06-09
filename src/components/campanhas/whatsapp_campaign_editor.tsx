@@ -72,7 +72,7 @@ export function WhatsAppCampaignEditor({
       } finally {
         setIsSearching(false);
       }
-    }, 400);
+    }, 150);
 
     return () => clearTimeout(timer);
   }, [searchQuery]);
