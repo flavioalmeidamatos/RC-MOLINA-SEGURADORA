@@ -35,6 +35,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isImporting, setIsImporting] = useState<boolean>(false);
+  const [importProgress, setImportProgress] = useState<number>(0);
   const [importStats, setImportStats] = useState<{ total: number, imported: number, rejected: number } | null>(null);
 
   useEffect(() => {
@@ -372,6 +373,8 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
       let hasConnectionError = false;
       let lastErrorMsg = "";
 
+      setImportProgress(0);
+
       for (let i = 0; i < contactsToImport.length; i += chunkSize) {
         const chunk = contactsToImport.slice(i, i + chunkSize);
         const response = await fetch('/api/gmail/import-contacts', {
@@ -402,6 +405,9 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
           }
           break; // Stop processing further chunks on error
         }
+        
+        const progress = Math.min(100, Math.round(((i + chunk.length) / contactsToImport.length) * 100));
+        setImportProgress(progress);
       }
 
       if (hasConnectionError) {
@@ -592,15 +598,23 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
                 onChange={handleFileUpload} 
                 className="hidden" 
               />
-              <button
-                type="button"
-                onClick={handleImportClick}
-                disabled={isImporting}
-                className="flex h-11 items-center gap-2 rounded-xl bg-[#0078d4] px-5 text-sm font-semibold text-white transition-colors hover:bg-[#006cbd] disabled:opacity-70 disabled:cursor-not-allowed ml-auto"
-              >
-                {isImporting ? <Loader2 size={16} className="animate-spin" /> : <UploadCloud size={16} />}
-                Importar Contatos para Conta Outlook
-              </button>
+                <button
+                  type="button"
+                  onClick={handleImportClick}
+                  disabled={isImporting}
+                  className="relative flex h-11 items-center justify-center gap-2 rounded-xl bg-[#0078d4] px-5 text-sm font-semibold text-white transition-all hover:bg-[#006cbd] disabled:opacity-90 disabled:cursor-not-allowed ml-auto overflow-hidden min-w-[280px]"
+                >
+                  {isImporting && (
+                    <div 
+                      className="absolute left-0 top-0 bottom-0 bg-[#004e8c] transition-all duration-300 ease-out"
+                      style={{ width: `${importProgress}%` }}
+                    />
+                  )}
+                  <span className="relative z-10 flex items-center gap-2">
+                    {isImporting ? <Loader2 size={16} className="animate-spin" /> : <UploadCloud size={16} />}
+                    {isImporting ? `Importando... ${importProgress}%` : 'Importar Contatos para Conta Outlook'}
+                  </span>
+                </button>
             </div>
 
             {(isScanning || scannedImage) && (
