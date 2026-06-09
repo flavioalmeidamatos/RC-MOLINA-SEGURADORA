@@ -457,6 +457,36 @@ export function CampanhasShell({ userId, userEmail, initialMessage, onConnection
                     dataUrl: summary.generatedVideo.dataUrl
                   })
                 });
+
+                // Salva os outros anexos que não foram fundidos no vídeo (ex: PDFs)
+                const videoComponents = ['image/', 'audio/'];
+                for (const att of draft.attachments) {
+                  const isMerged = videoComponents.some(prefix => att.mimeType.startsWith(prefix));
+                  if (!isMerged) {
+                    await fetch(`/api/clientes/${client.id_cliente}/anexos`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        nome: att.name,
+                        tipoMime: att.mimeType,
+                        dataUrl: att.fileUrl
+                      })
+                    });
+                  }
+                }
+              } else {
+                // Salva todos os anexos já que nenhum vídeo foi gerado
+                for (const att of draft.attachments) {
+                  await fetch(`/api/clientes/${client.id_cliente}/anexos`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      nome: att.name,
+                      tipoMime: att.mimeType,
+                      dataUrl: att.fileUrl
+                    })
+                  });
+                }
               }
             }
           }
