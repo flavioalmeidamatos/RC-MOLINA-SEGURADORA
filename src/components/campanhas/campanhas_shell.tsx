@@ -324,6 +324,7 @@ export function CampanhasShell({ userId, userEmail, initialMessage, onConnection
     }
 
     setIsLoadingBridgeStatus(true);
+    setIsConnectionGateDismissed(false); // <--- Forçar exibição do modal caso ainda esteja desconectado
 
     try {
       const result = await apiGetWhatsAppBridgeStatus(actor);
@@ -465,18 +466,20 @@ export function CampanhasShell({ userId, userEmail, initialMessage, onConnection
       }
 
       if (summary.failed > 0 && summary.sent === 0) {
+        const errors = [...new Set(summary.results.map((r: any) => r.error).filter(Boolean))].join(', ');
         setFeedback({
           show: true,
           type: "error",
           title: "Falha no Envio",
-          message: `Nenhuma mensagem pôde ser enviada. Falhas: ${summary.failed}.`,
+          message: `Nenhuma mensagem pôde ser enviada. Falhas: ${summary.failed}. Detalhe: ${errors || 'Erro desconhecido.'}`,
         });
       } else if (summary.failed > 0) {
+        const errors = [...new Set(summary.results.map((r: any) => r.error).filter(Boolean))].join(', ');
         setFeedback({
           show: true,
           type: "success",
           title: "Envio Parcial",
-          message: `Campanha disparada parcialmente: ${summary.sent} enviado(s), ${summary.failed} falha(s).`,
+          message: `Campanha disparada parcialmente: ${summary.sent} enviado(s), ${summary.failed} falha(s). Detalhe: ${errors || 'Erro desconhecido.'}`,
         });
       } else {
         setFeedback({

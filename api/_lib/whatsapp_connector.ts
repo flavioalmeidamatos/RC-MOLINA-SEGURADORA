@@ -186,10 +186,20 @@ export const getLocalWhatsAppBridgeStatus = async (): Promise<WhatsAppBridgeStat
 };
 
 export const logoutLocalWhatsAppBridge = async () => {
-  await initializeLocalWhatsAppConnector();
+  await initializeLocalWhatsAppConnector().catch(() => {});
 
   if (client) {
-    await client.logout();
+    try {
+      await client.logout();
+    } catch (error) {
+      console.error('[WHATSAPP] Ignorando erro no logout do cliente:', error);
+    }
+  }
+
+  try {
+    await fs.rm(resolveSessionDir(), { recursive: true, force: true });
+  } catch (error) {
+    console.error('[WHATSAPP] Ignorando erro ao deletar diretorio de sessao:', error);
   }
 
   await handleDisconnect(null);
