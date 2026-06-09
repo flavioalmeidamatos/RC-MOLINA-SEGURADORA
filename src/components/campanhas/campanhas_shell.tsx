@@ -445,6 +445,18 @@ export function CampanhasShell({ userId, userEmail, initialMessage, onConnection
                   dataUrl: `data:text/plain;base64,${base64Content}`
                 })
               });
+
+              if (summary.generatedVideo) {
+                await fetch(`/api/clientes/${client.id_cliente}/anexos`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    nome: summary.generatedVideo.name,
+                    tipoMime: summary.generatedVideo.mimeType,
+                    dataUrl: summary.generatedVideo.dataUrl
+                  })
+                });
+              }
             }
           }
         } catch (err) {

@@ -86,6 +86,11 @@ export interface WhatsAppDispatchResult {
   sent: number;
   failed: number;
   results: WhatsAppDispatchRecipientResult[];
+  generatedVideo?: {
+    dataUrl: string;
+    name: string;
+    mimeType: string;
+  };
 }
 
 export type CampaignHistoryEventType = "created" | "updated" | "deleted" | "dispatched";

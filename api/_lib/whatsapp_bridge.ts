@@ -325,6 +325,7 @@ export const sendCampaignToWhatsAppBridge = async (
   }
 
   let media = await mapAttachmentsToBridgeMedia(payload.attachments || []);
+  let generatedVideo: { dataUrl: string; name: string; mimeType: string } | undefined = undefined;
 
   const images = media.filter((item) => item.type.startsWith('image/'));
   const audios = media.filter((item) => item.type.startsWith('audio/'));
@@ -338,6 +339,11 @@ export const sendCampaignToWhatsAppBridge = async (
       // Filter out the merged image and audio, then add the video
       media = media.filter((item) => item !== imageMedia && item !== audioMedia);
       media.push(videoMedia);
+      generatedVideo = {
+        dataUrl: videoMedia.base64,
+        name: videoMedia.name,
+        mimeType: videoMedia.type,
+      };
     } catch (error) {
       console.error('[WHATSAPP] Erro ao fundir imagem e audio em video:', error);
       // Fallback: keep media as-is
@@ -393,5 +399,6 @@ export const sendCampaignToWhatsAppBridge = async (
     sent,
     failed: results.length - sent,
     results,
+    generatedVideo,
   };
 };
