@@ -676,12 +676,208 @@ const rewriteSimulatorText = (content: string, contentType: string) => {
   return rewriteSimulatorAppPaths(rewritten);
 };
 
+  fillSulamericaLogin();
+  acceptSulamericaPrivacy();
+  
+  [250, 750, 1500, 3000, 5000].forEach(function (delay) {
+    window.setTimeout(function() {
+      fillSulamericaLogin();
+      acceptSulamericaPrivacy();
+    }, delay);
+  });
+})();
+</script>`;
+
+const rewriteSulamericaText = (content: string, contentType: string, upstreamPath: string) => {
+  let rewritten = content
+    .replaceAll(SULAMERICA_ORIGIN, SULAMERICA_PROXY_PREFIX)
+    .replaceAll('http://os11.sulamerica.com.br', SULAMERICA_PROXY_PREFIX)
+    .replaceAll('//os11.sulamerica.com.br', SULAMERICA_PROXY_PREFIX);
+
+  if (contentType.includes('text/html')) {
+    const basePath = upstreamPath.includes('/') ? upstreamPath.slice(0, upstreamPath.lastIndexOf('/') + 1) : '/';
+    rewritten = rewritten
+      .replace(/<base\s+href=["'][^"']*["']\s*\/?>/i, '')
+      .replace(/<head([^>]*)>/i, `<head$1><base href="${SULAMERICA_PROXY_PREFIX}${basePath}" />`)
+      .replace(/\b(href|src|action)=["']\/(?!\/|sulamerica-proxy\/)/gi, `$1="${SULAMERICA_PROXY_PREFIX}/`);
+
+    rewritten = rewritten.includes('</body>')
+      ? rewritten.replace('</body>', `${sulamericaAutofillScript}</body>`)
+      : `${rewritten}${sulamericaAutofillScript}`;
+  }
+
+  if (contentType.includes('text/css') || contentType.includes('javascript')) {
+    rewritten = rewritten
+      .replace(/url\((['"]?)\/(?!\/)/gi, `url($1${SULAMERICA_PROXY_PREFIX}/`)
+      .replace(
+        new RegExp(`(["'])/(?!sulamerica-proxy/)(${SULAMERICA_APP_PATHS})(?=/|\\?)`, 'gi'),
+        `$1${SULAMERICA_PROXY_PREFIX}/$2`
+      );
+  }
+
+  return rewriteSulamericaAppPaths(rewritten);
+};
+
+const amilAutofillScript = `
+<script>
+(function () {
+  var loginValue = ${JSON.stringify(AMIL_LOGIN)};
+  var senhaValue = ${JSON.stringify(AMIL_PASSWORD)};
+  var enterPressed = false;
+
+  function findLoginInput() {
+    var candidates = document.querySelectorAll('#login, input[name="login"], input[name*="login" i], input[id*="login" i], input[name*="cpf" i], input[id*="cpf" i], input[type="email"], input[type="text"]');
+    for (var index = 0; index < candidates.length; index += 1) {
+      var input = candidates[index];
+      if (input.type !== 'hidden' && !input.disabled && !input.readOnly) return input;
+    }
+    return null;
+  }
+
+  function findPasswordInput() {
+    return document.querySelector('input[type="password"], input[name*="senha" i], input[id*="senha" i], input[name*="password" i], input[id*="password" i]');
+  }
+
+  function triggerFieldEvents(input) {
+    input.setAttribute('autocomplete', 'off');
+    input.setAttribute('data-lpignore', 'true');
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  function pressEnter(input) {
+    if (!input || enterPressed) return;
+    enterPressed = true;
+    var perfil = document.getElementById('perfilUsuario');
+    if (perfil && !perfil.value) {
+      perfil.value = 'CORRETOR';
+      triggerFieldEvents(perfil);
+    }
+
+    input.focus();
+    ['keydown', 'keypress', 'keyup'].forEach(function (eventName) {
+      input.dispatchEvent(new KeyboardEvent(eventName, {
+        bubbles: true,
+        cancelable: true,
+        key: 'Enter',
+        code: 'Enter',
+        keyCode: 13,
+        which: 13
+      }));
+    });
+
+    var button = document.getElementById('efetuarLogin') || document.querySelector('button[type="submit"], input[type="submit"], button.acaoPrincipal, button, a[role="button"]');
+    if (button) button.click();
+
+    window.setTimeout(function () {
+      var form = document.getElementById('formLoginCorretor');
+      if (form && location.href.indexOf('/login') !== -1) form.submit();
+    }, 1200);
+  }
+
+  function fillAmilLogin() {
+    var login = findLoginInput();
+    var senha = findPasswordInput();
+
+    if (login) {
+      login.value = loginValue;
+      triggerFieldEvents(login);
+    }
+
+    if (senha) {
+      senha.value = senhaValue;
+      triggerFieldEvents(senha);
+      window.setTimeout(function () { pressEnter(senha); }, 1800);
+    }
+  }
+
+  fillAmilLogin();
+  [250, 750, 1500, 3000, 5000].forEach(function (delay) {
+    window.setTimeout(fillAmilLogin, delay);
+  });
+})();
+</script>`;
+
+const rewriteAmilText = (content: string, contentType: string, upstreamPath: string) => {
+  let rewritten = content
+    .replaceAll(AMIL_ORIGIN, AMIL_PROXY_PREFIX)
+    .replaceAll('http://portalcorretor.amil.com.br', AMIL_PROXY_PREFIX)
+    .replaceAll('//portalcorretor.amil.com.br', AMIL_PROXY_PREFIX);
+
+  if (contentType.includes('text/html')) {
+    const basePath = upstreamPath.includes('/') ? upstreamPath.slice(0, upstreamPath.lastIndexOf('/') + 1) : '/';
+    rewritten = rewritten
+      .replace(/<base\s+href=["'][^"']*["']\s*\/?>/i, '')
+      .replace(/<head([^>]*)>/i, `<head$1><base href="${AMIL_PROXY_PREFIX}${basePath}" />`)
+      .replace(/\b(href|src|action)=["']\/(?!\/|amil-proxy\/)/gi, `$1="${AMIL_PROXY_PREFIX}/`);
+
+    rewritten = rewritten.includes('</body>')
+      ? rewritten.replace('</body>', `${amilAutofillScript}</body>`)
+      : `${rewritten}${amilAutofillScript}`;
+  }
+
+  if (contentType.includes('text/css') || contentType.includes('javascript')) {
+    rewritten = rewritten
+      .replace(/url\((['"]?)\/(?!\/)/gi, `url($1${AMIL_PROXY_PREFIX}/`)
+      .replace(
+        new RegExp(`(["'])/(?!amil-proxy/)(${AMIL_APP_PATHS})(?=/|\\?)`, 'gi'),
+        `$1${AMIL_PROXY_PREFIX}/$2`
+      );
+  }
+
+  return rewriteAmilAppPaths(rewritten);
+};
+
+const rewriteSimulatorText = (content: string, contentType: string) => {
+  const proxyOrigin = SIMULATOR_PROXY_PREFIX;
+  let rewritten = content
+    .replaceAll(SIMULATOR_ORIGIN, proxyOrigin)
+    .replaceAll('http://app.simuladoronline.com', proxyOrigin)
+    .replaceAll('//app.simuladoronline.com', proxyOrigin);
+
+  if (contentType.includes('text/html')) {
+    rewritten = rewritten
+      .replace(/<base\s+href=["'][^"']*["']\s*\/?>/i, `<base href="${SIMULATOR_PROXY_PREFIX}/" />`)
+      .replace(/\b(href|src|action)=["']\/(?!\/|simulador-proxy\/)/gi, `$1="${SIMULATOR_PROXY_PREFIX}/`)
+      .replace(/window\.BASE_URL\s*=\s*['"][^'"]*['"]/g, `window.BASE_URL = '${SIMULATOR_PROXY_PREFIX}/'`)
+      .replace(/window\.ASSETS_URL\s*=\s*['"][^'"]*['"]/g, `window.ASSETS_URL = '${SIMULATOR_PROXY_PREFIX}/static/'`)
+      .replace(
+        /<input([^>]*id=["']login_usuario["'][^>]*?)\s*\/?>/i,
+        '<input$1 value="Rosilene Rodrigues" autocomplete="off" data-lpignore="true">'
+      )
+      .replace(
+        /<input([^>]*id=["']login_senha["'][^>]*?)\s*\/?>/i,
+        '<input$1 value="123" autocomplete="off" data-lpignore="true">'
+      );
+
+    rewritten = rewritten.includes('</body>')
+      ? rewritten.replace('</body>', `${simulatorRegionRefreshScript}</body>`)
+      : `${rewritten}${simulatorRegionRefreshScript}`;
+  }
+
+  if (contentType.includes('text/css') || contentType.includes('javascript')) {
+    rewritten = rewritten
+      .replace(/url\((['"]?)\/(?!\/)/gi, `url($1${SIMULATOR_PROXY_PREFIX}/`)
+      .replace(
+        /return url\.match\(\/https\?\|www\/\)\?url:\(window\.BASE_URL\|\|""\)\+url/g,
+        'return url.match(/https?|www/)?url:(url.charAt(0)==="/"?url:(window.BASE_URL||"")+url)'
+      )
+      .replace(
+        new RegExp(`(["'])/(?!simulador-proxy/)(${SIMULATOR_APP_PATHS})/`, 'gi'),
+        `$1${SIMULATOR_PROXY_PREFIX}/$2/`
+      );
+  }
+
+  return rewriteSimulatorAppPaths(rewritten);
+};
+
 async function startServer() {
   const app = express();
   const PORT = Number(process.env.PORT) || 3000;
   const uploadDir = process.env.UPLOAD_DIR || path.join(__dirname, 'uploads');
 
-  app.use(express.json({ limit: '25mb' }));
+  app.use(express.json({ limit: '50mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '50mb' }));
   app.use('/uploads', express.static(uploadDir));
   void initializeLocalWhatsAppConnector();
 

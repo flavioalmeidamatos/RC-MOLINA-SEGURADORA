@@ -367,13 +367,9 @@ export function WhatsAppCampaignEditor({
                   onChange={(e) => {
                     const val = e.target.value;
                     setSearchQuery(val);
-                    if (val.toLowerCase().includes("remalho")) {
-                      setShowSearchResults(true);
-                    } else {
-                      setShowSearchResults(false);
-                    }
+                    setShowSearchResults(val.length >= 2);
                   }}
-                  onFocus={() => searchQuery.toLowerCase().includes("remalho") && setShowSearchResults(true)}
+                  onFocus={() => searchQuery.length >= 2 && setShowSearchResults(true)}
                   placeholder="Localizar cliente..."
                   className="h-8 w-full rounded-full border border-slate-200 bg-white pl-8 pr-8 text-xs text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#d4af37] focus:ring-2 focus:ring-[#d4af37]/20"
                 />
