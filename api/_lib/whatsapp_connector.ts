@@ -226,39 +226,49 @@ export const sendLocalWhatsAppBridgeMessage = async (
   const chatId = `${cleanedNumber}@c.us`;
   const responses = [];
 
-  if (Array.isArray(mediaItems) && mediaItems.length > 0) {
-    for (let index = 0; index < mediaItems.length; index += 1) {
-      if (index > 0) {
-        // Wait 2.5 seconds between sending consecutive media files to prevent congestion
-        await new Promise((resolve) => setTimeout(resolve, 2500));
+  try {
+    if (Array.isArray(mediaItems) && mediaItems.length > 0) {
+      for (let index = 0; index < mediaItems.length; index += 1) {
+        if (index > 0) {
+          // Wait 2.5 seconds between sending consecutive media files to prevent congestion
+          await new Promise((resolve) => setTimeout(resolve, 2500));
+        }
+
+        const mediaItem = mediaItems[index];
+        const base64Data = mediaItem.base64.includes(';base64,')
+          ? mediaItem.base64.split(';base64,')[1]
+          : mediaItem.base64;
+
+        const media = new MessageMedia(
+          mediaItem.type,
+          base64Data,
+          mediaItem.name || 'arquivo',
+        );
+
+        const options: any = {};
+        if (mediaItem.type.startsWith('audio/')) {
+          options.sendAudioAsVoice = true;
+        }
+
+        responses.push(await client.sendMessage(chatId, media, options));
       }
 
-      const mediaItem = mediaItems[index];
-      const base64Data = mediaItem.base64.includes(';base64,')
-        ? mediaItem.base64.split(';base64,')[1]
-        : mediaItem.base64;
-
-      const media = new MessageMedia(
-        mediaItem.type,
-        base64Data,
-        mediaItem.name || 'arquivo',
-      );
-
-      const options: any = {};
-      if (mediaItem.type.startsWith('audio/')) {
-        options.sendAudioAsVoice = true;
+      if (message) {
+        // Wait 1.5 seconds before sending the text message separately to ensure order and readability
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        responses.push(await client.sendMessage(chatId, message));
       }
-
-      responses.push(await client.sendMessage(chatId, media, options));
-    }
-
-    if (message) {
-      // Wait 1.5 seconds before sending the text message separately to ensure order and readability
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+    } else {
       responses.push(await client.sendMessage(chatId, message));
     }
-  } else {
-    responses.push(await client.sendMessage(chatId, message));
+  } catch (error: any) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    if (errorMsg.includes('detached Frame') || errorMsg.includes('Target closed') || errorMsg.includes('Session closed') || errorMsg.includes('Protocol error')) {
+      console.error('[WHATSAPP] Fatal error during send, disconnecting client:', errorMsg);
+      void handleDisconnect(errorMsg);
+      throw new Error('A conexão com o WhatsApp sofreu uma instabilidade (detached frame/target closed). Por favor, aguarde alguns segundos e tente novamente.');
+    }
+    throw error;
   }
 
   return {
