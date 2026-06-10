@@ -95,7 +95,7 @@ type UploadedDocument = {
   mimeType: string;
   extension: string;
   previewUrl: string;
-  previewKind: 'image' | 'pdf' | 'video' | 'audio' | 'document';
+  previewKind: 'image' | 'pdf' | 'video' | 'audio' | 'document' | 'text';
   caminhoArquivo?: string;
 };
 
@@ -391,6 +391,7 @@ const obterTipoPreview = (arquivo: File): UploadedDocument['previewKind'] => {
   if (arquivo.type.startsWith('video/')) return 'video';
   if (arquivo.type.startsWith('audio/')) return 'audio';
   if (arquivo.type === 'application/pdf' || obterExtensaoArquivo(arquivo.name) === 'pdf') return 'pdf';
+  if (arquivo.type.startsWith('text/') || obterExtensaoArquivo(arquivo.name) === 'txt') return 'text';
   return 'document';
 };
 
@@ -424,7 +425,7 @@ const criarDocumentoPersistido = (anexo: ClienteSearchResult['anexos'][number]):
     mimeType,
     extension,
     previewUrl: caminhoArquivo,
-    previewKind: mimeType.startsWith('image/') ? 'image' : mimeType.startsWith('video/') || extension === 'mp4' ? 'video' : mimeType.startsWith('audio/') || extension === 'ogg' || extension === 'mp3' ? 'audio' : extension === 'pdf' ? 'pdf' : 'document',
+    previewKind: mimeType.startsWith('image/') ? 'image' : mimeType.startsWith('video/') || extension === 'mp4' ? 'video' : mimeType.startsWith('audio/') || extension === 'ogg' || extension === 'mp3' ? 'audio' : extension === 'pdf' ? 'pdf' : mimeType.startsWith('text/') || extension === 'txt' ? 'text' : 'document',
     caminhoArquivo,
   };
 };
@@ -2234,11 +2235,11 @@ export const ClientRegistrationMultipage: React.FC = () => {
                                 alt={documento.name}
                                 className="h-full w-full object-cover"
                               />
-                            ) : documento.previewKind === 'pdf' ? (
+                            ) : documento.previewKind === 'pdf' || documento.previewKind === 'text' ? (
                               <iframe
                                 title={documento.name}
-                                src={`${documento.previewUrl}#toolbar=0&navpanes=0&scrollbar=0`}
-                                className="h-full w-full border-0"
+                                src={documento.previewKind === 'pdf' ? `${documento.previewUrl}#toolbar=0&navpanes=0&scrollbar=0` : documento.previewUrl}
+                                className="h-full w-full border-0 bg-white"
                               />
                             ) : documento.previewKind === 'video' ? (
                               <video
@@ -2380,8 +2381,8 @@ export const ClientRegistrationMultipage: React.FC = () => {
                       className="max-h-[72vh] w-full object-contain"
                     />
                   </div>
-                ) : selectedDocumentPreview.previewKind === 'pdf' ? (
-                  <div className="overflow-hidden rounded-[24px] border border-slate-200">
+                ) : selectedDocumentPreview.previewKind === 'pdf' || selectedDocumentPreview.previewKind === 'text' ? (
+                  <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white">
                     <iframe
                       title={selectedDocumentPreview.name}
                       src={selectedDocumentPreview.previewUrl}
