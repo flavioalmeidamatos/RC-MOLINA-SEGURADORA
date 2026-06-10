@@ -366,7 +366,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
         return;
       }
 
-      const chunkSize = 50;
+      const chunkSize = 10;
       let totalImported = 0;
       let allRejected = [];
       let hasScopeError = false;
@@ -377,33 +377,39 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
 
       for (let i = 0; i < contactsToImport.length; i += chunkSize) {
         const chunk = contactsToImport.slice(i, i + chunkSize);
-        const response = await fetch('/api/gmail/import-contacts', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contacts: chunk })
-        });
-
-        let result;
-        try {
-          result = await response.json();
-        } catch (e) {
-          throw new Error(`Timeout ou erro no servidor (Status ${response.status}). O lote foi muito grande ou o servidor falhou.`);
-        }
         
-        if (response.ok && result.success) {
-          totalImported += result.importedCount || 0;
-          if (result.rejectedContacts) {
-             allRejected = allRejected.concat(result.rejectedContacts);
+        try {
+          const response = await fetch('/api/gmail/import-contacts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contacts: chunk })
+          });
+
+          if (!response.ok) {
+            lastErrorMsg = `Timeout ou erro no servidor (Status ${response.status}). O lote foi muito grande ou o servidor falhou.`;
+            break;
           }
-        } else {
-          if (result.error === 'Conta Gmail nao conectada.' || result.code === 'gmail_account_not_connected') {
-             hasConnectionError = true;
-          } else if (result.error && result.error.includes("insufficient_scope")) {
-             hasScopeError = true;
+
+          const result = await response.json();
+          
+          if (result.success) {
+            totalImported += result.importedCount || 0;
+            if (result.rejectedContacts) {
+               allRejected = allRejected.concat(result.rejectedContacts);
+            }
           } else {
-             lastErrorMsg = result.error || "Erro desconhecido.";
+            if (result.error === 'Conta Gmail nao conectada.' || result.code === 'gmail_account_not_connected') {
+               hasConnectionError = true;
+            } else if (result.error && result.error.includes("insufficient_scope")) {
+               hasScopeError = true;
+            } else {
+               lastErrorMsg = result.error || "Erro desconhecido.";
+            }
+            break; // Stop processing further chunks on error
           }
-          break; // Stop processing further chunks on error
+        } catch (e) {
+          lastErrorMsg = "Falha na comunicação com o servidor ou timeout na resposta.";
+          break;
         }
         
         const progress = Math.min(100, Math.round(((i + chunk.length) / contactsToImport.length) * 100));
@@ -416,18 +422,19 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
       } else if (hasScopeError) {
          alert("O sistema requer uma nova permissão (Contatos) no seu Gmail. Por favor, desconecte e conecte o Gmail novamente.");
       } else if (lastErrorMsg) {
-         alert("Erro na importação: " + lastErrorMsg);
-      } else {
-        await new Promise(r => setTimeout(r, 500)); // Mantém o 100% visível brevemente
-        setImportStats({
-          total: contactsToImport.length,
-          imported: totalImported,
-          rejected: allRejected.length
-        });
+         alert("Importação interrompida: " + lastErrorMsg);
+      }
 
-        if (allRejected.length > 0) {
-           await downloadRejectedExcel(allRejected);
-        }
+      // Mesmo que tenha havido erro (parcial), se já importou algo ou finalizou, mostra as estatísticas
+      await new Promise(r => setTimeout(r, 500)); // Mantém o 100% visível brevemente
+      setImportStats({
+        total: contactsToImport.length,
+        imported: totalImported,
+        rejected: allRejected.length
+      });
+
+      if (allRejected.length > 0) {
+         await downloadRejectedExcel(allRejected);
       }
     } catch (err: any) {
       alert("Falha ao processar arquivo: " + err.message);
