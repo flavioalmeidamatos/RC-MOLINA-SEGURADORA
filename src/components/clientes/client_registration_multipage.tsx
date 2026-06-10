@@ -2304,7 +2304,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
       <div className="rounded-[28px] border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
         <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
           <div className="text-sm text-slate-500">
-            Etapa {activeTabIndex + 1} de {tabs.length}. Todas as telas do multipage estão prontas para navegaçãoo.
+            Etapa {activeTabIndex + 1} de {tabs.length}. Todas as telas de navegação do Cadastro de Clientes estão prontas para navegação.
           </div>
 
           <div className="grid grid-cols-2 gap-2.5 sm:flex sm:flex-wrap">
