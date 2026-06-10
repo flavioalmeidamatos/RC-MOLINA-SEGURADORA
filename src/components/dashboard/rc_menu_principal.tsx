@@ -1485,7 +1485,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
       {showLinksChooser ? (
         <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-4xl overflow-hidden rounded-[28px] border border-white/70 bg-white shadow-2xl flex flex-col max-h-[85vh]">
+          <div className="w-full max-w-4xl overflow-hidden rounded-[28px] border border-white/70 bg-white shadow-2xl flex flex-col max-h-[95vh]">
             <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5 shrink-0">
               <div>
                 <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#b58c2a]">
@@ -1539,7 +1539,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
               </div>
             ) : null}
 
-            <div className="overflow-y-auto custom-scrollbar p-6 h-[60vh] min-h-[400px]">
+            <div className="overflow-y-auto custom-scrollbar p-6 pb-8 h-[80vh] min-h-[600px]">
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {(activeLinkTab === 'simuladores'
                   ? [
