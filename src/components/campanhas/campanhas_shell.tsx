@@ -78,6 +78,8 @@ export function CampanhasShell({ userId, userEmail, initialMessage, onConnection
     type: "success" | "error";
     title: string;
     message: string;
+    generatedVideoUrl?: string;
+    generatedVideoName?: string;
   } | null>(null);
   const [showEmailComposeModal, setShowEmailComposeModal] = useState(false);
 
@@ -517,7 +519,9 @@ export function CampanhasShell({ userId, userEmail, initialMessage, onConnection
           show: true,
           type: "success",
           title: "Envio Concluído!",
-          message: `Campanha enviada com sucesso para os ${summary.sent} destinatários.${videoStr}`,
+          message: `A mensagem foi processada com sucesso.${videoStr}`,
+          generatedVideoUrl: summary.generatedVideo?.dataUrl,
+          generatedVideoName: summary.generatedVideo?.name
         });
       }
 
@@ -715,7 +719,23 @@ export function CampanhasShell({ userId, userEmail, initialMessage, onConnection
 
               {/* Title & Description */}
               <h3 className="text-base font-black text-slate-900 tracking-tight">{feedback.title}</h3>
-              <p className="mt-2 text-xs font-semibold leading-relaxed text-slate-500 px-2">{feedback.message}</p>
+              <p className="mt-2 text-xs font-semibold leading-relaxed text-slate-500 px-2 whitespace-pre-wrap">{feedback.message}</p>
+
+              {feedback.generatedVideoUrl && feedback.generatedVideoName && (
+                <div className="mt-4">
+                  <a
+                    href={feedback.generatedVideoUrl}
+                    download={feedback.generatedVideoName}
+                    className="inline-flex items-center gap-2 rounded-lg bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-4 w-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                    </svg>
+                    Baixar Vídeo Gerado
+                  </a>
+                  <p className="mt-1.5 text-[10px] text-slate-400">Para adicionar ao cliente, baixe e arraste para a aba "Documentos".</p>
+                </div>
+              )}
 
               {/* Elegant automatic closing progress bar */}
               <div className="mt-5 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
