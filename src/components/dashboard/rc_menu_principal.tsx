@@ -1512,7 +1512,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveLinkTab('simuladores')}
-                className={`py-3.5 px-4 text-sm font-black border-b-2 transition-all cursor-pointer ${
+                className={`h-[46px] px-4 flex items-center justify-center text-sm font-black border-b-2 transition-all cursor-pointer ${
                   activeLinkTab === 'simuladores'
                     ? 'border-[#b58c2a] text-[#b58c2a]'
                     : 'border-transparent text-slate-500 hover:text-slate-850'
@@ -1523,7 +1523,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveLinkTab('consorcios')}
-                className={`py-3.5 px-4 text-sm font-black border-b-2 transition-all cursor-pointer ${
+                className={`h-[46px] px-4 flex items-center justify-center text-sm font-black border-b-2 transition-all cursor-pointer ${
                   activeLinkTab === 'consorcios'
                     ? 'border-[#b58c2a] text-[#b58c2a]'
                     : 'border-transparent text-slate-500 hover:text-slate-850'
