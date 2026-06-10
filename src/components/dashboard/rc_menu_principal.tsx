@@ -1232,7 +1232,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                               <div className="flex flex-col gap-1.5">
                                 {filtered.map((cliente) => {
                                   const bDate = new Date(cliente.data_nascimento);
-                                  const isToday = bDate.getUTCDate() === new Date().getDate() && bDate.getUTCMonth() === currentMonth;
+                                  const isToday = bDate.getUTCDate() === new Date().getDate() && bDate.getUTCMonth() === new Date().getMonth();
 
                                   return (
                                     <div
@@ -1965,7 +1965,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                 </button>
               </div>
             </div>
-            <div className="custom-scrollbar max-h-[60vh] overflow-y-auto p-4 bg-slate-50">
+            <div className="custom-scrollbar max-h-[60vh] overflow-y-auto p-4 bg-slate-50 relative">
               {isLoadingStatusModal ? (
                 <div className="flex py-10 items-center justify-center flex-col gap-3">
                   <Loader2 size={32} className="animate-spin text-slate-400" />
@@ -1978,37 +1978,84 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                 </div>
               ) : (
                 <div className="flex flex-col gap-2">
-                  {statusModalClientes
-                    .sort((a, b) => (a.nome_completo || '').localeCompare(b.nome_completo || ''))
-                    .map((cliente) => (
-                    <div
-                      key={cliente.id_cliente}
-                      onClick={() => {
-                        setShowStatusModal(false);
-                        setClientToEdit(cliente.nome_completo);
-                        void handleMenuClick("Clientes");
-                      }}
-                      className={`group relative overflow-hidden rounded-xl border bg-white p-3 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md cursor-pointer flex items-center gap-4
-                        ${statusModalType === 'ATIVO' ? 'border-slate-200 hover:border-[#25D366]/40' : 'border-slate-200 hover:border-red-400/40'}`}
-                    >
-                      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors duration-300
-                        ${statusModalType === 'ATIVO' ? 'bg-[#25D366]/10 text-[#128C7E] group-hover:bg-[#25D366]/20' : 'bg-red-50 text-red-500 group-hover:bg-red-100'}`}>
-                        <User size={18} />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className={`font-bold transition-colors truncate
-                          ${statusModalType === 'ATIVO' ? 'text-slate-800 group-hover:text-[#128C7E]' : 'text-slate-800 group-hover:text-red-600'}`}>
-                          {cliente.nome_completo}
-                        </p>
-                        <p className="text-xs text-slate-500 truncate mt-0.5">
-                          {cliente.cpf || cliente.cnpj || 'Documento não informado'}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+                  {(() => {
+                    const sorted = [...statusModalClientes].sort((a, b) => (a.nome_completo || '').localeCompare(b.nome_completo || ''));
+                    let currentLetter = '';
+                    
+                    return sorted.map((cliente) => {
+                      const letter = (cliente.nome_completo || ' ').charAt(0).toUpperCase();
+                      const isFirstOfLetter = letter !== currentLetter;
+                      if (isFirstOfLetter) currentLetter = letter;
+                      
+                      return (
+                        <div key={cliente.id_cliente} className="flex flex-col">
+                          {isFirstOfLetter && (
+                            <div id={`client-letter-${letter}`} className="sticky top-0 z-10 -mx-2 mb-2 bg-slate-50/90 px-2 py-1 backdrop-blur-sm">
+                              <span className={`text-xs font-black ${statusModalType === 'ATIVO' ? 'text-[#128C7E]' : 'text-red-500'}`}>
+                                {letter}
+                              </span>
+                            </div>
+                          )}
+                          <div
+                            onClick={() => {
+                              setShowStatusModal(false);
+                              setClientToEdit(cliente.nome_completo);
+                              void handleCardClick("Meus", "clientes");
+                            }}
+                            className={`group relative overflow-hidden rounded-xl border bg-white p-3 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md cursor-pointer flex items-center gap-4
+                              ${statusModalType === 'ATIVO' ? 'border-slate-200 hover:border-[#25D366]/40' : 'border-slate-200 hover:border-red-400/40'}`}
+                          >
+                            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors duration-300
+                              ${statusModalType === 'ATIVO' ? 'bg-[#25D366]/10 text-[#128C7E] group-hover:bg-[#25D366]/20' : 'bg-red-50 text-red-500 group-hover:bg-red-100'}`}>
+                              <User size={18} />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className={`font-bold transition-colors truncate
+                                ${statusModalType === 'ATIVO' ? 'text-slate-800 group-hover:text-[#128C7E]' : 'text-slate-800 group-hover:text-red-600'}`}>
+                                {cliente.nome_completo}
+                              </p>
+                              <p className="text-xs text-slate-500 truncate mt-0.5">
+                                {cliente.cpf || cliente.cnpj || 'Documento não informado'}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
                 </div>
               )}
             </div>
+            
+            {/* Alphabet quick jump footer */}
+            {!isLoadingStatusModal && statusModalClientes.length > 0 && (
+              <div className="bg-white border-t border-slate-100 p-3">
+                <div className="flex flex-wrap items-center justify-center gap-1">
+                  {"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map((letter) => {
+                    const exists = statusModalClientes.some(c => (c.nome_completo || ' ').charAt(0).toUpperCase() === letter);
+                    return (
+                      <button
+                        key={letter}
+                        disabled={!exists}
+                        onClick={() => {
+                          const el = document.getElementById(`client-letter-${letter}`);
+                          if (el) {
+                            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                          }
+                        }}
+                        className={`flex h-7 w-7 items-center justify-center rounded-md text-xs font-bold transition-all
+                          ${exists 
+                            ? (statusModalType === 'ATIVO' ? 'bg-[#25D366]/10 text-[#128C7E] hover:bg-[#25D366]/20 cursor-pointer' : 'bg-red-50 text-red-600 hover:bg-red-100 cursor-pointer')
+                            : 'text-slate-300 cursor-not-allowed'
+                          }`}
+                      >
+                        {letter}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
