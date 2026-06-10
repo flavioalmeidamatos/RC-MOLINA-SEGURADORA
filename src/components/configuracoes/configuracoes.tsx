@@ -195,7 +195,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
     // Definir colunas com auto-fit
     worksheet.columns = [
       { header: 'Nome', key: 'nome', width: 45 },
-      { header: 'Celular', key: 'celular', width: 25 },
+      { header: 'Celular', key: 'celular', width: 25, style: { numFmt: '@' } },
       { header: 'Importado', key: 'importado', width: 15 }
     ];
 
@@ -219,7 +219,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
     extractedData.forEach((row, index) => {
       const addedRow = worksheet.addRow({
         nome: row.nome,
-        celular: row.celular ? `'${row.celular}` : row.celular,
+        celular: row.celular,
         importado: row.importado
       });
 
