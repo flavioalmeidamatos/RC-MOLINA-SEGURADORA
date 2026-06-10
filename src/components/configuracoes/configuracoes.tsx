@@ -219,7 +219,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
     extractedData.forEach((row, index) => {
       const addedRow = worksheet.addRow({
         nome: row.nome,
-        celular: row.celular ? \`'\${row.celular}\` : row.celular,
+        celular: row.celular ? `'\${row.celular}` : row.celular,
         importado: row.importado
       });
 
