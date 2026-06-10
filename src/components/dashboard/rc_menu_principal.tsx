@@ -162,6 +162,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const [isLoadingAniversariantes, setIsLoadingAniversariantes] = useState(false);
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
   const [agendaDate, setAgendaDate] = useState<Date>(new Date());
+  const [aniversariantesDate, setAniversariantesDate] = useState<Date>(new Date());
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -1139,13 +1140,27 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                               <p className="text-[9px] font-black uppercase tracking-[0.22em] text-[#d4af37]/90">
                                 Aniversariantes do mês
                               </p>
-                              <h2 className="mt-0.5 text-xl font-black tracking-tight">{currentMonthName()}</h2>
-                              <p className="mt-0.5 text-[10px] font-medium text-white/50">
+                              <div className="mt-0.5 flex items-center gap-2">
+                                <button 
+                                  onClick={(e) => { e.stopPropagation(); setAniversariantesDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1)); }}
+                                  className="flex h-6 w-6 items-center justify-center rounded-full bg-white/5 text-white/70 hover:bg-white/10 hover:text-white transition-colors"
+                                >
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                                </button>
+                                <h2 className="text-xl font-black tracking-tight capitalize">{new Intl.DateTimeFormat('pt-BR', { month: 'long' }).format(aniversariantesDate)}</h2>
+                                <button 
+                                  onClick={(e) => { e.stopPropagation(); setAniversariantesDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1)); }}
+                                  className="flex h-6 w-6 items-center justify-center rounded-full bg-white/5 text-white/70 hover:bg-white/10 hover:text-white transition-colors"
+                                >
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                                </button>
+                              </div>
+                              <p className="mt-1 text-[10px] font-medium text-white/50">
                                 {isLoadingAniversariantes
                                   ? "Carregando registros..."
                                   : `${aniversariantesMes.filter(c => {
                                     const d = new Date(c.data_nascimento);
-                                    return !isNaN(d.getTime()) && d.getUTCMonth() === new Date().getMonth();
+                                    return !isNaN(d.getTime()) && d.getUTCMonth() === aniversariantesDate.getMonth();
                                   }).length} clientes celebram este mês`}
                               </p>
                             </div>
@@ -1157,7 +1172,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
                         <div className="custom-scrollbar flex-1 overflow-y-auto bg-slate-50/50 p-2">
                           {(() => {
-                            const currentMonth = new Date().getMonth();
+                            const currentMonth = aniversariantesDate.getMonth();
                             const filtered = aniversariantesMes
                               .filter(c => {
                                 const d = new Date(c.data_nascimento);
