@@ -723,16 +723,42 @@ export function CampanhasShell({ userId, userEmail, initialMessage, onConnection
 
               {feedback.generatedVideoUrl && feedback.generatedVideoName && (
                 <div className="mt-4">
-                  <a
-                    href={feedback.generatedVideoUrl}
-                    download={feedback.generatedVideoName}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      try {
+                        const urlParts = feedback.generatedVideoUrl!.split(',');
+                        const mimeMatch = urlParts[0].match(/:(.*?);/);
+                        const mime = mimeMatch ? mimeMatch[1] : 'video/mp4';
+                        const bstr = atob(urlParts[1]);
+                        let n = bstr.length;
+                        const u8arr = new Uint8Array(n);
+                        while (n--) {
+                          u8arr[n] = bstr.charCodeAt(n);
+                        }
+                        const blob = new Blob([u8arr], { type: mime });
+                        const blobUrl = URL.createObjectURL(blob);
+                        
+                        const a = document.createElement('a');
+                        a.href = blobUrl;
+                        a.download = feedback.generatedVideoName!;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+                      } catch (err) {
+                        console.error("Erro ao baixar o vídeo gerado:", err);
+                        alert("Houve um erro ao processar o arquivo para download.");
+                      }
+                    }}
                     className="inline-flex items-center gap-2 rounded-lg bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-4 w-4">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
                     </svg>
                     Baixar Vídeo Gerado
-                  </a>
+                  </button>
                   <p className="mt-1.5 text-[10px] text-slate-400">Para adicionar ao cliente, baixe e arraste para a aba "Documentos".</p>
                 </div>
               )}
