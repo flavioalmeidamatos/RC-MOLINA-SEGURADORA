@@ -512,11 +512,12 @@ export function CampanhasShell({ userId, userEmail, initialMessage, onConnection
           message: `Campanha disparada parcialmente: ${summary.sent} enviado(s), ${summary.failed} falha(s). Detalhe: ${errors || 'Erro desconhecido.'}`,
         });
       } else {
+        const videoStr = summary.generatedVideo ? `\n\n[DEBUG] Vídeo gerado: ${summary.generatedVideo.name}` : '';
         setFeedback({
           show: true,
           type: "success",
           title: "Envio Concluído!",
-          message: `Campanha enviada com sucesso para os ${summary.sent} destinatários.`,
+          message: `Campanha enviada com sucesso para os ${summary.sent} destinatários.${videoStr}`,
         });
       }
 
