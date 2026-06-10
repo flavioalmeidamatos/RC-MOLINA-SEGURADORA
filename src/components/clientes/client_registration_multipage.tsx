@@ -187,7 +187,7 @@ const statusNegociacaoOptions = [
   'Fechada',
   'Inválida',
   'Ligar Novamente',
-  'Não Quer',
+  'Não tem Interesse',
   'Negociação',
   'Renovação',
 ];
@@ -214,18 +214,18 @@ const cidadesPorEstado: Record<string, string[]> = {
 };
 
 const fieldClassName =
-  'h-11 w-full rounded-2xl border border-black bg-white px-3.5 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-black focus:ring-4 focus:ring-black/10 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400 sm:h-10 sm:px-4';
+  'h-10 w-full rounded-xl border border-black bg-white px-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-black focus:ring-4 focus:ring-black/10 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400 sm:h-9 sm:px-3';
 
 const compactFieldClassName =
-  'h-10 w-full rounded-lg border border-black bg-white px-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-black focus:ring-4 focus:ring-black/10 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400 sm:h-9';
+  'h-9 w-full rounded-lg border border-black bg-white px-2.5 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-black focus:ring-4 focus:ring-black/10 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400 sm:h-8';
 
 const textAreaClassName =
-  'w-full rounded-2xl border border-black bg-white px-3.5 py-2.5 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-black focus:ring-4 focus:ring-black/10 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400 sm:px-4';
+  'w-full rounded-xl border border-black bg-white px-3 py-2 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-black focus:ring-4 focus:ring-black/10 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400 sm:px-3';
 
 const compactTextAreaClassName =
-  'w-full rounded-lg border border-black bg-white px-3 py-2 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-black focus:ring-4 focus:ring-black/10 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400';
+  'w-full rounded-lg border border-black bg-white px-2.5 py-1.5 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-black focus:ring-4 focus:ring-black/10 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400';
 
-const sectionCardClassName = 'rounded-[28px] border border-slate-200 bg-white p-3 shadow-sm sm:p-4 xl:p-5';
+const sectionCardClassName = 'rounded-[20px] border border-slate-200 bg-white p-2.5 shadow-sm sm:p-3 xl:p-3.5';
 
 const errorMessageClassName = 'mt-2 text-xs font-semibold text-red-600';
 const documentInputAccept =
@@ -1283,7 +1283,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
       documentacao: c.documentacao_anotacoes || '',
       comoConheceu: c.como_conheceu || initialFormState.comoConheceu,
       produtoComercializado: c.produto_comercializado || initialFormState.produtoComercializado,
-      statusNegociacao: c.status_negociacao || initialFormState.statusNegociacao,
+      statusNegociacao: c.status_negociacao === 'Não Quer' ? 'Não tem Interesse' : (c.status_negociacao || initialFormState.statusNegociacao),
       valorProposta: c.valor_proposta || initialFormState.valorProposta,
       numeroProposta: c.numero_proposta || initialFormState.numeroProposta,
       formaPagamento: c.forma_pagamento || initialFormState.formaPagamento,
@@ -1767,10 +1767,10 @@ export const ClientRegistrationMultipage: React.FC = () => {
           </div>
 
           <div className={sectionCardClassName}>
-            <div className="grid gap-3">
-              <div className="grid gap-3 xl:grid-cols-[1fr_1fr_1fr_0.8fr]">
+            <div className="grid gap-2.5">
+              <div className="grid gap-2.5 xl:grid-cols-[1fr_1fr_1fr_0.8fr]">
                 <div>
-                  <label className="mb-2 block text-sm font-bold text-slate-700">Como nos conheceu?</label>
+                  <label className="mb-1 block text-sm font-bold text-slate-700">Como nos conheceu?</label>
                   <select
                     className={fieldClassName}
                     value={formState.comoConheceu}
@@ -1787,7 +1787,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-bold text-slate-700">Produto a ser Comercializado</label>
+                  <label className="mb-1 block text-sm font-bold text-slate-700">Produto a ser Comercializado</label>
                   <div className="relative">
                     <input
                       className={`${fieldClassName} pr-10`}
@@ -1833,7 +1833,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-bold text-slate-700">Status da Negociação</label>
+                  <label className="mb-1 block text-sm font-bold text-slate-700">Status da Negociação</label>
                   <div className="relative">
                     <input
                       className={`${fieldClassName} pr-10`}
@@ -1879,12 +1879,12 @@ export const ClientRegistrationMultipage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-bold text-slate-700">Permite agendar online?</label>
+                  <label className="mb-1 block text-sm font-bold text-slate-700">Permite agendar online?</label>
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
                       onClick={() => handleFieldChange('permiteAgendarOnline', true)}
-                      className={`min-h-11 rounded-2xl border px-4 py-2.5 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-10 ${formState.permiteAgendarOnline
+                      className={`min-h-10 rounded-xl border px-3 py-1.5 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-9 ${formState.permiteAgendarOnline
                           ? 'border-teal-500 bg-teal-500 text-white'
                           : 'border-black bg-white text-slate-500'
                         }`}
@@ -1894,7 +1894,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleFieldChange('permiteAgendarOnline', false)}
-                      className={`min-h-11 rounded-2xl border px-4 py-2.5 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-10 ${!formState.permiteAgendarOnline
+                      className={`min-h-10 rounded-xl border px-3 py-1.5 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-9 ${!formState.permiteAgendarOnline
                           ? 'border-teal-500 bg-teal-500 text-white'
                           : 'border-black bg-white text-slate-500'
                         }`}
@@ -1905,14 +1905,14 @@ export const ClientRegistrationMultipage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid gap-3 lg:grid-cols-2">
+              <div className="grid gap-2.5 lg:grid-cols-2">
                 <div>
-                  <label className="mb-2 block text-sm font-bold text-slate-700">Status</label>
+                  <label className="mb-1 block text-sm font-bold text-slate-700">Status</label>
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
                       onClick={() => handleFieldChange('status', 'ATIVO')}
-                      className={`min-h-11 rounded-2xl border px-4 py-2.5 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-10 ${formState.status === 'ATIVO'
+                      className={`min-h-10 rounded-xl border px-3 py-1.5 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-9 ${formState.status === 'ATIVO'
                           ? 'border-teal-500 bg-teal-500 text-white'
                           : 'border-black bg-white text-slate-500'
                         }`}
@@ -1922,7 +1922,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleFieldChange('status', 'INATIVO')}
-                      className={`min-h-11 rounded-2xl border px-4 py-2.5 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-10 ${formState.status === 'INATIVO'
+                      className={`min-h-10 rounded-xl border px-3 py-1.5 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-9 ${formState.status === 'INATIVO'
                           ? 'border-teal-500 bg-teal-500 text-white'
                           : 'border-black bg-white text-slate-500'
                         }`}
@@ -1933,7 +1933,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-bold text-slate-700">Data de atualização</label>
+                  <label className="mb-1 block text-sm font-bold text-slate-700">Data de atualização</label>
                   <input
                     className={fieldClassName}
                     value={formState.dataAtualizacao}
@@ -2012,11 +2012,11 @@ export const ClientRegistrationMultipage: React.FC = () => {
           </div>
         </section>
 
-        <section className={activeTab === 'endereco' ? 'space-y-3' : 'hidden'}>
+        <section className={activeTab === 'endereco' ? 'space-y-2.5' : 'hidden'}>
           <div className={sectionCardClassName}>
-            <div className="grid gap-3 xl:grid-cols-12">
+            <div className="grid gap-2.5 xl:grid-cols-12">
               <div className="xl:col-span-2">
-                <label className="mb-2 block text-sm font-bold text-slate-700">CEP</label>
+                <label className="mb-1 block text-sm font-bold text-slate-700">CEP</label>
                 <input
                   className={fieldClassName}
                   value={formState.enderecoCep}
@@ -2027,13 +2027,13 @@ export const ClientRegistrationMultipage: React.FC = () => {
                   maxLength={9}
                   placeholder="00000-000"
                 />
-                <p className="mt-1.5 text-xs font-semibold text-slate-400">
+                <p className="mt-1 text-xs font-semibold text-slate-400">
                   {isFetchingCep ? 'Buscando CEP...' : 'Digite 8 números e pressione Enter ou Tab.'}
                 </p>
               </div>
 
               <div className="xl:col-span-5">
-                <label className="mb-2 block text-sm font-bold text-slate-700">Endereço</label>
+                <label className="mb-1 block text-sm font-bold text-slate-700">Endereço</label>
                 <input
                   className={fieldClassName}
                   value={formState.enderecoRua}
@@ -2044,7 +2044,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
               </div>
 
               <div className="xl:col-span-2">
-                <label className="mb-2 block text-sm font-bold text-slate-700">Número</label>
+                <label className="mb-1 block text-sm font-bold text-slate-700">Número</label>
                 <input
                   ref={enderecoNumeroInputRef}
                   className={fieldClassName}
@@ -2055,7 +2055,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
               </div>
 
               <div className="xl:col-span-3">
-                <label className="mb-2 block text-sm font-bold text-slate-700">Complemento</label>
+                <label className="mb-1 block text-sm font-bold text-slate-700">Complemento</label>
                 <input
                   className={fieldClassName}
                   value={formState.enderecoComplemento}
@@ -2065,7 +2065,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
               </div>
 
               <div className="xl:col-span-3">
-                <label className="mb-2 block text-sm font-bold text-slate-700">Ponto de referência</label>
+                <label className="mb-1 block text-sm font-bold text-slate-700">Ponto de referência</label>
                 <input
                   className={fieldClassName}
                   value={formState.enderecoReferencia}
@@ -2075,7 +2075,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
               </div>
 
               <div className="xl:col-span-3">
-                <label className="mb-2 block text-sm font-bold text-slate-700">Bairro</label>
+                <label className="mb-1 block text-sm font-bold text-slate-700">Bairro</label>
                 <input
                   className={fieldClassName}
                   value={formState.enderecoBairro}
@@ -2086,7 +2086,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
               </div>
 
               <div className="xl:col-span-4">
-                <label className="mb-2 block text-sm font-bold text-slate-700">Cidade</label>
+                <label className="mb-1 block text-sm font-bold text-slate-700">Cidade</label>
                 <input
                   className={fieldClassName}
                   value={formState.enderecoCidade}
@@ -2097,7 +2097,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
               </div>
 
               <div className="xl:col-span-2">
-                <label className="mb-2 block text-sm font-bold text-slate-700">Estado</label>
+                <label className="mb-1 block text-sm font-bold text-slate-700">Estado</label>
                 <select
                   className={fieldClassName}
                   value={formState.enderecoEstado}
