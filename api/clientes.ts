@@ -303,6 +303,26 @@ export const listClientesHandler = async (req: express.Request, res: express.Res
   }
 };
 
+export const listClientesByStatusHandler = async (req: express.Request, res: express.Response) => {
+  await initLocalDatabase();
+  const pool = getPool();
+  try {
+    const status = req.query.s as string;
+    if (!status || (status !== 'ATIVO' && status !== 'INATIVO')) {
+      return res.status(400).json({ error: 'Status inválido' });
+    }
+    const result = await pool.query(`
+      ${clienteSelect}
+      WHERE status_cliente = $1
+      ORDER BY nome_completo ASC
+    `, [status]);
+    res.json(result.rows);
+  } catch (error: any) {
+    console.error('Error listing clientes:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 export const nextClienteCodigoHandler = async (_req: express.Request, res: express.Response) => {
   await initLocalDatabase();
   const pool = getPool();

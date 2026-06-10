@@ -163,6 +163,29 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
   const [agendaDate, setAgendaDate] = useState<Date>(new Date());
   const [aniversariantesDate, setAniversariantesDate] = useState<Date>(new Date());
+  const [clientToEdit, setClientToEdit] = useState<string | null>(null);
+  
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [statusModalType, setStatusModalType] = useState<'ATIVO' | 'INATIVO'>('ATIVO');
+  const [statusModalClientes, setStatusModalClientes] = useState<any[]>([]);
+  const [isLoadingStatusModal, setIsLoadingStatusModal] = useState(false);
+
+  const openStatusModal = async (status: 'ATIVO' | 'INATIVO') => {
+    setStatusModalType(status);
+    setShowStatusModal(true);
+    setIsLoadingStatusModal(true);
+    try {
+      const response = await fetch(`/api/clientes/status?s=${status}`);
+      if (response.ok) {
+        const data = await response.json();
+        setStatusModalClientes(data);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoadingStatusModal(false);
+    }
+  };
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -1052,7 +1075,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
           <div className="flex min-h-0 min-w-0 flex-1 flex-col">
             {showClientArea ? (
               <div className="flex-1 overflow-y-auto px-4 pb-4 pt-2 sm:px-6 sm:pb-6 sm:pt-3 md:px-8 md:pb-8 md:pt-4">
-                <ClientRegistrationMultipage />
+                <ClientRegistrationMultipage initialSearchQuery={clientToEdit} />
               </div>
             ) : showWebmailArea ? (
               <React.Suspense
@@ -1396,7 +1419,10 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
                         <div className="custom-scrollbar flex-1 overflow-y-auto bg-slate-50/50 p-2.5">
                           <div className="flex flex-col gap-2">
-                            <div className="group relative overflow-hidden rounded-xl border border-white bg-white p-3 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#25D366]/30 hover:shadow-md">
+                            <div 
+                              onClick={() => openStatusModal('ATIVO')}
+                              className="group relative overflow-hidden rounded-xl border border-white bg-white p-3 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#25D366]/30 hover:shadow-md cursor-pointer"
+                            >
                               <div className="flex items-center gap-3">
                                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#25D366]/10 text-[#128C7E] transition-all duration-300 group-hover:bg-[#25D366]/20">
                                   <User size={16} />
@@ -1420,7 +1446,10 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                               </div>
                             </div>
 
-                            <div className="group relative overflow-hidden rounded-xl border border-white bg-white p-3 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-red-400/30 hover:shadow-md">
+                            <div 
+                              onClick={() => openStatusModal('INATIVO')}
+                              className="group relative overflow-hidden rounded-xl border border-white bg-white p-3 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-red-400/30 hover:shadow-md cursor-pointer"
+                            >
                               <div className="flex items-center gap-3">
                                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-500 transition-all duration-300 group-hover:bg-red-100">
                                   <User size={16} className="opacity-60" />
@@ -1910,6 +1939,75 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
               >
                 Sim, sair agora
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showStatusModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="flex w-full max-w-2xl flex-col overflow-hidden rounded-[24px] border border-white/60 bg-white shadow-2xl scale-in-95 duration-200">
+            <div className={`p-6 text-white ${statusModalType === 'ATIVO' ? 'bg-[#25D366]' : 'bg-red-500'}`}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-black">
+                    Clientes {statusModalType === 'ATIVO' ? 'Ativos' : 'Inativos'}
+                  </h3>
+                  <p className="mt-1 text-sm font-medium text-white/80">
+                    Selecione um cliente para ver os detalhes
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowStatusModal(false)}
+                  className="rounded-full bg-white/20 p-2 text-white transition hover:bg-white/30"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+            <div className="custom-scrollbar max-h-[60vh] overflow-y-auto p-4 bg-slate-50">
+              {isLoadingStatusModal ? (
+                <div className="flex py-10 items-center justify-center flex-col gap-3">
+                  <Loader2 size={32} className="animate-spin text-slate-400" />
+                  <p className="text-sm text-slate-500">Carregando clientes...</p>
+                </div>
+              ) : statusModalClientes.length === 0 ? (
+                <div className="flex py-10 items-center justify-center flex-col gap-3">
+                  <User size={32} className="text-slate-300" />
+                  <p className="text-sm font-medium text-slate-500">Nenhum cliente encontrado.</p>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {statusModalClientes
+                    .sort((a, b) => (a.nome_completo || '').localeCompare(b.nome_completo || ''))
+                    .map((cliente) => (
+                    <div
+                      key={cliente.id_cliente}
+                      onClick={() => {
+                        setShowStatusModal(false);
+                        setClientToEdit(cliente.nome_completo);
+                        void handleMenuClick("Clientes");
+                      }}
+                      className={`group relative overflow-hidden rounded-xl border bg-white p-3 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md cursor-pointer flex items-center gap-4
+                        ${statusModalType === 'ATIVO' ? 'border-slate-200 hover:border-[#25D366]/40' : 'border-slate-200 hover:border-red-400/40'}`}
+                    >
+                      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors duration-300
+                        ${statusModalType === 'ATIVO' ? 'bg-[#25D366]/10 text-[#128C7E] group-hover:bg-[#25D366]/20' : 'bg-red-50 text-red-500 group-hover:bg-red-100'}`}>
+                        <User size={18} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className={`font-bold transition-colors truncate
+                          ${statusModalType === 'ATIVO' ? 'text-slate-800 group-hover:text-[#128C7E]' : 'text-slate-800 group-hover:text-red-600'}`}>
+                          {cliente.nome_completo}
+                        </p>
+                        <p className="text-xs text-slate-500 truncate mt-0.5">
+                          {cliente.cpf || cliente.cnpj || 'Documento não informado'}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

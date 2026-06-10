@@ -522,7 +522,11 @@ type ClienteSearchResult = {
   }>;
 };
 
-export const ClientRegistrationMultipage: React.FC = () => {
+interface ClientRegistrationProps {
+  initialSearchQuery?: string | null;
+}
+
+export const ClientRegistrationMultipage: React.FC<ClientRegistrationProps> = ({ initialSearchQuery }) => {
   const [activeTab, setActiveTab] = useState<TabId>('geral');
   const [isClientFormEnabled, setIsClientFormEnabled] = useState(false);
   const [formState, setFormState] = useState<ClientFormState>(initialFormState);
@@ -538,7 +542,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
   const [fieldErrors, setFieldErrors] = useState<FieldErrorState>(initialFieldErrors);
   const [contactErrors, setContactErrors] = useState<ContactErrorState>({});
   const [editingClienteId, setEditingClienteId] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery || '');
   const [searchResults, setSearchResults] = useState<ClienteSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
@@ -602,6 +606,23 @@ export const ClientRegistrationMultipage: React.FC = () => {
   const CepPopupIcon = systemMessageStyles.error.Icon;
 
   useEffect(() => {
+    if (initialSearchQuery) {
+      setIsSearching(true);
+      setShowSearchResults(true);
+      fetch(`/api/clientes/search?q=${encodeURIComponent(initialSearchQuery.trim())}`)
+        .then((r) => r.json())
+        .then((data: ClienteSearchResult[]) => {
+          setSearchResults(data);
+          setIsSearching(false);
+          // Auto-load if exactly one result or if you want them to click it
+          if (data.length === 1) {
+            // We can't easily call loadClienteIntoForm here because it's defined below.
+            // But we will just show the results dropdown.
+          }
+        })
+        .catch(() => setIsSearching(false));
+    }
+  }, [initialSearchQuery]);  useEffect(() => {
     uploadedDocumentsRef.current = uploadedDocuments;
   }, [uploadedDocuments]);
 
