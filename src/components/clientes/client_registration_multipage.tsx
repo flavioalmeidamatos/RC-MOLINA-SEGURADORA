@@ -1764,11 +1764,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                 </div>
               </div>
             </div>
-          </div>
-
-          <div className={sectionCardClassName}>
-            <div className="grid gap-1.5">
-              <div className="grid gap-1.5 xl:grid-cols-[1fr_1fr_1fr_0.8fr]">
+          </d              <div className="grid gap-2.5 xl:grid-cols-[1fr_1.2fr_1.2fr_auto_auto_0.8fr]">
                 <div>
                   <label className="mb-1 block text-sm font-bold text-slate-700">Como nos conheceu?</label>
                   <select
@@ -1879,61 +1875,55 @@ export const ClientRegistrationMultipage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-sm font-bold text-slate-700">Permite agendar online?</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleFieldChange('permiteAgendarOnline', true)}
-                      className={`min-h-10 rounded-xl border px-3 py-1.5 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-9 ${formState.permiteAgendarOnline
-                          ? 'border-teal-500 bg-teal-500 text-white'
-                          : 'border-black bg-white text-slate-500'
-                        }`}
-                    >
+                  <label className="mb-1 block text-sm font-bold text-slate-700 whitespace-nowrap">Permite agendar online?</label>
+                  <div className="flex h-[38px] items-center gap-3">
+                    <label className="flex cursor-pointer items-center gap-1.5 text-sm font-semibold text-slate-600">
+                      <input
+                        type="radio"
+                        checked={formState.permiteAgendarOnline}
+                        onChange={() => handleFieldChange('permiteAgendarOnline', true)}
+                        className="h-4 w-4 text-teal-600 focus:ring-teal-500"
+                      />
                       SIM
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleFieldChange('permiteAgendarOnline', false)}
-                      className={`min-h-10 rounded-xl border px-3 py-1.5 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-9 ${!formState.permiteAgendarOnline
-                          ? 'border-teal-500 bg-teal-500 text-white'
-                          : 'border-black bg-white text-slate-500'
-                        }`}
-                    >
+                    </label>
+                    <label className="flex cursor-pointer items-center gap-1.5 text-sm font-semibold text-slate-600">
+                      <input
+                        type="radio"
+                        checked={!formState.permiteAgendarOnline}
+                        onChange={() => handleFieldChange('permiteAgendarOnline', false)}
+                        className="h-4 w-4 text-teal-600 focus:ring-teal-500"
+                      />
                       NÃO
-                    </button>
+                    </label>
                   </div>
                 </div>
-              </div>
 
-              <div className="grid gap-2.5 lg:grid-cols-2">
                 <div>
                   <label className="mb-1 block text-sm font-bold text-slate-700">Status</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleFieldChange('status', 'ATIVO')}
-                      className={`min-h-10 rounded-xl border px-3 py-1.5 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-9 ${formState.status === 'ATIVO'
-                          ? 'border-teal-500 bg-teal-500 text-white'
-                          : 'border-black bg-white text-slate-500'
-                        }`}
-                    >
+                  <div className="flex h-[38px] items-center gap-3">
+                    <label className="flex cursor-pointer items-center gap-1.5 text-sm font-semibold text-slate-600">
+                      <input
+                        type="radio"
+                        checked={formState.status === 'ATIVO'}
+                        onChange={() => handleFieldChange('status', 'ATIVO')}
+                        className="h-4 w-4 text-teal-600 focus:ring-teal-500"
+                      />
                       ATIVO
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleFieldChange('status', 'INATIVO')}
-                      className={`min-h-10 rounded-xl border px-3 py-1.5 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-9 ${formState.status === 'INATIVO'
-                          ? 'border-teal-500 bg-teal-500 text-white'
-                          : 'border-black bg-white text-slate-500'
-                        }`}
-                    >
+                    </label>
+                    <label className="flex cursor-pointer items-center gap-1.5 text-sm font-semibold text-slate-600">
+                      <input
+                        type="radio"
+                        checked={formState.status === 'INATIVO'}
+                        onChange={() => handleFieldChange('status', 'INATIVO')}
+                        className="h-4 w-4 text-teal-600 focus:ring-teal-500"
+                      />
                       INATIVO
-                    </button>
+                    </label>
                   </div>
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-sm font-bold text-slate-700">Data de atualização</label>
+                  <label className="mb-1 block text-sm font-bold text-slate-700 whitespace-nowrap">Data de atualização</label>
                   <input
                     className={fieldClassName}
                     value={formState.dataAtualizacao}
