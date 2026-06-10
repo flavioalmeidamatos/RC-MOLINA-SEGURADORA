@@ -33,14 +33,7 @@ export function WhatsAppRecipientFields({
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={onAddRecipient}
-            disabled={recipients.length >= 10}
-            className="rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Adicionar
-          </button>
+
         </div>
       </div>
 
