@@ -1282,8 +1282,21 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                 Tarefas programadas
                               </p>
                             </div>
-                            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/5 text-[#d4af37] ring-1 ring-white/10 backdrop-blur-sm">
+                            <div className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-white/5 text-[#d4af37] ring-1 ring-white/10 backdrop-blur-sm transition-colors hover:bg-white/10 cursor-pointer overflow-hidden">
                               <Calendar size={22} strokeWidth={1.5} />
+                              <input
+                                type="date"
+                                className="absolute inset-0 h-full w-full opacity-0 cursor-pointer"
+                                value={`${agendaDate.getFullYear()}-${String(agendaDate.getMonth() + 1).padStart(2, '0')}-${String(agendaDate.getDate()).padStart(2, '0')}`}
+                                onChange={(e) => {
+                                  if (e.target.value) {
+                                    const [year, month, day] = e.target.value.split('-').map(Number);
+                                    if (year && month && day) {
+                                      setAgendaDate(new Date(year, month - 1, day));
+                                    }
+                                  }
+                                }}
+                              />
                             </div>
                           </div>
                         </div>
