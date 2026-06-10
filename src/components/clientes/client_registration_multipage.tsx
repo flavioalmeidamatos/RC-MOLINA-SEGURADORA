@@ -34,6 +34,21 @@ import { SistemaQuerImportModal, type SistemaQuerLeadData } from '../dashboard/s
 
 type TabId = 'geral' | 'endereco' | 'documentacao';
 
+const TextFilePreview = ({ url }: { url: string }) => {
+  const [content, setContent] = React.useState<string>('Carregando...');
+  React.useEffect(() => {
+    fetch(url)
+      .then(res => res.text())
+      .then(text => setContent(text))
+      .catch(() => setContent('Erro ao carregar o conteúdo do arquivo de texto.'));
+  }, [url]);
+  return (
+    <div className="h-[72vh] w-full overflow-auto bg-slate-50 p-4 font-mono text-sm whitespace-pre-wrap text-slate-800 text-left">
+      {content}
+    </div>
+  );
+};
+
 type ContactRow = {
   id: number;
   type: string;
@@ -2256,12 +2271,16 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationProps> = ({
                                 alt={documento.name}
                                 className="h-full w-full object-cover"
                               />
-                            ) : documento.previewKind === 'pdf' || documento.previewKind === 'text' ? (
+                            ) : documento.previewKind === 'pdf' ? (
                               <iframe
                                 title={documento.name}
-                                src={documento.previewKind === 'pdf' ? `${documento.previewUrl}#toolbar=0&navpanes=0&scrollbar=0` : documento.previewUrl}
+                                src={`${documento.previewUrl}#toolbar=0&navpanes=0&scrollbar=0`}
                                 className="h-full w-full border-0 bg-white"
                               />
+                            ) : documento.previewKind === 'text' ? (
+                              <div className="flex h-full items-center justify-center bg-slate-100">
+                                <FileText size={40} className="text-slate-400" />
+                              </div>
                             ) : documento.previewKind === 'video' ? (
                               <video
                                 src={documento.previewUrl}
@@ -2402,13 +2421,17 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationProps> = ({
                       className="max-h-[72vh] w-full object-contain"
                     />
                   </div>
-                ) : selectedDocumentPreview.previewKind === 'pdf' || selectedDocumentPreview.previewKind === 'text' ? (
+                ) : selectedDocumentPreview.previewKind === 'pdf' ? (
                   <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white">
                     <iframe
                       title={selectedDocumentPreview.name}
-                      src={selectedDocumentPreview.previewUrl}
+                      src={`${selectedDocumentPreview.previewUrl}#toolbar=0&navpanes=0&scrollbar=0`}
                       className="h-[72vh] w-full border-0"
                     />
+                  </div>
+                ) : selectedDocumentPreview.previewKind === 'text' ? (
+                  <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white">
+                    <TextFilePreview url={selectedDocumentPreview.previewUrl} />
                   </div>
                 ) : selectedDocumentPreview.previewKind === 'video' ? (
                   <div className="overflow-hidden rounded-[24px] bg-slate-100 flex justify-center items-center">

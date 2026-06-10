@@ -141,6 +141,8 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
     // Expressão regular para remover a marca VMC e variações
     const patternVmc = /VMC\s*Multimarcas(\s*Form\.?Inst\.?)?/gi;
 
+    let pendingNome = '';
+
     for (let i = 0; i < lines.length; i++) {
       let line = lines[i].trim();
       if (!line) continue;
@@ -149,39 +151,42 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
       line = line.replace(patternVmc, '');
 
       // 2. Extrair APENAS letras (e espaços) para formar o nome
-      // O campo nome deve conter SOMENTE caracteres alfabéticos (incluindo acentos) e espaços
       let nome = line.replace(/[^a-zA-ZáàâãéèêíïóôõöúçñÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ\s]/g, '');
       nome = nome.replace(/\s+/g, ' ').trim().toUpperCase();
 
       // 3. Extrair APENAS números e a barra '/' para formar os telefones.
-      // A regex /[^\d/]/g remove tudo que não for dígito ou barra (ex: espaços, hifens, parênteses)
       let telefonesStr = line.replace(/[^\d/]/g, '');
-
-      // 4. Separar pelos caracteres de barra '/' para o caso de múltiplos números na mesma linha
       let telefones = telefonesStr.split('/').filter(t => t.length > 0);
 
-      const importadoText = nome ? `${nome} - REMALHO` : '';
-
-      // 5. Adicionar à tabela
-      if (telefones.length === 0) {
-        // Se não tem telefone, mas tem nome
-        if (nome) {
-          data.push({ nome, celular: '', importado: importadoText });
+      if (nome && telefones.length === 0) {
+        // Se já tínhamos um nome pendente, ele fica sem telefone
+        if (pendingNome) {
+          data.push({ nome: pendingNome, celular: '', importado: `${pendingNome} - REMALHO` });
         }
-      } else {
-        // Se tem telefones, cria uma linha para cada um mantendo o mesmo nome
+        pendingNome = nome;
+      } else if (telefones.length > 0) {
+        const finalNome = nome || pendingNome || 'CLIENTE';
+        const importadoText = `${finalNome} - REMALHO`;
+        
         telefones.forEach(celular => {
-          if (nome || celular) {
-            data.push({ nome, celular: `+55${celular}`, importado: importadoText });
-          }
+          data.push({ nome: finalNome, celular: celular, importado: importadoText });
         });
+        
+        pendingNome = ''; // Consumiu o nome pendente
+      } else if (!nome && telefones.length === 0) {
+        // Linha vazia ou lixo, ignora
       }
+    }
+
+    // Se sobrou algum nome pendente no final
+    if (pendingNome) {
+      data.push({ nome: pendingNome, celular: '', importado: `${pendingNome} - REMALHO` });
     }
 
     setExtractedData(data);
     setOcrStatus('Extração concluída com sucesso!');
 
-    const hasInvalidNumbers = data.some(d => d.celular.length > 0 && d.celular.replace('+55', '').length < 11);
+    const hasInvalidNumbers = data.some(d => d.celular.length > 0 && d.celular.length < 10);
     if (hasInvalidNumbers) {
       setShowWarningPopup(true);
       setTimeout(() => setShowWarningPopup(false), 10000);
@@ -239,7 +244,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
           right: { style: 'thin', color: { argb: 'FF000000' } }
         };
 
-        if (colNumber === 2 && row.celular.length > 0 && row.celular.replace('+55', '').length < 11) {
+        if (colNumber === 2 && row.celular.length > 0 && row.celular.length < 10) {
           cell.font = { color: { argb: 'FFFF0000' }, bold: true };
         } else {
           cell.font = { color: { argb: 'FF000000' } };
@@ -366,7 +371,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
         return;
       }
 
-      const chunkSize = 10;
+      const chunkSize = 5;
       let totalImported = 0;
       let allRejected = [];
       let hasScopeError = false;

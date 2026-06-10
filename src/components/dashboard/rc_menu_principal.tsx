@@ -1614,7 +1614,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
               </div>
             ) : null}
 
-            <div className="overflow-y-auto custom-scrollbar p-6 pb-8 h-[80vh] min-h-[600px]">
+            <div className="overflow-y-auto custom-scrollbar p-6 pb-8 flex-1">
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {(activeLinkTab === 'simuladores'
                   ? [
