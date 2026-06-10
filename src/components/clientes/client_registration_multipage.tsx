@@ -225,7 +225,7 @@ const textAreaClassName =
 const compactTextAreaClassName =
   'w-full rounded-lg border border-black bg-white px-2.5 py-1.5 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-black focus:ring-4 focus:ring-black/10 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400';
 
-const sectionCardClassName = 'rounded-[20px] border border-slate-200 bg-white p-2.5 shadow-sm sm:p-3 xl:p-3.5';
+const sectionCardClassName = 'rounded-[20px] border border-slate-200 bg-white p-2 shadow-sm sm:p-2 xl:p-2.5';
 
 const errorMessageClassName = 'mt-2 text-xs font-semibold text-red-600';
 const documentInputAccept =
@@ -1544,10 +1544,10 @@ export const ClientRegistrationMultipage: React.FC = () => {
         </div>
       </div>
 
-      <fieldset disabled={isClientFormLocked} className="m-0 space-y-3 border-0 p-0">
-        <section className={activeTab === 'geral' ? 'block space-y-3' : 'hidden'}>
+      <fieldset disabled={isClientFormLocked} className="m-0 space-y-1.5 border-0 p-0">
+        <section className={activeTab === 'geral' ? 'block space-y-1.5' : 'hidden'}>
           <div className={sectionCardClassName}>
-            <div className="grid gap-2.5 lg:grid-cols-[0.72fr_0.58fr_0.86fr_0.64fr]">
+            <div className="grid gap-1.5 lg:grid-cols-[0.72fr_0.58fr_0.86fr_0.64fr]">
               <div className="lg:col-span-4">
                 <label className="mb-1 block text-sm font-bold text-slate-700">Nome*</label>
                 <input
@@ -1723,7 +1723,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                 ))}
               </div>
 
-              <div className="grid gap-2.5 border-t border-slate-100 pt-3 xl:grid-cols-[minmax(0,1fr)_11.5rem]">
+              <div className="grid gap-1.5 border-t border-slate-100 pt-2 xl:grid-cols-[minmax(0,1fr)_11.5rem]">
                 <div>
                   <label className="mb-1 block text-sm font-bold text-slate-700">Observações</label>
                   <textarea
@@ -1734,7 +1734,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                   />
                 </div>
 
-                <div className="grid content-start gap-2.5">
+                <div className="grid content-start gap-1.5">
                   <div>
                     <label className="mb-1 block text-sm font-bold text-slate-700">Código</label>
                     <input
@@ -1767,8 +1767,8 @@ export const ClientRegistrationMultipage: React.FC = () => {
           </div>
 
           <div className={sectionCardClassName}>
-            <div className="grid gap-2.5">
-              <div className="grid gap-2.5 xl:grid-cols-[1fr_1fr_1fr_0.8fr]">
+            <div className="grid gap-1.5">
+              <div className="grid gap-1.5 xl:grid-cols-[1fr_1fr_1fr_0.8fr]">
                 <div>
                   <label className="mb-1 block text-sm font-bold text-slate-700">Como nos conheceu?</label>
                   <select
@@ -2012,9 +2012,9 @@ export const ClientRegistrationMultipage: React.FC = () => {
           </div>
         </section>
 
-        <section className={activeTab === 'endereco' ? 'space-y-2.5' : 'hidden'}>
+        <section className={activeTab === 'endereco' ? 'space-y-1.5' : 'hidden'}>
           <div className={sectionCardClassName}>
-            <div className="grid gap-2.5 xl:grid-cols-12">
+            <div className="grid gap-1.5 xl:grid-cols-12">
               <div className="xl:col-span-2">
                 <label className="mb-1 block text-sm font-bold text-slate-700">CEP</label>
                 <input
