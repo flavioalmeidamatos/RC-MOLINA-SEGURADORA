@@ -1764,7 +1764,11 @@ export const ClientRegistrationMultipage: React.FC = () => {
                 </div>
               </div>
             </div>
-          </d              <div className="grid gap-2.5 xl:grid-cols-[1fr_1.2fr_1.2fr_auto_auto_0.8fr]">
+          </div>
+
+          <div className={sectionCardClassName}>
+            <div className="grid gap-1.5">
+              <div className="grid gap-2.5 xl:grid-cols-[1fr_1.2fr_1.2fr_auto_auto_0.8fr]">
                 <div>
                   <label className="mb-1 block text-sm font-bold text-slate-700">Como nos conheceu?</label>
                   <select
