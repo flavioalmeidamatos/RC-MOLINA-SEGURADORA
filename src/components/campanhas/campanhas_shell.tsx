@@ -435,7 +435,12 @@ export function CampanhasShell({ userId, userEmail, initialMessage, onConnection
             if (!searchResponse.ok) continue;
             const searchData = await searchResponse.json();
             const client = searchData.find((c: any) => 
-              c.contatos?.some((ct: any) => ct.valor.replace(/\D/g, '').includes(phone))
+              c.contatos?.some((ct: any) => {
+                const ctClean = ct.valor.replace(/\D/g, '');
+                const phoneLocal = phone.startsWith('55') ? phone.slice(2) : phone;
+                const ctLocal = ctClean.startsWith('55') ? ctClean.slice(2) : ctClean;
+                return ctLocal.includes(phoneLocal) || phoneLocal.includes(ctLocal);
+              })
             );
             
             if (client) {
@@ -516,13 +521,14 @@ export function CampanhasShell({ userId, userEmail, initialMessage, onConnection
         });
       } else {
         const videoStr = summary.generatedVideo ? `\n\n[DEBUG] Vídeo gerado: ${summary.generatedVideo.name}` : '';
+        const downloadName = summary.generatedVideo ? (successfulPhones.length > 0 ? `campanha_${successfulPhones[0].replace(/\D/g, '')}.mp4` : summary.generatedVideo.name) : undefined;
         setFeedback({
           show: true,
           type: "success",
           title: "Envio Concluído!",
           message: `A mensagem foi processada com sucesso.${videoStr}`,
           generatedVideoUrl: summary.generatedVideo?.dataUrl,
-          generatedVideoName: summary.generatedVideo?.name
+          generatedVideoName: downloadName
         });
       }
 
