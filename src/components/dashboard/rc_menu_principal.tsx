@@ -1156,7 +1156,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                   <div className="flex flex-col gap-3 lg:flex-row">
                     <section className="flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm max-w-sm h-[360px]">
                       <div className="flex flex-col h-full">
-                        <div className="relative overflow-hidden bg-[#0c1826] p-3 text-white shrink-0">
+                        <div className="relative overflow-hidden bg-[#0c1826] p-4 text-white shrink-0">
                           <div className="absolute -right-8 -top-10 h-28 w-28 rounded-full bg-[#d4af37]/10 blur-3xl" />
                           <div className="relative flex items-center justify-between">
                             <div>
@@ -1317,7 +1317,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                 </button>
                               </div>
                               <p className="mt-1 text-[11px] font-medium text-white/50">
-                                Tarefas programadas
+                                Tarefas programadas - {agendaItems.length}
                               </p>
                             </div>
                             <div className="relative flex items-center justify-end pl-2 text-[#d4af37] transition-colors hover:opacity-80 cursor-pointer overflow-hidden">

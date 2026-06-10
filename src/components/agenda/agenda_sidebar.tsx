@@ -166,7 +166,12 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = React.memo(({
 
   const handleClientSearchChange = (value: string) => {
     setSearchTerm(value);
-    if (selectedClientId) setSelectedClientId(null);
+    if (selectedClientId || !value.trim()) {
+      setSelectedClientId(null);
+      setPhone("");
+      setBirthDate("");
+      setStatusNegociacao("");
+    }
   };
 
   const clearFormForNextAppointment = () => {
@@ -548,12 +553,6 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = React.memo(({
               disabled={true}
               className="flex-1 px-3 py-2 border border-black rounded text-sm text-black outline-none focus:border-black disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
             />
-            <button disabled={isFormDisabled} className="p-2 bg-[#00B5AD] text-white rounded shadow-sm hover:bg-[#009d96] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#00B5AD]">
-              <Plus size={16} />
-            </button>
-            <button disabled={isFormDisabled} className="p-2 bg-[#00B5AD] text-white rounded shadow-sm hover:bg-[#009d96] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#00B5AD]">
-              <Search size={16} />
-            </button>
           </div>
 
           <div className="flex gap-1">
