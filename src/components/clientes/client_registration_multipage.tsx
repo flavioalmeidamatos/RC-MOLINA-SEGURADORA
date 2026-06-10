@@ -95,7 +95,7 @@ type UploadedDocument = {
   mimeType: string;
   extension: string;
   previewUrl: string;
-  previewKind: 'image' | 'pdf' | 'document';
+  previewKind: 'image' | 'pdf' | 'video' | 'document';
   caminhoArquivo?: string;
 };
 
@@ -388,6 +388,7 @@ const obterExtensaoArquivo = (nome: string): string => {
 
 const obterTipoPreview = (arquivo: File): UploadedDocument['previewKind'] => {
   if (arquivo.type.startsWith('image/')) return 'image';
+  if (arquivo.type.startsWith('video/')) return 'video';
   if (arquivo.type === 'application/pdf' || obterExtensaoArquivo(arquivo.name) === 'pdf') return 'pdf';
   return 'document';
 };
@@ -422,7 +423,7 @@ const criarDocumentoPersistido = (anexo: ClienteSearchResult['anexos'][number]):
     mimeType,
     extension,
     previewUrl: caminhoArquivo,
-    previewKind: mimeType.startsWith('image/') ? 'image' : extension === 'pdf' ? 'pdf' : 'document',
+    previewKind: mimeType.startsWith('image/') ? 'image' : mimeType.startsWith('video/') || extension === 'mp4' ? 'video' : extension === 'pdf' ? 'pdf' : 'document',
     caminhoArquivo,
   };
 };
