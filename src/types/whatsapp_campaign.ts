@@ -1,4 +1,4 @@
-export type CampaignAttachmentKind = "image" | "video" | "pdf" | "file";
+export type CampaignAttachmentKind = "image" | "video" | "audio" | "pdf" | "file";
 
 export interface CampaignAttachment {
   id: string;

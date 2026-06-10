@@ -95,7 +95,7 @@ type UploadedDocument = {
   mimeType: string;
   extension: string;
   previewUrl: string;
-  previewKind: 'image' | 'pdf' | 'video' | 'document';
+  previewKind: 'image' | 'pdf' | 'video' | 'audio' | 'document';
   caminhoArquivo?: string;
 };
 
@@ -389,6 +389,7 @@ const obterExtensaoArquivo = (nome: string): string => {
 const obterTipoPreview = (arquivo: File): UploadedDocument['previewKind'] => {
   if (arquivo.type.startsWith('image/')) return 'image';
   if (arquivo.type.startsWith('video/')) return 'video';
+  if (arquivo.type.startsWith('audio/')) return 'audio';
   if (arquivo.type === 'application/pdf' || obterExtensaoArquivo(arquivo.name) === 'pdf') return 'pdf';
   return 'document';
 };
@@ -423,7 +424,7 @@ const criarDocumentoPersistido = (anexo: ClienteSearchResult['anexos'][number]):
     mimeType,
     extension,
     previewUrl: caminhoArquivo,
-    previewKind: mimeType.startsWith('image/') ? 'image' : mimeType.startsWith('video/') || extension === 'mp4' ? 'video' : extension === 'pdf' ? 'pdf' : 'document',
+    previewKind: mimeType.startsWith('image/') ? 'image' : mimeType.startsWith('video/') || extension === 'mp4' ? 'video' : mimeType.startsWith('audio/') || extension === 'ogg' || extension === 'mp3' ? 'audio' : extension === 'pdf' ? 'pdf' : 'document',
     caminhoArquivo,
   };
 };
@@ -2246,6 +2247,14 @@ export const ClientRegistrationMultipage: React.FC = () => {
                                 muted
                                 playsInline
                               />
+                            ) : documento.previewKind === 'audio' ? (
+                              <div className="flex h-full flex-col items-center justify-center bg-slate-100 px-4">
+                                <audio
+                                  src={documento.previewUrl}
+                                  controls
+                                  className="h-10 w-full"
+                                />
+                              </div>
                             ) : (
                               <div className="flex h-full flex-col items-center justify-center gap-3 px-4 text-center">
                                 {documento.mimeType.startsWith('image/') ? (
@@ -2386,6 +2395,15 @@ export const ClientRegistrationMultipage: React.FC = () => {
                       controls
                       autoPlay
                       className="max-h-[72vh] w-full object-contain"
+                    />
+                  </div>
+                ) : selectedDocumentPreview.previewKind === 'audio' ? (
+                  <div className="flex min-h-[320px] flex-col items-center justify-center rounded-[24px] border border-slate-200 bg-slate-50 px-6 py-8 text-center">
+                    <audio
+                      src={selectedDocumentPreview.previewUrl}
+                      controls
+                      autoPlay
+                      className="w-full max-w-lg"
                     />
                   </div>
                 ) : (
