@@ -1282,8 +1282,8 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                 Tarefas programadas
                               </p>
                             </div>
-                            <div className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-white/5 text-[#d4af37] ring-1 ring-white/10 backdrop-blur-sm transition-colors hover:bg-white/10 cursor-pointer overflow-hidden">
-                              <Calendar size={22} strokeWidth={1.5} />
+                            <div className="relative flex items-center justify-end pl-2 text-[#d4af37] transition-colors hover:opacity-80 cursor-pointer overflow-hidden">
+                              <Calendar size={24} strokeWidth={1.5} />
                               <input
                                 type="date"
                                 className="absolute inset-0 h-full w-full opacity-0 cursor-pointer"
