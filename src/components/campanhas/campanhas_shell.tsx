@@ -588,6 +588,7 @@ export function CampanhasShell({ userId, userEmail, initialMessage, onConnection
                   };
                 })
               }
+              campaignName={draft.campaignName}
               onPickMedia={handlePickFiles}
               onOptInChange={(checked) => setDraft((current) => ({ ...current, optInChecked: checked }))}
               onTemplateChange={(checked) => setDraft((current) => ({ ...current, templateChecked: checked }))}

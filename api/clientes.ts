@@ -352,6 +352,7 @@ export const searchClientesHandler = async (req: express.Request, res: express.R
   await initLocalDatabase();
   const pool = getPool();
   const query = req.query.q as string;
+  const campaign = req.query.campaign as string | undefined;
   
   if (!query || query.trim().length < 2) {
     return res.json([]);
@@ -359,9 +360,18 @@ export const searchClientesHandler = async (req: express.Request, res: express.R
 
   try {
     const searchTerm = `%${query.trim()}%`;
+    const params: any[] = [searchTerm];
+    let campaignFilter = '';
+
+    if (campaign && campaign.trim() !== '') {
+      params.push(`%${campaign.trim()}%`);
+      campaignFilter = `AND (c.documentacao_anotacoes IS NULL OR c.documentacao_anotacoes NOT ILIKE $2)`;
+    }
+
     const result = await pool.query(`
       ${clienteSelect}
-      WHERE c.nome_completo ILIKE $1 
+      WHERE (
+         c.nome_completo ILIKE $1 
          OR c.codigo ILIKE $1
          OR c.cpf ILIKE $1
          OR c.cnpj ILIKE $1
@@ -374,8 +384,11 @@ export const searchClientesHandler = async (req: express.Request, res: express.R
                OR (CASE WHEN regexp_replace(ct.valor, '\\D', '', 'g') LIKE '55%' THEN substring(regexp_replace(ct.valor, '\\D', '', 'g') from 3) ELSE regexp_replace(ct.valor, '\\D', '', 'g') END) ILIKE (CASE WHEN $1 LIKE '%55%' THEN replace($1, '55', '') ELSE $1 END)
              )
          )
+      )
+      ${campaignFilter}
+      ORDER BY c.nome_completo ASC
       LIMIT 15
-    `, [searchTerm]);
+    `, params);
     
     res.json(result.rows);
   } catch (error: any) {

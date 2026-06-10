@@ -20,6 +20,7 @@ interface WhatsAppCampaignEditorProps {
   onAudioRecorded?: (file: File, dataUrl: string) => void;
   onPhoneSelected?: (phone: string) => void;
   onPhonesSelected?: (phones: string[]) => void;
+  campaignName?: string;
 }
 
 const emojiCategories: CategoryConfig[] = [
@@ -49,6 +50,7 @@ export function WhatsAppCampaignEditor({
   onAudioRecorded,
   onPhoneSelected,
   onPhonesSelected,
+  campaignName,
 }: WhatsAppCampaignEditorProps) {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -68,7 +70,8 @@ export function WhatsAppCampaignEditor({
     const timer = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const response = await fetch(`/api/clientes/search?q=${encodeURIComponent(searchQuery)}`);
+        const url = `/api/clientes/search?q=${encodeURIComponent(searchQuery)}${campaignName ? `&campaign=${encodeURIComponent(campaignName)}` : ''}`;
+        const response = await fetch(url);
         const data = await response.json();
         setSearchResults(data);
       } catch (error) {
@@ -80,7 +83,7 @@ export function WhatsAppCampaignEditor({
     }, 150);
 
     return () => clearTimeout(timer);
-  }, [searchQuery]);
+  }, [searchQuery, campaignName]);
 
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
