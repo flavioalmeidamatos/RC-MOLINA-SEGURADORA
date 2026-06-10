@@ -1805,7 +1805,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                     <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
 
                     {isProdutoDropdownOpen ? (
-                      <div className="absolute left-0 right-0 z-30 mt-2 max-h-56 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl">
+                      <div className="absolute left-0 right-0 bottom-full z-30 mb-2 max-h-56 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl">
                         {produtosFiltrados.length > 0 ? (
                           produtosFiltrados.map((produto) => (
                             <button
@@ -1851,7 +1851,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
                     <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
 
                     {isStatusNegociacaoDropdownOpen ? (
-                      <div className="absolute left-0 right-0 z-30 mt-2 max-h-56 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl">
+                      <div className="absolute left-0 right-0 bottom-full z-30 mb-2 max-h-56 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl">
                         {statusNegociacaoFiltrados.length > 0 ? (
                           statusNegociacaoFiltrados.map((statusOpcao) => (
                             <button
