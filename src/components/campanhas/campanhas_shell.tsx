@@ -520,13 +520,12 @@ export function CampanhasShell({ userId, userEmail, initialMessage, onConnection
           message: `Campanha disparada parcialmente: ${summary.sent} enviado(s), ${summary.failed} falha(s). Detalhe: ${errors || 'Erro desconhecido.'}`,
         });
       } else {
-        const videoStr = summary.generatedVideo ? `\n\n[DEBUG] Vídeo gerado: ${summary.generatedVideo.name}` : '';
         const downloadName = summary.generatedVideo ? (successfulPhones.length > 0 ? `campanha_${successfulPhones[0].replace(/\D/g, '')}.mp4` : summary.generatedVideo.name) : undefined;
         setFeedback({
           show: true,
           type: "success",
           title: "Envio Concluído!",
-          message: `A mensagem foi processada com sucesso.${videoStr}`,
+          message: `A mensagem foi processada com sucesso.`,
           generatedVideoUrl: summary.generatedVideo?.dataUrl,
           generatedVideoName: downloadName
         });
