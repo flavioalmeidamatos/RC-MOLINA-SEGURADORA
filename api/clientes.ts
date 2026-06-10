@@ -353,6 +353,8 @@ export const searchClientesHandler = async (req: express.Request, res: express.R
   const pool = getPool();
   const query = req.query.q as string;
   const campaign = req.query.campaign as string | undefined;
+  const limitParam = req.query.limit ? parseInt(req.query.limit as string, 10) : 15;
+  const limit = isNaN(limitParam) ? 15 : Math.min(Math.max(1, limitParam), 500);
   
   if (!query || query.trim().length < 2) {
     return res.json([]);
@@ -360,12 +362,12 @@ export const searchClientesHandler = async (req: express.Request, res: express.R
 
   try {
     const searchTerm = `%${query.trim()}%`;
-    const params: any[] = [searchTerm];
+    const params: any[] = [searchTerm, limit];
     let campaignFilter = '';
 
     if (campaign && campaign.trim() !== '') {
       params.push(`%${campaign.trim()}%`);
-      campaignFilter = `AND (c.documentacao_anotacoes IS NULL OR c.documentacao_anotacoes NOT ILIKE $2)`;
+      campaignFilter = `AND (c.documentacao_anotacoes IS NULL OR c.documentacao_anotacoes NOT ILIKE $3)`;
     }
 
     const result = await pool.query(`
@@ -387,8 +389,9 @@ export const searchClientesHandler = async (req: express.Request, res: express.R
       )
       ${campaignFilter}
       ORDER BY c.nome_completo ASC
-      LIMIT 15
+      LIMIT $2
     `, params);
+    
     
     res.json(result.rows);
   } catch (error: any) {

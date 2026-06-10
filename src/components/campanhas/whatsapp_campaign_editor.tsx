@@ -60,20 +60,23 @@ export function WhatsAppCampaignEditor({
   const [isSearching, setIsSearching] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [selectedSearchPhones, setSelectedSearchPhones] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     if (searchQuery.length < 2) {
       setSearchResults([]);
+      setCurrentPage(1);
       return;
     }
 
     const timer = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const url = `/api/clientes/search?q=${encodeURIComponent(searchQuery)}${campaignName ? `&campaign=${encodeURIComponent(campaignName)}` : ''}`;
+        const url = `/api/clientes/search?q=${encodeURIComponent(searchQuery)}&limit=500${campaignName ? `&campaign=${encodeURIComponent(campaignName)}` : ''}`;
         const response = await fetch(url);
         const data = await response.json();
         setSearchResults(data);
+        setCurrentPage(1);
       } catch (error) {
         console.error("Erro ao buscar clientes:", error);
         setSearchResults([]);
@@ -346,6 +349,10 @@ export function WhatsAppCampaignEditor({
     }, 0);
   };
 
+  const itemsPerPage = 10;
+  const totalPages = Math.ceil(searchResults.length / itemsPerPage);
+  const paginatedResults = searchResults.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
   return (
     <section className="rounded-[20px] border border-slate-200 bg-white shadow-sm p-3">
       <div className="space-y-2">
@@ -382,12 +389,12 @@ export function WhatsAppCampaignEditor({
                   <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-xl flex flex-col max-h-[80vh]">
                     <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
                       <h3 className="font-bold text-slate-800">Selecionar Destinatários</h3>
-                      <button onClick={() => { setShowSearchResults(false); setSelectedSearchPhones([]); setSearchQuery(""); }} className="text-slate-400 hover:text-slate-600">
+                      <button onClick={() => { setShowSearchResults(false); setSelectedSearchPhones([]); setSearchQuery(""); setCurrentPage(1); }} className="text-slate-400 hover:text-slate-600">
                         <X size={20} />
                       </button>
                     </div>
-                    <div className="overflow-y-auto p-2">
-                      {searchResults.map((c) => {
+                    <div className="overflow-y-auto p-2 flex-1">
+                      {paginatedResults.map((c) => {
                         const phone = c.contatos?.find((ct: any) => ct.tipo_contato === "Celular")?.valor || c.contatos?.[0]?.valor;
                         const isSent = phone && sentPhones.includes(phone);
                         const isSelected = phone && selectedSearchPhones.includes(phone);
@@ -418,6 +425,28 @@ export function WhatsAppCampaignEditor({
                         );
                       })}
                     </div>
+                    {totalPages > 1 && (
+                      <div className="flex flex-col border-t border-slate-100 bg-white">
+                        <div className="flex items-center justify-center gap-2 overflow-x-auto p-3">
+                          {Array.from({ length: totalPages }).map((_, i) => (
+                            <button
+                              key={i}
+                              onClick={() => setCurrentPage(i + 1)}
+                              className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold transition ${
+                                currentPage === i + 1
+                                  ? "bg-[#d4af37] text-white shadow-md"
+                                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                              }`}
+                            >
+                              {i + 1}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="text-center pb-3">
+                           <span className="text-xs text-slate-500 font-medium">Total de {searchResults.length} contatos encontrados. Faltam {Math.max(0, searchResults.length - selectedSearchPhones.length - sentPhones.length)} para serem trabalhados.</span>
+                        </div>
+                      </div>
+                    )}
                     <div className="border-t border-slate-100 p-4 flex justify-between items-center bg-slate-50">
                       <span className="text-sm text-slate-600 font-medium">{selectedSearchPhones.length} / 10 selecionados</span>
                       <button 
@@ -428,6 +457,7 @@ export function WhatsAppCampaignEditor({
                           setShowSearchResults(false);
                           setSelectedSearchPhones([]);
                           setSearchQuery("");
+                          setCurrentPage(1);
                         }}
                         disabled={selectedSearchPhones.length === 0}
                         className="rounded-lg bg-[#d4af37] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#c4a133] disabled:opacity-50 disabled:cursor-not-allowed"
