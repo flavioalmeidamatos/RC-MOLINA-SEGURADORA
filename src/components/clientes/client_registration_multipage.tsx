@@ -116,8 +116,8 @@ const tabs: Array<{ id: TabId; label: string; icon: React.ComponentType<{ size?:
 
 const tabLabels: Record<TabId, string> = {
   geral: 'Geral',
-    endereco: 'Endereço',
-    documentacao: 'Documentação',
+  endereco: 'Endereço',
+  documentacao: 'Documentação',
 };
 
 const initialFormState: ClientFormState = {
@@ -136,7 +136,7 @@ const initialFormState: ClientFormState = {
   enderecoCidade: '',
   observacoes: '',
   documentacao: '',
-    comoConheceu: '0 - Não informado',
+  comoConheceu: '0 - Não informado',
   produtoComercializado: '',
   statusNegociacao: '',
   valorProposta: '',
@@ -208,9 +208,9 @@ const camposTextoMaiusculo = new Set<keyof ClientFormState>([
 ]);
 
 const cidadesPorEstado: Record<string, string[]> = {
-    RJ: ['Rio de Janeiro', 'Niterói', 'Petrópolis', 'Volta Redonda'],
-    SP: ['São Paulo', 'Campinas', 'Santos', 'Ribeirão Preto'],
-    MG: ['Belo Horizonte', 'Juiz de Fora', 'Uberlândia', 'Contagem'],
+  RJ: ['Rio de Janeiro', 'Niterói', 'Petrópolis', 'Volta Redonda'],
+  SP: ['São Paulo', 'Campinas', 'Santos', 'Ribeirão Preto'],
+  MG: ['Belo Horizonte', 'Juiz de Fora', 'Uberlândia', 'Contagem'],
 };
 
 const fieldClassName =
@@ -269,7 +269,7 @@ const systemMessageStyles: Record<
 };
 
 const somenteDigitos = (valor: string): string => valor.replace(/\D/g, '');
-  const somenteLetrasEEspacos = (valor: string): string => valor.replace(/[^A-Za-zÀ-ÿ\s]/g, '');
+const somenteLetrasEEspacos = (valor: string): string => valor.replace(/[^A-Za-zÀ-ÿ\s]/g, '');
 
 const normalizarTextoMaiusculo = (valor: string): string => valor.toLocaleUpperCase('pt-BR');
 
@@ -775,7 +775,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
       return true;
     }
     const isValid = validarCPF(formState.cpf);
-      updateFieldError('cpf', isValid ? '' : 'Informe um CPF válido.');
+    updateFieldError('cpf', isValid ? '' : 'Informe um CPF válido.');
     return isValid;
   };
 
@@ -785,7 +785,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
       return true;
     }
     const isValid = validarRG(formState.rg);
-      updateFieldError('rg', isValid ? '' : 'Informe um RG válido.');
+    updateFieldError('rg', isValid ? '' : 'Informe um RG válido.');
     return isValid;
   };
 
@@ -795,7 +795,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
       return true;
     }
     const isValid = validarCNPJ(formState.cnpj);
-      updateFieldError('cnpj', isValid ? '' : 'Informe um CNPJ válido.');
+    updateFieldError('cnpj', isValid ? '' : 'Informe um CNPJ válido.');
     return isValid;
   };
 
@@ -805,7 +805,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
       return true;
     }
     const isValid = validarDataNascimentoBR(formState.dataNascimento);
-      updateFieldError('dataNascimento', isValid ? '' : 'Informe uma data de nascimento válida.');
+    updateFieldError('dataNascimento', isValid ? '' : 'Informe uma data de nascimento válida.');
     return isValid;
   };
 
@@ -852,13 +852,13 @@ export const ClientRegistrationMultipage: React.FC = () => {
       prev.map((contact) =>
         contact.id === id
           ? {
-              ...contact,
-              type: nextType,
-              value:
-                nextType === 'E-mail'
-                  ? ''
-                  : formatarTelefoneContato(contact.value, nextType),
-            }
+            ...contact,
+            type: nextType,
+            value:
+              nextType === 'E-mail'
+                ? ''
+                : formatarTelefoneContato(contact.value, nextType),
+          }
           : contact,
       ),
     );
@@ -893,7 +893,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
     const minimo = contact.type === 'Celular' ? 11 : 10;
     setContactErrors((prev) => ({
       ...prev,
-        [id]: totalDigitos === minimo ? '' : 'Informe um telefone válido.',
+      [id]: totalDigitos === minimo ? '' : 'Informe um telefone válido.',
     }));
   };
 
@@ -1095,8 +1095,8 @@ export const ClientRegistrationMultipage: React.FC = () => {
       !isContratoObrigatorio ||
       Boolean(
         formState.valorProposta.trim() &&
-          formState.numeroProposta.trim() &&
-          formState.formaPagamento.trim(),
+        formState.numeroProposta.trim() &&
+        formState.formaPagamento.trim(),
       );
     let isDataFechamentoValid = true;
     if (isContratoObrigatorio) {
@@ -1531,11 +1531,10 @@ export const ClientRegistrationMultipage: React.FC = () => {
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className={`inline-flex min-h-11 shrink-0 items-center gap-2 rounded-2xl border px-4 py-2.5 text-sm font-bold transition sm:min-h-10 ${
-                  isActive
+                className={`inline-flex min-h-11 shrink-0 items-center gap-2 rounded-2xl border px-4 py-2.5 text-sm font-bold transition sm:min-h-10 ${isActive
                     ? 'border-[#ef6b74] bg-[#fff6f6] text-[#2e6ea8] shadow-sm'
                     : 'border-transparent bg-slate-50 text-slate-500 hover:border-slate-200 hover:bg-white'
-                }`}
+                  }`}
               >
                 <Icon size={18} className={isActive ? 'text-[#2e6ea8]' : 'text-slate-400'} />
                 {tabLabels[tab.id]}
@@ -1658,9 +1657,8 @@ export const ClientRegistrationMultipage: React.FC = () => {
                 {contacts.map((contact, index) => (
                   <div
                     key={contact.id}
-                    className={`bg-white px-3 py-2 ${
-                      index !== contacts.length - 1 ? 'border-b border-slate-200' : ''
-                    }`}
+                    className={`bg-white px-3 py-2 ${index !== contacts.length - 1 ? 'border-b border-slate-200' : ''
+                      }`}
                   >
                     <div className="grid gap-2 xl:grid-cols-[0.9fr_1.15fr_1fr_1fr_auto]">
                       <select
@@ -1921,11 +1919,10 @@ export const ClientRegistrationMultipage: React.FC = () => {
                                 handleFieldChange('produtoComercializado', produto);
                                 setIsProdutoDropdownOpen(false);
                               }}
-                              className={`w-full rounded-xl px-3 py-2 text-left text-sm font-semibold transition hover:bg-teal-50 hover:text-teal-700 ${
-                                formState.produtoComercializado === produto
+                              className={`w-full rounded-xl px-3 py-2 text-left text-sm font-semibold transition hover:bg-teal-50 hover:text-teal-700 ${formState.produtoComercializado === produto
                                   ? 'bg-teal-50 text-teal-700'
                                   : 'text-slate-600'
-                              }`}
+                                }`}
                             >
                               {produto}
                             </button>
@@ -1968,11 +1965,10 @@ export const ClientRegistrationMultipage: React.FC = () => {
                                 handleFieldChange('statusNegociacao', statusOpcao);
                                 setIsStatusNegociacaoDropdownOpen(false);
                               }}
-                              className={`w-full rounded-xl px-3 py-2 text-left text-sm font-semibold transition hover:bg-teal-50 hover:text-teal-700 ${
-                                formState.statusNegociacao === statusOpcao
+                              className={`w-full rounded-xl px-3 py-2 text-left text-sm font-semibold transition hover:bg-teal-50 hover:text-teal-700 ${formState.statusNegociacao === statusOpcao
                                   ? 'bg-teal-50 text-teal-700'
                                   : 'text-slate-600'
-                              }`}
+                                }`}
                             >
                               {statusOpcao}
                             </button>
@@ -1993,22 +1989,20 @@ export const ClientRegistrationMultipage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleFieldChange('permiteAgendarOnline', true)}
-                      className={`min-h-11 rounded-2xl border px-4 py-2.5 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-10 ${
-                        formState.permiteAgendarOnline
+                      className={`min-h-11 rounded-2xl border px-4 py-2.5 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-10 ${formState.permiteAgendarOnline
                           ? 'border-teal-500 bg-teal-500 text-white'
                           : 'border-black bg-white text-slate-500'
-                      }`}
+                        }`}
                     >
                       SIM
                     </button>
                     <button
                       type="button"
                       onClick={() => handleFieldChange('permiteAgendarOnline', false)}
-                      className={`min-h-11 rounded-2xl border px-4 py-2.5 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-10 ${
-                        !formState.permiteAgendarOnline
+                      className={`min-h-11 rounded-2xl border px-4 py-2.5 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-10 ${!formState.permiteAgendarOnline
                           ? 'border-teal-500 bg-teal-500 text-white'
                           : 'border-black bg-white text-slate-500'
-                      }`}
+                        }`}
                     >
                       NÃO
                     </button>
@@ -2023,22 +2017,20 @@ export const ClientRegistrationMultipage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleFieldChange('status', 'ATIVO')}
-                      className={`min-h-11 rounded-2xl border px-4 py-2.5 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-10 ${
-                        formState.status === 'ATIVO'
+                      className={`min-h-11 rounded-2xl border px-4 py-2.5 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-10 ${formState.status === 'ATIVO'
                           ? 'border-teal-500 bg-teal-500 text-white'
                           : 'border-black bg-white text-slate-500'
-                      }`}
+                        }`}
                     >
                       ATIVO
                     </button>
                     <button
                       type="button"
                       onClick={() => handleFieldChange('status', 'INATIVO')}
-                      className={`min-h-11 rounded-2xl border px-4 py-2.5 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-10 ${
-                        formState.status === 'INATIVO'
+                      className={`min-h-11 rounded-2xl border px-4 py-2.5 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-10 ${formState.status === 'INATIVO'
                           ? 'border-teal-500 bg-teal-500 text-white'
                           : 'border-black bg-white text-slate-500'
-                      }`}
+                        }`}
                     >
                       INATIVO
                     </button>
@@ -2137,13 +2129,12 @@ export const ClientRegistrationMultipage: React.FC = () => {
                   }}
                   onDragLeave={() => setIsDraggingDocuments(false)}
                   onDrop={handleDocumentDrop}
-                  className={`rounded-[28px] border-2 border-dashed px-4 py-3.5 text-center transition sm:px-5 xl:h-full ${
-                    isClientFormLocked
+                  className={`rounded-[28px] border-2 border-dashed px-4 py-3.5 text-center transition sm:px-5 xl:h-full ${isClientFormLocked
                       ? 'border-slate-200 bg-slate-100 opacity-70'
                       : isDraggingDocuments
-                      ? 'border-[#3d8ed8] bg-[#3d8ed8]/5'
-                      : 'border-slate-300 bg-slate-50/80 hover:border-[#3d8ed8]/50 hover:bg-[#3d8ed8]/[0.03]'
-                  }`}
+                        ? 'border-[#3d8ed8] bg-[#3d8ed8]/5'
+                        : 'border-slate-300 bg-slate-50/80 hover:border-[#3d8ed8]/50 hover:bg-[#3d8ed8]/[0.03]'
+                    }`}
                 >
                   <input
                     ref={fileInputRef}
@@ -2346,15 +2337,13 @@ export const ClientRegistrationMultipage: React.FC = () => {
       </div>
 
       <div
-        className={`fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 p-4 backdrop-blur-sm transition-all duration-200 ${
-          selectedDocumentPreview ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
-        }`}
+        className={`fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 p-4 backdrop-blur-sm transition-all duration-200 ${selectedDocumentPreview ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
+          }`}
         onClick={() => setSelectedDocumentPreview(null)}
       >
         <div
-          className={`w-full max-w-6xl rounded-[32px] bg-white shadow-2xl transition-all duration-200 ${
-            selectedDocumentPreview ? 'translate-y-0 scale-100' : 'translate-y-4 scale-95'
-          }`}
+          className={`w-full max-w-6xl rounded-[32px] bg-white shadow-2xl transition-all duration-200 ${selectedDocumentPreview ? 'translate-y-0 scale-100' : 'translate-y-4 scale-95'
+            }`}
           onClick={(event) => event.stopPropagation()}
         >
           {selectedDocumentPreview ? (

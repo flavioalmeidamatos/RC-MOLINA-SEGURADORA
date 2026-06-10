@@ -360,9 +360,7 @@ export const searchClientesHandler = async (req: express.Request, res: express.R
   try {
     const searchTerm = `%${query.trim()}%`;
     const result = await pool.query(`
-      SELECT c.id_cliente, c.nome_completo,
-        COALESCE((SELECT json_agg(row_to_json(cc)) FROM "RCMOLINASEGUROS"."CLIENTES_CONTATOS" cc WHERE cc.id_cliente = c.id_cliente), '[]'::json) as contatos
-      FROM "RCMOLINASEGUROS"."CLIENTES" c
+      ${clienteSelect}
       WHERE c.nome_completo ILIKE $1 
          OR c.codigo ILIKE $1
          OR c.cpf ILIKE $1
