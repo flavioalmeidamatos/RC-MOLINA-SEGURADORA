@@ -367,7 +367,12 @@ export const searchClientesHandler = async (req: express.Request, res: express.R
          OR c.cnpj ILIKE $1
          OR EXISTS (
            SELECT 1 FROM "RCMOLINASEGUROS"."CLIENTES_CONTATOS" ct
-           WHERE ct.id_cliente = c.id_cliente AND ct.valor ILIKE $1
+           WHERE ct.id_cliente = c.id_cliente 
+             AND (
+               ct.valor ILIKE $1 
+               OR regexp_replace(ct.valor, '\\D', '', 'g') ILIKE $1
+               OR (CASE WHEN regexp_replace(ct.valor, '\\D', '', 'g') LIKE '55%' THEN substring(regexp_replace(ct.valor, '\\D', '', 'g') from 3) ELSE regexp_replace(ct.valor, '\\D', '', 'g') END) ILIKE (CASE WHEN $1 LIKE '%55%' THEN replace($1, '55', '') ELSE $1 END)
+             )
          )
       LIMIT 15
     `, [searchTerm]);
