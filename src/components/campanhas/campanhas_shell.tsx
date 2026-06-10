@@ -450,16 +450,17 @@ export function CampanhasShell({ userId, userEmail, initialMessage, onConnection
               });
 
               if (summary.generatedVideo) {
+                const cleanPhone = phone.replace(/\D/g, '');
+                const videoName = `campanha_${cleanPhone}.mp4`;
                 await fetch(`/api/clientes/${client.id_cliente}/anexos`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
-                    nome: summary.generatedVideo.name,
+                    nome: videoName,
                     tipoMime: summary.generatedVideo.mimeType,
                     dataUrl: summary.generatedVideo.dataUrl
                   })
                 });
-
                 // Salva os outros anexos que não foram fundidos no vídeo (ex: PDFs)
                 const videoComponents = ['image/', 'audio/'];
                 for (const att of draft.attachments) {

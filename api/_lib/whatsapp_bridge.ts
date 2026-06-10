@@ -366,17 +366,31 @@ export const sendCampaignToWhatsAppBridge = async (
 
   for (const number of recipients) {
     try {
+      let recipientMedia = media;
+      if (generatedVideo) {
+        const cleanNumber = number.replace(/\D/g, '');
+        recipientMedia = media.map(m => {
+          if (m.type.startsWith('video/')) {
+            return {
+              ...m,
+              name: `campanha_${cleanNumber}.mp4`
+            };
+          }
+          return m;
+        });
+      }
+
       const response = useExternalBridge()
         ? await fetchBridgeJson<{ success?: boolean; messageId?: string; error?: string }>('/api/send', {
             method: 'POST',
             body: JSON.stringify({
               number,
               message,
-              media,
+              media: recipientMedia,
               optInConfirmed: true,
             }),
           })
-        : await sendLocalWhatsAppBridgeMessage(number, message, media);
+        : await sendLocalWhatsAppBridgeMessage(number, message, recipientMedia);
 
       results.push({
         number,
