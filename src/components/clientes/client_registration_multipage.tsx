@@ -1545,7 +1545,7 @@ export const ClientRegistrationMultipage: React.FC = () => {
       </div>
 
       <fieldset disabled={isClientFormLocked} className="m-0 space-y-3 border-0 p-0">
-        <section className={activeTab === 'geral' ? 'block' : 'hidden'}>
+        <section className={activeTab === 'geral' ? 'block space-y-3' : 'hidden'}>
           <div className={sectionCardClassName}>
             <div className="grid gap-2.5 lg:grid-cols-[0.72fr_0.58fr_0.86fr_0.64fr]">
               <div className="lg:col-span-4">
@@ -1762,112 +1762,6 @@ export const ClientRegistrationMultipage: React.FC = () => {
                     {fieldErrors.dataCadastro ? <p className={errorMessageClassName}>{fieldErrors.dataCadastro}</p> : null}
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className={activeTab === 'endereco' ? 'space-y-3' : 'hidden'}>
-          <div className={sectionCardClassName}>
-            <div className="grid gap-3 xl:grid-cols-12">
-              <div className="xl:col-span-2">
-                <label className="mb-2 block text-sm font-bold text-slate-700">CEP</label>
-                <input
-                  className={fieldClassName}
-                  value={formState.enderecoCep}
-                  onChange={(event) => handleCepChange(event.target.value)}
-                  onBlur={() => void fetchAddressByCep()}
-                  onKeyDown={handleCepKeyDown}
-                  inputMode="numeric"
-                  maxLength={9}
-                  placeholder="00000-000"
-                />
-                <p className="mt-1.5 text-xs font-semibold text-slate-400">
-                  {isFetchingCep ? 'Buscando CEP...' : 'Digite 8 números e pressione Enter ou Tab.'}
-                </p>
-              </div>
-
-              <div className="xl:col-span-5">
-                <label className="mb-2 block text-sm font-bold text-slate-700">Endereço</label>
-                <input
-                  className={fieldClassName}
-                  value={formState.enderecoRua}
-                  onChange={(event) => handleFieldChange('enderecoRua', event.target.value)}
-                  disabled
-                  placeholder="Rua, avenida ou logradouro"
-                />
-              </div>
-
-              <div className="xl:col-span-2">
-                <label className="mb-2 block text-sm font-bold text-slate-700">Número</label>
-                <input
-                  ref={enderecoNumeroInputRef}
-                  className={fieldClassName}
-                  value={formState.enderecoNumero}
-                  onChange={(event) => handleFieldChange('enderecoNumero', event.target.value)}
-                  placeholder="Número"
-                />
-              </div>
-
-              <div className="xl:col-span-3">
-                <label className="mb-2 block text-sm font-bold text-slate-700">Complemento</label>
-                <input
-                  className={fieldClassName}
-                  value={formState.enderecoComplemento}
-                  onChange={(event) => handleFieldChange('enderecoComplemento', event.target.value)}
-                  placeholder="Apartamento, bloco, sala"
-                />
-              </div>
-
-              <div className="xl:col-span-3">
-                <label className="mb-2 block text-sm font-bold text-slate-700">Ponto de referência</label>
-                <input
-                  className={fieldClassName}
-                  value={formState.enderecoReferencia}
-                  onChange={(event) => handleFieldChange('enderecoReferencia', event.target.value)}
-                  placeholder="Ex.: próximo à praça central"
-                />
-              </div>
-
-              <div className="xl:col-span-3">
-                <label className="mb-2 block text-sm font-bold text-slate-700">Bairro</label>
-                <input
-                  className={fieldClassName}
-                  value={formState.enderecoBairro}
-                  onChange={(event) => handleFieldChange('enderecoBairro', event.target.value)}
-                  disabled
-                  placeholder="Bairro"
-                />
-              </div>
-
-              <div className="xl:col-span-4">
-                <label className="mb-2 block text-sm font-bold text-slate-700">Cidade</label>
-                <input
-                  className={fieldClassName}
-                  value={formState.enderecoCidade}
-                  onChange={(event) => handleFieldChange('enderecoCidade', event.target.value)}
-                  disabled
-                  placeholder="Cidade"
-                />
-              </div>
-
-              <div className="xl:col-span-2">
-                <label className="mb-2 block text-sm font-bold text-slate-700">Estado</label>
-                <select
-                  className={fieldClassName}
-                  value={formState.enderecoEstado}
-                  disabled
-                  onChange={(event) => {
-                    handleFieldChange('enderecoEstado', event.target.value);
-                    handleFieldChange('enderecoCidade', '');
-                  }}
-                >
-                  {estados.map((state) => (
-                    <option key={state} value={state === 'Selecione...' ? '' : state}>
-                      {state}
-                    </option>
-                  ))}
-                </select>
               </div>
             </div>
           </div>
@@ -2114,6 +2008,112 @@ export const ClientRegistrationMultipage: React.FC = () => {
                   </div>
                 </div>
               ) : null}
+            </div>
+          </div>
+        </section>
+
+        <section className={activeTab === 'endereco' ? 'space-y-3' : 'hidden'}>
+          <div className={sectionCardClassName}>
+            <div className="grid gap-3 xl:grid-cols-12">
+              <div className="xl:col-span-2">
+                <label className="mb-2 block text-sm font-bold text-slate-700">CEP</label>
+                <input
+                  className={fieldClassName}
+                  value={formState.enderecoCep}
+                  onChange={(event) => handleCepChange(event.target.value)}
+                  onBlur={() => void fetchAddressByCep()}
+                  onKeyDown={handleCepKeyDown}
+                  inputMode="numeric"
+                  maxLength={9}
+                  placeholder="00000-000"
+                />
+                <p className="mt-1.5 text-xs font-semibold text-slate-400">
+                  {isFetchingCep ? 'Buscando CEP...' : 'Digite 8 números e pressione Enter ou Tab.'}
+                </p>
+              </div>
+
+              <div className="xl:col-span-5">
+                <label className="mb-2 block text-sm font-bold text-slate-700">Endereço</label>
+                <input
+                  className={fieldClassName}
+                  value={formState.enderecoRua}
+                  onChange={(event) => handleFieldChange('enderecoRua', event.target.value)}
+                  disabled
+                  placeholder="Rua, avenida ou logradouro"
+                />
+              </div>
+
+              <div className="xl:col-span-2">
+                <label className="mb-2 block text-sm font-bold text-slate-700">Número</label>
+                <input
+                  ref={enderecoNumeroInputRef}
+                  className={fieldClassName}
+                  value={formState.enderecoNumero}
+                  onChange={(event) => handleFieldChange('enderecoNumero', event.target.value)}
+                  placeholder="Número"
+                />
+              </div>
+
+              <div className="xl:col-span-3">
+                <label className="mb-2 block text-sm font-bold text-slate-700">Complemento</label>
+                <input
+                  className={fieldClassName}
+                  value={formState.enderecoComplemento}
+                  onChange={(event) => handleFieldChange('enderecoComplemento', event.target.value)}
+                  placeholder="Apartamento, bloco, sala"
+                />
+              </div>
+
+              <div className="xl:col-span-3">
+                <label className="mb-2 block text-sm font-bold text-slate-700">Ponto de referência</label>
+                <input
+                  className={fieldClassName}
+                  value={formState.enderecoReferencia}
+                  onChange={(event) => handleFieldChange('enderecoReferencia', event.target.value)}
+                  placeholder="Ex.: próximo à praça central"
+                />
+              </div>
+
+              <div className="xl:col-span-3">
+                <label className="mb-2 block text-sm font-bold text-slate-700">Bairro</label>
+                <input
+                  className={fieldClassName}
+                  value={formState.enderecoBairro}
+                  onChange={(event) => handleFieldChange('enderecoBairro', event.target.value)}
+                  disabled
+                  placeholder="Bairro"
+                />
+              </div>
+
+              <div className="xl:col-span-4">
+                <label className="mb-2 block text-sm font-bold text-slate-700">Cidade</label>
+                <input
+                  className={fieldClassName}
+                  value={formState.enderecoCidade}
+                  onChange={(event) => handleFieldChange('enderecoCidade', event.target.value)}
+                  disabled
+                  placeholder="Cidade"
+                />
+              </div>
+
+              <div className="xl:col-span-2">
+                <label className="mb-2 block text-sm font-bold text-slate-700">Estado</label>
+                <select
+                  className={fieldClassName}
+                  value={formState.enderecoEstado}
+                  disabled
+                  onChange={(event) => {
+                    handleFieldChange('enderecoEstado', event.target.value);
+                    handleFieldChange('enderecoCidade', '');
+                  }}
+                >
+                  {estados.map((state) => (
+                    <option key={state} value={state === 'Selecione...' ? '' : state}>
+                      {state}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
         </section>
