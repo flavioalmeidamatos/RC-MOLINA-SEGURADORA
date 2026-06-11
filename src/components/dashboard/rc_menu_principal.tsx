@@ -981,10 +981,10 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
               ) : (
                 <>
                   <div className="text-xl font-bold leading-none tracking-widest text-[#d4af37]">
-                    RC MOLINA
+                    CKDEV
                   </div>
                   <div className="mt-1 text-center text-[10px] font-bold tracking-[0.3em] text-white/80">
-                    SEGUROS
+                    SOLUÇÕES EM TI
                   </div>
                 </>
               )}

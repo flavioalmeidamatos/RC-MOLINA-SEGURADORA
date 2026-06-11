@@ -234,8 +234,8 @@ export const RecuperarSenha: React.FC = () => {
       <div className="w-full max-w-md bg-[#1a1a1a] p-8 rounded-2xl shadow-2xl border border-gray-800">
         <div className="flex flex-col items-center mb-8">
           <div className="bg-black px-6 py-3 rounded mb-6">
-            <div className="text-[#d4af37] font-serif text-xl tracking-widest font-bold">RC MOLINA</div>
-            <div className="text-white text-[10px] tracking-[0.3em] text-center">CORRETORA</div>
+            <div className="text-[#d4af37] font-serif text-xl tracking-widest font-bold">CKDEV</div>
+            <div className="text-white text-[10px] tracking-[0.3em] text-center mt-1 font-bold">SOLUÇÕES EM TI</div>
           </div>
           <h1 className="text-3xl font-bold mb-2">Recuperar Senha</h1>
           <p className="text-gray-400 text-sm text-center">{subtitles[stage]}</p>
