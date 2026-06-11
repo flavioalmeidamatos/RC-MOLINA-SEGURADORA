@@ -159,22 +159,22 @@ export const Cadastro: React.FC = () => {
   };
 
   return (
-    <div id="SCR-003" data-name="crieconta" className="flex h-full min-h-0 flex-col items-center justify-start overflow-y-auto bg-[#121212] px-4 py-4 text-white sm:py-6">
-      <div className="w-full max-w-md bg-[#1a1a1a] p-8 rounded-2xl shadow-2xl border border-gray-800">
-        <div className="flex flex-col items-center mb-8">
-          <h1 className="text-3xl font-bold mb-2">Crie sua conta</h1>
+    <div id="SCR-003" data-name="crieconta" className="flex h-full min-h-0 flex-col items-center justify-start overflow-y-auto bg-[#121212] px-4 py-2 text-white sm:py-4">
+      <div className="w-full max-w-md bg-[#1a1a1a] p-6 rounded-2xl shadow-2xl border border-gray-800">
+        <div className="flex flex-col items-center mb-4">
+          <h1 className="text-2xl font-bold mb-1">Crie sua conta</h1>
           <p className="text-gray-400 text-sm">Preencha os dados abaixo para começar.</p>
         </div>
 
-        <div className="flex flex-col items-center mb-8">
+        <div className="flex flex-col items-center mb-4">
           <div
             onClick={triggerFileInput}
-            className="w-24 h-24 rounded-full border-2 border-[#ccff00] flex items-center justify-center relative bg-[#121212] overflow-hidden group cursor-pointer"
+            className="w-20 h-20 rounded-full border-2 border-[#ccff00] flex items-center justify-center relative bg-[#121212] overflow-hidden group cursor-pointer"
           >
             {avatarUrl ? (
               <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
             ) : (
-              <User className="text-gray-500 group-hover:text-[#ccff00] transition" size={48} />
+              <User className="text-gray-500 group-hover:text-[#ccff00] transition" size={40} />
             )}
             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
               <span className="text-[10px] font-bold">ALTERAR</span>
@@ -196,20 +196,20 @@ export const Cadastro: React.FC = () => {
         </div>
 
         {error && (
-          <div className="bg-red-900/10 border border-red-500 text-red-200 p-4 rounded-xl mb-6 text-sm text-center">
+          <div className="bg-red-900/10 border border-red-500 text-red-200 p-3 rounded-xl mb-4 text-sm text-center">
             {error}
           </div>
         )}
 
         {success && (
-          <div className="bg-green-900/10 border border-green-500 text-green-200 p-4 rounded-xl mb-6 text-sm text-center">
+          <div className="bg-green-900/10 border border-green-500 text-green-200 p-3 rounded-xl mb-4 text-sm text-center">
             {success}
           </div>
         )}
 
-        <form onSubmit={handleCadastro} className="space-y-5">
+        <form onSubmit={handleCadastro} className="space-y-3">
           <div>
-            <label className="block text-sm font-bold mb-2">Nome Completo</label>
+            <label className="block text-sm font-bold mb-1">Nome Completo</label>
             <input
               type="text"
               value={formData.nome}
@@ -226,13 +226,13 @@ export const Cadastro: React.FC = () => {
                 }
               }}
               placeholder="SOMENTE LETRAS MAIÚSCULAS"
-              className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 focus:outline-none focus:border-[#ccff00] transition uppercase"
+              className="w-full bg-[#121212] border border-gray-700 rounded-xl p-3 focus:outline-none focus:border-[#ccff00] transition uppercase"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-bold mb-2">E-mail</label>
+            <label className="block text-sm font-bold mb-1">E-mail</label>
             <input
               type="email"
               value={formData.email}
@@ -246,13 +246,13 @@ export const Cadastro: React.FC = () => {
                 }
               }}
               placeholder="você@exemplo.com"
-              className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 focus:outline-none focus:border-[#ccff00] transition"
+              className="w-full bg-[#121212] border border-gray-700 rounded-xl p-3 focus:outline-none focus:border-[#ccff00] transition"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-bold mb-2">Senha</label>
+            <label className="block text-sm font-bold mb-1">Senha</label>
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
@@ -267,7 +267,7 @@ export const Cadastro: React.FC = () => {
                   }
                 }}
                 placeholder="Pelo menos 8 caracteres"
-                className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 pr-12 focus:outline-none focus:border-[#ccff00] transition"
+                className="w-full bg-[#121212] border border-gray-700 rounded-xl p-3 pr-12 focus:outline-none focus:border-[#ccff00] transition"
                 required
               />
               <button
@@ -281,7 +281,7 @@ export const Cadastro: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-bold mb-2">Redigite sua senha</label>
+            <label className="block text-sm font-bold mb-1">Redigite sua senha</label>
             <div className="relative">
               <input
                 type={showConfirmPassword ? 'text' : 'password'}
@@ -298,7 +298,7 @@ export const Cadastro: React.FC = () => {
                   }
                 }}
                 placeholder="Confirme sua senha"
-                className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 pr-12 focus:outline-none focus:border-[#ccff00] transition"
+                className="w-full bg-[#121212] border border-gray-700 rounded-xl p-3 pr-12 focus:outline-none focus:border-[#ccff00] transition"
                 required
               />
               <button
@@ -312,7 +312,7 @@ export const Cadastro: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-bold mb-2">Nome da organização <span className="text-gray-500 font-normal">(Opcional)</span></label>
+            <label className="block text-sm font-bold mb-1">Nome da organização <span className="text-gray-500 font-normal">(Opcional)</span></label>
             <input
               type="text"
               value={formData.organizacao}
@@ -321,20 +321,20 @@ export const Cadastro: React.FC = () => {
               }}
               onKeyDown={handleKeyDown}
               placeholder="NOME DA SUA ORGANIZAÇÃO (OPCIONAL)"
-              className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 focus:outline-none focus:border-[#ccff00] transition uppercase"
+              className="w-full bg-[#121212] border border-gray-700 rounded-xl p-3 focus:outline-none focus:border-[#ccff00] transition uppercase"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#ccff00] text-black font-black text-lg rounded-xl p-4 hover:bg-[#b3e600] transition flex justify-center items-center gap-2 mt-4"
+            className="w-full bg-[#ccff00] text-black font-black text-base rounded-xl p-3 hover:bg-[#b3e600] transition flex justify-center items-center gap-2 mt-2"
           >
             {loading ? 'Aguarde...' : 'Criar uma conta ->'}
           </button>
         </form>
 
-        <p className="text-center text-sm text-gray-400 mt-8">
+        <p className="text-center text-sm text-gray-400 mt-4">
           Já tem uma conta? <button onClick={() => navigate('/login')} className="text-[#ccff00] font-bold hover:underline">Iniciar sessão</button>
         </p>
 
