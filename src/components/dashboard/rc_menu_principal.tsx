@@ -685,11 +685,11 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        if (showLinksChooser) {
+        if (isExternalWebviewOpen) {
+          closeExternalWebview();
+        } else if (showLinksChooser) {
           setShowLinksChooser(false);
           setLinksDesktopStatus("");
-        } else if (isExternalWebviewOpen) {
-          closeExternalWebview();
         }
       }
     };
@@ -1644,7 +1644,6 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                     type="button"
                     onClick={(event) => {
                       const anchorRect = event.currentTarget.getBoundingClientRect();
-                      setShowLinksChooser(false);
                       if ((window as any).chrome && (window as any).chrome.webview) {
                         setIsExternalWebviewOpen(true);
                         setTimeout(() => {
