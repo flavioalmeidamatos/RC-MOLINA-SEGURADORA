@@ -747,6 +747,9 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     }
   };
   const checkPermission = (menuName: string) => {
+    if (perfil?.email === 'admin@rcmolina.com.br') {
+      return true;
+    }
     if (perfil?.permissoes && perfil.permissoes[menuName] === false) {
       setShowRestrictedModal(true);
       return false;

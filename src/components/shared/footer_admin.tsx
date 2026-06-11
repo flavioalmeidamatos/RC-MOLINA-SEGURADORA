@@ -114,7 +114,18 @@ export const FooterAdmin: React.FC = () => {
                 });
                 setAvatarUrl(user.avatar_url || null);
                 setLogoUrl(user.logo_url || null);
-                if (user.permissoes) {
+                if (user.email === 'admin@rcmolina.com.br') {
+                    setPermissions({
+                        'Home': true,
+                        'Meus clientes': true,
+                        'Agenda': true,
+                        'Links': true,
+                        'Webmail': true,
+                        'Campanhas': true,
+                        'Financeiro': true,
+                        'Configurações': true,
+                    });
+                } else if (user.permissoes) {
                     setPermissions({
                         'Home': user.permissoes['Home'] ?? true,
                         'Meus clientes': user.permissoes['Meus clientes'] ?? true,
@@ -514,13 +525,13 @@ export const FooterAdmin: React.FC = () => {
                                                 <div key={option} className="flex items-center justify-between bg-[#121212] p-4 rounded-xl border border-gray-800">
                                                     <span className="font-bold text-white text-sm">{option}</span>
                                                     <div className="flex items-center gap-4">
-                                                        <label className="flex items-center gap-2 cursor-pointer group">
-                                                            <input type="radio" name={`perm_${option}`} checked={permissions[option]} onChange={() => setPermissions(p => ({ ...p, [option]: true }))} className="accent-[#ccff00] w-4 h-4" />
-                                                            <span className="text-xs font-bold text-gray-400 group-hover:text-white transition">HABILITADO</span>
+                                                        <label className={`flex items-center gap-2 ${formData.email === 'admin@rcmolina.com.br' ? 'cursor-not-allowed opacity-50' : 'cursor-pointer group'}`}>
+                                                            <input disabled={formData.email === 'admin@rcmolina.com.br'} type="radio" name={`perm_${option}`} checked={permissions[option]} onChange={() => setPermissions(p => ({ ...p, [option]: true }))} className="accent-[#ccff00] w-4 h-4" />
+                                                            <span className={`text-xs font-bold text-gray-400 transition ${formData.email !== 'admin@rcmolina.com.br' ? 'group-hover:text-white' : ''}`}>HABILITADO</span>
                                                         </label>
-                                                        <label className="flex items-center gap-2 cursor-pointer group">
-                                                            <input type="radio" name={`perm_${option}`} checked={!permissions[option]} onChange={() => setPermissions(p => ({ ...p, [option]: false }))} className="accent-red-500 w-4 h-4" />
-                                                            <span className="text-xs font-bold text-gray-400 group-hover:text-white transition">DESABILITADO</span>
+                                                        <label className={`flex items-center gap-2 ${formData.email === 'admin@rcmolina.com.br' ? 'cursor-not-allowed opacity-50' : 'cursor-pointer group'}`}>
+                                                            <input disabled={formData.email === 'admin@rcmolina.com.br'} type="radio" name={`perm_${option}`} checked={!permissions[option]} onChange={() => setPermissions(p => ({ ...p, [option]: false }))} className="accent-red-500 w-4 h-4" />
+                                                            <span className={`text-xs font-bold text-gray-400 transition ${formData.email !== 'admin@rcmolina.com.br' ? 'group-hover:text-white' : ''}`}>DESABILITADO</span>
                                                         </label>
                                                     </div>
                                                 </div>
