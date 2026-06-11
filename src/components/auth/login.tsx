@@ -231,9 +231,8 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
     <div id="SCR-002" data-name="telalogin" className={wrapperClassName}>
       <div className={cardClassName}>
         <div className="mb-8 flex flex-col items-center">
-          <div className="mb-6 rounded bg-black px-6 py-3">
-            <div className="font-serif text-xl font-bold tracking-widest text-[#d4af37]">RC MOLINA</div>
-            <div className="text-center text-[10px] tracking-[0.3em] text-white">CORRETORA</div>
+          <div className="mb-6 flex justify-center">
+            <img src="/portais/logo_cixdev.webp" alt="CKDEV Soluções em TI" className="h-20 w-auto object-contain" />
           </div>
           <h1 className="mb-2 text-center text-3xl font-bold">{heading}</h1>
           <p className="text-center text-sm text-gray-400">{subtitle}</p>

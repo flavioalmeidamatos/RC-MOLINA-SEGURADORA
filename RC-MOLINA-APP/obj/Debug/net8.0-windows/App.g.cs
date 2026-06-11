@@ -43,7 +43,7 @@ namespace RCMolinaApp {
         /// InitializeComponent
         /// </summary>
         [System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [System.CodeDom.Compiler.GeneratedCodeAttribute("PresentationBuildTasks", "8.0.27.0")]
+        [System.CodeDom.Compiler.GeneratedCodeAttribute("PresentationBuildTasks", "8.0.28.0")]
         public void InitializeComponent() {
             
             #line 4 "..\..\..\App.xaml"
@@ -58,7 +58,7 @@ namespace RCMolinaApp {
         /// </summary>
         [System.STAThreadAttribute()]
         [System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [System.CodeDom.Compiler.GeneratedCodeAttribute("PresentationBuildTasks", "8.0.27.0")]
+        [System.CodeDom.Compiler.GeneratedCodeAttribute("PresentationBuildTasks", "8.0.28.0")]
         public static void Main() {
             RCMolinaApp.App app = new RCMolinaApp.App();
             app.InitializeComponent();
