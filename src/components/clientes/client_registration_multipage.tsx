@@ -49,6 +49,21 @@ const TextFilePreview = ({ url }: { url: string }) => {
   );
 };
 
+const TextFileThumbnail = ({ url }: { url: string }) => {
+  const [content, setContent] = React.useState<string>('...');
+  React.useEffect(() => {
+    fetch(url)
+      .then(res => res.text())
+      .then(text => setContent(text.slice(0, 500)))
+      .catch(() => setContent('Erro ao carregar.'));
+  }, [url]);
+  return (
+    <div className="h-full w-full overflow-hidden bg-white p-2 font-mono text-[8px] leading-tight text-slate-500 whitespace-pre-wrap text-left select-none">
+      {content}
+    </div>
+  );
+};
+
 type ContactRow = {
   id: number;
   type: string;
@@ -2278,9 +2293,7 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationProps> = ({
                                 className="h-full w-full border-0 bg-white"
                               />
                             ) : documento.previewKind === 'text' ? (
-                              <div className="flex h-full items-center justify-center bg-slate-100">
-                                <FileText size={40} className="text-slate-400" />
-                              </div>
+                              <TextFileThumbnail url={documento.previewUrl} />
                             ) : documento.previewKind === 'video' ? (
                               <video
                                 src={documento.previewUrl}
