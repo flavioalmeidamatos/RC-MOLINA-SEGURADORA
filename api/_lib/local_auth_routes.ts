@@ -104,6 +104,11 @@ export const registerLocalAuthRoutes = (app: express.Express) => {
         return;
       }
 
+      if (perfil.aprovado === false) {
+        res.status(403).json({ error: 'Seu cadastro está aguardando aprovação do administrador.' });
+        return;
+      }
+
       res.json({ data: perfil });
     }),
   );
@@ -129,6 +134,25 @@ export const registerLocalAuthRoutes = (app: express.Express) => {
       const avatarUrl = await saveAvatarDataUrl(req.body?.avatar_data_url, req.body?.avatar_file_name);
       const logoUrl = await saveAvatarDataUrl(req.body?.logo_data_url, req.body?.logo_file_name);
       const perfil = await usuariosCadastrar({ email, senha, nomeCompleto, organizacao, avatarUrl, logoUrl });
+
+      const adminEmail = (process.env.ADMIN_EMAIL || 'admin@rcmolina.com.br').trim().toLowerCase();
+      const resendApiKey = process.env.RESEND_API_KEY;
+      if (resendApiKey && adminEmail) {
+        fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            authorization: `Bearer ${resendApiKey}`,
+            'content-type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: process.env.RESEND_FROM_EMAIL || 'RC Molina Seguradora <onboarding@resend.dev>',
+            to: adminEmail,
+            subject: 'Novo Usuário Cadastrado - Pendente de Aprovação',
+            html: `<p>O usuário <strong>${nomeCompleto}</strong> (${email}) acabou de se cadastrar e está aguardando liberação de acesso.</p><p>Acesse o painel administrativo para aprovar.</p>`,
+          }),
+        }).catch(err => console.error('Erro ao notificar administrador via Resend:', err));
+      }
+
       res.status(201).json({ data: perfil });
     }),
   );
@@ -142,6 +166,11 @@ export const registerLocalAuthRoutes = (app: express.Express) => {
 
       if (!perfil) {
         res.status(401).json({ error: 'Codigo invalido, expirado ou bloqueado.' });
+        return;
+      }
+
+      if (perfil.aprovado === false) {
+        res.status(403).json({ error: 'Seu cadastro está aguardando aprovação do administrador.' });
         return;
       }
 
@@ -235,6 +264,7 @@ export const registerLocalAuthRoutes = (app: express.Express) => {
           logoUrl,
           senha,
           permissoes: req.body?.permissoes ? String(req.body.permissoes) : null,
+          aprovado: req.body?.aprovado !== undefined ? Boolean(req.body.aprovado) : undefined,
         });
         res.json({ ok: true });
       }),

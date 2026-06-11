@@ -15,6 +15,7 @@ export interface UsuarioPerfil {
   avatar_url?: string | null;
   logo_url?: string | null;
   permissoes?: Record<string, boolean> | null;
+  aprovado?: boolean;
   created_at?: string;
   updated_at?: string;
 }

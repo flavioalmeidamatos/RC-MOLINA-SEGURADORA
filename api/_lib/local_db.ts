@@ -11,6 +11,7 @@ export type UsuarioPerfil = {
   avatar_url?: string | null;
   logo_url?: string | null;
   permissoes?: Record<string, boolean> | null;
+  aprovado?: boolean;
   created_at?: string;
   updated_at?: string;
 };
@@ -212,6 +213,11 @@ alter table "RCMOLINASEGUROS"."USUARIOS"
 alter table "RCMOLINASEGUROS"."USUARIOS"
   add column if not exists permissoes jsonb default '{}'::jsonb;
 
+alter table "RCMOLINASEGUROS"."USUARIOS"
+  add column if not exists aprovado boolean;
+update "RCMOLINASEGUROS"."USUARIOS" set aprovado = true where aprovado is null;
+alter table "RCMOLINASEGUROS"."USUARIOS" alter column aprovado set default false;
+
 `;
 
 const rowToPerfil = (row: any): UsuarioPerfil => ({
@@ -222,6 +228,7 @@ const rowToPerfil = (row: any): UsuarioPerfil => ({
   avatar_url: row.avatar_url,
   logo_url: row.logo_url,
   permissoes: typeof row.permissoes === 'string' ? JSON.parse(row.permissoes) : row.permissoes || {},
+  aprovado: row.aprovado,
   created_at: row.created_at?.toISOString?.() || row.created_at,
   updated_at: row.updated_at?.toISOString?.() || row.updated_at,
 });
@@ -268,7 +275,8 @@ const seedAdminUser = async () => {
       `update "RCMOLINASEGUROS"."USUARIOS"
        set senha_hash = crypt($2, gen_salt('bf')),
            nome_completo = coalesce(nullif(trim(nome_completo), ''), $3),
-           organizacao = coalesce(nullif(trim(organizacao), ''), $4)
+           organizacao = coalesce(nullif(trim(organizacao), ''), $4),
+           aprovado = true
        where lower(email) = $1`,
       [adminEmail, adminPassword, 'ADMINISTRADOR RC MOLINA', 'RC MOLINA'],
     );
@@ -276,8 +284,8 @@ const seedAdminUser = async () => {
   }
 
   await getPool().query(
-    `insert into "RCMOLINASEGUROS"."USUARIOS" (email, senha_hash, nome_completo, organizacao)
-     values ($1, crypt($2, gen_salt('bf')), $3, $4)`,
+    `insert into "RCMOLINASEGUROS"."USUARIOS" (email, senha_hash, nome_completo, organizacao, aprovado)
+     values ($1, crypt($2, gen_salt('bf')), $3, $4, true)`,
     [adminEmail, adminPassword, 'ADMINISTRADOR RC MOLINA', 'RC MOLINA'],
   );
 };
@@ -332,8 +340,8 @@ export const usuariosCadastrar = async ({
 }) => {
   await initLocalDatabase();
   const result = await getPool().query(
-    `insert into "RCMOLINASEGUROS"."USUARIOS" (email, senha_hash, nome_completo, organizacao, avatar_url, logo_url)
-     values (lower(trim($1)), crypt($2, gen_salt('bf')), upper(trim($3)), nullif(trim($4), ''), nullif(trim($5), ''), nullif(trim($6), ''))
+    `insert into "RCMOLINASEGUROS"."USUARIOS" (email, senha_hash, nome_completo, organizacao, avatar_url, logo_url, aprovado)
+     values (lower(trim($1)), crypt($2, gen_salt('bf')), upper(trim($3)), nullif(trim($4), ''), nullif(trim($5), ''), nullif(trim($6), ''), false)
      returning *`,
     [email, senha, nomeCompleto, organizacao || '', avatarUrl || '', logoUrl || ''],
   );
@@ -527,6 +535,7 @@ export const adminUpdateUser = async ({
   logoUrl,
   senha,
   permissoes,
+  aprovado,
 }: {
   id: string;
   nome: string;
@@ -536,6 +545,7 @@ export const adminUpdateUser = async ({
   logoUrl?: string | null;
   senha?: string | null;
   permissoes?: string | null;
+  aprovado?: boolean | null;
 }) => {
   await initLocalDatabase();
   await getPool().query(
@@ -552,16 +562,41 @@ export const adminUpdateUser = async ({
          permissoes = case
            when nullif($8, '') is not null then $8::jsonb
            else permissoes
-         end
+         end,
+         aprovado = coalesce($9, aprovado)
      where id = $7`,
-    [nome, email, organizacao || '', avatarUrl || '', senha || '', logoUrl || '', id, permissoes || ''],
+    [nome, email, organizacao || '', avatarUrl || '', senha || '', logoUrl || '', id, permissoes || '', aprovado !== undefined && aprovado !== null ? aprovado : null],
   );
-  await registrarAuditoria('ADMIN_UPDATE_USER', { id, email, senha_alterada: Boolean(senha) });
+  await registrarAuditoria('ADMIN_UPDATE_USER', { id, email, senha_alterada: Boolean(senha), aprovado });
 };
 
 export const adminDeleteUser = async (id: string) => {
   await initLocalDatabase();
-  await getPool().query('delete from "RCMOLINASEGUROS"."USUARIOS" where id = $1', [id]);
+  const pool = getPool();
+
+  const res = await pool.query('select avatar_url, logo_url from "RCMOLINASEGUROS"."USUARIOS" where id = $1', [id]);
+  const user = res.rows[0];
+
+  if (user) {
+    const uploadRoot = process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads');
+    const deleteFile = async (url: string | null) => {
+      if (url && url.startsWith('/uploads/avatars/')) {
+        const filename = url.split('/').pop();
+        if (filename) {
+          const filePath = path.join(uploadRoot, 'avatars', filename);
+          try {
+            await fs.unlink(filePath);
+          } catch (e) {
+            console.error(`Erro ao deletar arquivo ${filePath}:`, e);
+          }
+        }
+      }
+    };
+    await deleteFile(user.avatar_url);
+    await deleteFile(user.logo_url);
+  }
+
+  await pool.query('delete from "RCMOLINASEGUROS"."USUARIOS" where id = $1', [id]);
   await registrarAuditoria('ADMIN_DELETE_USER', { id });
 };
 

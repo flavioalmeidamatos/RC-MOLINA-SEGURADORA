@@ -24,6 +24,7 @@ export const FooterAdmin: React.FC = () => {
     const [selectedUserId, setSelectedUserId] = useState<string>('');
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState({ text: '', type: '' });
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     const isSuperAdmin = getStoredSession()?.user?.email === 'admin@rcmolina.com.br' || adminEmail === 'admin@rcmolina.com.br';
     const [permissions, setPermissions] = useState<Record<string, boolean>>({
@@ -44,6 +45,7 @@ export const FooterAdmin: React.FC = () => {
         email: '',
         senha: '',
         organizacao: '',
+        aprovado: false,
     });
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -111,6 +113,7 @@ export const FooterAdmin: React.FC = () => {
                     email: user.email || '',
                     senha: '',
                     organizacao: user.organizacao || '',
+                    aprovado: user.aprovado ?? false,
                 });
                 setAvatarUrl(user.avatar_url || null);
                 setLogoUrl(user.logo_url || null);
@@ -150,7 +153,7 @@ export const FooterAdmin: React.FC = () => {
                 }
             }
         } else {
-            setFormData({ nome: '', email: '', senha: '', organizacao: '' });
+            setFormData({ nome: '', email: '', senha: '', organizacao: '', aprovado: false });
             setAvatarUrl(null);
             setLogoUrl(null);
         }
@@ -212,11 +215,12 @@ export const FooterAdmin: React.FC = () => {
                 organizacao: formData.organizacao.toUpperCase(),
                 avatar_url: finalAvatarUrl,
                 avatar_data_url: avatarFile ? avatarUrl : null,
-                avatar_file_name: avatarFile?.name || null,
+                avatar_file_name: avatarFile ? avatarFile.name : null,
                 logo_url: finalLogoUrl,
                 logo_data_url: logoFile ? logoUrl : null,
-                logo_file_name: logoFile?.name || null,
+                logo_file_name: logoFile ? logoFile.name : null,
                 permissoes: JSON.stringify(permissions),
+                aprovado: formData.aprovado,
             });
 
             if (error) throw new Error(error);
@@ -230,26 +234,27 @@ export const FooterAdmin: React.FC = () => {
         setLoading(false);
     };
 
+    const confirmDelete = () => {
+        if (!selectedUserId) return;
+        setShowDeleteConfirm(true);
+    };
+
     const handleDeleteUser = async () => {
         if (!selectedUserId) return;
-        if (!window.confirm('Tem certeza que deseja excluir este usuário?')) return;
 
         setLoading(true);
-        setMessage({ text: '', type: '' });
+        setShowDeleteConfirm(false);
+        const { error } = await apiAdminDeleteUser(adminToken, selectedUserId);
 
-        try {
-            const { error } = await apiAdminDeleteUser(adminToken, selectedUserId);
-
-            if (error) throw new Error(error);
-
-            setMessage({ text: 'Usuário excluído com sucesso!', type: 'success' });
+        if (error) {
+            setMessage({ text: 'Erro ao excluir usuário.', type: 'error' });
+        } else {
+            setMessage({ text: 'Usuário excluído com sucesso.', type: 'success' });
+            setFormData({ nome: '', email: '', senha: '', organizacao: '', aprovado: false });
             setSelectedUserId('');
-            setFormData({ nome: '', email: '', senha: '', organizacao: '' });
             setAvatarUrl(null);
             setLogoUrl(null);
-            await fetchUsers();
-        } catch (error: any) {
-            setMessage({ text: 'Erro ao excluir: ' + error.message, type: 'error' });
+            await fetchUsers(); // refresh the user list
         }
         setLoading(false);
     };
@@ -375,8 +380,8 @@ export const FooterAdmin: React.FC = () => {
                         )}
 
                         {selectedUserId && (
-                            <div className="flex flex-col md:flex-row gap-6 animate-in slide-in-from-bottom-4 duration-300">
-                                <div className="flex-1 space-y-4">
+                            <div className="flex flex-col md:flex-row gap-4 animate-in slide-in-from-bottom-4 duration-300">
+                                <div className="flex-1 space-y-2">
                                     <div className="flex justify-center gap-6 mb-2">
                                     <div className="flex flex-col items-center">
                                         <div
@@ -449,7 +454,7 @@ export const FooterAdmin: React.FC = () => {
                                                 const alphaOnly = e.target.value.toUpperCase().replace(/[^A-ZÀ-Ÿ\s]/g, '');
                                                 setFormData({ ...formData, nome: alphaOnly });
                                             }}
-                                            className="w-full bg-[#121212] border border-gray-700 rounded-xl p-3 focus:outline-none focus:border-[#ccff00] transition uppercase"
+                                            className="w-full bg-[#121212] border border-gray-700 rounded-xl p-2 focus:outline-none focus:border-[#ccff00] transition uppercase"
                                             required
                                         />
                                     </div>
@@ -463,7 +468,7 @@ export const FooterAdmin: React.FC = () => {
                                             autoComplete="off"
                                             value={formData.email}
                                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                            className="w-full bg-[#121212] border border-gray-700 rounded-xl p-3 focus:outline-none focus:border-[#ccff00] transition"
+                                            className="w-full bg-[#121212] border border-gray-700 rounded-xl p-2 focus:outline-none focus:border-[#ccff00] transition"
                                             required
                                         />
                                     </div>
@@ -478,7 +483,7 @@ export const FooterAdmin: React.FC = () => {
                                             value={formData.senha}
                                             onChange={(e) => setFormData({ ...formData, senha: e.target.value })}
                                             placeholder="Preencha somente para alterar"
-                                            className="w-full bg-[#121212] border border-gray-700 rounded-xl p-3 focus:outline-none focus:border-[#ccff00] transition"
+                                            className="w-full bg-[#121212] border border-gray-700 rounded-xl p-2 focus:outline-none focus:border-[#ccff00] transition"
                                         />
                                     </div>
 
@@ -493,14 +498,14 @@ export const FooterAdmin: React.FC = () => {
                                                 const alphaOnly = e.target.value.toUpperCase().replace(/[^A-ZÀ-Ÿ\s]/g, '');
                                                 setFormData({ ...formData, organizacao: alphaOnly });
                                             }}
-                                            className="w-full bg-[#121212] border border-gray-700 rounded-xl p-3 focus:outline-none focus:border-[#ccff00] transition uppercase"
+                                            className="w-full bg-[#121212] border border-gray-700 rounded-xl p-2 focus:outline-none focus:border-[#ccff00] transition uppercase"
                                         />
                                     </div>
 
-                                    <div className="flex gap-4 pt-4">
+                                    <div className="flex gap-4 pt-2">
                                         <button
                                             type="button"
-                                            onClick={handleDeleteUser}
+                                            onClick={confirmDelete}
                                             disabled={loading || formData.email === 'admin@rcmolina.com.br'}
                                             className="flex-1 bg-red-900/20 text-red-500 border border-red-900/50 hover:bg-red-900/40 hover:text-red-400 font-bold text-sm lg:text-base rounded-xl p-3 transition flex justify-center items-center gap-2 disabled:opacity-50"
                                         >
@@ -522,7 +527,7 @@ export const FooterAdmin: React.FC = () => {
                                         <h2 className="text-xl font-black mb-4 text-white flex items-center gap-2">Opções do Sistema</h2>
                                         <div className="space-y-2">
                                             {Object.keys(permissions).map(option => (
-                                                <div key={option} className="flex items-center justify-between bg-[#121212] p-3 rounded-xl border border-gray-800">
+                                                <div key={option} className="flex items-center justify-between bg-[#121212] p-2 rounded-xl border border-gray-800">
                                                     <span className="font-bold text-white text-sm">{option}</span>
                                                     <div className="flex items-center gap-4">
                                                         <label className={`flex items-center gap-2 ${formData.email === 'admin@rcmolina.com.br' || option === 'Home' ? 'cursor-not-allowed opacity-50' : 'cursor-pointer group'}`}>
@@ -537,11 +542,59 @@ export const FooterAdmin: React.FC = () => {
                                                 </div>
                                             ))}
                                         </div>
+                                        <div className="mt-4 border-t border-gray-800 pt-4">
+                                            <h2 className="text-xl font-black mb-2 text-white flex items-center gap-2">Acesso ao Sistema</h2>
+                                            <div className="flex items-center justify-between bg-[#121212] p-2 rounded-xl border border-gray-800">
+                                                <span className="font-bold text-white text-sm">Usuário Aprovado</span>
+                                                <div className="flex items-center gap-4">
+                                                    <label className={`flex items-center gap-2 ${formData.email === 'admin@rcmolina.com.br' ? 'cursor-not-allowed opacity-50' : 'cursor-pointer group'}`}>
+                                                        <input disabled={formData.email === 'admin@rcmolina.com.br'} type="radio" name="aprovado_status" checked={formData.aprovado} onChange={() => setFormData(f => ({ ...f, aprovado: true }))} className="accent-[#ccff00] w-4 h-4" />
+                                                        <span className={`text-xs font-bold text-gray-400 transition ${formData.email !== 'admin@rcmolina.com.br' ? 'group-hover:text-white' : ''}`}>SIM</span>
+                                                    </label>
+                                                    <label className={`flex items-center gap-2 ${formData.email === 'admin@rcmolina.com.br' ? 'cursor-not-allowed opacity-50' : 'cursor-pointer group'}`}>
+                                                        <input disabled={formData.email === 'admin@rcmolina.com.br'} type="radio" name="aprovado_status" checked={!formData.aprovado} onChange={() => setFormData(f => ({ ...f, aprovado: false }))} className="accent-red-500 w-4 h-4" />
+                                                        <span className={`text-xs font-bold text-gray-400 transition ${formData.email !== 'admin@rcmolina.com.br' ? 'group-hover:text-white' : ''}`}>NÃO</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
                             </div>
                         )}
 
+                    </div>
+                </div>
+            )}
+
+            {/* DELETE CONFIRMATION MODAL */}
+            {showDeleteConfirm && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 pointer-events-auto" onClick={(e) => e.stopPropagation()}>
+                    <div className="bg-[#1a1a1a] shadow-2xl border border-red-900/50 rounded-2xl p-6 md:p-8 w-full max-w-md relative animate-in zoom-in-95 duration-200">
+                        <div className="flex flex-col items-center text-center">
+                            <div className="w-16 h-16 rounded-full bg-red-900/20 flex items-center justify-center mb-4">
+                                <Trash2 size={32} className="text-red-500" />
+                            </div>
+                            <h2 className="text-2xl font-black mb-2 text-white">Excluir Usuário?</h2>
+                            <p className="text-gray-400 text-sm mb-6">
+                                Tem certeza que deseja excluir <strong>{formData.nome || formData.email}</strong>? Esta ação é irreversível e removerá todas as permissões e imagens associadas.
+                            </p>
+                            
+                            <div className="flex w-full gap-4">
+                                <button
+                                    onClick={() => setShowDeleteConfirm(false)}
+                                    className="flex-1 bg-[#2a2a2a] hover:bg-[#333] text-white font-bold py-3 px-4 rounded-xl transition"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={handleDeleteUser}
+                                    className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-xl transition shadow-[0_0_15px_rgba(220,38,38,0.3)]"
+                                >
+                                    Excluir
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}
