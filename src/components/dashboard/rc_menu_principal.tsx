@@ -159,6 +159,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const [activeMenu, setActiveMenu] = useState(forcedMenu || "Home");
   const [campanhaInitialMessage, setCampanhaInitialMessage] = useState("");
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const isLoggingOutRef = useRef(false);
   const [showLogoutConfirmModal, setShowLogoutConfirmModal] = useState(false);
   const [aniversariantesMes, setAniversariantesMes] = useState<AniversarianteMes[]>([]);
   const [isLoadingAniversariantes, setIsLoadingAniversariantes] = useState(false);
@@ -192,6 +193,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isLoggingOutRef.current) return;
       e.preventDefault();
       e.returnValue = '';
     };
@@ -726,6 +728,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     }
 
     setIsLoggingOut(true);
+    isLoggingOutRef.current = true;
 
     // Disable beforeunload to prevent the browser from asking "Leave site?"
     // This usually happens because of unsaved changes in tinyMCE.
