@@ -9,6 +9,7 @@ export type UsuarioPerfil = {
   nome_completo: string;
   organizacao?: string | null;
   avatar_url?: string | null;
+  logo_url?: string | null;
   created_at?: string;
   updated_at?: string;
 };
@@ -204,6 +205,9 @@ alter table "RCMOLINASEGUROS"."CLIENTES"
 alter table "RCMOLINASEGUROS"."CLIENTES"
   drop column if exists marcacoes;
 
+alter table "RCMOLINASEGUROS"."USUARIOS"
+  add column if not exists logo_url text;
+
 `;
 
 const rowToPerfil = (row: any): UsuarioPerfil => ({
@@ -212,6 +216,7 @@ const rowToPerfil = (row: any): UsuarioPerfil => ({
   nome_completo: row.nome_completo,
   organizacao: row.organizacao,
   avatar_url: row.avatar_url,
+  logo_url: row.logo_url,
   created_at: row.created_at?.toISOString?.() || row.created_at,
   updated_at: row.updated_at?.toISOString?.() || row.updated_at,
 });
@@ -311,19 +316,21 @@ export const usuariosCadastrar = async ({
   nomeCompleto,
   organizacao,
   avatarUrl,
+  logoUrl,
 }: {
   email: string;
   senha: string;
   nomeCompleto: string;
   organizacao?: string | null;
   avatarUrl?: string | null;
+  logoUrl?: string | null;
 }) => {
   await initLocalDatabase();
   const result = await getPool().query(
-    `insert into "RCMOLINASEGUROS"."USUARIOS" (email, senha_hash, nome_completo, organizacao, avatar_url)
-     values (lower(trim($1)), crypt($2, gen_salt('bf')), upper(trim($3)), nullif(trim($4), ''), nullif(trim($5), ''))
+    `insert into "RCMOLINASEGUROS"."USUARIOS" (email, senha_hash, nome_completo, organizacao, avatar_url, logo_url)
+     values (lower(trim($1)), crypt($2, gen_salt('bf')), upper(trim($3)), nullif(trim($4), ''), nullif(trim($5), ''), nullif(trim($6), ''))
      returning *`,
-    [email, senha, nomeCompleto, organizacao || '', avatarUrl || ''],
+    [email, senha, nomeCompleto, organizacao || '', avatarUrl || '', logoUrl || ''],
   );
   await registrarAuditoria('USUARIO_CADASTRADO', { email });
   return rowToPerfil(result.rows[0]);

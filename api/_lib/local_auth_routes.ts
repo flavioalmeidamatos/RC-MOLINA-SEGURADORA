@@ -127,7 +127,8 @@ export const registerLocalAuthRoutes = (app: express.Express) => {
       }
 
       const avatarUrl = await saveAvatarDataUrl(req.body?.avatar_data_url, req.body?.avatar_file_name);
-      const perfil = await usuariosCadastrar({ email, senha, nomeCompleto, organizacao, avatarUrl });
+      const logoUrl = await saveAvatarDataUrl(req.body?.logo_data_url, req.body?.logo_file_name);
+      const perfil = await usuariosCadastrar({ email, senha, nomeCompleto, organizacao, avatarUrl, logoUrl });
       res.status(201).json({ data: perfil });
     }),
   );

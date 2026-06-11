@@ -15,6 +15,7 @@ export const Cadastro: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
     nome: '',
@@ -26,6 +27,8 @@ export const Cadastro: React.FC = () => {
 
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -87,14 +90,34 @@ export const Cadastro: React.FC = () => {
     fileInputRef.current?.click();
   };
 
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setLogoFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogoUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const triggerLogoInput = () => {
+    logoInputRef.current?.click();
+  };
+
   const handleCadastro = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess('');
 
-    // Validação de Nome (Mínimo 2 palavras)
     if (formData.nome.trim().split(' ').length < 2) {
       setError('Por favor, insira seu nome completo.');
+      return;
+    }
+
+    if (formData.organizacao.trim().length === 0) {
+      setError('Por favor, insira o nome da sua empresa.');
       return;
     }
 
@@ -144,6 +167,8 @@ export const Cadastro: React.FC = () => {
         organizacao: formData.organizacao,
         avatar_data_url: avatarFile ? avatarUrl : null,
         avatar_file_name: avatarFile?.name || null,
+        logo_data_url: logoFile ? logoUrl : null,
+        logo_file_name: logoFile?.name || null,
       });
 
       if (profileError) {
@@ -166,33 +191,64 @@ export const Cadastro: React.FC = () => {
           <p className="text-gray-400 text-sm">Preencha os dados abaixo para começar.</p>
         </div>
 
-        <div className="flex flex-col items-center mb-4">
-          <div
-            onClick={triggerFileInput}
-            className="w-20 h-20 rounded-full border-2 border-[#ccff00] flex items-center justify-center relative bg-[#121212] overflow-hidden group cursor-pointer"
-          >
-            {avatarUrl ? (
-              <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
-            ) : (
-              <User className="text-gray-500 group-hover:text-[#ccff00] transition" size={40} />
-            )}
-            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-              <span className="text-[10px] font-bold">ALTERAR</span>
+        <div className="flex items-center justify-center gap-8 mb-4">
+          <div className="flex flex-col items-center">
+            <div
+              onClick={triggerFileInput}
+              className="w-20 h-20 rounded-full border-2 border-[#ccff00] flex items-center justify-center relative bg-[#121212] overflow-hidden group cursor-pointer"
+            >
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                <User className="text-gray-500 group-hover:text-[#ccff00] transition" size={40} />
+              )}
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                <span className="text-[10px] font-bold">ALTERAR</span>
+              </div>
             </div>
+            <div className="flex items-center gap-2 mt-2 cursor-pointer" onClick={triggerFileInput}>
+              <Camera size={14} className="text-[#ccff00]" />
+              <span className="text-[#ccff00] text-[10px] font-bold uppercase tracking-widest">Sua Foto</span>
+            </div>
+            <input
+              id="cadastro_avatar_upload"
+              title="Selecionar foto de perfil"
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              accept="image/*"
+              className="hidden"
+            />
           </div>
-          <div className="flex items-center gap-2 mt-2 cursor-pointer" onClick={triggerFileInput}>
-            <Camera size={14} className="text-[#ccff00]" />
-            <span className="text-[#ccff00] text-[10px] font-bold uppercase tracking-widest">foto</span>
+
+          <div className="flex flex-col items-center">
+            <div
+              onClick={triggerLogoInput}
+              className="w-20 h-20 rounded-full border-2 border-[#ccff00] flex items-center justify-center relative bg-[#121212] overflow-hidden group cursor-pointer"
+            >
+              {logoUrl ? (
+                <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
+              ) : (
+                <User className="text-gray-500 group-hover:text-[#ccff00] transition" size={40} />
+              )}
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                <span className="text-[10px] font-bold">ALTERAR</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 mt-2 cursor-pointer" onClick={triggerLogoInput}>
+              <Camera size={14} className="text-[#ccff00]" />
+              <span className="text-[#ccff00] text-[10px] font-bold uppercase tracking-widest">Logo (Opcional)</span>
+            </div>
+            <input
+              id="cadastro_logo_upload"
+              title="Selecionar logo da empresa"
+              type="file"
+              ref={logoInputRef}
+              onChange={handleLogoChange}
+              accept="image/*"
+              className="hidden"
+            />
           </div>
-          <input
-            id="cadastro_avatar_upload"
-            title="Selecionar foto de perfil"
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            accept="image/*"
-            className="hidden"
-          />
         </div>
 
         {error && (
@@ -312,16 +368,24 @@ export const Cadastro: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-bold mb-1">Nome da organização <span className="text-gray-500 font-normal">(Opcional)</span></label>
+            <label className="block text-sm font-bold mb-1">Nome da Empresa</label>
             <input
               type="text"
               value={formData.organizacao}
               onChange={(e) => {
                 setFormData({ ...formData, organizacao: sanitizeOrganizacao(e.target.value) });
               }}
+              onBlur={(e) => {
+                if (formData.organizacao.trim().length === 0) {
+                  setError('Obrigatório informar o nome da empresa.');
+                } else {
+                  setError('');
+                }
+              }}
               onKeyDown={handleKeyDown}
-              placeholder="NOME DA SUA ORGANIZAÇÃO (OPCIONAL)"
+              placeholder="NOME DA SUA EMPRESA"
               className="w-full bg-[#121212] border border-gray-700 rounded-xl p-3 focus:outline-none focus:border-[#ccff00] transition uppercase"
+              required
             />
           </div>
 

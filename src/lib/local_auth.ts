@@ -13,6 +13,7 @@ export interface UsuarioPerfil {
   nome_completo: string;
   organizacao?: string | null;
   avatar_url?: string | null;
+  logo_url?: string | null;
   created_at?: string;
   updated_at?: string;
 }

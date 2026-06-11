@@ -14,6 +14,7 @@ const attachmentIconByKind = {
   video: Video,
   pdf: FileText,
   file: Paperclip,
+  audio: Paperclip,
 } satisfies Record<CampaignAttachment["kind"], typeof FileImage>;
 
 export function WhatsAppMediaPanel({
