@@ -237,7 +237,7 @@ export const Cadastro: React.FC = () => {
             </div>
             <div className="flex items-center gap-2 mt-2 cursor-pointer" onClick={triggerLogoInput}>
               <Camera size={14} className="text-[#ccff00]" />
-              <span className="text-[#ccff00] text-[10px] font-bold uppercase tracking-widest">Logo (Opcional)</span>
+              <span className="text-[#ccff00] text-[10px] font-bold uppercase tracking-widest">Logo da Empresa</span>
             </div>
             <input
               id="cadastro_logo_upload"
