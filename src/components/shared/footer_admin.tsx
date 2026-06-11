@@ -319,7 +319,7 @@ export const FooterAdmin: React.FC = () => {
             {/* ADMIN PANEL MODAL */}
             {showAdminPanel && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto pointer-events-auto" onClick={(e) => e.stopPropagation()}>
-                    <div className={`bg-[#1a1a1a] shadow-2xl border border-gray-800 rounded-2xl p-6 md:p-8 w-full relative my-8 pointer-events-auto transition-all duration-300 ${isSuperAdmin && selectedUserId ? 'max-w-5xl' : 'max-w-lg'}`} onClick={(e) => e.stopPropagation()}>
+                    <div className={`bg-[#1a1a1a] shadow-2xl border border-gray-800 rounded-2xl p-4 md:p-6 w-full relative my-4 pointer-events-auto transition-all duration-300 ${isSuperAdmin && selectedUserId ? 'max-w-5xl' : 'max-w-lg'}`} onClick={(e) => e.stopPropagation()}>
                         <button
                             onClick={() => {
                                 setAdminToken('');
@@ -341,18 +341,18 @@ export const FooterAdmin: React.FC = () => {
                             <X size={20} />
                         </button>
 
-                        <div className="flex flex-col items-center mb-6 mt-4">
-                            <h1 className="text-2xl font-bold mb-2">Gerenciar Usuários</h1>
+                        <div className="flex flex-col items-center mb-4 mt-2">
+                            <h1 className="text-2xl font-bold mb-1">Gerenciar Usuários</h1>
                             <p className="text-gray-400 text-sm">Selecione, edite ou exclua os dados dos usuários.</p>
                         </div>
 
-                        <div className="mb-6">
+                        <div className="mb-4">
                             <label className="block text-sm font-bold mb-2 text-gray-400">Selecionar Usuário</label>
                             <div className="relative">
                                 <select
                                     value={selectedUserId}
                                     onChange={(e) => handleSelectUser(e as any)}
-                                    className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 text-white font-semibold focus:outline-none focus:border-[#ccff00] appearance-none cursor-pointer transition"
+                                    className="w-full bg-[#121212] border border-gray-700 rounded-xl p-3 text-white font-semibold focus:outline-none focus:border-[#ccff00] appearance-none cursor-pointer transition"
                                 >
                                     <option value="" disabled>-- Selecione um usuário --</option>
                                     {users.map((u) => (
@@ -368,20 +368,20 @@ export const FooterAdmin: React.FC = () => {
                         </div>
 
                         {message.text && (
-                            <div className={`p-4 rounded-xl mb-6 text-sm text-center border ${message.type === 'error' ? 'bg-red-900/10 border-red-500 text-red-200' : 'bg-green-900/10 border-green-500 text-green-200'
+                            <div className={`p-3 rounded-xl mb-4 text-sm text-center border ${message.type === 'error' ? 'bg-red-900/10 border-red-500 text-red-200' : 'bg-green-900/10 border-green-500 text-green-200'
                                 }`}>
                                 {message.text}
                             </div>
                         )}
 
                         {selectedUserId && (
-                            <div className="flex flex-col md:flex-row gap-8 animate-in slide-in-from-bottom-4 duration-300">
-                                <div className="flex-1 space-y-6">
-                                    <div className="flex justify-center gap-8 mb-2">
+                            <div className="flex flex-col md:flex-row gap-6 animate-in slide-in-from-bottom-4 duration-300">
+                                <div className="flex-1 space-y-4">
+                                    <div className="flex justify-center gap-6 mb-2">
                                     <div className="flex flex-col items-center">
                                         <div
                                             onClick={() => fileInputRef.current?.click()}
-                                            className="w-24 h-24 rounded-full border-2 border-[#ccff00] flex items-center justify-center relative bg-[#121212] overflow-hidden group cursor-pointer"
+                                            className="w-20 h-20 rounded-full border-2 border-[#ccff00] flex items-center justify-center relative bg-[#121212] overflow-hidden group cursor-pointer"
                                         >
                                             {avatarUrl ? (
                                                 <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
@@ -410,7 +410,7 @@ export const FooterAdmin: React.FC = () => {
                                     <div className="flex flex-col items-center">
                                         <div
                                             onClick={() => logoInputRef.current?.click()}
-                                            className="w-24 h-24 rounded-full border-2 border-[#ccff00] flex items-center justify-center relative bg-[#121212] overflow-hidden group cursor-pointer"
+                                            className="w-20 h-20 rounded-full border-2 border-[#ccff00] flex items-center justify-center relative bg-[#121212] overflow-hidden group cursor-pointer"
                                         >
                                             {logoUrl ? (
                                                 <img src={logoUrl} alt="Logo" className="w-full h-full object-contain p-2 bg-white" />
@@ -437,9 +437,9 @@ export const FooterAdmin: React.FC = () => {
                                     </div>
                                 </div>
 
-                                <form onSubmit={handleSaveUser} className="space-y-4">
+                                <form onSubmit={handleSaveUser} className="space-y-3">
                                     <div>
-                                        <label htmlFor="edit_nome" className="block text-sm font-bold mb-2">Nome Completo</label>
+                                        <label htmlFor="edit_nome" className="block text-sm font-bold mb-1">Nome Completo</label>
                                         <input
                                             id="edit_nome"
                                             title="Nome Completo"
@@ -449,13 +449,13 @@ export const FooterAdmin: React.FC = () => {
                                                 const alphaOnly = e.target.value.toUpperCase().replace(/[^A-ZÀ-Ÿ\s]/g, '');
                                                 setFormData({ ...formData, nome: alphaOnly });
                                             }}
-                                            className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 focus:outline-none focus:border-[#ccff00] transition uppercase"
+                                            className="w-full bg-[#121212] border border-gray-700 rounded-xl p-3 focus:outline-none focus:border-[#ccff00] transition uppercase"
                                             required
                                         />
                                     </div>
 
                                     <div>
-                                        <label htmlFor="edit_email" className="block text-sm font-bold mb-2">E-mail</label>
+                                        <label htmlFor="edit_email" className="block text-sm font-bold mb-1">E-mail</label>
                                         <input
                                             id="edit_email"
                                             title="E-mail"
@@ -463,13 +463,13 @@ export const FooterAdmin: React.FC = () => {
                                             autoComplete="off"
                                             value={formData.email}
                                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                            className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 focus:outline-none focus:border-[#ccff00] transition"
+                                            className="w-full bg-[#121212] border border-gray-700 rounded-xl p-3 focus:outline-none focus:border-[#ccff00] transition"
                                             required
                                         />
                                     </div>
 
                                     <div>
-                                        <label htmlFor="edit_senha" className="block text-sm font-bold mb-2">Nova senha</label>
+                                        <label htmlFor="edit_senha" className="block text-sm font-bold mb-1">Nova senha</label>
                                         <input
                                             id="edit_senha"
                                             title="Nova senha"
@@ -478,12 +478,12 @@ export const FooterAdmin: React.FC = () => {
                                             value={formData.senha}
                                             onChange={(e) => setFormData({ ...formData, senha: e.target.value })}
                                             placeholder="Preencha somente para alterar"
-                                            className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 focus:outline-none focus:border-[#ccff00] transition"
+                                            className="w-full bg-[#121212] border border-gray-700 rounded-xl p-3 focus:outline-none focus:border-[#ccff00] transition"
                                         />
                                     </div>
 
                                     <div>
-                                        <label htmlFor="edit_org" className="block text-sm font-bold mb-2">Organização</label>
+                                        <label htmlFor="edit_org" className="block text-sm font-bold mb-1">Organização</label>
                                         <input
                                             id="edit_org"
                                             title="Organização"
@@ -493,7 +493,7 @@ export const FooterAdmin: React.FC = () => {
                                                 const alphaOnly = e.target.value.toUpperCase().replace(/[^A-ZÀ-Ÿ\s]/g, '');
                                                 setFormData({ ...formData, organizacao: alphaOnly });
                                             }}
-                                            className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 focus:outline-none focus:border-[#ccff00] transition uppercase"
+                                            className="w-full bg-[#121212] border border-gray-700 rounded-xl p-3 focus:outline-none focus:border-[#ccff00] transition uppercase"
                                         />
                                     </div>
 
@@ -502,7 +502,7 @@ export const FooterAdmin: React.FC = () => {
                                             type="button"
                                             onClick={handleDeleteUser}
                                             disabled={loading || formData.email === 'admin@rcmolina.com.br'}
-                                            className="flex-1 bg-red-900/20 text-red-500 border border-red-900/50 hover:bg-red-900/40 hover:text-red-400 font-bold text-sm lg:text-base rounded-xl p-4 transition flex justify-center items-center gap-2 disabled:opacity-50"
+                                            className="flex-1 bg-red-900/20 text-red-500 border border-red-900/50 hover:bg-red-900/40 hover:text-red-400 font-bold text-sm lg:text-base rounded-xl p-3 transition flex justify-center items-center gap-2 disabled:opacity-50"
                                         >
                                             <Trash2 size={18} />
                                             Excluir
@@ -510,7 +510,7 @@ export const FooterAdmin: React.FC = () => {
                                         <button
                                             type="submit"
                                             disabled={loading}
-                                            className="flex-1 bg-[#ccff00] text-black font-black text-sm lg:text-base rounded-xl p-4 hover:bg-[#b3e600] transition flex justify-center items-center gap-2 disabled:opacity-50"
+                                            className="flex-1 bg-[#ccff00] text-black font-black text-sm lg:text-base rounded-xl p-3 hover:bg-[#b3e600] transition flex justify-center items-center gap-2 disabled:opacity-50"
                                         >
                                             {loading ? 'Adicionando...' : <><Save size={18} /> Salvar</>}
                                         </button>
@@ -518,11 +518,11 @@ export const FooterAdmin: React.FC = () => {
                                 </form>
                                 </div>
                                 {isSuperAdmin && (
-                                    <div className="flex-1 border-t md:border-t-0 md:border-l border-gray-800 pt-8 md:pt-0 md:pl-8">
-                                        <h2 className="text-xl font-black mb-6 text-white flex items-center gap-2">Opções do Sistema</h2>
-                                        <div className="space-y-3">
+                                    <div className="flex-1 border-t md:border-t-0 md:border-l border-gray-800 pt-6 md:pt-0 md:pl-6">
+                                        <h2 className="text-xl font-black mb-4 text-white flex items-center gap-2">Opções do Sistema</h2>
+                                        <div className="space-y-2">
                                             {Object.keys(permissions).map(option => (
-                                                <div key={option} className="flex items-center justify-between bg-[#121212] p-4 rounded-xl border border-gray-800">
+                                                <div key={option} className="flex items-center justify-between bg-[#121212] p-3 rounded-xl border border-gray-800">
                                                     <span className="font-bold text-white text-sm">{option}</span>
                                                     <div className="flex items-center gap-4">
                                                         <label className={`flex items-center gap-2 ${formData.email === 'admin@rcmolina.com.br' || option === 'Home' ? 'cursor-not-allowed opacity-50' : 'cursor-pointer group'}`}>
