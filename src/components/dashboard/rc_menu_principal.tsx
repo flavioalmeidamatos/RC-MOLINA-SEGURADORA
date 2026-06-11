@@ -751,6 +751,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     }
   };
   const checkPermission = (menuName: string) => {
+    if (menuName === 'Home') return true;
     if (perfil?.email === 'admin@rcmolina.com.br') {
       return true;
     }
@@ -2104,7 +2105,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
       {showRestrictedModal && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="flex w-full max-w-sm flex-col overflow-hidden rounded-[24px] border border-gray-800 bg-[#121212] shadow-2xl scale-in-95 duration-200 p-8 text-center items-center">
+          <div className="flex w-full max-w-sm flex-col overflow-hidden rounded-[24px] border border-gray-800 bg-[#121212] shadow-2xl scale-in-95 duration-200 p-8 text-center items-center relative">
             <button
               onClick={() => setShowRestrictedModal(false)}
               className="absolute top-4 right-4 text-gray-500 hover:text-white"
