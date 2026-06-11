@@ -342,6 +342,14 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = React.memo(({
     }
   };
 
+  const isFormValid = Boolean(
+    selectedClientId &&
+    agendaDate &&
+    agendaTime &&
+    agendaDuration &&
+    observacao.trim()
+  );
+
   return (
     <>
       {showDeleteConfirm && selectedAgendamento ? (
@@ -636,7 +644,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = React.memo(({
               </button>
               <button
                 onClick={isEditingSelected ? handleSave : () => setShowDeleteConfirm(true)}
-                disabled={isSaving}
+                disabled={isSaving || (isEditingSelected && !isFormValid)}
                 tabIndex={7}
                 className={`flex-1 py-3 text-white font-bold rounded shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${isEditingSelected ? "bg-[#00B5AD] hover:bg-[#009d96]" : "bg-red-600 hover:bg-red-700"
                   }`}
@@ -647,7 +655,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = React.memo(({
           ) : (
             <button
               onClick={handleSave}
-              disabled={!selectedClientId || isSaving}
+              disabled={isSaving || !isFormValid}
               tabIndex={6}
               className="w-full py-3 bg-[#00B5AD] text-white font-bold rounded shadow-lg hover:bg-[#009d96] transition-all flex items-center justify-center gap-2 mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
             >
