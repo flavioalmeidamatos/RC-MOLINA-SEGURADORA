@@ -204,6 +204,15 @@ function buildPreviewHtml(message: FullMessage, accountEmail: string, actor?: RC
       a { color: #0f766e; }
     </style>
     <base target="_blank" />
+    <script>
+      document.addEventListener('click', function(e) {
+        var a = e.target.closest('a');
+        if (a && a.href) {
+          e.preventDefault();
+          window.parent.postMessage({ type: 'open_external_link', url: a.href }, '*');
+        }
+      });
+    </script>
   `;
 
   const resolvedHtml = message.attachments.reduce((current, attachment) => {
@@ -897,6 +906,28 @@ export function RCWebmail({
   }, []);
 
   useEffect(() => {
+    const handleMessage = (e: MessageEvent) => {
+      if (e.data?.type === 'open_external_link' && e.data?.url) {
+        if ((window as any).chrome && (window as any).chrome.webview) {
+          const sidebarWidth = Math.round(document.querySelector("aside")?.getBoundingClientRect().width || 192);
+          const headerHeight = Math.round(document.querySelector("header")?.getBoundingClientRect().height || 64) + 45;
+          const payload = {
+            action: "open_external",
+            url: e.data.url,
+            sidebarWidth,
+            headerHeight
+          };
+          (window as any).chrome.webview.postMessage(JSON.stringify(payload));
+        } else {
+          window.open(e.data.url, '_blank');
+        }
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
+  useEffect(() => {
     if (activeThreadId) {
       setActiveMessageId(activeThreadId);
     }
@@ -1562,7 +1593,7 @@ export function RCWebmail({
                     <iframe
                       title="Conteúdo do e-mail"
                       className="min-h-[1600px] w-full rounded-[20px] border border-slate-200 bg-white"
-                      sandbox=""
+                      sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox allow-same-origin"
                       srcDoc={buildPreviewHtml(selectedMessage, accountEmail, { userId, userEmail })}
                     />
                   ) : (
