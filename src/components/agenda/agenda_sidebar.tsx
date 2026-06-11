@@ -493,6 +493,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = React.memo(({
                 }}
                 onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                 disabled={isSaving || isFormLockedForEdit}
+                tabIndex={1}
                 className="w-full pl-3 pr-10 py-2 border border-black rounded text-sm text-black outline-none focus:border-black disabled:cursor-not-allowed disabled:bg-gray-100 disabled:opacity-50"
               />
               <div className="absolute right-0 top-0 bottom-0 flex items-center pr-2">
@@ -532,6 +533,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = React.memo(({
               value={phone}
               readOnly={true}
               disabled={true}
+              tabIndex={-1}
               className="flex-1 min-w-0 px-3 py-2 border border-black rounded text-sm text-black italic outline-none focus:border-black disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
             />
             <input
@@ -540,6 +542,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = React.memo(({
               value={birthDate}
               readOnly={true}
               disabled={true}
+              tabIndex={-1}
               className="w-[120px] min-w-0 px-3 py-2 border border-black rounded text-sm text-black outline-none focus:border-black disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
             />
           </div>
@@ -551,6 +554,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = React.memo(({
               value={statusNegociacao}
               readOnly={true}
               disabled={true}
+              tabIndex={-1}
               className="flex-1 px-3 py-2 border border-black rounded text-sm text-black outline-none focus:border-black disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
             />
           </div>
@@ -562,12 +566,14 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = React.memo(({
               value={agendaDate}
               onChange={(e) => setAgendaDate(e.target.value)}
               disabled={isFormDisabled}
+              tabIndex={2}
               className="flex-1 px-3 py-2 border border-black rounded text-sm text-black outline-none focus:border-black bg-white uppercase text-center disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
             />
             <select
               value={agendaTime}
               onChange={(e) => setAgendaTime(e.target.value)}
               disabled={isFormDisabled}
+              tabIndex={3}
               className="w-[85px] px-2 py-2 border border-black rounded text-sm text-black text-center outline-none focus:border-black appearance-none bg-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
             >
               <option value="" disabled className="text-black">Hora</option>
@@ -582,6 +588,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = React.memo(({
               value={agendaDuration}
               onChange={(e) => setAgendaDuration(e.target.value)}
               disabled={isFormDisabled || !agendaTime}
+              tabIndex={4}
               className="w-full px-3 py-2 border border-black rounded text-sm text-black outline-none appearance-none bg-white focus:border-black disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
             >
               <option value="" disabled className="text-black">Duração...</option>
@@ -599,6 +606,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = React.memo(({
               value={observacao}
               onChange={(e) => setObservacao(e.target.value)}
               disabled={isFormDisabled}
+              tabIndex={5}
               className="w-full px-3 py-2 border border-black rounded text-sm text-black outline-none h-20 resize-none focus:border-black disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100"
             />
           </div>
@@ -619,6 +627,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = React.memo(({
                   }, 0);
                 }}
                 disabled={!selectedClientId || isSaving}
+                tabIndex={6}
                 className={`flex-1 py-3 text-white font-bold rounded shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${isEditingSelected ? "bg-slate-600 hover:bg-slate-700" : "bg-blue-600 hover:bg-blue-700"
                   }`}
               >
@@ -628,6 +637,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = React.memo(({
               <button
                 onClick={isEditingSelected ? handleSave : () => setShowDeleteConfirm(true)}
                 disabled={isSaving}
+                tabIndex={7}
                 className={`flex-1 py-3 text-white font-bold rounded shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${isEditingSelected ? "bg-[#00B5AD] hover:bg-[#009d96]" : "bg-red-600 hover:bg-red-700"
                   }`}
               >
@@ -638,6 +648,7 @@ export const AgendaSidebar: React.FC<AgendaSidebarProps> = React.memo(({
             <button
               onClick={handleSave}
               disabled={!selectedClientId || isSaving}
+              tabIndex={6}
               className="w-full py-3 bg-[#00B5AD] text-white font-bold rounded shadow-lg hover:bg-[#009d96] transition-all flex items-center justify-center gap-2 mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Plus size={18} />

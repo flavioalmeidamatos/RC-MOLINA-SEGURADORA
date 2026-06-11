@@ -5,6 +5,7 @@ import type { UsuarioPerfil } from '../../lib/local_auth';
 import { apiEmailExists, apiLogin, apiVerifyCode } from '../../lib/local_api';
 import { validarEmailRFC5322 } from '../../lib/validacoes';
 import { FooterAdmin } from '../shared/footer_admin';
+import { APP_VERSION } from '../../version';
 
 interface LoginProps {
   embedded?: boolean;
@@ -228,7 +229,12 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
   };
 
   return (
-    <div id="SCR-002" data-name="telalogin" className={wrapperClassName}>
+    <div id="SCR-002" data-name="telalogin" className={`${wrapperClassName} relative`}>
+      {!embedded && (
+        <div className="absolute top-4 left-4 text-xs font-medium text-gray-500 tracking-wide select-none">
+          Versão: {APP_VERSION}
+        </div>
+      )}
       <div className={cardClassName}>
         <div className="mb-8 flex flex-col items-center">
           <div className="mb-6 flex justify-center">
