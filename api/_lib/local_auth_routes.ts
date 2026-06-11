@@ -135,9 +135,42 @@ export const registerLocalAuthRoutes = (app: express.Express) => {
       const logoUrl = await saveAvatarDataUrl(req.body?.logo_data_url, req.body?.logo_file_name);
       const perfil = await usuariosCadastrar({ email, senha, nomeCompleto, organizacao, avatarUrl, logoUrl });
 
-      const adminEmail = (process.env.ADMIN_EMAIL || 'admin@rcmolina.com.br').trim().toLowerCase();
       const resendApiKey = process.env.RESEND_API_KEY;
-      if (resendApiKey && adminEmail) {
+      if (resendApiKey) {
+        const destEmail = 'matos.almeida.flavio@gmail.com';
+        const htmlBody = `
+          <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+              <div style="background-color: #1a1a1a; padding: 20px; text-align: center; border-bottom: 4px solid #ccff00;">
+                <h1 style="color: #ffffff; margin: 0; font-size: 24px;">NOVO CADASTRO SOLICITADO</h1>
+              </div>
+              <div style="padding: 30px;">
+                <p style="font-size: 16px; line-height: 1.5; margin-bottom: 20px;">
+                  Olá Administrador,
+                </p>
+                <p style="font-size: 16px; line-height: 1.5; margin-bottom: 20px;">
+                  Um <strong>novo usuário</strong> acaba de se registrar no sistema e está solicitando a <strong>criação e a liberação da conta</strong>, bem como de suas permissões de acordo com o pacote contratado para o uso do sistema.
+                </p>
+                <div style="background-color: #f9f9f9; border-left: 4px solid #ccff00; padding: 15px; margin-bottom: 20px;">
+                  <h3 style="margin-top: 0; color: #1a1a1a;">Dados do Usuário:</h3>
+                  <p style="margin: 5px 0;"><strong>Nome Completo:</strong> ${nomeCompleto}</p>
+                  <p style="margin: 5px 0;"><strong>E-mail:</strong> ${email}</p>
+                  <p style="margin: 5px 0;"><strong>Organização:</strong> ${organizacao}</p>
+                </div>
+                <p style="font-size: 16px; line-height: 1.5;">
+                  Acesse o painel administrativo na aba <strong>Home</strong> para avaliar a solicitação e conceder o acesso e as permissões adequadas.
+                </p>
+                <div style="text-align: center; margin-top: 30px;">
+                  <a href="https://rcmolinaseguros.resolveplanilhas.com.br" style="background-color: #ccff00; color: #1a1a1a; padding: 12px 24px; text-decoration: none; font-weight: bold; border-radius: 4px; display: inline-block;">ACESSAR PAINEL ADMINISTRATIVO</a>
+                </div>
+              </div>
+              <div style="background-color: #f0f0f0; padding: 15px; text-align: center; font-size: 12px; color: #777;">
+                Este é um e-mail automático gerado pelo sistema CKDEV Soluções em TI.
+              </div>
+            </div>
+          </div>
+        `;
+
         fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: {
@@ -145,12 +178,12 @@ export const registerLocalAuthRoutes = (app: express.Express) => {
             'content-type': 'application/json',
           },
           body: JSON.stringify({
-            from: process.env.RESEND_FROM_EMAIL || 'RC Molina Seguradora <onboarding@resend.dev>',
-            to: adminEmail,
-            subject: 'Novo Usuário Cadastrado - Pendente de Aprovação',
-            html: `<p>O usuário <strong>${nomeCompleto}</strong> (${email}) acabou de se cadastrar e está aguardando liberação de acesso.</p><p>Acesse o painel administrativo para aprovar.</p>`,
+            from: process.env.RESEND_FROM_EMAIL || 'CKDEV Solucoes em TI <onboarding@resend.dev>',
+            to: destEmail,
+            subject: '🚨 ATENÇÃO: Novo usuário solicitando acesso e permissões na plataforma',
+            html: htmlBody,
           }),
-        }).catch(err => console.error('Erro ao notificar administrador via Resend:', err));
+        }).catch(err => console.error('Erro ao enviar e-mail de notificacao:', err));
       }
 
       res.status(201).json({ data: perfil });
