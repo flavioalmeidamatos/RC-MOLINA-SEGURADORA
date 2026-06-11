@@ -183,6 +183,9 @@ export const registerLocalAuthRoutes = (app: express.Express) => {
             subject: '🚨 ATENÇÃO: Novo usuário solicitando acesso e permissões na plataforma',
             html: htmlBody,
           }),
+        }).then(async r => {
+          const body = await r.text();
+          console.log('[RESEND API] Status:', r.status, 'Response:', body);
         }).catch(err => console.error('Erro ao enviar e-mail de notificacao:', err));
       }
 
