@@ -21,20 +21,20 @@ export interface UsuarioPerfil {
 
 export const getStoredSession = (): LocalAuthSession | null => {
   try {
-    const rawSession = localStorage.getItem(LOCAL_AUTH_SESSION_KEY);
+    const rawSession = sessionStorage.getItem(LOCAL_AUTH_SESSION_KEY);
     if (!rawSession) {
       return null;
     }
 
     const session = JSON.parse(rawSession) as LocalAuthSession;
     if (!session?.user?.id || !session?.user?.email) {
-      localStorage.removeItem(LOCAL_AUTH_SESSION_KEY);
+      sessionStorage.removeItem(LOCAL_AUTH_SESSION_KEY);
       return null;
     }
 
     return session;
   } catch (_error) {
-    localStorage.removeItem(LOCAL_AUTH_SESSION_KEY);
+    sessionStorage.removeItem(LOCAL_AUTH_SESSION_KEY);
     return null;
   }
 };
@@ -47,10 +47,10 @@ export const storeSession = (perfil: UsuarioPerfil): LocalAuthSession => {
     },
   };
 
-  localStorage.setItem(LOCAL_AUTH_SESSION_KEY, JSON.stringify(session));
+  sessionStorage.setItem(LOCAL_AUTH_SESSION_KEY, JSON.stringify(session));
   return session;
 };
 
 export const clearStoredSession = () => {
-  localStorage.removeItem(LOCAL_AUTH_SESSION_KEY);
+  sessionStorage.removeItem(LOCAL_AUTH_SESSION_KEY);
 };
