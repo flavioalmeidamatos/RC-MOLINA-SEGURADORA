@@ -152,6 +152,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     session?.user?.email?.split("@")[0] ||
     "Nome do Usuário";
   const avatarUrl = perfil?.avatar_url || null;
+  const logoUrl = perfil?.logo_url || null;
   const canViewSystemUsers = normalizeFullName(perfil?.nome_completo || "") === USERS_VIEWER_FULL_NAME;
 
   const [activeMenu, setActiveMenu] = useState(forcedMenu || "Home");
@@ -975,12 +976,18 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
         <header id="main-dashboard-header" className="flex flex-col gap-4 bg-black border-b border-slate-800 px-4 py-4 shadow-sm sm:px-6 md:px-8 lg:h-16 lg:flex-row lg:items-center lg:justify-between lg:gap-0 lg:py-0">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
             <div className="flex flex-col items-start px-2 py-1">
-              <div className="text-xl font-bold leading-none tracking-widest text-[#d4af37]">
-                RC MOLINA
-              </div>
-              <div className="mt-1 text-center text-[10px] font-bold tracking-[0.3em] text-white/80">
-                SEGUROS
-              </div>
+              {logoUrl ? (
+                <img src={logoUrl} alt="Logo da Empresa" className="h-10 w-auto sm:h-12 max-w-[200px] object-contain" />
+              ) : (
+                <>
+                  <div className="text-xl font-bold leading-none tracking-widest text-[#d4af37]">
+                    RC MOLINA
+                  </div>
+                  <div className="mt-1 text-center text-[10px] font-bold tracking-[0.3em] text-white/80">
+                    SEGUROS
+                  </div>
+                </>
+              )}
             </div>
 
             <span className="border-l border-slate-700 pl-4 text-sm text-slate-400">
