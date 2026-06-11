@@ -726,16 +726,10 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     setIsLoggingOut(true);
     try {
       onLogout?.();
-      navigate("/login", { replace: true });
-      if ((window as any).chrome && (window as any).chrome.webview) {
-        (window as any).chrome.webview.postMessage(JSON.stringify({ action: "close_app" }));
-      }
+      window.location.href = "/";
     } catch (_error) {
       onLogout?.();
-      navigate("/login", { replace: true });
-      if ((window as any).chrome && (window as any).chrome.webview) {
-        (window as any).chrome.webview.postMessage(JSON.stringify({ action: "close_app" }));
-      }
+      window.location.href = "/";
     } finally {
       setIsLoggingOut(false);
     }
@@ -1918,8 +1912,8 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       {showLogoutConfirmModal && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="flex w-full max-w-md flex-col overflow-hidden rounded-[24px] border border-white/60 bg-white shadow-2xl scale-in-95 duration-200 p-8 text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100 text-red-600 shadow-sm">
-              <LogOut size={32} strokeWidth={2.5} />
+            <div className="mx-auto mb-6 flex justify-center">
+              <img src={logoUrl || "/portais/logo_cixdev.webp"} alt="Logo" className="h-16 w-auto object-contain" />
             </div>
             <h3 className="mb-2 text-2xl font-black text-[#0c1826]">
               Sair do sistema
@@ -1941,9 +1935,10 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                   setShowLogoutConfirmModal(false);
                   void handleLogout();
                 }}
-                className="flex-1 rounded-xl bg-[#b58c2a] py-3 font-bold text-white transition hover:bg-[#a17c1f] shadow-md shadow-[#b58c2a]/20"
+                className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-[#b58c2a] py-3 font-bold text-white transition hover:bg-[#a17c1f] shadow-md shadow-[#b58c2a]/20"
               >
-                Sim, sair agora
+                <LogOut size={20} strokeWidth={2.5} />
+                <span>LOGOUT</span>
               </button>
             </div>
           </div>
