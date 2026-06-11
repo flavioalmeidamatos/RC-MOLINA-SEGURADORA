@@ -234,6 +234,7 @@ export const registerLocalAuthRoutes = (app: express.Express) => {
           avatarUrl,
           logoUrl,
           senha,
+          permissoes: req.body?.permissoes ? String(req.body.permissoes) : null,
         });
         res.json({ ok: true });
       }),

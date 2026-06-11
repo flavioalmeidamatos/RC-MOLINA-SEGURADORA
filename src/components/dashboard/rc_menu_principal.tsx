@@ -170,6 +170,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const [statusModalType, setStatusModalType] = useState<'ATIVO' | 'INATIVO'>('ATIVO');
   const [statusModalClientes, setStatusModalClientes] = useState<any[]>([]);
   const [isLoadingStatusModal, setIsLoadingStatusModal] = useState(false);
+  const [showRestrictedModal, setShowRestrictedModal] = useState(false);
 
   const openStatusModal = async (status: 'ATIVO' | 'INATIVO') => {
     setStatusModalType(status);
@@ -745,7 +746,17 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       setIsLoggingOut(false);
     }
   };
+  const checkPermission = (menuName: string) => {
+    if (perfil?.permissoes && perfil.permissoes[menuName] === false) {
+      setShowRestrictedModal(true);
+      return false;
+    }
+    return true;
+  };
+
   const handleMenuClick = async (title: string) => {
+    if (!checkPermission(title)) return;
+
     if (title === "Links") {
       setLinksDesktopStatus("");
       setShowLinksChooser(true);
@@ -756,33 +767,45 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
   const handleCardClick = async (line1: string, line2: string) => {
     if (line1 === "Links" || line1 === "Sistemas") {
+      if (!checkPermission("Links")) return;
       setLinksDesktopStatus("");
       setShowLinksChooser(true);
       return;
     }
 
     if (line1 === "Meus" && line2 === "clientes") {
+      if (!checkPermission("Meus clientes")) return;
       setActiveMenu("Meus clientes");
       return;
     }
 
     if (line1 === "Agenda") {
+      if (!checkPermission("Agenda")) return;
       setActiveMenu("Agenda");
       return;
     }
 
     if (line1 === "Webmail") {
+      if (!checkPermission("Webmail")) return;
       setActiveMenu("Webmail");
       return;
     }
 
     if (line1 === "Campanhas") {
+      if (!checkPermission("Campanhas")) return;
       setActiveMenu("Campanhas");
       return;
     }
 
     if (line1 === "Configurar" || line1 === "Configurações") {
+      if (!checkPermission("Configurações")) return;
       setActiveMenu("Configurações");
+      return;
+    }
+    
+    if (line1 === "Financeiro") {
+      if (!checkPermission("Financeiro")) return;
+      setActiveMenu("Financeiro");
       return;
     }
   };
@@ -2068,6 +2091,31 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {showRestrictedModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="flex w-full max-w-sm flex-col overflow-hidden rounded-[24px] border border-gray-800 bg-[#121212] shadow-2xl scale-in-95 duration-200 p-8 text-center items-center">
+            <button
+              onClick={() => setShowRestrictedModal(false)}
+              className="absolute top-4 right-4 text-gray-500 hover:text-white"
+            >
+              <X size={24} />
+            </button>
+            <div className="w-20 h-20 mb-6 bg-red-900/20 rounded-full flex items-center justify-center text-red-500">
+              <Lock size={40} />
+            </div>
+            <h2 className="text-xl font-bold text-white mb-2">Acesso Restrito</h2>
+            <p className="text-gray-400 mb-8 text-sm">
+              Você não tem permissão para acessar esta área. Entre em contato com o suporte para mais informações.
+            </p>
+            <img src="/portais/logo_cixdev.webp" alt="CKDEV Soluções em TI" className="h-8 mb-4 object-contain opacity-80" />
+            <div className="flex items-center gap-2 text-[#ccff00] font-bold text-lg bg-[#ccff00]/10 px-6 py-3 rounded-xl border border-[#ccff00]/20">
+              <Phone size={20} />
+              (21) 98868-1799
+            </div>
           </div>
         </div>
       )}

@@ -10,6 +10,7 @@ export type UsuarioPerfil = {
   organizacao?: string | null;
   avatar_url?: string | null;
   logo_url?: string | null;
+  permissoes?: Record<string, boolean> | null;
   created_at?: string;
   updated_at?: string;
 };
@@ -208,6 +209,9 @@ alter table "RCMOLINASEGUROS"."CLIENTES"
 alter table "RCMOLINASEGUROS"."USUARIOS"
   add column if not exists logo_url text;
 
+alter table "RCMOLINASEGUROS"."USUARIOS"
+  add column if not exists permissoes jsonb default '{}'::jsonb;
+
 `;
 
 const rowToPerfil = (row: any): UsuarioPerfil => ({
@@ -217,6 +221,7 @@ const rowToPerfil = (row: any): UsuarioPerfil => ({
   organizacao: row.organizacao,
   avatar_url: row.avatar_url,
   logo_url: row.logo_url,
+  permissoes: typeof row.permissoes === 'string' ? JSON.parse(row.permissoes) : row.permissoes || {},
   created_at: row.created_at?.toISOString?.() || row.created_at,
   updated_at: row.updated_at?.toISOString?.() || row.updated_at,
 });
@@ -521,6 +526,7 @@ export const adminUpdateUser = async ({
   avatarUrl,
   logoUrl,
   senha,
+  permissoes,
 }: {
   id: string;
   nome: string;
@@ -529,6 +535,7 @@ export const adminUpdateUser = async ({
   avatarUrl?: string | null;
   logoUrl?: string | null;
   senha?: string | null;
+  permissoes?: string | null;
 }) => {
   await initLocalDatabase();
   await getPool().query(
@@ -541,9 +548,13 @@ export const adminUpdateUser = async ({
            when nullif($5, '') is not null then crypt($5, gen_salt('bf'))
            else senha_hash
          end,
-         logo_url = nullif(trim($6), '')
+         logo_url = nullif(trim($6), ''),
+         permissoes = case
+           when nullif($8, '') is not null then $8::jsonb
+           else permissoes
+         end
      where id = $7`,
-    [nome, email, organizacao || '', avatarUrl || '', senha || '', logoUrl || '', id],
+    [nome, email, organizacao || '', avatarUrl || '', senha || '', logoUrl || '', id, permissoes || ''],
   );
   await registrarAuditoria('ADMIN_UPDATE_USER', { id, email, senha_alterada: Boolean(senha) });
 };

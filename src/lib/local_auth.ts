@@ -14,6 +14,7 @@ export interface UsuarioPerfil {
   organizacao?: string | null;
   avatar_url?: string | null;
   logo_url?: string | null;
+  permissoes?: Record<string, boolean> | null;
   created_at?: string;
   updated_at?: string;
 }

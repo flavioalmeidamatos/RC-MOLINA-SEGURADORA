@@ -128,6 +128,7 @@ export const apiAdminUpdateUser = async (
     logo_url?: string | null;
     logo_data_url?: string | null;
     logo_file_name?: string | null;
+    permissoes?: string;
   },
 ) => {
   const response = await fetch(`/api/admin/users/${encodeURIComponent(id)}`, {

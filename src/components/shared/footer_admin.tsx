@@ -114,6 +114,29 @@ export const FooterAdmin: React.FC = () => {
                 });
                 setAvatarUrl(user.avatar_url || null);
                 setLogoUrl(user.logo_url || null);
+                if (user.permissoes) {
+                    setPermissions({
+                        'Home': user.permissoes['Home'] ?? true,
+                        'Meus clientes': user.permissoes['Meus clientes'] ?? true,
+                        'Agenda': user.permissoes['Agenda'] ?? true,
+                        'Links': user.permissoes['Links'] ?? true,
+                        'Webmail': user.permissoes['Webmail'] ?? true,
+                        'Campanhas': user.permissoes['Campanhas'] ?? true,
+                        'Financeiro': user.permissoes['Financeiro'] ?? true,
+                        'Configurações': user.permissoes['Configurações'] ?? true,
+                    });
+                } else {
+                    setPermissions({
+                        'Home': true,
+                        'Meus clientes': true,
+                        'Agenda': true,
+                        'Links': true,
+                        'Webmail': true,
+                        'Campanhas': true,
+                        'Financeiro': true,
+                        'Configurações': true,
+                    });
+                }
             }
         } else {
             setFormData({ nome: '', email: '', senha: '', organizacao: '' });
@@ -182,6 +205,7 @@ export const FooterAdmin: React.FC = () => {
                 logo_url: finalLogoUrl,
                 logo_data_url: logoFile ? logoUrl : null,
                 logo_file_name: logoFile?.name || null,
+                permissoes: JSON.stringify(permissions),
             });
 
             if (error) throw new Error(error);
