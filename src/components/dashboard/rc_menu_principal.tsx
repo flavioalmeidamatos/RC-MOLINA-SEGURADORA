@@ -20,6 +20,7 @@ import {
   User,
   Users,
   Link2,
+  Lock,
   Wrench,
   X,
 } from "lucide-react";
