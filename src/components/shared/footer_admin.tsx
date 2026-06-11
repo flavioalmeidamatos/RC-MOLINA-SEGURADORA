@@ -311,60 +311,31 @@ export const FooterAdmin: React.FC = () => {
                             <p className="text-gray-400 text-sm">Selecione, edite ou exclua os dados dos usuários.</p>
                         </div>
 
-                        {!selectedUserId && (
-                            <div className="mb-6">
-                                <div className="grid gap-2 md:grid-cols-2 mt-4 custom-scrollbar overflow-y-auto max-h-[360px] pr-2">
-                                    {users.length === 0 ? (
-                                        <div className="rounded-xl border border-gray-700 bg-[#121212] px-4 py-5 text-sm font-semibold text-gray-400 text-center col-span-2">
-                                            Nenhum usuário encontrado.
-                                        </div>
-                                    ) : (
-                                        users.map((u) => (
-                                            <article
-                                                key={u.id}
-                                                onClick={() => handleSelectUser({ target: { value: u.id } } as any)}
-                                                className="rounded-xl border border-gray-700 bg-[#121212] px-4 py-3 shadow-sm cursor-pointer hover:border-[#ccff00] hover:bg-[#1a1a1a] transition"
-                                            >
-                                                <div className="flex items-start justify-between gap-3">
-                                                    <div className="min-w-0">
-                                                        <p className="truncate text-sm font-black text-white">
-                                                            {u.nome_completo}
-                                                        </p>
-                                                        <p className="mt-1 truncate text-xs font-semibold text-gray-400">
-                                                            {u.email}
-                                                        </p>
-                                                    </div>
-                                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#ccff00]/10 text-[#ccff00]">
-                                                        <User size={15} />
-                                                    </div>
-                                                </div>
-                                            </article>
-                                        ))
-                                    )}
+                        <div className="mb-6">
+                            <label className="block text-sm font-bold mb-2 text-gray-400">Selecionar Usuário</label>
+                            <div className="relative">
+                                <select
+                                    value={selectedUserId}
+                                    onChange={(e) => handleSelectUser(e as any)}
+                                    className="w-full bg-[#121212] border border-gray-700 rounded-xl p-4 text-white font-semibold focus:outline-none focus:border-[#ccff00] appearance-none cursor-pointer transition"
+                                >
+                                    <option value="" disabled>-- Selecione um usuário --</option>
+                                    {users.map((u) => (
+                                        <option key={u.id} value={u.id}>
+                                            {u.nome_completo} ({u.email})
+                                        </option>
+                                    ))}
+                                </select>
+                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
+                                    <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
                                 </div>
                             </div>
-                        )}
+                        </div>
 
                         {message.text && (
                             <div className={`p-4 rounded-xl mb-6 text-sm text-center border ${message.type === 'error' ? 'bg-red-900/10 border-red-500 text-red-200' : 'bg-green-900/10 border-green-500 text-green-200'
                                 }`}>
                                 {message.text}
-                            </div>
-                        )}
-
-                        {selectedUserId && (
-                            <div className="mb-4 flex items-center justify-between">
-                                <button
-                                    onClick={() => { setSelectedUserId(''); setMessage({ text: '', type: '' }); }}
-                                    className="text-sm text-gray-400 hover:text-[#ccff00] flex items-center gap-1 transition"
-                                    title="Voltar para a lista"
-                                    aria-label="Voltar para a lista"
-                                >
-                                    <span>&larr; Voltar para a lista</span>
-                                </button>
-                                <span className="text-xs font-bold bg-[#ccff00]/10 text-[#ccff00] px-3 py-1 rounded-full uppercase tracking-wider">
-                                    Editando
-                                </span>
                             </div>
                         )}
 
