@@ -27,6 +27,7 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
   const [otpStage, setOtpStage] = useState<'request' | 'verify'>('request');
   const [otpCode, setOtpCode] = useState('');
   const [cooldown, setCooldown] = useState(0);
+  const [showApprovalModal, setShowApprovalModal] = useState(false);
   const heading = 'Bem vindo de volta';
   const subtitle = loginMethod === 'password'
     ? 'Inicie sessão na sua conta para continuar.'
@@ -123,6 +124,12 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
       const { data: perfil, error: authError } = await apiLogin(normalizedEmail, password);
 
       if (authError || !perfil) {
+        if (authError && authError.toLowerCase().includes('aprovação')) {
+          setShowApprovalModal(true);
+          setLoading(false);
+          return;
+        }
+
         const profile = await verifyProfileExists(normalizedEmail);
         setError(profile ? 'Senha incorreta.' : 'E-mail não cadastrado ou senha incorreta.');
         setLoading(false);
@@ -203,6 +210,12 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
 
       if (verifyError) {
         const msg = verifyError.toLowerCase();
+        if (msg.includes('aprovação')) {
+          setShowApprovalModal(true);
+          setLoading(false);
+          return;
+        }
+
         if (msg.includes('rate_limit')) {
           setError('Aguarde 60 segundos entre solicitações.');
         } else {
@@ -461,6 +474,27 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-800">
               <div className="h-full animate-progress-bar bg-[#ccff00]"></div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Aguardando Aprovação */}
+      {showApprovalModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+          <div className="flex w-full max-w-sm animate-in flex-col items-center rounded-2xl border border-yellow-500/30 bg-[#1a1a1a] p-8 shadow-2xl duration-300 zoom-in-95">
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-yellow-500/10">
+              <svg className="h-8 w-8 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2 text-center">Conta em Análise</h3>
+            <p className="text-sm text-gray-300 mb-6 text-center">Aguardando o administrador fazer sua liberação.</p>
+            <button
+              onClick={() => setShowApprovalModal(false)}
+              className="w-full rounded-lg bg-[#242424] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#333333] border border-gray-800"
+            >
+              Entendi
+            </button>
           </div>
         </div>
       )}
