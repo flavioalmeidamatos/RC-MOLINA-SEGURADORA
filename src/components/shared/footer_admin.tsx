@@ -6,7 +6,7 @@ import {
     apiAdminLogin,
     apiAdminUpdateUser,
 } from '../../lib/local_api';
-import type { UsuarioPerfil } from '../../lib/local_auth';
+import { getStoredSession, type UsuarioPerfil } from '../../lib/local_auth';
 import { validarEmailRFC5322 } from '../../lib/validacoes';
 
 const senhaAtendeCriterios = (senha: string) =>
@@ -24,6 +24,18 @@ export const FooterAdmin: React.FC = () => {
     const [selectedUserId, setSelectedUserId] = useState<string>('');
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState({ text: '', type: '' });
+
+    const isSuperAdmin = getStoredSession()?.user?.email === 'admin@rcmolina.com.br' || adminEmail === 'admin@rcmolina.com.br';
+    const [permissions, setPermissions] = useState<Record<string, boolean>>({
+        'Home': true,
+        'Meus clientes': true,
+        'Agenda': true,
+        'Links': true,
+        'Webmail': true,
+        'Campanhas': true,
+        'Financeiro': true,
+        'Configurações': true,
+    });
 
     // Form states
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -272,7 +284,7 @@ export const FooterAdmin: React.FC = () => {
             {/* ADMIN PANEL MODAL */}
             {showAdminPanel && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto pointer-events-auto" onClick={(e) => e.stopPropagation()}>
-                    <div className="bg-[#1a1a1a] shadow-2xl border border-gray-800 rounded-2xl p-6 md:p-8 max-w-lg w-full relative my-8 pointer-events-auto" onClick={(e) => e.stopPropagation()}>
+                    <div className={`bg-[#1a1a1a] shadow-2xl border border-gray-800 rounded-2xl p-6 md:p-8 w-full relative my-8 pointer-events-auto transition-all duration-300 ${isSuperAdmin && selectedUserId ? 'max-w-5xl' : 'max-w-lg'}`} onClick={(e) => e.stopPropagation()}>
                         <button
                             onClick={() => {
                                 setAdminToken('');
@@ -357,8 +369,9 @@ export const FooterAdmin: React.FC = () => {
                         )}
 
                         {selectedUserId && (
-                            <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-300">
-                                <div className="flex justify-center gap-8 mb-2">
+                            <div className="flex flex-col md:flex-row gap-8 animate-in slide-in-from-bottom-4 duration-300">
+                                <div className="flex-1 space-y-6">
+                                    <div className="flex justify-center gap-8 mb-2">
                                     <div className="flex flex-col items-center">
                                         <div
                                             onClick={() => fileInputRef.current?.click()}
@@ -497,6 +510,29 @@ export const FooterAdmin: React.FC = () => {
                                         </button>
                                     </div>
                                 </form>
+                                </div>
+                                {isSuperAdmin && (
+                                    <div className="flex-1 border-t md:border-t-0 md:border-l border-gray-800 pt-8 md:pt-0 md:pl-8">
+                                        <h2 className="text-xl font-black mb-6 text-white flex items-center gap-2">Opções do Sistema</h2>
+                                        <div className="space-y-3">
+                                            {Object.keys(permissions).map(option => (
+                                                <div key={option} className="flex items-center justify-between bg-[#121212] p-4 rounded-xl border border-gray-800">
+                                                    <span className="font-bold text-white text-sm">{option}</span>
+                                                    <div className="flex items-center gap-4">
+                                                        <label className="flex items-center gap-2 cursor-pointer group">
+                                                            <input type="radio" name={`perm_${option}`} checked={permissions[option]} onChange={() => setPermissions(p => ({ ...p, [option]: true }))} className="accent-[#ccff00] w-4 h-4" />
+                                                            <span className="text-xs font-bold text-gray-400 group-hover:text-white transition">HABILITADO</span>
+                                                        </label>
+                                                        <label className="flex items-center gap-2 cursor-pointer group">
+                                                            <input type="radio" name={`perm_${option}`} checked={!permissions[option]} onChange={() => setPermissions(p => ({ ...p, [option]: false }))} className="accent-red-500 w-4 h-4" />
+                                                            <span className="text-xs font-bold text-gray-400 group-hover:text-white transition">DESABILITADO</span>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
 
