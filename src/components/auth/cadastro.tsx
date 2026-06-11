@@ -294,13 +294,6 @@ export const Cadastro: React.FC = () => {
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               onKeyDown={handleKeyDown}
-              onBlur={(e) => {
-                if (!formData.email || !validarEmailRFC5322(formData.email.trim().toLowerCase())) {
-                  setError('Obrigatório preencher um e-mail válido.');
-                } else {
-                  setError('');
-                }
-              }}
               placeholder="você@exemplo.com"
               className="w-full bg-[#121212] border border-gray-700 rounded-xl p-3 focus:outline-none focus:border-[#ccff00] transition"
               required

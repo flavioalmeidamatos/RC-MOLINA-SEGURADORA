@@ -262,7 +262,7 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
                 onChange={(e) => setEmail(e.target.value)}
                 onKeyDown={handleKeyDown}
                 onBlur={(e) => {
-                  if (!email || !validarEmailRFC5322(email.trim().toLowerCase())) {
+                  if (email && !validarEmailRFC5322(email.trim().toLowerCase())) {
                     setError('Obrigatório preencher um e-mail válido.');
                   } else {
                     setError('');
