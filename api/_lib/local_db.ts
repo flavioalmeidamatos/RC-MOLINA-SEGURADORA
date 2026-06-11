@@ -519,6 +519,7 @@ export const adminUpdateUser = async ({
   email,
   organizacao,
   avatarUrl,
+  logoUrl,
   senha,
 }: {
   id: string;
@@ -526,6 +527,7 @@ export const adminUpdateUser = async ({
   email: string;
   organizacao?: string | null;
   avatarUrl?: string | null;
+  logoUrl?: string | null;
   senha?: string | null;
 }) => {
   await initLocalDatabase();
@@ -538,9 +540,10 @@ export const adminUpdateUser = async ({
          senha_hash = case
            when nullif($5, '') is not null then crypt($5, gen_salt('bf'))
            else senha_hash
-         end
-     where id = $6`,
-    [nome, email, organizacao || '', avatarUrl || '', senha || '', id],
+         end,
+         logo_url = nullif(trim($6), '')
+     where id = $7`,
+    [nome, email, organizacao || '', avatarUrl || '', senha || '', logoUrl || '', id],
   );
   await registrarAuditoria('ADMIN_UPDATE_USER', { id, email, senha_alterada: Boolean(senha) });
 };

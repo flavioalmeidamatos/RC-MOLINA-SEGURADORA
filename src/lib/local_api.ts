@@ -125,6 +125,9 @@ export const apiAdminUpdateUser = async (
     avatar_url?: string | null;
     avatar_data_url?: string | null;
     avatar_file_name?: string | null;
+    logo_url?: string | null;
+    logo_data_url?: string | null;
+    logo_file_name?: string | null;
   },
 ) => {
   const response = await fetch(`/api/admin/users/${encodeURIComponent(id)}`, {

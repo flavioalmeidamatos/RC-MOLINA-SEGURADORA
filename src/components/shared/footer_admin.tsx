@@ -35,6 +35,9 @@ export const FooterAdmin: React.FC = () => {
     });
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
+    const [logoUrl, setLogoUrl] = useState<string | null>(null);
+    const [logoFile, setLogoFile] = useState<File | null>(null);
+    const logoInputRef = useRef<HTMLInputElement>(null);
 
     const fetchUsers = async () => {
         if (!adminToken) return;
@@ -97,13 +100,16 @@ export const FooterAdmin: React.FC = () => {
                     senha: '',
                     organizacao: user.organizacao || '',
                 });
-                setAvatarUrl(user.avatar_url);
+                setAvatarUrl(user.avatar_url || null);
+                setLogoUrl(user.logo_url || null);
             }
         } else {
             setFormData({ nome: '', email: '', senha: '', organizacao: '' });
             setAvatarUrl(null);
+            setLogoUrl(null);
         }
         setAvatarFile(null);
+        setLogoFile(null);
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -113,6 +119,18 @@ export const FooterAdmin: React.FC = () => {
             const reader = new FileReader();
             reader.onloadend = () => {
                 setAvatarUrl(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setLogoFile(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setLogoUrl(reader.result as string);
             };
             reader.readAsDataURL(file);
         }
@@ -139,6 +157,7 @@ export const FooterAdmin: React.FC = () => {
 
         try {
             let finalAvatarUrl = avatarUrl;
+            let finalLogoUrl = logoUrl;
 
             const { error } = await apiAdminUpdateUser(adminToken, selectedUserId, {
                 nome: formData.nome.toUpperCase(),
@@ -148,6 +167,9 @@ export const FooterAdmin: React.FC = () => {
                 avatar_url: finalAvatarUrl,
                 avatar_data_url: avatarFile ? avatarUrl : null,
                 avatar_file_name: avatarFile?.name || null,
+                logo_url: finalLogoUrl,
+                logo_data_url: logoFile ? logoUrl : null,
+                logo_file_name: logoFile?.name || null,
             });
 
             if (error) throw new Error(error);
@@ -177,6 +199,7 @@ export const FooterAdmin: React.FC = () => {
             setSelectedUserId('');
             setFormData({ nome: '', email: '', senha: '', organizacao: '' });
             setAvatarUrl(null);
+            setLogoUrl(null);
             await fetchUsers();
         } catch (error: any) {
             setMessage({ text: 'Erro ao excluir: ' + error.message, type: 'error' });
@@ -335,33 +358,64 @@ export const FooterAdmin: React.FC = () => {
 
                         {selectedUserId && (
                             <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-300">
-                                <div className="flex flex-col items-center mb-2">
-                                    <div
-                                        onClick={() => fileInputRef.current?.click()}
-                                        className="w-24 h-24 rounded-full border-2 border-[#ccff00] flex items-center justify-center relative bg-[#121212] overflow-hidden group cursor-pointer"
-                                    >
-                                        {avatarUrl ? (
-                                            <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
-                                        ) : (
-                                            <User className="text-gray-500 group-hover:text-[#ccff00] transition" size={48} />
-                                        )}
-                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-                                            <span className="text-[10px] font-bold">ALTERAR</span>
+                                <div className="flex justify-center gap-8 mb-2">
+                                    <div className="flex flex-col items-center">
+                                        <div
+                                            onClick={() => fileInputRef.current?.click()}
+                                            className="w-24 h-24 rounded-full border-2 border-[#ccff00] flex items-center justify-center relative bg-[#121212] overflow-hidden group cursor-pointer"
+                                        >
+                                            {avatarUrl ? (
+                                                <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <User className="text-gray-500 group-hover:text-[#ccff00] transition" size={48} />
+                                            )}
+                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                                                <span className="text-[10px] font-bold">ALTERAR</span>
+                                            </div>
                                         </div>
+                                        <div className="flex items-center gap-2 mt-2 cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                                            <Camera size={14} className="text-[#ccff00]" />
+                                            <span className="text-[#ccff00] text-[10px] font-bold uppercase tracking-widest">foto</span>
+                                        </div>
+                                        <input
+                                            id="upload_avatar"
+                                            title="Selecionar foto"
+                                            type="file"
+                                            ref={fileInputRef}
+                                            onChange={handleFileChange}
+                                            accept="image/*"
+                                            className="hidden"
+                                        />
                                     </div>
-                                    <div className="flex items-center gap-2 mt-2 cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-                                        <Camera size={14} className="text-[#ccff00]" />
-                                        <span className="text-[#ccff00] text-[10px] font-bold uppercase tracking-widest">foto</span>
+
+                                    <div className="flex flex-col items-center">
+                                        <div
+                                            onClick={() => logoInputRef.current?.click()}
+                                            className="w-24 h-24 rounded-full border-2 border-[#ccff00] flex items-center justify-center relative bg-[#121212] overflow-hidden group cursor-pointer"
+                                        >
+                                            {logoUrl ? (
+                                                <img src={logoUrl} alt="Logo" className="w-full h-full object-contain p-2 bg-white" />
+                                            ) : (
+                                                <Camera className="text-gray-500 group-hover:text-[#ccff00] transition" size={48} />
+                                            )}
+                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                                                <span className="text-[10px] font-bold">ALTERAR</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2 mt-2 cursor-pointer" onClick={() => logoInputRef.current?.click()}>
+                                            <Camera size={14} className="text-[#ccff00]" />
+                                            <span className="text-[#ccff00] text-[10px] font-bold uppercase tracking-widest">Logo da Empresa</span>
+                                        </div>
+                                        <input
+                                            id="upload_logo"
+                                            title="Selecionar logo"
+                                            type="file"
+                                            ref={logoInputRef}
+                                            onChange={handleLogoChange}
+                                            accept="image/*"
+                                            className="hidden"
+                                        />
                                     </div>
-                                    <input
-                                        id="upload_avatar"
-                                        title="Selecionar foto"
-                                        type="file"
-                                        ref={fileInputRef}
-                                        onChange={handleFileChange}
-                                        accept="image/*"
-                                        className="hidden"
-                                    />
                                 </div>
 
                                 <form onSubmit={handleSaveUser} className="space-y-4">

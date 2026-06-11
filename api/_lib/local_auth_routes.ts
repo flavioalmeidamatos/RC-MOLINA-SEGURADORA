@@ -212,6 +212,7 @@ export const registerLocalAuthRoutes = (app: express.Express) => {
     requireAdmin(
       asyncRoute(async (req, res) => {
         const currentAvatarUrl = String(req.body?.avatar_url || '');
+        const currentLogoUrl = String(req.body?.logo_url || '');
         const senha = String(req.body?.senha || '');
 
         if (senha && !senhaAtendeCriterios(senha)) {
@@ -222,12 +223,16 @@ export const registerLocalAuthRoutes = (app: express.Express) => {
         const avatarUrl =
           (await saveAvatarDataUrl(req.body?.avatar_data_url, req.body?.avatar_file_name)) || currentAvatarUrl;
 
+        const logoUrl =
+          (await saveAvatarDataUrl(req.body?.logo_data_url, req.body?.logo_file_name)) || currentLogoUrl;
+
         await adminUpdateUser({
           id: req.params.id,
           nome: String(req.body?.nome || ''),
           email: String(req.body?.email || ''),
           organizacao: String(req.body?.organizacao || ''),
           avatarUrl,
+          logoUrl,
           senha,
         });
         res.json({ ok: true });
