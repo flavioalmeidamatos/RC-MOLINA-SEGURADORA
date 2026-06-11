@@ -229,12 +229,7 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
   };
 
   return (
-    <div id="SCR-002" data-name="telalogin" className={`${wrapperClassName} relative`}>
-      {!embedded && (
-        <div className="absolute top-4 left-4 text-xs font-medium text-gray-500 tracking-wide select-none">
-          Versão: {APP_VERSION}
-        </div>
-      )}
+    <div id="SCR-002" data-name="telalogin" className={wrapperClassName}>
       <div className={cardClassName}>
         <div className="mb-8 flex flex-col items-center">
           <div className="mb-6 flex justify-center">
@@ -446,6 +441,9 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
             </p>
 
             <FooterAdmin />
+            <div className="mt-2 text-center text-xs font-medium text-gray-500 tracking-wide select-none">
+              Versão: {APP_VERSION}
+            </div>
           </>
         ) : null}
       </div>
