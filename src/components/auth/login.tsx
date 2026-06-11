@@ -264,7 +264,6 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
                 onBlur={(e) => {
                   if (!email || !validarEmailRFC5322(email.trim().toLowerCase())) {
                     setError('Obrigatório preencher um e-mail válido.');
-                    e.target.focus();
                   } else {
                     setError('');
                   }
@@ -299,7 +298,6 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
                   onBlur={(e) => {
                     if (!password || password.length < 8) {
                       setError('Obrigatório informar senha com no mínimo 8 caracteres.');
-                      e.target.focus();
                     } else {
                       setError('');
                     }
