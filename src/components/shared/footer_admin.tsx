@@ -466,7 +466,7 @@ export const FooterAdmin: React.FC = () => {
                                         <button
                                             type="button"
                                             onClick={handleDeleteUser}
-                                            disabled={loading}
+                                            disabled={loading || formData.email === 'admin@rcmolina.com.br'}
                                             className="flex-1 bg-red-900/20 text-red-500 border border-red-900/50 hover:bg-red-900/40 hover:text-red-400 font-bold text-sm lg:text-base rounded-xl p-4 transition flex justify-center items-center gap-2 disabled:opacity-50"
                                         >
                                             <Trash2 size={18} />
