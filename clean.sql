@@ -1,1 +1,0 @@
-DELETE FROM "RCMOLINASEGUROS"."CLIENTES" WHERE nome_completo ILIKE '%remalho%';

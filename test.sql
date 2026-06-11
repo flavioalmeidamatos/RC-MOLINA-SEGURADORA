@@ -1,1 +1,0 @@
-SELECT count(*) FROM "RCMOLINASEGUROS"."CLIENTES" WHERE nome_completo LIKE '%- REMALHO%';
