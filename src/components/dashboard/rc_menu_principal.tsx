@@ -724,6 +724,17 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     }
 
     setIsLoggingOut(true);
+
+    // Disable beforeunload to prevent the browser from asking "Leave site?"
+    // This usually happens because of unsaved changes in tinyMCE.
+    window.onbeforeunload = null;
+    if (typeof (window as any).tinymce !== 'undefined') {
+      const editors = (window as any).tinymce.editors;
+      if (editors) {
+        editors.forEach((editor: any) => editor.setDirty(false));
+      }
+    }
+
     try {
       onLogout?.();
       window.location.href = "/";
