@@ -622,7 +622,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
       </div>
 
       <div className="flex-1 overflow-y-auto p-4">
-        <div className="grid grid-cols-1 2xl:grid-cols-2 gap-6 w-full max-w-[1600px] mx-auto">
+        <div className="grid grid-cols-1 2xl:grid-cols-2 gap-6 w-full max-w-[1600px] mx-auto items-start">
           {/* Coluna Esquerda: Scanner */}
           <div className="flex flex-col bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
           <div className="mb-4 border-b border-slate-100 pb-2 flex justify-between items-end">
