@@ -875,7 +875,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
 
           {/* Coluna Direita: Importação Inteligente de Clientes (Excel) */}
           <div className="flex flex-col bg-white border border-slate-200 rounded-xl p-5 shadow-sm min-h-[650px]">
-            <div className="border-b border-slate-100 pb-2 flex justify-between items-end">
+            <div className="mb-4 border-b border-slate-100 pb-2 flex justify-between items-end">
               <div>
                 <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
                   <UploadCloud className="text-[#0078d4]" size={18} />
