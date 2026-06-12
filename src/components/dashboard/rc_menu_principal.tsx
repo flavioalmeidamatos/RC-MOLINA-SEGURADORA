@@ -911,6 +911,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       const reminderState = agendaReminderState[agendamento.id_agendamento] || {};
       const isLate = appointmentAt ? appointmentAt.getTime() < Date.now() : false;
       const hasBeenSnoozed = Boolean(reminderState.snoozedUntil);
+      const isPastDay = String(agendamento.data_agendamento || "").slice(0, 10) < getLocalDateKey();
 
       return {
         id: agendamento.id_agendamento,
@@ -919,7 +920,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
         time: agendamento.hora_inicio?.slice(0, 5) || "--:--",
         endTime: agendamento.hora_fim?.slice(0, 5) || "",
         status: agendamento.observacao || "compromisso",
-        highlight: isLate && hasBeenSnoozed,
+        highlight: isPastDay ? true : (isLate && hasBeenSnoozed),
         sortTime: appointmentAt?.getTime() || 0,
       };
     })
