@@ -922,6 +922,21 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     })
     .sort((a, b) => a.sortTime - b.sortTime);
 
+  const compromissosAtrasados = agendamentos.filter(
+    (a) => String(a.data_agendamento || "").slice(0, 10) < getLocalDateKey()
+  );
+
+  const handleAtrasadosClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (compromissosAtrasados.length > 0) {
+      const dates = compromissosAtrasados.map(a => String(a.data_agendamento || "").slice(0, 10)).sort();
+      const oldestDateStr = dates[0];
+      const [year, month, day] = oldestDateStr.split('-').map(Number);
+      if (year && month && day) {
+        setAgendaDate(new Date(year, month - 1, day));
+      }
+    }
+  };
 
   const showClientArea = activeMenu === "Meus clientes";
   const showAgendaArea = activeMenu === "Agenda";
@@ -1359,8 +1374,20 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
                                 </button>
                               </div>
-                              <p className="mt-1 text-[11px] font-medium text-white/50">
+                              <p className="mt-1 text-[11px] font-medium text-white/50 flex items-center">
                                 Tarefas programadas - {agendaItems.length}
+                                {compromissosAtrasados.length > 0 && (
+                                  <>
+                                    <span className="mx-2 opacity-50">|</span>
+                                    <span 
+                                      className="text-red-400 font-bold animate-pulse cursor-pointer hover:text-red-300 transition-colors"
+                                      onClick={handleAtrasadosClick}
+                                      title="Ir para o dia do compromisso atrasado mais antigo"
+                                    >
+                                      {compromissosAtrasados.length} {compromissosAtrasados.length === 1 ? "compromisso atrasado" : "compromissos atrasados"}
+                                    </span>
+                                  </>
+                                )}
                               </p>
                             </div>
                             <div className="relative flex items-center justify-end pl-2 text-[#d4af37] transition-colors hover:opacity-80 cursor-pointer overflow-hidden">

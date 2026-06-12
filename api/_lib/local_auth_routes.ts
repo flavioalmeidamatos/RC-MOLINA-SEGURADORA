@@ -28,23 +28,23 @@ const senhaAtendeCriterios = (senha: string) =>
 
 const asyncRoute =
   (handler: express.RequestHandler): express.RequestHandler =>
-  (req, res, next) => {
-    Promise.resolve(handler(req, res, next)).catch(next);
-  };
+    (req, res, next) => {
+      Promise.resolve(handler(req, res, next)).catch(next);
+    };
 
 const getBearerToken = (req: express.Request) => req.headers.authorization;
 const getRequestUserHeader = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] || '' : value || '');
 
 const requireAdmin =
   (handler: express.RequestHandler): express.RequestHandler =>
-  (req, res, next) => {
-    if (!verifyAdminToken(getBearerToken(req))) {
-      res.status(401).json({ error: 'Acesso administrativo invalido.' });
-      return;
-    }
+    (req, res, next) => {
+      if (!verifyAdminToken(getBearerToken(req))) {
+        res.status(401).json({ error: 'Acesso administrativo invalido.' });
+        return;
+      }
 
-    return handler(req, res, next);
-  };
+      return handler(req, res, next);
+    };
 
 export const registerLocalAuthRoutes = (app: express.Express) => {
   app.get(
