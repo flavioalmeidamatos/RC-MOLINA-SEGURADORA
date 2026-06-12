@@ -596,15 +596,15 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
 
   return (
     <div className="flex flex-col h-full bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-      <div className="bg-[#0c1826] p-6 text-white shrink-0 relative overflow-hidden">
+      <div className="bg-[#0c1826] p-4 text-white shrink-0 relative overflow-hidden">
         <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-[#d4af37]/10 blur-3xl" />
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/5 text-[#d4af37] ring-1 ring-white/10 backdrop-blur-sm">
-            <ScannerIcon size={24} />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-[#d4af37] ring-1 ring-white/10 backdrop-blur-sm">
+            <ScannerIcon size={20} />
           </div>
           <div>
-            <h1 className="text-2xl font-black tracking-tight">Configurações do Sistema</h1>
-            <p className="text-xs font-medium text-white/50 mt-1">
+            <h1 className="text-xl font-black tracking-tight">Configurações do Sistema</h1>
+            <p className="text-xs font-medium text-white/50 mt-0.5">
               Gerencie opções de hardware e integrações locais
             </p>
           </div>
@@ -621,14 +621,14 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="grid grid-cols-1 2xl:grid-cols-2 gap-10 w-full max-w-[1600px] mx-auto">
+      <div className="flex-1 overflow-y-auto p-4">
+        <div className="grid grid-cols-1 2xl:grid-cols-2 gap-6 w-full max-w-[1600px] mx-auto">
           {/* Coluna Esquerda: Scanner */}
           <div className="flex flex-col">
-          <div className="mb-8 border-b border-slate-100 pb-4 flex justify-between items-end">
+          <div className="mb-4 border-b border-slate-100 pb-2 flex justify-between items-end">
             <div>
-              <h2 className="text-lg font-bold text-slate-800">Digitalização de Documentos</h2>
-              <p className="text-sm text-slate-500 mt-1">
+              <h2 className="text-base font-bold text-slate-800">Digitalização de Documentos</h2>
+              <p className="text-xs text-slate-500 mt-0.5">
                 Busque scanners locais (WIA) ou configure um IP para digitalizar diretamente para o sistema.
               </p>
             </div>
@@ -647,7 +647,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
             </label>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-4">
             {!useIpScanner ? (
               <div className="flex items-end gap-4">
                 <div className="flex-1">
@@ -856,17 +856,17 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
 
           {/* Coluna Direita: Importação Inteligente de Clientes (Excel) */}
           <div className="flex flex-col">
-            <div className="border-b border-slate-100 pb-4">
-              <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-            <UploadCloud className="text-[#0078d4]" size={20} />
+            <div className="border-b border-slate-100 pb-2">
+              <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+            <UploadCloud className="text-[#0078d4]" size={18} />
             Importação Inteligente de Clientes (Excel)
           </h2>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="text-xs text-slate-500 mt-0.5">
             Carregue uma planilha, faça o mapeamento das colunas arrastando os campos e importe os dados para o sistema e Google Contatos.
           </p>
         </div>
 
-        <div className="space-y-6 pt-4 mb-20">
+        <div className="space-y-4 pt-3 mb-4">
           {!excelPreview ? (
             <div className="flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-2xl bg-slate-50 p-10 text-center">
               <FileSpreadsheet size={48} className="text-[#0078d4] mb-4 opacity-80" />
@@ -885,7 +885,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 xl:grid-cols-4 gap-4">
               {/* Campos do Banco (Esquerda) */}
               <div className="xl:col-span-1 border border-slate-200 rounded-xl bg-slate-50 p-4">
                 <h3 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
@@ -896,7 +896,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
                   Arraste estes campos e solte sobre as colunas da planilha ao lado.
                 </p>
                 
-                <div className="flex flex-col gap-2 max-h-[60vh] overflow-y-auto custom-scrollbar pr-2">
+                <div className="flex flex-col gap-2 max-h-[50vh] 2xl:max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
                   {dbFields.map(field => {
                     const isMapped = Object.values(columnMappings).includes(field.id);
                     return (
