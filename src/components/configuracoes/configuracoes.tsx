@@ -379,23 +379,40 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
       let headerFound = false;
 
       worksheet.eachRow((row) => {
-        const rawVals = Array.isArray(row.values) ? row.values.slice(1) : [];
-        const rowData = rawVals.map(val => {
-          if (val === null || val === undefined) return '';
-          if (typeof val === 'object') {
-            if ('text' in val && val.text) return String(val.text).trim();
-            if ('result' in val && val.result) return String(val.result).trim();
-            if ('richText' in val && Array.isArray(val.richText)) return val.richText.map((rt: any) => rt.text).join('').trim();
+        let maxCols = row.cellCount || 0;
+        if (Array.isArray(row.values) && row.values.length > maxCols) {
+            maxCols = row.values.length - 1;
+        }
+        if (headerFound && headers.length > maxCols) {
+            maxCols = headers.length;
+        }
+        maxCols = Math.max(maxCols, 20);
+
+        const rowData: string[] = [];
+        for (let i = 1; i <= maxCols; i++) {
+          const val = row.getCell(i).value;
+          if (val === null || val === undefined) {
+            rowData.push('');
+          } else if (typeof val === 'object') {
+            if ('text' in val && val.text) rowData.push(String(val.text).trim());
+            else if ('result' in val && val.result) rowData.push(String(val.result).trim());
+            else if ('richText' in val && Array.isArray(val.richText)) rowData.push(val.richText.map((rt: any) => rt.text).join('').trim());
+            else rowData.push(String(val).trim());
+          } else {
+            rowData.push(String(val).trim());
           }
-          return String(val).trim();
-        });
+        }
 
         if (!headerFound) {
           if (rowData.some(v => v !== '')) {
-            headers = rowData;
+            let lastIndex = rowData.length - 1;
+            while(lastIndex >= 0 && rowData[lastIndex] === '') {
+               lastIndex--;
+            }
+            headers = rowData.slice(0, lastIndex + 1);
             headerFound = true;
           }
-        } else if (rows.length < 4) {
+        } else if (rows.length < 5) {
           const paddedRow = [...rowData];
           while (paddedRow.length < headers.length) paddedRow.push('');
           rows.push(paddedRow.slice(0, headers.length));
@@ -442,16 +459,26 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
       let headerFound = false;
       if (worksheet) {
         worksheet.eachRow((row) => {
-          const rawVals = Array.isArray(row.values) ? row.values.slice(1) : [];
-          const rowData = rawVals.map(val => {
-            if (val === null || val === undefined) return '';
-            if (typeof val === 'object') {
-              if ('text' in val && val.text) return String(val.text).trim();
-              if ('result' in val && val.result) return String(val.result).trim();
-              if ('richText' in val && Array.isArray(val.richText)) return val.richText.map((rt: any) => rt.text).join('').trim();
+          let maxCols = row.cellCount || 0;
+          if (Array.isArray(row.values) && row.values.length > maxCols) {
+              maxCols = row.values.length - 1;
+          }
+          maxCols = Math.max(maxCols, 20);
+
+          const rowData: string[] = [];
+          for (let i = 1; i <= maxCols; i++) {
+            const val = row.getCell(i).value;
+            if (val === null || val === undefined) {
+              rowData.push('');
+            } else if (typeof val === 'object') {
+              if ('text' in val && val.text) rowData.push(String(val.text).trim());
+              else if ('result' in val && val.result) rowData.push(String(val.result).trim());
+              else if ('richText' in val && Array.isArray(val.richText)) rowData.push(val.richText.map((rt: any) => rt.text).join('').trim());
+              else rowData.push(String(val).trim());
+            } else {
+              rowData.push(String(val).trim());
             }
-            return String(val).trim();
-          });
+          }
 
           if (!headerFound) {
             if (rowData.some(v => v !== '')) {
@@ -1007,7 +1034,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
                               {header}
                             </div>
                             {excelPreview.rows.map((row, rIndex) => (
-                              <div key={rIndex} className={`p-2 text-xs truncate border-b border-slate-100 last:border-b-0 ${rIndex % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`} title={row[colIndex]}>
+                              <div key={rIndex} className={`p-2 text-xs text-slate-800 truncate border-b border-slate-100 last:border-b-0 ${rIndex % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`} title={row[colIndex]}>
                                 {row[colIndex] || '-'}
                               </div>
                             ))}
