@@ -651,7 +651,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
       <div className="flex-1 overflow-y-auto p-4">
         <div className="grid grid-cols-1 2xl:grid-cols-2 gap-6 w-full max-w-[1600px] mx-auto items-start">
           {/* Coluna Esquerda: Scanner */}
-          <div className="flex flex-col bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+          <div className="flex flex-col bg-white border border-slate-200 rounded-xl p-5 shadow-sm min-h-[600px]">
           <div className="mb-4 border-b border-slate-100 pb-2 flex justify-between items-end">
             <div>
               <h2 className="text-base font-bold text-slate-800">Digitalização de Documentos</h2>
@@ -674,7 +674,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
             </label>
           </div>
 
-          <div className="space-y-4 flex-1 bg-slate-50/50 border border-slate-200 rounded-xl p-4 shadow-inner">
+          <div className="space-y-4 bg-slate-50/50 border border-slate-200 rounded-xl p-4 shadow-inner">
             {!useIpScanner ? (
               <div className="flex items-end gap-4">
                 <div className="flex-1">
