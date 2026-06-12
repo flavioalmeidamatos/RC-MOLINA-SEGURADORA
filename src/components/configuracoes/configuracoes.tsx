@@ -896,17 +896,23 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
 
             <div className="space-y-4 pt-3 flex-1 bg-slate-50/50 border border-slate-200 rounded-xl p-4 shadow-inner flex flex-col">
               {!excelPreview ? (
-                <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-2xl bg-slate-50 p-10 text-center min-h-[100px]">
-                  <FileSpreadsheet size={48} className="text-[#0078d4] mb-4 opacity-80" />
-                  <h3 className="text-lg font-bold text-slate-700 mb-2">Nenhuma planilha carregada</h3>
-                  <p className="text-sm text-slate-500 mb-6 max-w-md">
-                    Selecione um arquivo .XLSX do seu computador para visualizar as colunas e fazer a associação com os campos do sistema.
-                  </p>
+                <div className="flex-1 flex flex-col 2xl:flex-row items-center justify-between gap-6 border-2 border-dashed border-slate-300 rounded-2xl bg-slate-50 p-6 text-center 2xl:text-left min-h-[100px]">
+                  <div className="flex flex-col 2xl:flex-row items-center gap-4">
+                    <div className="p-3 bg-[#0078d4]/10 rounded-xl shrink-0 hidden 2xl:flex">
+                      <FileSpreadsheet size={28} className="text-[#0078d4]" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold text-slate-700">Nenhuma planilha carregada</h3>
+                      <p className="text-sm text-slate-500 mt-1 max-w-md">
+                        Selecione um arquivo .XLSX do seu computador para visualizar as colunas e fazer a associação com os campos do sistema.
+                      </p>
+                    </div>
+                  </div>
 
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="flex h-12 items-center justify-center gap-2 rounded-xl bg-[#0078d4] px-6 font-bold text-white shadow-lg shadow-[#0078d4]/20 transition-all hover:bg-[#006cbd]"
+                    className="flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#0078d4] px-6 text-sm font-bold text-white shadow-lg shadow-[#0078d4]/20 transition-all hover:bg-[#006cbd]"
                   >
                     <UploadCloud size={18} />
                     Carregar Arquivo Excel
