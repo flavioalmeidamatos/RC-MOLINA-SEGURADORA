@@ -202,6 +202,9 @@ alter table "RCMOLINASEGUROS"."CLIENTES"
   add column if not exists data_fechamento date;
 
 alter table "RCMOLINASEGUROS"."CLIENTES"
+  add column if not exists idade varchar(100);
+
+alter table "RCMOLINASEGUROS"."CLIENTES"
   add column if not exists updated_at timestamptz not null default timezone('utc', now());
 
 alter table "RCMOLINASEGUROS"."CLIENTES"

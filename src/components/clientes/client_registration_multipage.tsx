@@ -79,6 +79,7 @@ type ClientFormState = {
   rg: string;
   cnpj: string;
   dataNascimento: string;
+  idade: string;
   enderecoCep: string;
   enderecoRua: string;
   enderecoNumero: string;
@@ -156,6 +157,7 @@ const initialFormState: ClientFormState = {
   rg: '',
   cnpj: '',
   dataNascimento: '',
+  idade: '',
   enderecoCep: '',
   enderecoRua: '',
   enderecoNumero: '',
@@ -324,6 +326,42 @@ const validarDataBR = (valor: string): boolean => {
     data.getMonth() === mes - 1 &&
     data.getDate() === dia
   );
+};
+
+const calcularIdadeStr = (dataNascimento: string): string => {
+  if (!validarDataBR(dataNascimento)) return '';
+  const match = dataNascimento.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!match) return '';
+  const dia = parseInt(match[1], 10);
+  const mes = parseInt(match[2], 10);
+  const ano = parseInt(match[3], 10);
+  
+  const hoje = new Date();
+  const nascimento = new Date(ano, mes - 1, dia);
+  
+  let anos = hoje.getFullYear() - nascimento.getFullYear();
+  let meses = hoje.getMonth() - nascimento.getMonth();
+  let dias = hoje.getDate() - nascimento.getDate();
+  
+  if (dias < 0) {
+    meses--;
+    const ultimoDiaMesAnterior = new Date(hoje.getFullYear(), hoje.getMonth(), 0).getDate();
+    dias += ultimoDiaMesAnterior;
+  }
+  
+  if (meses < 0) {
+    anos--;
+    meses += 12;
+  }
+  
+  if (anos < 0) return '';
+  
+  const partes = [];
+  if (anos > 0) partes.push(`${anos} ${anos === 1 ? 'ano' : 'anos'}`);
+  if (meses > 0) partes.push(`${meses} ${meses === 1 ? 'mês' : 'meses'}`);
+  if (dias > 0) partes.push(`${dias} ${dias === 1 ? 'dia' : 'dias'}`);
+  
+  return partes.join(', ').replace(/, ([^,]*)$/, ' e $1') || '0 dias';
 };
 
 const formatarDataBancoParaBR = (valor?: string | null): string => {
@@ -521,6 +559,7 @@ type ClienteSearchResult = {
   rg: string | null;
   cnpj: string | null;
   data_nascimento: string | null;
+  idade?: string | null;
   status_cliente: 'ATIVO' | 'INATIVO' | null;
   codigo: string | null;
   data_cadastro: string | null;
@@ -723,7 +762,9 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationProps> = ({
   };
 
   const handleDataNascimentoChange = (value: string) => {
-    handleFieldChange('dataNascimento', formatarDataBR(value));
+    const formatada = formatarDataBR(value);
+    handleFieldChange('dataNascimento', formatada);
+    handleFieldChange('idade', calcularIdadeStr(formatada));
     updateFieldError('dataNascimento', '');
   };
 
@@ -1065,6 +1106,7 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationProps> = ({
         cpf: importedDocumentDigits.length === 11 ? formatarCPF(importedDocumentDigits) : '',
         cnpj: importedDocumentDigits.length === 14 ? formatarCNPJ(importedDocumentDigits) : '',
         dataNascimento: formatarNascimentoImportado(leadData.nascimento),
+        idade: calcularIdadeStr(formatarNascimentoImportado(leadData.nascimento)),
         enderecoRua: normalizarTextoMaiusculo(leadData.endereco || ''),
         enderecoNumero: normalizarTextoMaiusculo(leadData.numero || ''),
         enderecoBairro: normalizarTextoMaiusculo(leadData.bairro || ''),
@@ -1325,6 +1367,7 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationProps> = ({
       rg: c.rg || '',
       cnpj: c.cnpj || '',
       dataNascimento: nascFormatado,
+      idade: c.idade || calcularIdadeStr(nascFormatado) || '',
       enderecoCep: c.cep || '',
       enderecoRua: c.logradouro || '',
       enderecoNumero: c.numero || '',
@@ -1601,8 +1644,8 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationProps> = ({
       <fieldset disabled={isClientFormLocked} className="m-0 space-y-1.5 border-0 p-0">
         <section className={activeTab === 'geral' ? 'block space-y-1.5' : 'hidden'}>
           <div className={sectionCardClassName}>
-            <div className="grid gap-1.5 lg:grid-cols-[0.72fr_0.58fr_0.86fr_0.64fr]">
-              <div className="lg:col-span-4">
+            <div className="grid gap-1.5 lg:grid-cols-[0.55fr_0.45fr_0.65fr_0.5fr_0.65fr]">
+              <div className="lg:col-span-5">
                 <label className="mb-1 block text-sm font-bold text-slate-700">Nome*</label>
                 <input
                   className={fieldClassName}
@@ -1679,6 +1722,16 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationProps> = ({
                 {fieldErrors.dataNascimento ? (
                   <p className={errorMessageClassName}>{fieldErrors.dataNascimento}</p>
                 ) : null}
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-bold text-slate-700">Idade</label>
+                <input
+                  className={compactFieldClassName}
+                  value={formState.idade}
+                  readOnly
+                  placeholder="Idade calculada"
+                />
               </div>
             </div>
 

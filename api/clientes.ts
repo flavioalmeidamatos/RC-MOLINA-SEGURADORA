@@ -192,8 +192,8 @@ export const createClienteHandler = async (req: express.Request, res: express.Re
 
     const clienteResult = await client.query(
       `INSERT INTO "RCMOLINASEGUROS"."CLIENTES" 
-       (nome_completo, cpf, rg, cnpj, data_nascimento, status_cliente, codigo, data_cadastro, data_atualizacao, cep, logradouro, numero, complemento, ponto_referencia, bairro, cidade, uf, observacoes_extras, como_conheceu, produto_comercializado, status_negociacao, valor_proposta, numero_proposta, forma_pagamento, data_fechamento, permite_agendar_online, documentacao_anotacoes)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, COALESCE($8::date, current_date), COALESCE($9::date, current_date), $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27)
+       (nome_completo, cpf, rg, cnpj, data_nascimento, status_cliente, codigo, data_cadastro, data_atualizacao, cep, logradouro, numero, complemento, ponto_referencia, bairro, cidade, uf, observacoes_extras, como_conheceu, produto_comercializado, status_negociacao, valor_proposta, numero_proposta, forma_pagamento, data_fechamento, permite_agendar_online, documentacao_anotacoes, idade)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, COALESCE($8::date, current_date), COALESCE($9::date, current_date), $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28)
        RETURNING id_cliente`,
       [
         data.nome || '',
@@ -222,7 +222,8 @@ export const createClienteHandler = async (req: express.Request, res: express.Re
         data.formaPagamento || null,
         parseDateBR(data.dataFechamento),
         resolvePermiteAgendarOnline(data) !== false,
-        data.documentacao || null
+        data.documentacao || null,
+        data.idade || null
       ]
     );
 
@@ -467,7 +468,7 @@ export const updateClienteHandler = async (req: express.Request, res: express.Re
         observacoes_extras = $18, como_conheceu = $19, produto_comercializado = $20,
         status_negociacao = $21, valor_proposta = $22, numero_proposta = $23,
         forma_pagamento = $24, data_fechamento = $25, permite_agendar_online = $26,
-        documentacao_anotacoes = $27
+        documentacao_anotacoes = $27, idade = $29
        WHERE id_cliente = $28`,
       [
         data.nome || '',
@@ -497,7 +498,8 @@ export const updateClienteHandler = async (req: express.Request, res: express.Re
         parseDateBR(data.dataFechamento),
         resolvePermiteAgendarOnline(data) !== false,
         data.documentacao || null,
-        id
+        id,
+        data.idade || null
       ]
     );
 
