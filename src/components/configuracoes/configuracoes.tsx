@@ -894,7 +894,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
               />
             </div>
 
-            <div className="space-y-4 pt-3 flex-1 bg-slate-50/50 border border-slate-200 rounded-xl p-4 shadow-inner flex flex-col">
+            <div className="space-y-4 pt-3 bg-slate-50/50 border border-slate-200 rounded-xl p-4 shadow-inner">
               {!excelPreview ? (
                 <div className="flex-1 flex flex-col 2xl:flex-row items-center justify-between gap-6 border-2 border-dashed border-slate-300 rounded-2xl bg-slate-50 p-6 text-center 2xl:text-left min-h-[100px]">
                   <div className="flex flex-col 2xl:flex-row items-center gap-4">
