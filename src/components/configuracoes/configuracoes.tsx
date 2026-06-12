@@ -674,7 +674,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
             </label>
           </div>
 
-          <div className="space-y-4 bg-slate-50/50 border border-slate-200 rounded-xl p-4 shadow-inner">
+          <div className="space-y-4 bg-slate-50/50 border border-slate-200 rounded-xl p-4 shadow-inner min-h-[350px]">
             {!useIpScanner ? (
               <div className="flex items-end gap-4">
                 <div className="flex-1">
