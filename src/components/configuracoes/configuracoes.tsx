@@ -39,7 +39,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
     try {
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(await file.arrayBuffer());
-      const worksheet = workbook.getWorksheet(1);
+      const worksheet = workbook.worksheets[0];
 
       if (!worksheet) {
         alert("Planilha vazia ou formato inválido.");
