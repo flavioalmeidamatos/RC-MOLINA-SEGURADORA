@@ -168,6 +168,9 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const [aniversariantesDate, setAniversariantesDate] = useState<Date>(new Date());
   const [clientToEdit, setClientToEdit] = useState<string | null>(null);
   
+  const [showAtrasadosModal, setShowAtrasadosModal] = useState(false);
+  const [agendaInitialDate, setAgendaInitialDate] = useState<Date | undefined>(undefined);
+
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [statusModalType, setStatusModalType] = useState<'ATIVO' | 'INATIVO'>('ATIVO');
   const [statusModalClientes, setStatusModalClientes] = useState<any[]>([]);
@@ -929,12 +932,16 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const handleAtrasadosClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (compromissosAtrasados.length > 0) {
-      const dates = compromissosAtrasados.map(a => String(a.data_agendamento || "").slice(0, 10)).sort();
-      const oldestDateStr = dates[0];
-      const [year, month, day] = oldestDateStr.split('-').map(Number);
-      if (year && month && day) {
-        setAgendaDate(new Date(year, month - 1, day));
-      }
+      setShowAtrasadosModal(true);
+    }
+  };
+
+  const handleGoToAgendaDate = (dateStr: string) => {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    if (year && month && day) {
+      setAgendaInitialDate(new Date(year, month - 1, day));
+      setActiveMenu("Agenda");
+      setShowAtrasadosModal(false);
     }
   };
 
@@ -1168,6 +1175,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                 <Agenda
                   aniversariantesMes={aniversariantesMes}
                   onAgendamentosChanged={handleAgendamentosChanged}
+                  initialDate={agendaInitialDate}
                 />
               </div>
             ) : showConfigurarArea ? (
@@ -2150,6 +2158,57 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
             <div className="flex items-center gap-2 text-[#ccff00] font-bold text-lg bg-[#ccff00]/10 px-6 py-3 rounded-xl border border-[#ccff00]/20">
               <Phone size={20} />
               (21) 98868-1799
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showAtrasadosModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between bg-red-500 px-6 py-4">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Calendar size={20} />
+                Compromissos Atrasados
+              </h3>
+              <button
+                onClick={() => setShowAtrasadosModal(false)}
+                className="rounded-full bg-white/20 p-1.5 text-white hover:bg-white/30 transition-colors"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div className="p-4 max-h-[60vh] overflow-y-auto custom-scrollbar">
+              {compromissosAtrasados.length === 0 ? (
+                <p className="text-center text-slate-500 py-4">Nenhum compromisso atrasado.</p>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {compromissosAtrasados.map(ag => {
+                    const date = ag.data_agendamento.slice(0, 10);
+                    const [y, m, d] = date.split('-');
+                    return (
+                      <div 
+                        key={ag.id_agendamento}
+                        className="flex cursor-pointer items-center justify-between rounded-xl border border-slate-200 p-3 hover:border-red-300 hover:bg-red-50 transition-all hover:-translate-y-0.5 shadow-sm hover:shadow-md"
+                        onClick={() => handleGoToAgendaDate(date)}
+                      >
+                        <div className="flex flex-col min-w-0 pr-3">
+                          <span className="font-bold text-slate-800 truncate">{ag.cliente_nome || "Cliente sem nome"}</span>
+                          <span className="text-xs text-slate-500 truncate">{ag.observacao || "Sem observação"}</span>
+                        </div>
+                        <div className="flex flex-col items-end gap-1 shrink-0">
+                          <span className="rounded bg-red-100 px-2 py-0.5 text-xs font-bold text-red-700">
+                            {d}/{m}/{y}
+                          </span>
+                          <span className="text-xs text-slate-400 font-medium">
+                            {ag.hora_inicio?.slice(0, 5) || "--:--"}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </div>

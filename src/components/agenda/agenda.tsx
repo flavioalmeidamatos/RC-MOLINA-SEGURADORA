@@ -28,11 +28,12 @@ export interface Agendamento {
 interface AgendaProps {
   aniversariantesMes?: AniversarianteMes[];
   onAgendamentosChanged?: () => void;
+  initialDate?: Date;
 }
 
-export const Agenda: React.FC<AgendaProps> = ({ aniversariantesMes = [], onAgendamentosChanged }) => {
+export const Agenda: React.FC<AgendaProps> = ({ aniversariantesMes = [], onAgendamentosChanged, initialDate }) => {
   const [activeView, setActiveView] = useState<CalendarView>("month");
-  const [currentDate, setCurrentDateRaw] = useState(() => startOfDay(new Date()));
+  const [currentDate, setCurrentDateRaw] = useState(() => startOfDay(initialDate || new Date()));
 
   const setCurrentDate = useCallback((date: Date) => {
     setCurrentDateRaw(startOfDay(date));
