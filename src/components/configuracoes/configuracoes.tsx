@@ -622,7 +622,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
       </div>
 
       <div className="flex-1 overflow-y-auto p-4">
-        <div className="grid grid-cols-1 2xl:grid-cols-2 gap-6 w-full max-w-[1600px] mx-auto items-start">
+        <div className="grid grid-cols-1 2xl:grid-cols-2 gap-6 w-full max-w-[1600px] mx-auto">
           {/* Coluna Esquerda: Scanner */}
           <div className="flex flex-col bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
           <div className="mb-4 border-b border-slate-100 pb-2 flex justify-between items-end">
@@ -647,7 +647,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
             </label>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-4 flex-1 bg-slate-50/50 border border-slate-200 rounded-xl p-4 shadow-inner">
             {!useIpScanner ? (
               <div className="flex items-end gap-4">
                 <div className="flex-1">
@@ -866,7 +866,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
           </p>
         </div>
 
-        <div className="space-y-4 pt-3 mb-4">
+        <div className="space-y-4 pt-3 flex-1 bg-slate-50/50 border border-slate-200 rounded-xl p-4 shadow-inner">
           {!excelPreview ? (
             <div className="flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-2xl bg-slate-50 p-10 text-center">
               <FileSpreadsheet size={48} className="text-[#0078d4] mb-4 opacity-80" />
