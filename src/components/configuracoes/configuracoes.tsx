@@ -380,17 +380,23 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
       let rowCount = 0;
       worksheet.eachRow((row) => {
         rowCount++;
-        const rowValues = row.values as any[];
         
         if (rowCount === 1) {
-          const maxCols = rowValues.length;
-          for (let i = 1; i < maxCols; i++) {
-            headers[i - 1] = rowValues[i]?.toString().trim() || `Coluna ${i}`;
-          }
+          row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+            let val = cell.text?.trim();
+            if (!val && cell.value) val = cell.value.toString().trim();
+            headers[colNumber - 1] = val || `Coluna ${colNumber}`;
+          });
         } else if (rowCount <= 4) { // Get up to 3 rows of data for preview
           const rowData: string[] = [];
-          for (let i = 1; i <= headers.length; i++) {
-            rowData[i - 1] = rowValues[i]?.toString().trim() || '';
+          row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+            let val = cell.text?.trim();
+            if (!val && cell.value) val = cell.value.toString().trim();
+            rowData[colNumber - 1] = val || '';
+          });
+          // Ensure rowData has the same length as headers
+          for (let i = 0; i < headers.length; i++) {
+            if (rowData[i] === undefined) rowData[i] = '';
           }
           rows.push(rowData);
         }
@@ -875,7 +881,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
                   Arraste estes campos e solte sobre as colunas da planilha ao lado.
                 </p>
                 
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-2 max-h-[60vh] overflow-y-auto custom-scrollbar pr-2">
                   {dbFields.map(field => {
                     const isMapped = Object.values(columnMappings).includes(field.id);
                     return (
