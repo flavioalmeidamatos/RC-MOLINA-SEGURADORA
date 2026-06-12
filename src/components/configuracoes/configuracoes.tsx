@@ -595,7 +595,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
   };
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+    <div className="flex flex-col h-full bg-slate-50 rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
       <div className="bg-[#0c1826] p-4 text-white shrink-0 relative overflow-hidden">
         <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-[#d4af37]/10 blur-3xl" />
         <div className="flex items-center gap-3">
@@ -624,7 +624,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
       <div className="flex-1 overflow-y-auto p-4">
         <div className="grid grid-cols-1 2xl:grid-cols-2 gap-6 w-full max-w-[1600px] mx-auto">
           {/* Coluna Esquerda: Scanner */}
-          <div className="flex flex-col">
+          <div className="flex flex-col bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
           <div className="mb-4 border-b border-slate-100 pb-2 flex justify-between items-end">
             <div>
               <h2 className="text-base font-bold text-slate-800">Digitalização de Documentos</h2>
@@ -855,7 +855,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
           </div>
 
           {/* Coluna Direita: Importação Inteligente de Clientes (Excel) */}
-          <div className="flex flex-col">
+          <div className="flex flex-col bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
             <div className="border-b border-slate-100 pb-2">
               <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
             <UploadCloud className="text-[#0078d4]" size={18} />
