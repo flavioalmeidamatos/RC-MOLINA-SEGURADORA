@@ -46,25 +46,27 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
         return;
       }
 
-      // Captura os headers da primeira linha
-      const headerRow = worksheet.getRow(1);
-      const headers: string[] = (headerRow.values as any[])
-        .slice(1)
-        .map((v) => (v ? v.toString().trim() : ''));
-
-      if (headers.every(h => h === '')) {
-        alert("A primeira linha não contém cabeçalhos válidos.");
-        setExcelPreview(null);
-        return;
-      }
-
-      // Captura até as 5 primeiras linhas de dados
+      let headers: string[] = [];
       const rows: string[][] = [];
+      let headerFound = false;
+
       worksheet.eachRow((row, rowNumber) => {
-        if (rowNumber === 1) return; // Pula header
         if (rows.length >= 5) return;
 
-        const rowData = (row.values as any[]).slice(1).map((v) => {
+        let rawValues: any[] = [];
+        if (Array.isArray(row.values)) {
+          rawValues = row.values;
+        } else if (typeof row.values === 'object' && row.values !== null) {
+          const keys = Object.keys(row.values).map(Number).filter(k => !isNaN(k));
+          if (keys.length > 0) {
+            const max = Math.max(...keys);
+            for (let i = 1; i <= max; i++) {
+               rawValues[i] = (row.values as any)[i];
+            }
+          }
+        }
+
+        const rowData = rawValues.slice(1).map((v) => {
           if (v === null || v === undefined) return '';
           if (typeof v === 'object') {
             if ('text' in v && v.text) return String(v.text).trim();
@@ -77,8 +79,26 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
           return String(v).trim();
         });
 
-        rows.push(rowData);
+        if (!headerFound) {
+          if (rowData.some(v => v !== '')) {
+            let lastIndex = rowData.length - 1;
+            while(lastIndex >= 0 && rowData[lastIndex] === '') lastIndex--;
+            headers = rowData.slice(0, lastIndex + 1);
+            headerFound = true;
+          }
+        } else {
+          // Apenas adiciona linhas que não são completamente vazias
+          if (rowData.some(v => v !== '')) {
+             rows.push(rowData);
+          }
+        }
       });
+
+      if (!headerFound || headers.length === 0) {
+        alert("A primeira linha não contém cabeçalhos válidos.");
+        setExcelPreview(null);
+        return;
+      }
 
       // Preenche colunas vazias com nomes genéricos
       for (let i = 0; i < headers.length; i++) {
