@@ -48,7 +48,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
 
       // Captura os headers da primeira linha
       const headerRow = worksheet.getRow(1);
-      const headers: string[] = headerRow.values
+      const headers: string[] = (headerRow.values as any[])
         .slice(1)
         .map((v) => (v ? v.toString().trim() : ''));
 
@@ -64,7 +64,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
         if (rowNumber === 1) return; // Pula header
         if (rows.length >= 5) return;
 
-        const rowData = row.values.slice(1).map((v) => {
+        const rowData = (row.values as any[]).slice(1).map((v) => {
           if (v === null || v === undefined) return '';
           if (typeof v === 'object') {
             if ('text' in v && v.text) return String(v.text).trim();
