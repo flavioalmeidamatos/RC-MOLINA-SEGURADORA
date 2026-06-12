@@ -695,12 +695,20 @@ registerRoute('post', ['/email/import-contacts', '/gmail/import-contacts'], asyn
   const rejectedContacts = [];
 
   for (const contact of contacts) {
-    if (!contact.name || !contact.phone) {
-      rejectedContacts.push({ ...contact, reason: 'Falta nome ou telefone' });
+    const nome = contact.name || contact.nome_completo;
+    const telefone = contact.phone || contact.celular;
+
+    if (!nome) {
+      rejectedContacts.push({ ...contact, reason: 'Falta nome' });
       continue;
     }
 
-    const rawPhone = String(contact.phone).trim();
+    if (!telefone) {
+      rejectedContacts.push({ ...contact, reason: 'Falta celular/telefone' });
+      continue;
+    }
+
+    const rawPhone = String(telefone).trim();
     const digits = rawPhone.replace(/\D/g, '');
     
     // O usuário solicitou "desde que tenha 14 digitos". Assumindo 14 caracteres com o '+' (ex: +5511999999999) ou 14 números
@@ -713,6 +721,10 @@ registerRoute('post', ['/email/import-contacts', '/gmail/import-contacts'], asyn
       rejectedContacts.push({ ...contact, reason: 'Telefone já importado' });
       continue;
     }
+
+    // Ensure backwards compatibility for importContactsToGoogle
+    contact.name = nome;
+    contact.phone = telefone;
 
     validContacts.push(contact);
     existingPhones.add(digits);
@@ -750,10 +762,23 @@ registerRoute('post', ['/email/import-contacts', '/gmail/import-contacts'], asyn
 
           const clienteResult = await client.query(
             `INSERT INTO "RCMOLINASEGUROS"."CLIENTES" 
-             (nome_completo, codigo, status_cliente, como_conheceu, permite_agendar_online, data_cadastro, data_atualizacao)
-             VALUES ($1, $2, 'ATIVO', '5 - Remalho', true, current_date, current_date)
+             (nome_completo, codigo, status_cliente, como_conheceu, permite_agendar_online, data_cadastro, data_atualizacao, cpf, rg, cnpj, data_nascimento, cep, logradouro, bairro, cidade, uf, observacoes_extras)
+             VALUES ($1, $2, 'ATIVO', '5 - Remalho', true, current_date, current_date, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
              RETURNING id_cliente`,
-            [contact.name, candidate]
+            [
+              contact.name, 
+              candidate,
+              contact.cpf || null,
+              contact.rg || null,
+              contact.cnpj || null,
+              contact.data_nascimento || null,
+              contact.cep || null,
+              contact.logradouro || null,
+              contact.bairro || null,
+              contact.cidade || null,
+              contact.uf || null,
+              contact.observacoes_extras || null
+            ]
           );
 
           const idCliente = clienteResult.rows[0].id_cliente;
@@ -770,6 +795,15 @@ registerRoute('post', ['/email/import-contacts', '/gmail/import-contacts'], asyn
              VALUES ($1, 'Celular', $2, true)`,
             [idCliente, phoneValue]
           );
+
+          if (contact.email) {
+            await client.query(
+              `INSERT INTO "RCMOLINASEGUROS"."CLIENTES_CONTATOS"
+               (id_cliente, tipo, valor, preferencial)
+               VALUES ($1, 'E-mail', $2, false)`,
+              [idCliente, String(contact.email).toLowerCase()]
+            );
+          }
           
           nextNumber++;
         }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Scan as ScannerIcon, Download, Loader2, Network, X, Table, FileSpreadsheet, UploadCloud } from "lucide-react";
+import { Scan as ScannerIcon, Download, Loader2, Network, X, Table, FileSpreadsheet, UploadCloud, GripVertical, CheckCircle2, Database } from "lucide-react";
 import Tesseract from 'tesseract.js';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
@@ -37,6 +37,26 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
   const [isImporting, setIsImporting] = useState<boolean>(false);
   const [importProgress, setImportProgress] = useState<number>(0);
   const [importStats, setImportStats] = useState<{ total: number, imported: number, rejected: number } | null>(null);
+
+  const [excelPreview, setExcelPreview] = useState<{ headers: string[], rows: string[][] } | null>(null);
+  const [columnMappings, setColumnMappings] = useState<Record<number, string>>({}); 
+  const [excelFile, setExcelFile] = useState<File | null>(null);
+
+  const dbFields = [
+    { id: 'nome_completo', label: 'Nome' },
+    { id: 'celular', label: 'Celular' },
+    { id: 'email', label: 'E-mail' },
+    { id: 'cpf', label: 'CPF' },
+    { id: 'rg', label: 'RG' },
+    { id: 'cnpj', label: 'CNPJ' },
+    { id: 'data_nascimento', label: 'Data Nascimento' },
+    { id: 'cep', label: 'CEP' },
+    { id: 'logradouro', label: 'Logradouro' },
+    { id: 'bairro', label: 'Bairro' },
+    { id: 'cidade', label: 'Cidade' },
+    { id: 'uf', label: 'UF' },
+    { id: 'observacoes_extras', label: 'Observações' }
+  ];
 
   useEffect(() => {
     const handleMessage = (event: any) => {
@@ -341,32 +361,101 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
     const file = event.target.files?.[0];
     if (!file) return;
 
-    setIsImporting(true);
+    setExcelFile(file);
+    setColumnMappings({});
+
     try {
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(await file.arrayBuffer());
       const worksheet = workbook.getWorksheet(1);
       
-      const contactsToImport: { name: string, phone: string }[] = [];
+      if (!worksheet) {
+        alert("Planilha vazia ou formato inválido.");
+        return;
+      }
+
+      const headers: string[] = [];
+      const rows: string[][] = [];
+
+      worksheet.eachRow((row, rowNumber) => {
+        if (rowNumber === 1) {
+          row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+            headers[colNumber - 1] = cell.text?.trim() || `Coluna ${colNumber}`;
+          });
+        } else if (rowNumber <= 4) { // Get up to 3 rows of data for preview
+          const rowData: string[] = [];
+          row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+            rowData[colNumber - 1] = cell.text?.trim() || '';
+          });
+          // Ensure rowData has the same length as headers
+          for (let i = 0; i < headers.length; i++) {
+            if (rowData[i] === undefined) rowData[i] = '';
+          }
+          rows.push(rowData);
+        }
+      });
+
+      // Fill empty header spots
+      for (let i = 0; i < headers.length; i++) {
+        if (!headers[i]) headers[i] = `Coluna ${i + 1}`;
+      }
+
+      setExcelPreview({ headers, rows });
+      
+    } catch (err: any) {
+      alert("Falha ao ler arquivo: " + err.message);
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleExecuteImport = async () => {
+    if (!excelFile || !excelPreview) return;
+    
+    // Check if at least one column is mapped
+    if (Object.keys(columnMappings).length === 0) {
+      alert("Por favor, mapeie pelo menos um campo para iniciar a importação.");
+      return;
+    }
+
+    const mappedFields = Object.values(columnMappings);
+    if (!mappedFields.includes('nome_completo')) {
+      const confirmResult = window.confirm("Você não mapeou o campo 'Nome'. O sistema pode ter dificuldade para identificar o contato. Deseja continuar?");
+      if (!confirmResult) return;
+    }
+
+    setIsImporting(true);
+    try {
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(await excelFile.arrayBuffer());
+      const worksheet = workbook.getWorksheet(1);
+      
+      const contactsToImport: Record<string, string>[] = [];
 
       if (worksheet) {
         worksheet.eachRow((row, rowNumber) => {
-          if (rowNumber > 1) { 
-            const importado = row.getCell(3).text?.trim(); 
-            const celular = row.getCell(2).text?.trim();   
+          if (rowNumber > 1) { // Skip header
+            const contact: Record<string, string> = {};
+            let hasAnyData = false;
             
-            if (importado) {
-               contactsToImport.push({
-                 name: importado,
-                 phone: celular || ''
-               });
+            Object.entries(columnMappings).forEach(([colIndex, fieldId]) => {
+              const colNumber = parseInt(colIndex) + 1;
+              const cellValue = row.getCell(colNumber).text?.trim();
+              if (cellValue) {
+                contact[fieldId as string] = cellValue;
+                hasAnyData = true;
+              }
+            });
+
+            if (hasAnyData) {
+               contactsToImport.push(contact);
             }
           }
         });
       }
 
       if (contactsToImport.length === 0) {
-        alert("Nenhum dado válido encontrado na planilha.");
+        alert("Nenhum dado válido encontrado nas colunas mapeadas.");
         setIsImporting(false);
         return;
       }
@@ -445,6 +534,9 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
       alert("Falha ao processar arquivo: " + err.message);
     } finally {
       setIsImporting(false);
+      setExcelPreview(null);
+      setExcelFile(null);
+      setColumnMappings({});
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -612,23 +704,6 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
                 onChange={handleFileUpload} 
                 className="hidden" 
               />
-                <button
-                  type="button"
-                  onClick={handleImportClick}
-                  disabled={isImporting}
-                  className="relative flex h-11 items-center justify-center gap-2 rounded-xl bg-[#0078d4] px-5 text-sm font-semibold text-white transition-all hover:bg-[#006cbd] disabled:opacity-90 disabled:cursor-not-allowed ml-auto overflow-hidden min-w-[280px]"
-                >
-                  {isImporting && (
-                    <div 
-                      className="absolute left-0 top-0 bottom-0 bg-[#004e8c] transition-all duration-300 ease-out"
-                      style={{ width: `${importProgress}%` }}
-                    />
-                  )}
-                  <span className="relative z-10 flex items-center gap-2">
-                    {isImporting ? <Loader2 size={16} className="animate-spin" /> : <UploadCloud size={16} />}
-                    {isImporting ? `Importando... ${importProgress}%` : 'Importar Contatos para o Google Contacts'}
-                  </span>
-                </button>
             </div>
 
             {(isScanning || scannedImage) && (
@@ -753,6 +828,192 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
               </div>
             )}
           </div>
+        </div>
+
+        {/* Importação Inteligente de Clientes (Excel) */}
+        <div className="mt-8 border-b border-slate-100 pb-4">
+          <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+            <UploadCloud className="text-[#0078d4]" size={20} />
+            Importação Inteligente de Clientes (Excel)
+          </h2>
+          <p className="text-sm text-slate-500 mt-1">
+            Carregue uma planilha, faça o mapeamento das colunas arrastando os campos e importe os dados para o sistema e Google Contatos.
+          </p>
+        </div>
+
+        <div className="space-y-6 pt-4 mb-20">
+          {!excelPreview ? (
+            <div className="flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-2xl bg-slate-50 p-10 text-center">
+              <FileSpreadsheet size={48} className="text-[#0078d4] mb-4 opacity-80" />
+              <h3 className="text-lg font-bold text-slate-700 mb-2">Nenhuma planilha carregada</h3>
+              <p className="text-sm text-slate-500 mb-6 max-w-md">
+                Selecione um arquivo .XLSX do seu computador para visualizar as colunas e fazer a associação com os campos do sistema.
+              </p>
+              
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex h-12 items-center justify-center gap-2 rounded-xl bg-[#0078d4] px-6 font-bold text-white shadow-lg shadow-[#0078d4]/20 transition-all hover:bg-[#006cbd]"
+              >
+                <UploadCloud size={18} />
+                Carregar Arquivo Excel
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+              {/* Campos do Banco (Esquerda) */}
+              <div className="xl:col-span-1 border border-slate-200 rounded-xl bg-slate-50 p-4">
+                <h3 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
+                  <Database size={16} className="text-[#b58c2a]"/>
+                  Campos do Sistema
+                </h3>
+                <p className="text-xs text-slate-500 mb-4 leading-relaxed">
+                  Arraste estes campos e solte sobre as colunas da planilha ao lado.
+                </p>
+                
+                <div className="flex flex-col gap-2">
+                  {dbFields.map(field => {
+                    const isMapped = Object.values(columnMappings).includes(field.id);
+                    return (
+                      <div 
+                        key={field.id}
+                        draggable={!isMapped}
+                        onDragStart={(e) => {
+                          e.dataTransfer.setData('fieldId', field.id);
+                          e.dataTransfer.effectAllowed = 'copy';
+                        }}
+                        className={`px-3 py-2.5 rounded-lg border text-sm font-semibold shadow-sm transition-all flex items-center justify-between ${
+                          isMapped 
+                            ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-60' 
+                            : 'bg-white border-slate-200 text-slate-700 cursor-grab hover:border-[#b58c2a] hover:shadow-md'
+                        }`}
+                      >
+                        {field.label}
+                        <GripVertical size={14} className={isMapped ? "text-slate-300" : "text-slate-400"} />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Preview da Planilha (Direita) */}
+              <div className="xl:col-span-3 border border-slate-200 rounded-xl bg-white flex flex-col overflow-hidden">
+                <div className="bg-slate-50 p-4 border-b border-slate-200 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                      <FileSpreadsheet size={16} className="text-green-600"/>
+                      {excelFile?.name}
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Pré-visualizando as colunas e as primeiras linhas
+                    </p>
+                  </div>
+                  
+                  <button
+                    onClick={() => {
+                      setExcelPreview(null);
+                      setExcelFile(null);
+                      setColumnMappings({});
+                    }}
+                    className="text-xs font-semibold text-slate-500 hover:text-red-500 transition-colors"
+                  >
+                    Cancelar / Trocar Arquivo
+                  </button>
+                </div>
+                
+                <div className="flex-1 overflow-x-auto p-4 custom-scrollbar">
+                  <div className="flex gap-4 min-w-max pb-4">
+                    {excelPreview.headers.map((header, colIndex) => {
+                      const mappedFieldId = columnMappings[colIndex];
+                      const mappedField = dbFields.find(f => f.id === mappedFieldId);
+                      
+                      return (
+                        <div key={colIndex} className="flex flex-col w-48 shrink-0">
+                          {/* Dropzone */}
+                          <div 
+                            className={`h-12 mb-2 rounded-lg border-2 border-dashed flex items-center justify-center transition-colors relative group ${
+                              mappedField 
+                                ? 'border-[#b58c2a] bg-[#b58c2a]/10' 
+                                : 'border-slate-300 bg-slate-50 hover:border-slate-400'
+                            }`}
+                            onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; }}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              const fieldId = e.dataTransfer.getData('fieldId');
+                              if (fieldId) {
+                                setColumnMappings(prev => {
+                                  const newMap = { ...prev };
+                                  Object.keys(newMap).forEach(key => {
+                                    if (newMap[parseInt(key)] === fieldId) delete newMap[parseInt(key)];
+                                  });
+                                  newMap[colIndex] = fieldId;
+                                  return newMap;
+                                });
+                              }
+                            }}
+                          >
+                            {mappedField ? (
+                              <>
+                                <span className="text-sm font-bold text-[#b58c2a] flex items-center gap-1.5">
+                                  {mappedField.label}
+                                  <CheckCircle2 size={14} />
+                                </span>
+                                <button 
+                                  onClick={() => {
+                                    setColumnMappings(prev => {
+                                      const newMap = { ...prev };
+                                      delete newMap[colIndex];
+                                      return newMap;
+                                    });
+                                  }}
+                                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 shadow-md hidden group-hover:block"
+                                >
+                                  <X size={12} />
+                                </button>
+                              </>
+                            ) : (
+                              <span className="text-xs font-semibold text-slate-400">Arraste aqui</span>
+                            )}
+                          </div>
+                          
+                          {/* Coluna Excel */}
+                          <div className="rounded-lg border border-slate-200 overflow-hidden">
+                            <div className="bg-slate-100 p-2 border-b border-slate-200 text-xs font-bold text-slate-700 truncate text-center" title={header}>
+                              {header}
+                            </div>
+                            {excelPreview.rows.map((row, rIndex) => (
+                              <div key={rIndex} className={`p-2 text-xs truncate border-b border-slate-100 last:border-b-0 ${rIndex % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`} title={row[colIndex]}>
+                                {row[colIndex] || '-'}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                
+                <div className="bg-slate-50 p-4 border-t border-slate-200 flex justify-end">
+                  <button
+                    onClick={handleExecuteImport}
+                    disabled={isImporting || Object.keys(columnMappings).length === 0}
+                    className="relative flex h-12 items-center justify-center gap-2 rounded-xl bg-[#0078d4] px-8 font-bold text-white shadow-lg shadow-[#0078d4]/20 transition-all hover:bg-[#006cbd] disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden"
+                  >
+                    {isImporting && (
+                      <div 
+                        className="absolute left-0 top-0 bottom-0 bg-[#004e8c] transition-all duration-300 ease-out"
+                        style={{ width: `${importProgress}%` }}
+                      />
+                    )}
+                    <span className="relative z-10 flex items-center gap-2">
+                      {isImporting ? <Loader2 size={18} className="animate-spin" /> : <UploadCloud size={18} />}
+                      {isImporting ? `Importando... ${importProgress}%` : 'Executar Importação'}
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
