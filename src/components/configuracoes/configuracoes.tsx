@@ -896,7 +896,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
 
             <div className="space-y-4 pt-3 flex-1 bg-slate-50/50 border border-slate-200 rounded-xl p-4 shadow-inner flex flex-col">
               {!excelPreview ? (
-                <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-2xl bg-slate-50 p-10 text-center min-h-[40vh]">
+                <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-2xl bg-slate-50 p-10 text-center min-h-[100px]">
                   <FileSpreadsheet size={48} className="text-[#0078d4] mb-4 opacity-80" />
                   <h3 className="text-lg font-bold text-slate-700 mb-2">Nenhuma planilha carregada</h3>
                   <p className="text-sm text-slate-500 mb-6 max-w-md">
