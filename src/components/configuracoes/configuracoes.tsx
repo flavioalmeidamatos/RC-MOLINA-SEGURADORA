@@ -374,31 +374,31 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
         return;
       }
 
-      const headers: string[] = [];
+      let headers: string[] = [];
       const rows: string[][] = [];
+      let headerFound = false;
 
-      let rowCount = 0;
       worksheet.eachRow((row) => {
-        rowCount++;
-        
-        if (rowCount === 1) {
-          row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-            let val = cell.text?.trim();
-            if (!val && cell.value) val = cell.value.toString().trim();
-            headers[colNumber - 1] = val || `Coluna ${colNumber}`;
-          });
-        } else if (rowCount <= 4) { // Get up to 3 rows of data for preview
-          const rowData: string[] = [];
-          row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-            let val = cell.text?.trim();
-            if (!val && cell.value) val = cell.value.toString().trim();
-            rowData[colNumber - 1] = val || '';
-          });
-          // Ensure rowData has the same length as headers
-          for (let i = 0; i < headers.length; i++) {
-            if (rowData[i] === undefined) rowData[i] = '';
+        const rawVals = Array.isArray(row.values) ? row.values.slice(1) : [];
+        const rowData = rawVals.map(val => {
+          if (val === null || val === undefined) return '';
+          if (typeof val === 'object') {
+            if ('text' in val && val.text) return String(val.text).trim();
+            if ('result' in val && val.result) return String(val.result).trim();
+            if ('richText' in val && Array.isArray(val.richText)) return val.richText.map((rt: any) => rt.text).join('').trim();
           }
-          rows.push(rowData);
+          return String(val).trim();
+        });
+
+        if (!headerFound) {
+          if (rowData.some(v => v !== '')) {
+            headers = rowData;
+            headerFound = true;
+          }
+        } else if (rows.length < 4) {
+          const paddedRow = [...rowData];
+          while (paddedRow.length < headers.length) paddedRow.push('');
+          rows.push(paddedRow.slice(0, headers.length));
         }
       });
 
@@ -439,15 +439,30 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
       
       const contactsToImport: Record<string, string>[] = [];
 
+      let headerFound = false;
       if (worksheet) {
-        worksheet.eachRow((row, rowNumber) => {
-          if (rowNumber > 1) { // Skip header
+        worksheet.eachRow((row) => {
+          const rawVals = Array.isArray(row.values) ? row.values.slice(1) : [];
+          const rowData = rawVals.map(val => {
+            if (val === null || val === undefined) return '';
+            if (typeof val === 'object') {
+              if ('text' in val && val.text) return String(val.text).trim();
+              if ('result' in val && val.result) return String(val.result).trim();
+              if ('richText' in val && Array.isArray(val.richText)) return val.richText.map((rt: any) => rt.text).join('').trim();
+            }
+            return String(val).trim();
+          });
+
+          if (!headerFound) {
+            if (rowData.some(v => v !== '')) {
+              headerFound = true; // Skip header row
+            }
+          } else {
             const contact: Record<string, string> = {};
             let hasAnyData = false;
             
             Object.entries(columnMappings).forEach(([colIndex, fieldId]) => {
-              const colNumber = parseInt(colIndex) + 1;
-              const cellValue = row.getCell(colNumber).text?.trim();
+              const cellValue = rowData[parseInt(colIndex)];
               if (cellValue) {
                 contact[fieldId as string] = cellValue;
                 hasAnyData = true;
