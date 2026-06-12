@@ -377,19 +377,20 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
       const headers: string[] = [];
       const rows: string[][] = [];
 
-      worksheet.eachRow((row, rowNumber) => {
-        if (rowNumber === 1) {
-          row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-            headers[colNumber - 1] = cell.text?.trim() || `Coluna ${colNumber}`;
-          });
-        } else if (rowNumber <= 4) { // Get up to 3 rows of data for preview
+      let rowCount = 0;
+      worksheet.eachRow((row) => {
+        rowCount++;
+        const rowValues = row.values as any[];
+        
+        if (rowCount === 1) {
+          const maxCols = rowValues.length;
+          for (let i = 1; i < maxCols; i++) {
+            headers[i - 1] = rowValues[i]?.toString().trim() || `Coluna ${i}`;
+          }
+        } else if (rowCount <= 4) { // Get up to 3 rows of data for preview
           const rowData: string[] = [];
-          row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-            rowData[colNumber - 1] = cell.text?.trim() || '';
-          });
-          // Ensure rowData has the same length as headers
-          for (let i = 0; i < headers.length; i++) {
-            if (rowData[i] === undefined) rowData[i] = '';
+          for (let i = 1; i <= headers.length; i++) {
+            rowData[i - 1] = rowValues[i]?.toString().trim() || '';
           }
           rows.push(rowData);
         }
@@ -600,7 +601,9 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
       </div>
 
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-3xl">
+        <div className="grid grid-cols-1 2xl:grid-cols-2 gap-10 w-full max-w-[1600px] mx-auto">
+          {/* Coluna Esquerda: Scanner */}
+          <div className="flex flex-col">
           <div className="mb-8 border-b border-slate-100 pb-4 flex justify-between items-end">
             <div>
               <h2 className="text-lg font-bold text-slate-800">Digitalização de Documentos</h2>
@@ -828,11 +831,12 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
               </div>
             )}
           </div>
-        </div>
+          </div>
 
-        {/* Importação Inteligente de Clientes (Excel) */}
-        <div className="mt-8 border-b border-slate-100 pb-4">
-          <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+          {/* Coluna Direita: Importação Inteligente de Clientes (Excel) */}
+          <div className="flex flex-col">
+            <div className="border-b border-slate-100 pb-4">
+              <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
             <UploadCloud className="text-[#0078d4]" size={20} />
             Importação Inteligente de Clientes (Excel)
           </h2>
@@ -1016,6 +1020,8 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
           )}
         </div>
       </div>
+    </div>
+  </div>
 
       {/* Popup de Aviso (Números Inválidos) */}
       {showWarningPopup && (
