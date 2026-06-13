@@ -965,7 +965,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     { title: "Webmail", icon: Mail },
     { title: "Campanhas", icon: Megaphone },
     { title: "Financeiro", icon: Banknote },
-    { title: "Importações Especiais", icon: Wrench },
+    { title: "Importações", icon: Wrench },
   ];
 
   const cards = [
