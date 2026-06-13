@@ -23,6 +23,8 @@ import {
   Lock,
   Wrench,
   X,
+  Hash,
+  ChevronRight,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ClientRegistrationMultipage } from "../clientes/client_registration_multipage";
