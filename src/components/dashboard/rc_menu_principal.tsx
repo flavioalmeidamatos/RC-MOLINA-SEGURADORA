@@ -1447,7 +1447,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                     <PartyPopper size={22} />
                                   </div>
                                   <p className="text-xs font-bold text-slate-400">Nenhum aniversariante encontrado</p>
-                                  <p className="mt-1 text-xs text-slate-400/80">para o mês de {currentMonthName().toLowerCase()}.</p>
+                                  <p className="mt-1 text-xs text-slate-400/80">para o mês de {new Intl.DateTimeFormat('pt-BR', { month: 'long' }).format(aniversariantesDate).toLowerCase()}.</p>
                                 </div>
                               );
                             }
