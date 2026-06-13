@@ -518,7 +518,12 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     const loadAniversariantes = async () => {
       setIsLoadingAniversariantes(true);
       try {
-        const response = await fetch("/api/clientes/aniversariantes-mes");
+        const response = await fetch(`/api/clientes/aniversariantes-mes?t=${Date.now()}`, {
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
+        });
         if (!response.ok) throw new Error("Falha ao carregar aniversariantes.");
         const data = (await response.json()) as AniversarianteMes[];
         if (!ignore) setAniversariantesMes(Array.isArray(data) ? data : []);
@@ -533,7 +538,12 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     const loadClientStats = async () => {
       setIsLoadingClientStats(true);
       try {
-        const response = await fetch("/api/clientes/stats");
+        const response = await fetch(`/api/clientes/stats?t=${Date.now()}`, {
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
+        });
         if (!response.ok) throw new Error("Falha ao carregar estatísticas de clientes.");
         const data = await response.json();
         if (!ignore) setClientStats(data);
@@ -585,7 +595,12 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
     const loadAgendamentos = async (options?: { allowAfterUnmount?: boolean }) => {
       try {
-        const response = await fetch("/api/agendamentos");
+        const response = await fetch(`/api/agendamentos?t=${Date.now()}`, {
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
+        });
         if (!response.ok) throw new Error("Falha ao carregar agendamentos.");
         const json = await response.json();
         if (!ignore || options?.allowAfterUnmount) setAgendamentos(Array.isArray(json.data) ? json.data : []);

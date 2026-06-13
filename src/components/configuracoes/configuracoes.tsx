@@ -884,6 +884,11 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
       if (allRejected.length > 0) {
         await downloadRejectedExcel(allRejected);
       }
+
+      // Tenta atualizar a dashboard caso ela esteja montada em background
+      if (typeof window !== 'undefined' && (window as any).__rcMolinaRefreshClientStats) {
+        (window as any).__rcMolinaRefreshClientStats();
+      }
     } catch (err: any) {
       alert("Falha ao processar arquivo: " + err.message);
     } finally {
