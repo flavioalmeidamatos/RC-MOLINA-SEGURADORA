@@ -375,7 +375,7 @@ export const searchClientesHandler = async (req: express.Request, res: express.R
   const query = req.query.q as string;
   const campaign = req.query.campaign as string | undefined;
   const limitParam = req.query.limit ? parseInt(req.query.limit as string, 10) : 15;
-  const limit = isNaN(limitParam) ? 15 : Math.min(Math.max(1, limitParam), 500);
+  const limit = isNaN(limitParam) ? 15 : Math.min(Math.max(1, limitParam), 5000);
   
   if (!query || query.trim().length < 2) {
     return res.json([]);
