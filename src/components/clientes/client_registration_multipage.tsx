@@ -307,7 +307,8 @@ const normalizarTextoMaiusculo = (valor: string): string => valor.toLocaleUpperC
 
 const normalizarCodigoCliente = (valor: string): string => {
   const digitos = somenteDigitos(valor).slice(0, 7);
-  return digitos ? digitos.padStart(7, '0') : '';
+  if (!digitos || /^0+$/.test(digitos)) return '';
+  return digitos.padStart(7, '0');
 };
 
 const validarDataBR = (valor: string): boolean => {

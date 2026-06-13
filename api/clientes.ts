@@ -62,7 +62,8 @@ const resolvePermiteAgendarOnline = (data: any) =>
 
 const normalizeClienteCodigo = (value?: string | null) => {
   const digits = String(value || '').replace(/\D/g, '').slice(0, 7);
-  return digits ? digits.padStart(7, '0') : '0000000';
+  if (!digits || /^0+$/.test(digits)) return '';
+  return digits.padStart(7, '0');
 };
 
 const gerarProximoCodigoCliente = async (client: DbQueryable) => {
