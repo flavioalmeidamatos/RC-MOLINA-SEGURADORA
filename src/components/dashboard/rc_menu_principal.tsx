@@ -250,7 +250,9 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const [linksDesktopStatus, setLinksDesktopStatus] = useState("");
 
   // ── Contexto Master Admin ─────────────────────────────────────────────────
-  const isMasterAdminUser = isMasterAdmin(perfil);
+  // Usa perfil OU session.user.email como fallback (perfil pode ser null no primeiro render)
+  const masterAdminEmail = (perfil?.email || session?.user?.email || '').toLowerCase().trim();
+  const isMasterAdminUser = isMasterAdmin(perfil) || isMasterAdmin(masterAdminEmail);
   const [masterCompanies, setMasterCompanies] = useState<Empresa[]>([]);
   const [masterSelectedCompanyId, setMasterSelectedCompanyId] = useState<string>(() => sessionStorage.getItem('rc_master_company_id') || '');
   const [masterMembers, setMasterMembers] = useState<EmpresaMembro[]>([]);
@@ -1110,29 +1112,36 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
 
   // ── Efeitos Master Admin ──────────────────────────────────────────────────
   useEffect(() => {
-    if (!isMasterAdminUser || !perfil) return;
+    if (!isMasterAdminUser) return;
+    // Usa perfil se disponivel, senao usa session como fallback para o request
+    const userId = perfil?.id || session?.user?.id;
+    const userEmail = perfil?.email || session?.user?.email;
+    if (!userId || !userEmail) return;
     setIsLoadingMasterCompanies(true);
-    apiListCompanies({ id: perfil.id, email: perfil.email })
+    apiListCompanies({ id: userId, email: userEmail })
       .then((res) => {
         if (res.data) setMasterCompanies(res.data);
       })
       .catch(() => {})
       .finally(() => setIsLoadingMasterCompanies(false));
-  }, [isMasterAdminUser, perfil?.id]);
+  }, [isMasterAdminUser, perfil?.id, session?.user?.id]);
 
   useEffect(() => {
-    if (!isMasterAdminUser || !perfil || !masterSelectedCompanyId) {
+    if (!isMasterAdminUser || !masterSelectedCompanyId) {
       setMasterMembers([]);
       return;
     }
+    const userId = perfil?.id || session?.user?.id;
+    const userEmail = perfil?.email || session?.user?.email;
+    if (!userId || !userEmail) return;
     setIsLoadingMasterMembers(true);
-    apiListCompanyMembers({ id: perfil.id, email: perfil.email }, masterSelectedCompanyId)
+    apiListCompanyMembers({ id: userId, email: userEmail }, masterSelectedCompanyId)
       .then((res) => {
         if (res.data) setMasterMembers(res.data);
       })
       .catch(() => {})
       .finally(() => setIsLoadingMasterMembers(false));
-  }, [isMasterAdminUser, perfil?.id, masterSelectedCompanyId]);
+  }, [isMasterAdminUser, perfil?.id, session?.user?.id, masterSelectedCompanyId]);
 
   const handleMasterCompanyChange = (companyId: string) => {
     setMasterSelectedCompanyId(companyId);
