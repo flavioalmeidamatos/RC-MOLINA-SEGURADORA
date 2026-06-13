@@ -188,19 +188,32 @@ export function WhatsAppMessagePreview({
           {/* Screen */}
           <div className="relative overflow-hidden flex-1 flex flex-col min-h-0 rounded-[38px] bg-[#efeae2] border-[4px] border-black">
             
-            {/* iPhone Notch */}
-            <div className="absolute left-1/2 top-0 z-20 h-[28px] w-[140px] -translate-x-1/2 rounded-b-[20px] bg-black flex items-center justify-center gap-3">
-              <div className="h-[4px] w-[40px] rounded-full bg-[#1e293b]/50" />
-              <div className="h-[8px] w-[8px] rounded-full bg-[#1e293b]/50" />
+            {/* iPhone Status Bar (Notch + Time/Date) */}
+            <div className="absolute top-0 left-0 right-0 h-[28px] z-20 flex justify-between items-center px-5 pointer-events-none">
+              {/* Left Side: Time */}
+              <div className="text-[11px] font-bold text-white tracking-wide mt-0.5">
+                {currentTime}
+              </div>
+
+              {/* Center Notch */}
+              <div className="absolute left-1/2 top-0 h-[28px] w-[140px] -translate-x-1/2 rounded-b-[20px] bg-black flex items-center justify-center gap-3 pointer-events-auto">
+                <div className="h-[4px] w-[40px] rounded-full bg-[#1e293b]/50" />
+                <div className="h-[8px] w-[8px] rounded-full bg-[#1e293b]/50" />
+              </div>
+
+              {/* Right Side: Date */}
+              <div className="text-[10px] font-bold text-white mt-0.5">
+                {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+              </div>
             </div>
 
             {/* Header Actions (with top padding for the notch) */}
-            <div className="flex flex-wrap items-center justify-center gap-1.5 bg-[#202c33] px-3 pb-3 pt-10 text-white shrink-0 shadow-sm relative z-10">
+            <div className="flex flex-nowrap items-center justify-center gap-1.5 bg-[#202c33] px-2 pb-2.5 pt-9 text-white shrink-0 shadow-sm relative z-10">
               <button
                 type="button"
                 onClick={onSend}
                 disabled={isSending || !canSend}
-                className="inline-flex items-center gap-1 rounded-full bg-[#25d366] hover:bg-[#20ba5a] active:scale-95 px-2.5 py-1 text-[9.5px] font-black uppercase tracking-[0.1em] text-white shadow-sm transition-all duration-200 disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-white/40 disabled:scale-100 disabled:shadow-none focus:outline-none shrink-0"
+                className="inline-flex items-center justify-center gap-1 flex-1 rounded-full bg-[#25d366] hover:bg-[#20ba5a] active:scale-95 px-1 py-1.5 text-[9px] font-black uppercase tracking-wider text-white shadow-sm transition-all duration-200 disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-white/40 disabled:scale-100 disabled:shadow-none focus:outline-none"
               >
                 <span className={`inline-flex items-center gap-1 ${canSend && !isSending ? "animate-pulse" : ""}`}>
                   {isSending ? (
@@ -216,7 +229,7 @@ export function WhatsAppMessagePreview({
                 type="button"
                 onClick={onRefresh}
                 disabled={isLoadingRefresh}
-                className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/10 hover:bg-white/25 active:scale-95 px-2.5 py-1 text-[9.5px] font-black uppercase tracking-[0.1em] text-white shadow-sm transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-40 focus:outline-none shrink-0"
+                className="inline-flex items-center justify-center gap-1 flex-1 rounded-full border border-white/20 bg-white/10 hover:bg-white/25 active:scale-95 px-1 py-1.5 text-[9px] font-black uppercase tracking-wider text-white shadow-sm transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-40 focus:outline-none"
               >
                 {isLoadingRefresh ? (
                   <Loader2 size={10} className="animate-spin" />
@@ -230,7 +243,7 @@ export function WhatsAppMessagePreview({
                 type="button"
                 onClick={onLogout}
                 disabled={isLoggingOut || !isConfigured}
-                className="inline-flex items-center gap-1 rounded-full border border-rose-500/35 bg-rose-500/20 hover:bg-rose-500/35 active:scale-95 px-2.5 py-1 text-[9.5px] font-black uppercase tracking-[0.1em] text-rose-200 shadow-sm transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-40 focus:outline-none shrink-0"
+                className="inline-flex items-center justify-center gap-1 flex-1 rounded-full border border-rose-500/35 bg-rose-500/20 hover:bg-rose-500/35 active:scale-95 px-1 py-1.5 text-[9px] font-black uppercase tracking-wider text-rose-200 shadow-sm transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-40 focus:outline-none"
               >
                 {isLoggingOut ? (
                   <Loader2 size={10} className="animate-spin" />
