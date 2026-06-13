@@ -72,7 +72,7 @@ export function WhatsAppCampaignEditor({
     const timer = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const url = `/api/clientes/search?q=${encodeURIComponent(searchQuery)}&limit=500${campaignName ? `&campaign=${encodeURIComponent(campaignName)}` : ''}`;
+        const url = `/api/clientes/search?q=${encodeURIComponent(searchQuery)}&limit=5000${campaignName ? `&campaign=${encodeURIComponent(campaignName)}` : ''}`;
         const response = await fetch(url);
         const data = await response.json();
         setSearchResults(data);
@@ -427,7 +427,7 @@ export function WhatsAppCampaignEditor({
                     </div>
                     {totalPages > 1 && (
                       <div className="flex flex-col border-t border-slate-100 bg-white">
-                        <div className="flex items-center justify-center gap-2 overflow-x-auto p-3">
+                        <div className="flex items-center justify-start gap-2 overflow-x-auto p-3">
                           {Array.from({ length: totalPages }).map((_, i) => (
                             <button
                               key={i}
