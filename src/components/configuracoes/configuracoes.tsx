@@ -990,7 +990,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
       <div className="flex-1 overflow-y-auto p-4">
         <div className="grid grid-cols-1 2xl:grid-cols-2 gap-6 w-full max-w-[1600px] mx-auto items-start">
           {/* Coluna Esquerda: Scanner */}
-          <div className="flex flex-col bg-white border border-slate-200 rounded-xl p-5 shadow-sm min-h-[758px]">
+          <div className="flex flex-col bg-white border border-slate-200 rounded-xl p-5 shadow-sm min-h-[600px]">
             <div className="mb-4 border-b border-slate-100 pb-2 flex justify-between items-end">
               <div>
                 <h2 className="text-base font-bold text-slate-800">Digitalização de Documentos</h2>
@@ -1099,7 +1099,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
                           <Loader2 size={14} className="animate-spin" />
                           Digitalizando Documento...
                         </p>
-                        <div className="relative flex justify-center bg-white border border-slate-200 shadow-sm rounded-lg p-2 mx-auto overflow-hidden aspect-[210/297] max-h-[40vh]">
+                        <div className="relative flex justify-center bg-white border border-slate-200 shadow-sm rounded-lg p-2 mx-auto overflow-hidden aspect-[210/297] max-h-[30vh]">
                           <style>{`
                           @keyframes scanLaser {
                             0% { top: 0%; }
@@ -1132,7 +1132,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
                         <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
                           Preview da Digitalização
                         </p>
-                        <div className="flex justify-center bg-white border border-slate-200 shadow-sm rounded-lg p-2 mx-auto aspect-[210/297] max-h-[40vh]">
+                        <div className="flex justify-center bg-white border border-slate-200 shadow-sm rounded-lg p-2 mx-auto aspect-[210/297] max-h-[30vh]">
                           <img
                             src={scannedImage}
                             alt="Documento escaneado"
@@ -1145,7 +1145,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
 
                   {/* Coluna 2: Dados Tratados (OCR + Excel) */}
                   <div className="flex flex-col gap-4">
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 flex flex-col h-full min-h-[40vh]">
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 flex flex-col h-full min-h-[30vh]">
                       <div className="flex items-center justify-between mb-4">
                         <p className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
                           <Table size={14} />
@@ -1175,7 +1175,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
                           <p className="text-xs text-slate-500 mt-2">{ocrProgress}%</p>
                         </div>
                       ) : extractedData.length > 0 ? (
-                        <div className="flex-1 overflow-auto border-2 border-black rounded-lg bg-white max-h-[40vh]">
+                        <div className="flex-1 overflow-auto border-2 border-black rounded-lg bg-white max-h-[30vh]">
                           <table className="w-full text-sm text-left whitespace-nowrap border-collapse border border-black">
                             <thead className="bg-slate-200 sticky top-0 text-slate-800 text-xs uppercase shadow-sm border-b-2 border-black">
                               <tr>
@@ -1214,7 +1214,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
           </div>
 
           {/* Coluna Direita: Importação Inteligente de Clientes (Excel) */}
-          <div className="flex flex-col bg-white border border-slate-200 rounded-xl p-5 shadow-sm min-h-[758px]">
+          <div className="flex flex-col bg-white border border-slate-200 rounded-xl p-5 shadow-sm min-h-[600px]">
             <div className="mb-4 border-b border-slate-100 pb-2 flex justify-between items-end">
               <div>
                 <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
@@ -1295,7 +1295,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
                   </div>
 
                   {/* Preview da Planilha (Abaixo) */}
-                  <div className="border border-slate-200 rounded-xl bg-white flex flex-col overflow-hidden flex-1 min-h-[400px]">
+                  <div className="border border-slate-200 rounded-xl bg-white flex flex-col overflow-hidden flex-1 min-h-[300px]">
                     <div className="bg-slate-50 p-4 border-b border-slate-200 flex items-center justify-between">
                       <div>
                         <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
