@@ -1148,11 +1148,13 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     setMasterSelectedMemberId('');
     sessionStorage.setItem('rc_master_company_id', companyId);
     sessionStorage.removeItem('rc_master_member_id');
+    window.location.reload();
   };
 
   const handleMasterMemberChange = (memberId: string) => {
     setMasterSelectedMemberId(memberId);
     sessionStorage.setItem('rc_master_member_id', memberId);
+    window.location.reload();
   };
 
   const showClientArea = activeMenu === "Meus clientes";
@@ -1261,24 +1263,22 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
             <span className="border-l border-slate-700 pl-4 text-sm text-slate-400">
               {activeMenu === "Home" ? "Painel Administrativo" : activeMenu}
             </span>
-          </div>
 
-          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
             {/* ── Seletor de Contexto – Apenas Master Admins ── */}
             {isMasterAdminUser && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 border-l border-slate-700 pl-4">
                 {/* Combobox de Empresa */}
                 <div className="relative">
-                  <div className="flex items-center gap-1.5 rounded-lg border border-[#b58c2a]/40 bg-[#0d1d2e] px-3 py-1.5 text-sm text-[#d4af37] min-w-[160px] max-w-[220px]">
-                    <Building2 size={14} className="shrink-0 text-[#b58c2a]" />
+                  <div className="flex items-center gap-1.5 rounded-lg border border-[#b58c2a] bg-[#152a42] px-3 py-1.5 text-sm text-white min-w-[160px] max-w-[220px]">
+                    <Building2 size={14} className="shrink-0 text-[#d4af37]" />
                     {isLoadingMasterCompanies ? (
-                      <Loader2 size={12} className="animate-spin" />
+                      <Loader2 size={12} className="animate-spin text-white" />
                     ) : (
                       <select
                         id="master-company-select"
                         value={masterSelectedCompanyId}
                         onChange={(e) => handleMasterCompanyChange(e.target.value)}
-                        className="flex-1 bg-transparent text-[#d4af37] text-xs outline-none cursor-pointer"
+                        className="flex-1 bg-transparent text-white font-medium text-xs outline-none cursor-pointer [&>option]:bg-[#0d1d2e] [&>option]:text-white"
                       >
                         <option value="">— Todas as empresas —</option>
                         {masterCompanies.map((c) => (
@@ -1286,23 +1286,23 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                         ))}
                       </select>
                     )}
-                    <ChevronDown size={12} className="shrink-0 opacity-60" />
+                    <ChevronDown size={12} className="shrink-0 text-[#d4af37]" />
                   </div>
                 </div>
 
                 {/* Combobox de Pessoa (só aparece quando empresa selecionada) */}
                 {masterSelectedCompanyId && (
                   <div className="relative">
-                    <div className="flex items-center gap-1.5 rounded-lg border border-slate-600 bg-[#0d1d2e] px-3 py-1.5 text-sm text-slate-300 min-w-[150px] max-w-[200px]">
-                      <User size={14} className="shrink-0 text-slate-400" />
+                    <div className="flex items-center gap-1.5 rounded-lg border border-slate-500 bg-[#152a42] px-3 py-1.5 text-sm text-white min-w-[150px] max-w-[200px]">
+                      <User size={14} className="shrink-0 text-slate-300" />
                       {isLoadingMasterMembers ? (
-                        <Loader2 size={12} className="animate-spin" />
+                        <Loader2 size={12} className="animate-spin text-white" />
                       ) : (
                         <select
                           id="master-member-select"
                           value={masterSelectedMemberId}
                           onChange={(e) => handleMasterMemberChange(e.target.value)}
-                          className="flex-1 bg-transparent text-slate-300 text-xs outline-none cursor-pointer"
+                          className="flex-1 bg-transparent text-white font-medium text-xs outline-none cursor-pointer [&>option]:bg-[#0d1d2e] [&>option]:text-white"
                         >
                           <option value="">— Todos os usuários —</option>
                           {masterMembers.map((m) => (
@@ -1310,12 +1310,15 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                           ))}
                         </select>
                       )}
-                      <ChevronDown size={12} className="shrink-0 opacity-60" />
+                      <ChevronDown size={12} className="shrink-0 text-slate-300" />
                     </div>
                   </div>
                 )}
               </div>
             )}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
 
             {showClientArea || showAgendaArea || showWebmailArea || showCampanhasArea ? (
               <button
