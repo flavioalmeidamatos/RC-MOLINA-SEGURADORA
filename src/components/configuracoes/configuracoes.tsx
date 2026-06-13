@@ -874,7 +874,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
           </div>
 
           {/* Coluna Direita: Importação Inteligente de Clientes (Excel) */}
-          <div className="flex flex-col bg-white border border-slate-200 rounded-xl p-5 shadow-sm min-h-[650px]">
+          <div className="flex flex-col bg-white border border-slate-200 rounded-xl p-5 shadow-sm min-h-[758px]">
             <div className="mb-4 border-b border-slate-100 pb-2 flex justify-between items-end">
               <div>
                 <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
