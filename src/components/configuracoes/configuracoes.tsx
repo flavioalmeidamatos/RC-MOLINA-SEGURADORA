@@ -127,6 +127,11 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
         }
       });
 
+      // Melhorar o reconhecimento para listas e blocos de texto (PSM 6)
+      await worker.setParameters({
+        tessedit_pageseg_mode: '6' as any
+      });
+
       const { data: { text } } = await worker.recognize(imageBase64);
       await worker.terminate();
 
@@ -152,11 +157,14 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
       if (!line) continue;
 
       line = line.replace(patternVmc, '');
-      let nome = line.replace(/[^a-zA-ZáàâãéèêíïóôõöúçñÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ\s]/g, '');
+      
+      // Limpar nome de números e caracteres especiais
+      let nome = line.replace(/\d+/g, '').replace(/[^a-zA-ZáàâãéèêíïóôõöúçñÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ\s]/g, '');
       nome = nome.replace(/\s+/g, ' ').trim().toUpperCase();
 
+      // Extrair telefones (aceitando múltiplos separados por /)
       let telefonesStr = line.replace(/[^\d/]/g, '');
-      let telefones = telefonesStr.split('/').filter(t => t.length > 0);
+      let telefones = telefonesStr.split('/').filter(t => t.length > 5); // Aceitar telefones um pouco mais curtos caso o OCR falhe alguns dígitos
 
       if (nome && telefones.length === 0) {
         if (pendingNome) {
@@ -171,7 +179,14 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
           data.push({ nome: finalNome, celular: celular, importado: importadoText });
         });
 
+        // Se encontrou telefone, zera o pendingNome (só se usou ele ou se o nome atual era válido)
         pendingNome = '';
+      } else if (nome) {
+        // Fallback: tem nome mas não tem telefone
+        if (pendingNome) {
+          data.push({ nome: pendingNome, celular: '', importado: `${pendingNome} - REMALHO` });
+        }
+        pendingNome = nome;
       }
     }
 
@@ -179,12 +194,12 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
       data.push({ nome: pendingNome, celular: '', importado: `${pendingNome} - REMALHO` });
     }
 
+    // Filtro super tolerante para não perder registros!
     const cleanedData = data.filter(d => {
-      if (d.celular.length >= 8) return true;
-      if (d.celular.length > 0 && d.celular.length < 8) return false;
-      const words = d.nome.split(' ').filter(w => w.length > 0);
-      const isGarbageName = words.length === 0 || words.some(w => w.length === 1);
-      if (!isGarbageName && d.nome.length >= 4) return true;
+      // Se tiver qualquer celular minimamente válido, mantém
+      if (d.celular.length >= 6) return true;
+      // Se não tiver celular mas o nome tiver pelo menos 2 letras, mantém (pode ser útil)
+      if (d.nome.trim().length >= 2) return true;
       return false;
     });
 
