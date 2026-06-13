@@ -1441,7 +1441,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                 >
                                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
                                 </button>
-                                <h2 className="text-2xl font-black tracking-tight">{agendaDate.getDate()} de {new Intl.DateTimeFormat('pt-BR', { month: 'long' }).format(agendaDate)}</h2>
+                                <h2 className="text-xl font-black tracking-tight">{agendaDate.getDate()} de {new Intl.DateTimeFormat('pt-BR', { month: 'long' }).format(agendaDate)}</h2>
                                 <button 
                                   onClick={(e) => { e.stopPropagation(); setAgendaDate(prev => new Date(prev.getFullYear(), prev.getMonth(), prev.getDate() + 1)); }}
                                   className="flex h-6 w-6 items-center justify-center rounded-full bg-white/5 text-white/70 hover:bg-white/10 hover:text-white transition-colors"
@@ -1449,7 +1449,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
                                 </button>
                               </div>
-                              <p className="mt-1 text-[11px] font-medium text-white/50 flex items-center">
+                              <p className="mt-1 text-[10px] font-medium text-white/50 flex items-center">
                                 Tarefas programadas - {agendaItems.length}
                                 {compromissosAtrasados.length > 0 && (
                                   <>
@@ -1465,8 +1465,8 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                 )}
                               </p>
                             </div>
-                            <div className="relative flex items-center justify-end pl-2 text-[#d4af37] transition-colors hover:opacity-80 cursor-pointer overflow-hidden">
-                              <Calendar size={24} strokeWidth={1.5} />
+                            <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-[#d4af37] ring-1 ring-white/10 backdrop-blur-sm transition-colors hover:bg-white/10 cursor-pointer overflow-hidden">
+                              <Calendar size={20} strokeWidth={1.5} />
                               <input
                                 type="date"
                                 className="absolute inset-0 h-full w-full opacity-0 cursor-pointer"
@@ -1551,13 +1551,15 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                               <p className="text-[9px] font-black uppercase tracking-[0.22em] text-[#d4af37]/90">
                                 Produtos comercializados
                               </p>
-                              <h2 className="mt-0.5 text-2xl font-black tracking-tight">{produtosStats.reduce((acc, curr) => acc + curr.quantidade, 0)}</h2>
-                              <p className="mt-1 text-[11px] font-medium text-white/50">
+                              <div className="mt-0.5 flex items-center h-7">
+                                <h2 className="text-xl font-black tracking-tight">{produtosStats.reduce((acc, curr) => acc + curr.quantidade, 0)}</h2>
+                              </div>
+                              <p className="mt-1 text-[10px] font-medium text-white/50">
                                 {isLoadingProdutosStats ? "Carregando..." : "Total de produtos ativos"}
                               </p>
                             </div>
-                            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/5 text-[#d4af37] ring-1 ring-white/10 backdrop-blur-sm">
-                              <Briefcase size={22} strokeWidth={1.5} />
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-[#d4af37] ring-1 ring-white/10 backdrop-blur-sm">
+                              <Briefcase size={20} strokeWidth={1.5} />
                             </div>
                           </div>
                         </div>
@@ -1602,13 +1604,15 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                               <p className="text-[9px] font-black uppercase tracking-[0.22em] text-[#d4af37]/90">
                                 Clientes da Corretora
                               </p>
-                              <h2 className="mt-0.5 text-2xl font-black tracking-tight">{clientStats.total}</h2>
-                              <p className="mt-1 text-[11px] font-medium text-white/50">
+                              <div className="mt-0.5 flex items-center h-7">
+                                <h2 className="text-xl font-black tracking-tight">{clientStats.total}</h2>
+                              </div>
+                              <p className="mt-1 text-[10px] font-medium text-white/50">
                                 {isLoadingClientStats ? "Calculando clientes..." : "Total de clientes registrados"}
                               </p>
                             </div>
-                            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/5 text-[#d4af37] ring-1 ring-white/10 backdrop-blur-sm">
-                              <Users size={22} strokeWidth={1.5} />
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-[#d4af37] ring-1 ring-white/10 backdrop-blur-sm">
+                              <Users size={20} strokeWidth={1.5} />
                             </div>
                           </div>
                         </div>
