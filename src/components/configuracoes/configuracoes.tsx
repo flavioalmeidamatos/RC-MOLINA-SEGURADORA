@@ -227,7 +227,8 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
       nome = nome.replace(/A[ÁÀÂÃ]|[ÁÀÂÃ]A/g, 'Á').replace(/I[Í]|[Í]I/g, 'Í').replace(/U[Ú]|[Ú]U/g, 'Ú');
 
       // Remover palavras duplicadas no nome (ex: "MARCIA DA MARCIA DA" -> "MARCIA DA")
-      const palavrasNome = nome.split(' ').filter(p => p.length > 0);
+      // Também removemos letras soltas (tamanho 1) pois não constituem nome (ex: "ANDERSON SANTANA J" -> "ANDERSON SANTANA")
+      const palavrasNome = nome.split(' ').filter(p => p.length > 1);
       nome = Array.from(new Set(palavrasNome)).join(' ');
 
       // Extrair telefones (aceitando múltiplos separados por /, mantendo + e números)
