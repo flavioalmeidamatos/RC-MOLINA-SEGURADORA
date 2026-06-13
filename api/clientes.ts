@@ -590,6 +590,33 @@ export const clientProdutosStatsHandler = async (_req: express.Request, res: exp
   }
 };
 
+export const clientNegociacaoStatsHandler = async (_req: express.Request, res: express.Response) => {
+  await initLocalDatabase();
+  const pool = getPool();
+  try {
+    const result = await pool.query(`
+      SELECT 
+        status_negociacao as status,
+        COUNT(*) as quantidade
+      FROM "RCMOLINASEGUROS"."CLIENTES"
+      WHERE status_negociacao IS NOT NULL AND status_negociacao != ''
+      GROUP BY status_negociacao
+      ORDER BY quantidade DESC
+    `);
+    
+    // Converte quantidade para Number
+    const data = result.rows.map(row => ({
+      status: row.status,
+      quantidade: Number(row.quantidade)
+    }));
+    
+    res.json(data);
+  } catch (error: any) {
+    console.error('Error getting client negociacao stats:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 export const checkClienteCodigoHandler = async (req: express.Request, res: express.Response) => {
   await initLocalDatabase();
   const pool = getPool();

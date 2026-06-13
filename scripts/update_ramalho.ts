@@ -22,12 +22,12 @@ async function run() {
     console.log('Executando query para atualizar os clientes...');
     const res = await pool.query(`
       UPDATE "RCMOLINASEGUROS"."CLIENTES"
-      SET como_conheceu = '6 - Leads'
-      WHERE nome_completo ILIKE '%ramalho%'
-         OR observacoes_extras ILIKE '%ramalho%'
-         OR documentacao_anotacoes ILIKE '%ramalho%';
+      SET como_conheceu = '6 - Lead'
+      WHERE nome_completo ILIKE '%- REMALHO%'
+         OR observacoes_extras ILIKE '%- REMALHO%'
+         OR documentacao_anotacoes ILIKE '%- REMALHO%';
     `);
-    console.log("Sucesso: " + res.rowCount + " registros atualizados para '6 - Leads'.");
+    console.log("Sucesso: " + res.rowCount + " registros atualizados para '6 - Lead'.");
   } catch (error) {
     console.error('Erro ao atualizar:', error);
   } finally {

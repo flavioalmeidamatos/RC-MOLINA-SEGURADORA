@@ -760,10 +760,12 @@ registerRoute('post', ['/email/import-contacts', '/gmail/import-contacts'], asyn
             nextNumber++;
           }
 
+          const comoConheceu = (contact.name && contact.name.includes('- REMALHO')) ? '6 - Lead' : '0 - Nao informado';
+
           const clienteResult = await client.query(
             `INSERT INTO "RCMOLINASEGUROS"."CLIENTES" 
              (nome_completo, codigo, status_cliente, como_conheceu, permite_agendar_online, data_cadastro, data_atualizacao, cpf, rg, cnpj, data_nascimento, cep, logradouro, bairro, cidade, uf, observacoes_extras)
-             VALUES ($1, $2, 'ATIVO', '6 - Lead', true, current_date, current_date, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+             VALUES ($1, $2, 'ATIVO', $13, true, current_date, current_date, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
              RETURNING id_cliente`,
             [
               contact.name, 
@@ -777,7 +779,8 @@ registerRoute('post', ['/email/import-contacts', '/gmail/import-contacts'], asyn
               contact.bairro || null,
               contact.cidade || null,
               contact.uf || null,
-              contact.observacoes_extras || null
+              contact.observacoes_extras || null,
+              comoConheceu
             ]
           );
 
