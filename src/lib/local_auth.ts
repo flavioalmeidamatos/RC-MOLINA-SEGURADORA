@@ -16,9 +16,25 @@ export interface UsuarioPerfil {
   logo_url?: string | null;
   permissoes?: Record<string, boolean> | null;
   aprovado?: boolean;
+  is_master_admin?: boolean;
   created_at?: string;
   updated_at?: string;
 }
+
+export const MASTER_EMAILS = [
+  'admin@rcmolina.com.br',
+  'matos.almeida.flavio@gmail.com'
+];
+
+export const isMasterAdmin = (userOrEmail: { email?: string; is_master_admin?: boolean } | string | null | undefined): boolean => {
+  if (!userOrEmail) return false;
+  if (typeof userOrEmail === 'string') {
+    return MASTER_EMAILS.includes(userOrEmail.toLowerCase().trim());
+  }
+  if (userOrEmail.is_master_admin === true) return true;
+  if (userOrEmail.email && MASTER_EMAILS.includes(userOrEmail.email.toLowerCase().trim())) return true;
+  return false;
+};
 
 export const getStoredSession = (): LocalAuthSession | null => {
   try {

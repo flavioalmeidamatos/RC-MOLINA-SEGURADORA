@@ -33,7 +33,7 @@ import type { Agendamento } from "../agenda/agenda";
 import { CampanhasShell } from "../campanhas/campanhas_shell";
 import { Configuracoes } from "../configuracoes/configuracoes";
 import { apiListVisibleUsers } from "../../lib/local_api";
-import type { LocalAuthSession, UsuarioPerfil } from "../../lib/local_auth";
+import { isMasterAdmin, type LocalAuthSession, type UsuarioPerfil } from "../../lib/local_auth";
 import { createGmailApi, type MessageSummary } from "../../lib/gmail_api";
 import { APP_VERSION } from "../../version";
 import { Monitor, Download } from "lucide-react";
@@ -851,7 +851,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   };
   const checkPermission = (menuName: string) => {
     if (menuName === 'Home') return true;
-    if (perfil?.email === 'admin@rcmolina.com.br') {
+    if (isMasterAdmin(perfil)) {
       return true;
     }
     if (perfil?.permissoes) {

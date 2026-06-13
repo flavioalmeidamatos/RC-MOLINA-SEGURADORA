@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import fs from 'fs/promises';
 import path from 'path';
 import { Pool } from 'pg';
+import { isMasterAdmin } from './master_admin_helper';
 
 export type UsuarioPerfil = {
   id: string;
@@ -12,6 +13,7 @@ export type UsuarioPerfil = {
   logo_url?: string | null;
   permissoes?: Record<string, boolean> | null;
   aprovado?: boolean;
+  is_master_admin?: boolean;
   created_at?: string;
   updated_at?: string;
 };
@@ -221,6 +223,11 @@ alter table "RCMOLINASEGUROS"."USUARIOS"
 update "RCMOLINASEGUROS"."USUARIOS" set aprovado = true where aprovado is null;
 alter table "RCMOLINASEGUROS"."USUARIOS" alter column aprovado set default false;
 
+alter table "RCMOLINASEGUROS"."USUARIOS"
+  add column if not exists is_master_admin boolean default false;
+update "RCMOLINASEGUROS"."USUARIOS" set is_master_admin = true where lower(email) in ('admin@rcmolina.com.br', 'matos.almeida.flavio@gmail.com');
+
+
 `;
 
 const rowToPerfil = (row: any): UsuarioPerfil => ({
@@ -232,6 +239,7 @@ const rowToPerfil = (row: any): UsuarioPerfil => ({
   logo_url: row.logo_url,
   permissoes: typeof row.permissoes === 'string' ? JSON.parse(row.permissoes) : row.permissoes || {},
   aprovado: row.aprovado,
+  is_master_admin: Boolean(row.is_master_admin),
   created_at: row.created_at?.toISOString?.() || row.created_at,
   updated_at: row.updated_at?.toISOString?.() || row.updated_at,
 });
@@ -267,30 +275,40 @@ const seedAdminUser = async () => {
   const adminEmail = (process.env.ADMIN_EMAIL || 'admin@rcmolina.com.br').trim().toLowerCase();
   const adminPassword = process.env.ADMIN_INITIAL_PASSWORD || '';
 
-  if (!adminPassword) return;
+  const masterEmails = ['admin@rcmolina.com.br', 'matos.almeida.flavio@gmail.com'];
 
-  const existing = await getPool().query('select 1 from "RCMOLINASEGUROS"."USUARIOS" where lower(email) = $1 limit 1', [
-    adminEmail,
-  ]);
+  for (const email of masterEmails) {
+    const isPrimary = email === adminEmail;
+    const pwd = isPrimary ? (adminPassword || 'rcmolina123') : 'rcmolina123'; // Default temp pwd for flavio, can be changed
+    
+    const existing = await getPool().query('select 1 from "RCMOLINASEGUROS"."USUARIOS" where lower(email) = $1 limit 1', [
+      email,
+    ]);
 
-  if (existing.rowCount) {
-    await getPool().query(
-      `update "RCMOLINASEGUROS"."USUARIOS"
-       set senha_hash = crypt($2, gen_salt('bf')),
-           nome_completo = coalesce(nullif(trim(nome_completo), ''), $3),
-           organizacao = coalesce(nullif(trim(organizacao), ''), $4),
-           aprovado = true
-       where lower(email) = $1`,
-      [adminEmail, adminPassword, 'ADMINISTRADOR RC MOLINA', 'RC MOLINA'],
-    );
-    return;
+    if (existing.rowCount) {
+      await getPool().query(
+        `update "RCMOLINASEGUROS"."USUARIOS"
+         set is_master_admin = true,
+             aprovado = true
+         where lower(email) = $1`,
+        [email]
+      );
+      if (isPrimary && adminPassword) {
+        await getPool().query(
+          `update "RCMOLINASEGUROS"."USUARIOS"
+           set senha_hash = crypt($2, gen_salt('bf'))
+           where lower(email) = $1`,
+          [email, adminPassword]
+        );
+      }
+    } else {
+      await getPool().query(
+        `insert into "RCMOLINASEGUROS"."USUARIOS" (email, senha_hash, nome_completo, organizacao, aprovado, is_master_admin)
+         values ($1, crypt($2, gen_salt('bf')), $3, $4, true, true)`,
+        [email, pwd, isPrimary ? 'ADMINISTRADOR RC MOLINA' : 'FLAVIO ALMEIDA MATOS', 'RC MOLINA']
+      );
+    }
   }
-
-  await getPool().query(
-    `insert into "RCMOLINASEGUROS"."USUARIOS" (email, senha_hash, nome_completo, organizacao, aprovado)
-     values ($1, crypt($2, gen_salt('bf')), $3, $4, true)`,
-    [adminEmail, adminPassword, 'ADMINISTRADOR RC MOLINA', 'RC MOLINA'],
-  );
 };
 
 export const registrarAuditoria = async (acao: string, detalhes: Record<string, unknown> = {}) => {
@@ -496,7 +514,9 @@ export const verifyAdminToken = (token: string | undefined) => {
   if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) return false;
 
   const decoded = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as { email?: string; exp?: number };
-  return decoded.email === (process.env.ADMIN_EMAIL || 'admin@rcmolina.com.br').toLowerCase() && Number(decoded.exp) > Date.now();
+  if (!decoded.email || Number(decoded.exp) <= Date.now()) return false;
+
+  return isMasterAdmin({ email: decoded.email });
 };
 
 export const usuariosPodeListarTodos = async ({ id, email }: { id: string; email: string }) => {

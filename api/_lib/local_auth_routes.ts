@@ -1,4 +1,5 @@
 import type express from 'express';
+import { isMasterAdmin } from './master_admin_helper';
 import {
   adminDeleteUser,
   adminListUsers,
@@ -235,9 +236,7 @@ export const registerLocalAuthRoutes = (app: express.Express) => {
     asyncRoute(async (req, res) => {
       const email = String(req.body?.email || '').trim().toLowerCase();
       const senha = String(req.body?.senha || '');
-      const adminEmail = (process.env.ADMIN_EMAIL || 'admin@rcmolina.com.br').trim().toLowerCase();
-
-      if (email !== adminEmail) {
+      if (!isMasterAdmin({ email })) {
         res.status(401).json({ error: 'Credenciais invalidas.' });
         return;
       }

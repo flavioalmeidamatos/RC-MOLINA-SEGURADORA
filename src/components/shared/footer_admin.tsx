@@ -6,7 +6,7 @@ import {
     apiAdminLogin,
     apiAdminUpdateUser,
 } from '../../lib/local_api';
-import { getStoredSession, type UsuarioPerfil } from '../../lib/local_auth';
+import { getStoredSession, isMasterAdmin, type UsuarioPerfil } from '../../lib/local_auth';
 import { validarEmailRFC5322 } from '../../lib/validacoes';
 
 const senhaAtendeCriterios = (senha: string) =>
@@ -26,7 +26,7 @@ export const FooterAdmin: React.FC = () => {
     const [message, setMessage] = useState({ text: '', type: '' });
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-    const isSuperAdmin = getStoredSession()?.user?.email === 'admin@rcmolina.com.br' || adminEmail === 'admin@rcmolina.com.br';
+    const isSuperAdmin = isMasterAdmin(getStoredSession()?.user?.email) || isMasterAdmin(adminEmail);
     const [permissions, setPermissions] = useState<Record<string, boolean>>({
         'Home': true,
         'Meus clientes': true,
@@ -117,7 +117,7 @@ export const FooterAdmin: React.FC = () => {
                 });
                 setAvatarUrl(user.avatar_url || null);
                 setLogoUrl(user.logo_url || null);
-                if (user.email === 'admin@rcmolina.com.br') {
+                if (isMasterAdmin(user.email)) {
                     setPermissions({
                         'Home': true,
                         'Meus clientes': true,
@@ -506,7 +506,7 @@ export const FooterAdmin: React.FC = () => {
                                         <button
                                             type="button"
                                             onClick={confirmDelete}
-                                            disabled={loading || formData.email === 'admin@rcmolina.com.br'}
+                                            disabled={loading || isMasterAdmin(formData.email)}
                                             className="flex-1 bg-red-900/20 text-red-500 border border-red-900/50 hover:bg-red-900/40 hover:text-red-400 font-bold text-sm lg:text-base rounded-xl p-3 transition flex justify-center items-center gap-2 disabled:opacity-50"
                                         >
                                             <Trash2 size={18} />
@@ -530,13 +530,13 @@ export const FooterAdmin: React.FC = () => {
                                                 <div key={option} className="flex items-center justify-between bg-[#121212] p-2 rounded-xl border border-gray-800">
                                                     <span className="font-bold text-white text-sm">{option}</span>
                                                     <div className="flex items-center gap-4">
-                                                        <label className={`flex items-center gap-2 ${formData.email === 'admin@rcmolina.com.br' || option === 'Home' ? 'cursor-not-allowed opacity-50' : 'cursor-pointer group'}`}>
-                                                            <input disabled={formData.email === 'admin@rcmolina.com.br' || option === 'Home'} type="radio" name={`perm_${option}`} checked={permissions[option]} onChange={() => setPermissions(p => ({ ...p, [option]: true }))} className="accent-[#ccff00] w-4 h-4" />
-                                                            <span className={`text-xs font-bold text-gray-400 transition ${formData.email !== 'admin@rcmolina.com.br' && option !== 'Home' ? 'group-hover:text-white' : ''}`}>HABILITADO</span>
+                                                        <label className={`flex items-center gap-2 ${isMasterAdmin(formData.email) || option === 'Home' ? 'cursor-not-allowed opacity-50' : 'cursor-pointer group'}`}>
+                                                            <input disabled={isMasterAdmin(formData.email) || option === 'Home'} type="radio" name={`perm_${option}`} checked={permissions[option]} onChange={() => setPermissions(p => ({ ...p, [option]: true }))} className="accent-[#ccff00] w-4 h-4" />
+                                                            <span className={`text-xs font-bold text-gray-400 transition ${!isMasterAdmin(formData.email) && option !== 'Home' ? 'group-hover:text-white' : ''}`}>HABILITADO</span>
                                                         </label>
-                                                        <label className={`flex items-center gap-2 ${formData.email === 'admin@rcmolina.com.br' || option === 'Home' ? 'cursor-not-allowed opacity-50' : 'cursor-pointer group'}`}>
-                                                            <input disabled={formData.email === 'admin@rcmolina.com.br' || option === 'Home'} type="radio" name={`perm_${option}`} checked={!permissions[option]} onChange={() => setPermissions(p => ({ ...p, [option]: false }))} className="accent-red-500 w-4 h-4" />
-                                                            <span className={`text-xs font-bold text-gray-400 transition ${formData.email !== 'admin@rcmolina.com.br' && option !== 'Home' ? 'group-hover:text-white' : ''}`}>DESABILITADO</span>
+                                                        <label className={`flex items-center gap-2 ${isMasterAdmin(formData.email) || option === 'Home' ? 'cursor-not-allowed opacity-50' : 'cursor-pointer group'}`}>
+                                                            <input disabled={isMasterAdmin(formData.email) || option === 'Home'} type="radio" name={`perm_${option}`} checked={!permissions[option]} onChange={() => setPermissions(p => ({ ...p, [option]: false }))} className="accent-red-500 w-4 h-4" />
+                                                            <span className={`text-xs font-bold text-gray-400 transition ${!isMasterAdmin(formData.email) && option !== 'Home' ? 'group-hover:text-white' : ''}`}>DESABILITADO</span>
                                                         </label>
                                                     </div>
                                                 </div>
@@ -547,13 +547,13 @@ export const FooterAdmin: React.FC = () => {
                                             <div className="flex items-center justify-between bg-[#121212] p-2 rounded-xl border border-gray-800">
                                                 <span className="font-bold text-white text-sm">Usuário Aprovado</span>
                                                 <div className="flex items-center gap-4">
-                                                    <label className={`flex items-center gap-2 ${formData.email === 'admin@rcmolina.com.br' ? 'cursor-not-allowed opacity-50' : 'cursor-pointer group'}`}>
-                                                        <input disabled={formData.email === 'admin@rcmolina.com.br'} type="radio" name="aprovado_status" checked={formData.aprovado} onChange={() => setFormData(f => ({ ...f, aprovado: true }))} className="accent-[#ccff00] w-4 h-4" />
-                                                        <span className={`text-xs font-bold text-gray-400 transition ${formData.email !== 'admin@rcmolina.com.br' ? 'group-hover:text-white' : ''}`}>SIM</span>
+                                                    <label className={`flex items-center gap-2 ${isMasterAdmin(formData.email) ? 'cursor-not-allowed opacity-50' : 'cursor-pointer group'}`}>
+                                                        <input disabled={isMasterAdmin(formData.email)} type="radio" name="aprovado_status" checked={formData.aprovado} onChange={() => setFormData(f => ({ ...f, aprovado: true }))} className="accent-[#ccff00] w-4 h-4" />
+                                                        <span className={`text-xs font-bold text-gray-400 transition ${!isMasterAdmin(formData.email) ? 'group-hover:text-white' : ''}`}>SIM</span>
                                                     </label>
-                                                    <label className={`flex items-center gap-2 ${formData.email === 'admin@rcmolina.com.br' ? 'cursor-not-allowed opacity-50' : 'cursor-pointer group'}`}>
-                                                        <input disabled={formData.email === 'admin@rcmolina.com.br'} type="radio" name="aprovado_status" checked={!formData.aprovado} onChange={() => setFormData(f => ({ ...f, aprovado: false }))} className="accent-red-500 w-4 h-4" />
-                                                        <span className={`text-xs font-bold text-gray-400 transition ${formData.email !== 'admin@rcmolina.com.br' ? 'group-hover:text-white' : ''}`}>NÃO</span>
+                                                    <label className={`flex items-center gap-2 ${isMasterAdmin(formData.email) ? 'cursor-not-allowed opacity-50' : 'cursor-pointer group'}`}>
+                                                        <input disabled={isMasterAdmin(formData.email)} type="radio" name="aprovado_status" checked={!formData.aprovado} onChange={() => setFormData(f => ({ ...f, aprovado: false }))} className="accent-red-500 w-4 h-4" />
+                                                        <span className={`text-xs font-bold text-gray-400 transition ${!isMasterAdmin(formData.email) ? 'group-hover:text-white' : ''}`}>NÃO</span>
                                                     </label>
                                                 </div>
                                             </div>
