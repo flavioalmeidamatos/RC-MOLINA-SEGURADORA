@@ -948,9 +948,9 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
             <ScannerIcon size={20} />
           </div>
           <div>
-            <h1 className="text-xl font-black tracking-tight">Configurações do Sistema</h1>
+            <h1 className="text-xl font-black tracking-tight">Importações Especiais</h1>
             <p className="text-xs font-medium text-white/50 mt-0.5">
-              Gerencie opções de hardware e integrações locais
+              Digitalize documentos e faça importações inteligentes em lote
             </p>
           </div>
         </div>

@@ -904,7 +904,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       return;
     }
 
-    if (line1 === "Configurar" || line1 === "Configurações") {
+    if (line1 === "Configurar" || line1 === "Configurações" || line1 === "Importações Especiais" || line1 === "Importações") {
       if (!checkPermission("Configurações")) return;
       setActiveMenu("Configurações");
       return;
@@ -965,7 +965,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     { title: "Webmail", icon: Mail },
     { title: "Campanhas", icon: Megaphone },
     { title: "Financeiro", icon: Banknote },
-    { title: "Configurações", icon: Wrench },
+    { title: "Importações Especiais", icon: Wrench },
   ];
 
   const cards = [
@@ -975,7 +975,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     { line1: "Webmail", line2: "", icon: Mail },
     { line1: "Campanhas", line2: "", icon: Megaphone },
     { line1: "Financeiro", line2: "", icon: Banknote },
-    { line1: "Configurar", line2: "", icon: Wrench },
+    { line1: "Importações", line2: "especiais", icon: Wrench },
   ];
 
   const updateAgendaReminderState = (updater: (state: AgendaReminderState) => AgendaReminderState) => {
