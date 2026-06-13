@@ -862,11 +862,16 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   };
 
   const handleMenuClick = async (title: string) => {
-    if (!checkPermission(title)) return;
+    const permTitle = (title === "Importações" || title === "Importações Especiais") ? "Configurações" : title;
+    if (!checkPermission(permTitle)) return;
 
     if (title === "Links") {
       setLinksDesktopStatus("");
       setShowLinksChooser(true);
+      return;
+    }
+    if (title === "Importações" || title === "Importações Especiais") {
+      setActiveMenu("Configurações");
       return;
     }
     setActiveMenu(title);
