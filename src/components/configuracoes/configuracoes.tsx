@@ -185,6 +185,75 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
     }
   };
 
+  const levenshteinDistance = (a: string, b: string): number => {
+    const matrix = [];
+    for (let i = 0; i <= b.length; i++) { matrix[i] = [i]; }
+    for (let j = 0; j <= a.length; j++) { matrix[0][j] = j; }
+    for (let i = 1; i <= b.length; i++) {
+      for (let j = 1; j <= a.length; j++) {
+        if (b.charAt(i - 1) === a.charAt(j - 1)) {
+          matrix[i][j] = matrix[i - 1][j - 1];
+        } else {
+          matrix[i][j] = Math.min(
+            matrix[i - 1][j - 1] + 1, // substituição
+            Math.min(matrix[i][j - 1] + 1, // inserção
+                     matrix[i - 1][j] + 1) // deleção
+          );
+        }
+      }
+    }
+    return matrix[b.length][a.length];
+  };
+
+  const autoCorrectNameWord = (word: string): string => {
+    // Tabela de vícios conhecidos (Hardcoded para falhas bizarras do OCR)
+    const vicios: Record<string, string> = {
+      "JURO": "JULIO",
+      "JUHO": "JULIO",
+      "JURHO": "JULIO",
+      "MAARCIA": "MARCIA",
+      "MMARCIA": "MARCIA"
+    };
+
+    if (vicios[word]) return vicios[word];
+    if (word.length <= 3) return word;
+
+    // Dicionário dos nomes/sobrenomes mais comuns do Brasil
+    const commonNames = [
+      "MARIA", "JOSE", "ANA", "JOAO", "ANTONIO", "FRANCISCO", "CARLOS", "PAULO", "PEDRO", "LUCAS", 
+      "LUIZ", "MARCOS", "LUIS", "GABRIEL", "RAFAEL", "DANIEL", "MARCELO", "BRUNO", "EDUARDO", "FELIPE", 
+      "RAIMUNDO", "RODRIGO", "MANOEL", "MATEUS", "ANDRE", "FERNANDO", "FABIO", "LEONARDO", "GUSTAVO", 
+      "GUILHERME", "LEANDRO", "TIAGO", "ANDERSON", "RICARDO", "MARCIO", "JORGE", "SEBASTIAO", "ALEXANDRE", 
+      "ROBERTO", "EDSON", "DIEGO", "VITOR", "JULIO", "JULIANA", "ALINE", "CAMILA", "BRUNA", "JESSICA", 
+      "LETICIA", "AMANDA", "GABRIELA", "DANIELA", "PRISCILA", "VANESSA", "CAROLINA", "BIANCA", "RENATA", 
+      "BEATRIZ", "TATIANA", "FABIANA", "MARCIA", "LUCIA", "FATIMA", "HELENA", "ANDREA", "TAMIRES", 
+      "MICHELY", "MICHELE", "SILVANA", "OSMAN", "ALLAN", "MAXWELL", "SANTANA", "FERREIRA", "SILVA", 
+      "SOUZA", "COSTA", "SANTOS", "OLIVEIRA", "PEREIRA", "RODRIGUES", "ALMEIDA", "NASCIMENTO", "LIMA", 
+      "ARAUJO", "FERNANDES", "CARVALHO", "GOMES", "MARTINS", "ROCHA", "RIBEIRO", "ALVES", "MONTEIRO", 
+      "MENDES", "BARROS", "FREITAS", "BARBOSA", "PINTO", "MOURA", "CAVALCANTE", "DIAS", "CASTRO", "MELO", 
+      "VIEIRA", "CARDOSO", "CORREIA", "MARQUES", "MACHADO", "BRITO", "TEIXEIRA", "MORAES", "NUNES"
+    ];
+
+    let bestMatch = word;
+    let minDistance = 999;
+
+    for (const name of commonNames) {
+      const dist = levenshteinDistance(word, name);
+      if (dist < minDistance) {
+        minDistance = dist;
+        bestMatch = name;
+      }
+    }
+
+    // Só permite a autocorreção fuzzy se o erro for pequeno (evita transformar nomes raros em nomes comuns sem querer)
+    // 1 erro permitido para palavras maiores que 3 letras. 2 erros para palavras maiores que 6 letras.
+    if (minDistance === 1 || (minDistance === 2 && word.length >= 7)) {
+      return bestMatch;
+    }
+
+    return word;
+  };
+
   const parseOcrText = (text: string) => {
     const lines = text.split('\n');
     const data: Array<{ nome: string, celular: string, importado: string }> = [];
@@ -226,9 +295,9 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
       // 3. Remove combinações comuns de erro (AÁ -> Á)
       nome = nome.replace(/A[ÁÀÂÃ]|[ÁÀÂÃ]A/g, 'Á').replace(/I[Í]|[Í]I/g, 'Í').replace(/U[Ú]|[Ú]U/g, 'Ú');
 
-      // Remover palavras duplicadas no nome (ex: "MARCIA DA MARCIA DA" -> "MARCIA DA")
-      // Também removemos letras soltas (tamanho 1) pois não constituem nome (ex: "ANDERSON SANTANA J" -> "ANDERSON SANTANA")
-      const palavrasNome = nome.split(' ').filter(p => p.length > 1);
+      // Remover palavras duplicadas no nome e aplicar o Autocorrector de Dicionário
+      // Também removemos letras soltas (tamanho 1) pois não constituem nome
+      const palavrasNome = nome.split(' ').filter(p => p.length > 1).map(p => autoCorrectNameWord(p));
       nome = Array.from(new Set(palavrasNome)).join(' ');
 
       // Extrair telefones (aceitando múltiplos separados por /, mantendo + e números)
