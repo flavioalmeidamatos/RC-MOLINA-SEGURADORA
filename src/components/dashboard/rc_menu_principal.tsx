@@ -1945,6 +1945,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                   setLinksDesktopStatus("");
                   setShowLinksChooser(false);
                   setActiveLinkTab("simuladores");
+                  setActiveMenu("Home");
                 }}
                 aria-label="Fechar"
                 className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800"
