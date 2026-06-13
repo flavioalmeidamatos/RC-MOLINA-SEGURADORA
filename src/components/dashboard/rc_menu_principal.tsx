@@ -1407,9 +1407,13 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                   }).length} clientes celebram este mês`}
                               </p>
                             </div>
-                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-[#d4af37] ring-1 ring-white/10 backdrop-blur-sm">
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); setAniversariantesDate(new Date()); }}
+                              title="Voltar para o mês atual"
+                              className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-[#d4af37] ring-1 ring-white/10 backdrop-blur-sm hover:bg-white/10 transition-colors cursor-pointer"
+                            >
                               <PartyPopper size={20} strokeWidth={1.5} />
-                            </div>
+                            </button>
                           </div>
                         </div>
 
