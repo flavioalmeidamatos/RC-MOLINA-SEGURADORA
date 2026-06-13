@@ -188,23 +188,28 @@ export function WhatsAppMessagePreview({
           {/* Screen */}
           <div className="relative overflow-hidden flex-1 flex flex-col min-h-0 rounded-[38px] bg-[#efeae2] border-[4px] border-black">
             
-            {/* iPhone Status Bar (Notch + Time/Date) */}
-            <div className="absolute top-0 left-0 right-0 h-[28px] z-20 flex justify-between items-center px-4 pointer-events-none">
-              {/* Left Side: Time */}
-              <div className="w-[85px] text-center text-[10px] font-bold text-white tracking-wide mt-0.5">
-                {currentTime}
+            {/* iPhone Status Bar (Time/Date) */}
+            <div className="absolute top-0 left-0 right-0 h-[28px] z-20 flex flex-nowrap gap-1.5 px-2 pointer-events-none">
+              {/* Left Side: Time (aligns with Enviar) */}
+              <div className="flex-1 flex items-center justify-center pt-1.5">
+                <span className="text-[10px] font-bold text-white tracking-wide">{currentTime}</span>
               </div>
 
-              {/* Center Notch */}
-              <div className="absolute left-1/2 top-0 h-[28px] w-[140px] -translate-x-1/2 rounded-b-[20px] bg-black flex items-center justify-center gap-3 pointer-events-auto">
-                <div className="h-[4px] w-[40px] rounded-full bg-[#1e293b]/50" />
-                <div className="h-[8px] w-[8px] rounded-full bg-[#1e293b]/50" />
-              </div>
+              {/* Center Space (aligns with Atualizar, hidden under notch) */}
+              <div className="flex-1" />
 
-              {/* Right Side: Date */}
-              <div className="w-[85px] text-center text-[10px] font-bold text-white mt-0.5">
-                {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+              {/* Right Side: Date (aligns with Desconectar) */}
+              <div className="flex-1 flex items-center justify-center pt-1.5">
+                <span className="text-[9.5px] font-bold text-white tracking-wide">
+                  {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                </span>
               </div>
+            </div>
+
+            {/* Center Notch */}
+            <div className="absolute left-1/2 top-0 z-20 h-[28px] w-[140px] -translate-x-1/2 rounded-b-[20px] bg-black flex items-center justify-center gap-3 pointer-events-auto">
+              <div className="h-[4px] w-[40px] rounded-full bg-[#1e293b]/50" />
+              <div className="h-[8px] w-[8px] rounded-full bg-[#1e293b]/50" />
             </div>
 
             {/* Header Actions (with top padding for the notch) */}
