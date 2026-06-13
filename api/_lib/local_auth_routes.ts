@@ -315,4 +315,36 @@ export const registerLocalAuthRoutes = (app: express.Express) => {
       }),
     ),
   );
+
+  // ── Endpoints de contexto para Master Admins ───────────────────────────────
+
+  app.get(
+    '/api/admin/companies',
+    asyncRoute(async (req, res) => {
+      const userEmail = getRequestUserHeader(req.headers['x-user-email']);
+      if (!isMasterAdmin({ email: userEmail })) {
+        res.status(403).json({ error: 'Acesso restrito a administradores master.' });
+        return;
+      }
+
+      const { listAllCompanies } = await import('./local_db');
+      const companies = await listAllCompanies();
+      res.json({ data: companies });
+    }),
+  );
+
+  app.get(
+    '/api/admin/companies/:id/members',
+    asyncRoute(async (req, res) => {
+      const userEmail = getRequestUserHeader(req.headers['x-user-email']);
+      if (!isMasterAdmin({ email: userEmail })) {
+        res.status(403).json({ error: 'Acesso restrito a administradores master.' });
+        return;
+      }
+
+      const { listCompanyMembers } = await import('./local_db');
+      const members = await listCompanyMembers(req.params.id);
+      res.json({ data: members });
+    }),
+  );
 };

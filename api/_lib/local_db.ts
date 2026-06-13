@@ -14,6 +14,7 @@ export type UsuarioPerfil = {
   permissoes?: Record<string, boolean> | null;
   aprovado?: boolean;
   is_master_admin?: boolean;
+  company_id?: string | null;
   created_at?: string;
   updated_at?: string;
 };
@@ -227,6 +228,45 @@ alter table "RCMOLINASEGUROS"."USUARIOS"
   add column if not exists is_master_admin boolean default false;
 update "RCMOLINASEGUROS"."USUARIOS" set is_master_admin = true where lower(email) in ('admin@rcmolina.com.br', 'matos.almeida.flavio@gmail.com');
 
+create table if not exists "RCMOLINASEGUROS"."EMPRESAS" (
+  id uuid primary key default gen_random_uuid(),
+  nome varchar(255) not null unique,
+  cnpj varchar(18),
+  status varchar(20) default 'ATIVO',
+  created_at timestamptz not null default timezone('utc', now())
+);
+
+alter table "RCMOLINASEGUROS"."USUARIOS"
+  add column if not exists company_id uuid references "RCMOLINASEGUROS"."EMPRESAS"(id) on delete set null;
+
+alter table "RCMOLINASEGUROS"."CLIENTES"
+  add column if not exists company_id uuid references "RCMOLINASEGUROS"."EMPRESAS"(id) on delete set null,
+  add column if not exists usuario_id uuid references "RCMOLINASEGUROS"."USUARIOS"(id) on delete set null;
+
+alter table "RCMOLINASEGUROS"."AGENDAMENTOS"
+  add column if not exists company_id uuid references "RCMOLINASEGUROS"."EMPRESAS"(id) on delete set null,
+  add column if not exists usuario_id uuid references "RCMOLINASEGUROS"."USUARIOS"(id) on delete set null;
+
+-- Migracao de dados de empresas
+insert into "RCMOLINASEGUROS"."EMPRESAS" (nome)
+select distinct coalesce(nullif(trim(organizacao), ''), 'RC MOLINA')
+from "RCMOLINASEGUROS"."USUARIOS"
+on conflict (nome) do nothing;
+
+update "RCMOLINASEGUROS"."USUARIOS" u
+set company_id = e.id
+from "RCMOLINASEGUROS"."EMPRESAS" e
+where coalesce(nullif(trim(u.organizacao), ''), 'RC MOLINA') = e.nome
+  and u.company_id is null;
+
+update "RCMOLINASEGUROS"."CLIENTES"
+set company_id = (select id from "RCMOLINASEGUROS"."EMPRESAS" order by created_at asc limit 1)
+where company_id is null;
+
+update "RCMOLINASEGUROS"."AGENDAMENTOS"
+set company_id = (select id from "RCMOLINASEGUROS"."EMPRESAS" order by created_at asc limit 1)
+where company_id is null;
+
 
 `;
 
@@ -240,6 +280,7 @@ const rowToPerfil = (row: any): UsuarioPerfil => ({
   permissoes: typeof row.permissoes === 'string' ? JSON.parse(row.permissoes) : row.permissoes || {},
   aprovado: row.aprovado,
   is_master_admin: Boolean(row.is_master_admin),
+  company_id: row.company_id,
   created_at: row.created_at?.toISOString?.() || row.created_at,
   updated_at: row.updated_at?.toISOString?.() || row.updated_at,
 });
@@ -657,3 +698,25 @@ export const saveAvatarDataUrl = async (dataUrl?: string | null, originalName = 
 
   return `/uploads/avatars/${filename}`;
 };
+
+export const listAllCompanies = async () => {
+  await initLocalDatabase();
+  const result = await getPool().query(`
+    select id, nome, cnpj, status, created_at
+    from "RCMOLINASEGUROS"."EMPRESAS"
+    order by nome asc
+  `);
+  return result.rows;
+};
+
+export const listCompanyMembers = async (companyId: string) => {
+  await initLocalDatabase();
+  const result = await getPool().query(`
+    select id, email, nome_completo, organizacao, avatar_url, aprovado, is_master_admin
+    from "RCMOLINASEGUROS"."USUARIOS"
+    where company_id = $1
+    order by nome_completo asc
+  `, [companyId]);
+  return result.rows;
+};
+

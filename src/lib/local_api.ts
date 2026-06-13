@@ -150,3 +150,42 @@ export const apiAdminDeleteUser = async (token: string, id: string) => {
   });
   return parseJson<{ ok: boolean }>(response);
 };
+
+export type Empresa = {
+  id: string;
+  nome: string;
+  cnpj?: string | null;
+  status?: string | null;
+};
+
+export type EmpresaMembro = {
+  id: string;
+  email: string;
+  nome_completo: string;
+  organizacao?: string | null;
+  avatar_url?: string | null;
+};
+
+export const apiListCompanies = async (user: Pick<UsuarioPerfil, 'id' | 'email'>) => {
+  const response = await fetch('/api/admin/companies', {
+    headers: {
+      'x-user-id': user.id,
+      'x-user-email': user.email,
+    },
+  });
+  return parseJson<Empresa[]>(response);
+};
+
+export const apiListCompanyMembers = async (
+  user: Pick<UsuarioPerfil, 'id' | 'email'>,
+  companyId: string,
+) => {
+  const response = await fetch(`/api/admin/companies/${encodeURIComponent(companyId)}/members`, {
+    headers: {
+      'x-user-id': user.id,
+      'x-user-email': user.email,
+    },
+  });
+  return parseJson<EmpresaMembro[]>(response);
+};
+

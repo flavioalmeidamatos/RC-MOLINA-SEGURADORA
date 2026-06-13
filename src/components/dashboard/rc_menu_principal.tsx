@@ -4,7 +4,9 @@ import {
   Bell,
   Banknote,
   Briefcase,
+  Building2,
   Calendar,
+  ChevronDown,
   ExternalLink,
   FileText,
   FolderOpen,
@@ -32,7 +34,7 @@ import { Agenda } from "../agenda/agenda";
 import type { Agendamento } from "../agenda/agenda";
 import { CampanhasShell } from "../campanhas/campanhas_shell";
 import { Configuracoes } from "../configuracoes/configuracoes";
-import { apiListVisibleUsers } from "../../lib/local_api";
+import { apiListVisibleUsers, apiListCompanies, apiListCompanyMembers, type Empresa, type EmpresaMembro } from "../../lib/local_api";
 import { isMasterAdmin, type LocalAuthSession, type UsuarioPerfil } from "../../lib/local_auth";
 import { createGmailApi, type MessageSummary } from "../../lib/gmail_api";
 import { APP_VERSION } from "../../version";
@@ -246,6 +248,15 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const [showLinksChooser, setShowLinksChooser] = useState(false);
   const [activeLinkTab, setActiveLinkTab] = useState<'simuladores' | 'consorcios'>('simuladores');
   const [linksDesktopStatus, setLinksDesktopStatus] = useState("");
+
+  // ── Contexto Master Admin ─────────────────────────────────────────────────
+  const isMasterAdminUser = isMasterAdmin(perfil);
+  const [masterCompanies, setMasterCompanies] = useState<Empresa[]>([]);
+  const [masterSelectedCompanyId, setMasterSelectedCompanyId] = useState<string>(() => sessionStorage.getItem('rc_master_company_id') || '');
+  const [masterMembers, setMasterMembers] = useState<EmpresaMembro[]>([]);
+  const [masterSelectedMemberId, setMasterSelectedMemberId] = useState<string>(() => sessionStorage.getItem('rc_master_member_id') || '');
+  const [isLoadingMasterCompanies, setIsLoadingMasterCompanies] = useState(false);
+  const [isLoadingMasterMembers, setIsLoadingMasterMembers] = useState(false);
   const [isExternalWebviewOpen, setIsExternalWebviewOpen] = useState(false);
   const [isLinksDesktopWindowOpen, setIsLinksDesktopWindowOpen] = useState(false);
 
@@ -1097,6 +1108,44 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     }
   };
 
+  // ── Efeitos Master Admin ──────────────────────────────────────────────────
+  useEffect(() => {
+    if (!isMasterAdminUser || !perfil) return;
+    setIsLoadingMasterCompanies(true);
+    apiListCompanies({ id: perfil.id, email: perfil.email })
+      .then((res) => {
+        if (res.data) setMasterCompanies(res.data);
+      })
+      .catch(() => {})
+      .finally(() => setIsLoadingMasterCompanies(false));
+  }, [isMasterAdminUser, perfil?.id]);
+
+  useEffect(() => {
+    if (!isMasterAdminUser || !perfil || !masterSelectedCompanyId) {
+      setMasterMembers([]);
+      return;
+    }
+    setIsLoadingMasterMembers(true);
+    apiListCompanyMembers({ id: perfil.id, email: perfil.email }, masterSelectedCompanyId)
+      .then((res) => {
+        if (res.data) setMasterMembers(res.data);
+      })
+      .catch(() => {})
+      .finally(() => setIsLoadingMasterMembers(false));
+  }, [isMasterAdminUser, perfil?.id, masterSelectedCompanyId]);
+
+  const handleMasterCompanyChange = (companyId: string) => {
+    setMasterSelectedCompanyId(companyId);
+    setMasterSelectedMemberId('');
+    sessionStorage.setItem('rc_master_company_id', companyId);
+    sessionStorage.removeItem('rc_master_member_id');
+  };
+
+  const handleMasterMemberChange = (memberId: string) => {
+    setMasterSelectedMemberId(memberId);
+    sessionStorage.setItem('rc_master_member_id', memberId);
+  };
+
   const showClientArea = activeMenu === "Meus clientes";
   const showAgendaArea = activeMenu === "Agenda";
   const showWebmailArea = activeMenu === "Webmail";
@@ -1206,6 +1255,59 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+            {/* ── Seletor de Contexto – Apenas Master Admins ── */}
+            {isMasterAdminUser && (
+              <div className="flex items-center gap-2">
+                {/* Combobox de Empresa */}
+                <div className="relative">
+                  <div className="flex items-center gap-1.5 rounded-lg border border-[#b58c2a]/40 bg-[#0d1d2e] px-3 py-1.5 text-sm text-[#d4af37] min-w-[160px] max-w-[220px]">
+                    <Building2 size={14} className="shrink-0 text-[#b58c2a]" />
+                    {isLoadingMasterCompanies ? (
+                      <Loader2 size={12} className="animate-spin" />
+                    ) : (
+                      <select
+                        id="master-company-select"
+                        value={masterSelectedCompanyId}
+                        onChange={(e) => handleMasterCompanyChange(e.target.value)}
+                        className="flex-1 bg-transparent text-[#d4af37] text-xs outline-none cursor-pointer"
+                      >
+                        <option value="">— Todas as empresas —</option>
+                        {masterCompanies.map((c) => (
+                          <option key={c.id} value={c.id}>{c.nome}</option>
+                        ))}
+                      </select>
+                    )}
+                    <ChevronDown size={12} className="shrink-0 opacity-60" />
+                  </div>
+                </div>
+
+                {/* Combobox de Pessoa (só aparece quando empresa selecionada) */}
+                {masterSelectedCompanyId && (
+                  <div className="relative">
+                    <div className="flex items-center gap-1.5 rounded-lg border border-slate-600 bg-[#0d1d2e] px-3 py-1.5 text-sm text-slate-300 min-w-[150px] max-w-[200px]">
+                      <User size={14} className="shrink-0 text-slate-400" />
+                      {isLoadingMasterMembers ? (
+                        <Loader2 size={12} className="animate-spin" />
+                      ) : (
+                        <select
+                          id="master-member-select"
+                          value={masterSelectedMemberId}
+                          onChange={(e) => handleMasterMemberChange(e.target.value)}
+                          className="flex-1 bg-transparent text-slate-300 text-xs outline-none cursor-pointer"
+                        >
+                          <option value="">— Todos os usuários —</option>
+                          {masterMembers.map((m) => (
+                            <option key={m.id} value={m.id}>{m.nome_completo}</option>
+                          ))}
+                        </select>
+                      )}
+                      <ChevronDown size={12} className="shrink-0 opacity-60" />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {showClientArea || showAgendaArea || showWebmailArea || showCampanhasArea ? (
               <button
                 type="button"
