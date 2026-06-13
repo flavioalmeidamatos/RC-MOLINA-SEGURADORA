@@ -176,6 +176,11 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const [statusModalClientes, setStatusModalClientes] = useState<any[]>([]);
   const [isLoadingStatusModal, setIsLoadingStatusModal] = useState(false);
   const [showRestrictedModal, setShowRestrictedModal] = useState(false);
+  const [showNegociacaoModal, setShowNegociacaoModal] = useState(false);
+  const [selectedNegociacaoStatus, setSelectedNegociacaoStatus] = useState<string>("");
+  const [negociacaoClients, setNegociacaoClients] = useState<any[]>([]);
+  const [isLoadingNegociacaoClients, setIsLoadingNegociacaoClients] = useState(false);
+  const [negociacaoAlphabetFilter, setNegociacaoAlphabetFilter] = useState<string>("TODOS");
 
   const openStatusModal = async (status: 'ATIVO' | 'INATIVO') => {
     setStatusModalType(status);
@@ -910,6 +915,46 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     }
   };
 
+  const handleNegociacaoCardClick = async (status: string, quantidade: number) => {
+    if (quantidade === 1) {
+      try {
+        const response = await fetch(`/api/clientes/by-negociacao?status=${encodeURIComponent(status)}`);
+        const data = await response.json();
+        if (data && data.length > 0) {
+          setClientToEdit(data[0].codigo || data[0].nome_completo);
+          setActiveMenu("Meus clientes");
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    } else if (quantidade > 1) {
+      setSelectedNegociacaoStatus(status);
+      setShowNegociacaoModal(true);
+      setNegociacaoAlphabetFilter("TODOS");
+      setIsLoadingNegociacaoClients(true);
+      try {
+        const response = await fetch(`/api/clientes/by-negociacao?status=${encodeURIComponent(status)}`);
+        const data = await response.json();
+        setNegociacaoClients(Array.isArray(data) ? data : []);
+      } catch (e) {
+        console.error(e);
+        setNegociacaoClients([]);
+      } finally {
+        setIsLoadingNegociacaoClients(false);
+      }
+    }
+  };
+
+  const filteredNegociacaoClients = negociacaoClients.filter(c => {
+    if (negociacaoAlphabetFilter === "TODOS") return true;
+    const initial = (c.nome_completo || "").charAt(0).toUpperCase();
+    return initial === negociacaoAlphabetFilter;
+  });
+
+  const getFilteredProdutosStats = () => {
+    return produtosStats;
+  };
+
   const menuItems = [
     { title: "Home", icon: Home },
     { title: "Meus clientes", icon: Briefcase },
@@ -1477,7 +1522,8 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                             {negociacaoStats.length > 0 ? negociacaoStats.map((item, i) => (
                               <div
                                 key={i}
-                                className="group relative overflow-hidden rounded-xl border border-white bg-white p-3 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#b58c2a]/30 hover:shadow-md cursor-default"
+                                onClick={() => handleNegociacaoCardClick(item.status, item.quantidade)}
+                                className="group relative overflow-hidden rounded-xl border border-white bg-white p-3 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#b58c2a]/30 hover:shadow-md cursor-pointer"
                               >
                                 <div className="flex items-center gap-3">
                                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#b58c2a]/10 text-[#a2812a] transition-all duration-300 group-hover:bg-[#b58c2a]/20">
@@ -2384,6 +2430,130 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
             <div className="flex items-center gap-2 text-[#ccff00] font-bold text-lg bg-[#ccff00]/10 px-6 py-3 rounded-xl border border-[#ccff00]/20">
               <Phone size={20} />
               (21) 98868-1799
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Negociação Status Modal */}
+      {showNegociacaoModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overflow-x-hidden bg-black/40 p-4 sm:p-0 backdrop-blur-sm">
+          <div className="relative w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 p-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#b58c2a]/10 text-[#a2812a]">
+                  <Briefcase size={20} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-slate-800">
+                    Status de Negociação: {selectedNegociacaoStatus}
+                  </h3>
+                  <p className="text-xs font-bold text-slate-500">
+                    {filteredNegociacaoClients.length} {filteredNegociacaoClients.length === 1 ? 'cliente' : 'clientes'} com este status
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowNegociacaoModal(false)}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+              {isLoadingNegociacaoClients ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#b58c2a] border-t-transparent" />
+                  <p className="mt-4 text-sm font-medium text-slate-500">Carregando clientes...</p>
+                </div>
+              ) : (
+                <div className="grid gap-3">
+                  {filteredNegociacaoClients.length > 0 ? (
+                    filteredNegociacaoClients.map((cliente) => (
+                      <div
+                        key={cliente.id_cliente}
+                        onClick={() => {
+                          setClientToEdit(cliente.codigo || cliente.nome_completo);
+                          setActiveMenu("Meus clientes");
+                          setShowNegociacaoModal(false);
+                        }}
+                        className="group flex cursor-pointer items-center justify-between rounded-xl border border-slate-200 bg-white p-4 transition-all duration-200 hover:border-[#b58c2a]/30 hover:shadow-md"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-50 text-lg font-black text-[#0c1826] group-hover:bg-[#b58c2a]/10 group-hover:text-[#a2812a] transition-colors">
+                            {cliente.nome_completo.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-slate-800 transition-colors group-hover:text-[#b58c2a]">
+                              {cliente.nome_completo}
+                            </h4>
+                            <div className="mt-1 flex items-center gap-3 text-xs font-medium text-slate-500">
+                              {cliente.cpf && (
+                                <span className="flex items-center gap-1">
+                                  <User size={12} /> {cliente.cpf}
+                                </span>
+                              )}
+                              {cliente.codigo && (
+                                <span className="flex items-center gap-1">
+                                  <Hash size={12} /> {cliente.codigo}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <ChevronRight size={20} className="text-slate-300 transition-colors group-hover:text-[#b58c2a]" />
+                      </div>
+                    ))
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+                        <Users size={24} />
+                      </div>
+                      <h4 className="mt-4 font-bold text-slate-700">Nenhum cliente encontrado</h4>
+                      <p className="mt-1 text-sm text-slate-500">
+                        Não há clientes para este status na letra selecionada.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-slate-100 bg-white p-4">
+              <div className="flex flex-wrap gap-1.5 justify-center">
+                <button
+                  onClick={() => setNegociacaoAlphabetFilter("TODOS")}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
+                    negociacaoAlphabetFilter === "TODOS"
+                      ? "bg-[#b58c2a] text-white shadow-md shadow-[#b58c2a]/20"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  }`}
+                >
+                  TODOS
+                </button>
+                {"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map((letter) => {
+                  const hasClientsWithLetter = negociacaoClients.some(
+                    (c) => (c.nome_completo || "").charAt(0).toUpperCase() === letter
+                  );
+                  return (
+                    <button
+                      key={letter}
+                      onClick={() => setNegociacaoAlphabetFilter(letter)}
+                      disabled={!hasClientsWithLetter}
+                      className={`flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold transition-all ${
+                        negociacaoAlphabetFilter === letter
+                          ? "bg-[#b58c2a] text-white shadow-md shadow-[#b58c2a]/20"
+                          : hasClientsWithLetter
+                          ? "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                          : "bg-slate-50 text-slate-300 opacity-50 cursor-not-allowed"
+                      }`}
+                    >
+                      {letter}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>

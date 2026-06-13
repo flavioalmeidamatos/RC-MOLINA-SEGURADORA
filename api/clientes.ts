@@ -635,3 +635,24 @@ export const checkClienteCodigoHandler = async (req: express.Request, res: expre
     res.status(500).json({ error: error.message });
   }
 };
+
+export const listClientesByNegociacaoHandler = async (req: express.Request, res: express.Response) => {
+  await initLocalDatabase();
+  const pool = getPool();
+  try {
+    const status = req.query.status as string;
+    if (!status) {
+      return res.status(400).json({ error: 'Status de negociação é obrigatório' });
+    }
+    const result = await pool.query(`
+      ${clienteSelect}
+      WHERE status_negociacao = $1
+      ORDER BY nome_completo ASC
+    `, [status]);
+    res.json(result.rows);
+  } catch (error: any) {
+    console.error('Error listing clientes by negociacao:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
