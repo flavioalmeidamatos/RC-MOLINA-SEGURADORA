@@ -198,13 +198,27 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
 
       line = line.replace(patternVmc, '');
       
+      // Correção de falhas comuns do OCR em números
+      let words = line.split(' ').map(w => {
+        const digitCount = (w.match(/\d/g) || []).length;
+        if (digitCount >= 3) {
+          return w.replace(/[Oo]/g, '0')
+                  .replace(/[Il]/g, '1')
+                  .replace(/[Ss]/g, '5')
+                  .replace(/[Zz]/g, '2')
+                  .replace(/[Bb]/g, '8');
+        }
+        return w;
+      });
+      line = words.join(' ');
+
       // Limpar nome de números e caracteres especiais
       let nome = line.replace(/\d+/g, '').replace(/[^a-zA-ZáàâãéèêíïóôõöúçñÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ\s]/g, '');
       nome = nome.replace(/\s+/g, ' ').trim().toUpperCase();
 
-      // Extrair telefones (aceitando múltiplos separados por /)
-      let telefonesStr = line.replace(/[^\d/]/g, '');
-      let telefones = telefonesStr.split('/').filter(t => t.length > 5); // Aceitar telefones um pouco mais curtos caso o OCR falhe alguns dígitos
+      // Extrair telefones (aceitando múltiplos separados por /, mantendo + e números)
+      let telefonesStr = line.replace(/[^\d/+]/g, '');
+      let telefones = telefonesStr.split('/').filter(t => t.length >= 6); // Aceitar telefones um pouco mais curtos caso o OCR falhe alguns dígitos
 
       if (nome && telefones.length === 0) {
         if (pendingNome) {
