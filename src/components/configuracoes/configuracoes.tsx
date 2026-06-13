@@ -218,6 +218,14 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
       // Remover a palavra REMALHO do nome (pois ela já é adicionada automaticamente no campo Importado)
       nome = nome.replace(/REMALHO/g, '').replace(/\s+/g, ' ').trim();
 
+      // Corretor ortográfico básico para falhas de OCR em nomes
+      // 1. Nenhuma letra deve repetir 3 vezes (ex: FERRREIRA -> FERREIRA)
+      nome = nome.replace(/(.)\1{2,}/g, '$1$1');
+      // 2. Remove vogais duplas incomuns (MÁARCIA -> MÁRCIA), exceto E e O que podem ser legítimas (Kardec, Cooper)
+      nome = nome.replace(/([AÁÀÂÃIÍUÚÜ])\1+/g, '$1');
+      // 3. Remove combinações comuns de erro (AÁ -> Á)
+      nome = nome.replace(/A[ÁÀÂÃ]|[ÁÀÂÃ]A/g, 'Á').replace(/I[Í]|[Í]I/g, 'Í').replace(/U[Ú]|[Ú]U/g, 'Ú');
+
       // Remover palavras duplicadas no nome (ex: "MARCIA DA MARCIA DA" -> "MARCIA DA")
       const palavrasNome = nome.split(' ').filter(p => p.length > 0);
       nome = Array.from(new Set(palavrasNome)).join(' ');
@@ -225,11 +233,23 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
       // Extrair telefones (aceitando múltiplos separados por /, mantendo + e números)
       let telefonesStr = line.replace(/[^\d/+]/g, '');
       let telefones = telefonesStr.split('/').map(t => {
-        // Se o OCR "comeu" o símbolo de + mas o número começa com 55 (DDI do Brasil), vamos forçar o +
-        if (t.startsWith('55') && t.length >= 12 && !t.startsWith('+')) {
-          return '+' + t;
+        // Limpa tudo que não for número (remove +, letras perdidas)
+        let tClean = t.replace(/[^\d]/g, ''); 
+        
+        // Se terminar com 55 seguido de 10 a 11 dígitos, é o número internacional limpo! (Ignora lixo no começo)
+        let matchInt = tClean.match(/55(\d{10,11})$/);
+        if (matchInt) {
+          return '+55' + matchInt[1];
         }
-        return t;
+        
+        // Se terminar com 10 a 11 dígitos, é um celular com DDD (Ignora lixo no começo)
+        let matchLocal = tClean.match(/(\d{10,11})$/);
+        if (matchLocal) {
+          return matchLocal[1];
+        }
+
+        // Se falhou as regras acima, retorna como estava (limpo de +)
+        return tClean;
       }).filter(t => t.length >= 6); // Aceitar telefones um pouco mais curtos caso o OCR falhe alguns dígitos
 
       if (nome && telefones.length === 0) {
