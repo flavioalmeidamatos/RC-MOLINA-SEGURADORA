@@ -207,9 +207,9 @@ export function WhatsAppMessagePreview({
             </div>
 
             {/* Center Notch */}
-            <div className="absolute left-1/2 top-0 z-20 h-[28px] w-[140px] -translate-x-1/2 rounded-b-[20px] bg-black flex items-center justify-center gap-3 pointer-events-auto">
-              <div className="h-[4px] w-[40px] rounded-full bg-[#1e293b]/50" />
-              <div className="flex h-[12px] w-[12px] items-center justify-center rounded-full bg-white">
+            <div className="absolute left-1/2 top-0 z-20 h-[28px] w-[140px] -translate-x-1/2 rounded-b-[20px] bg-black pointer-events-auto">
+              <div className="absolute left-1/2 top-1/2 h-[4px] w-[40px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#1e293b]/50" />
+              <div className="absolute right-6 top-1/2 flex h-[12px] w-[12px] -translate-y-1/2 items-center justify-center rounded-full bg-white">
                 <div className="h-[6px] w-[6px] rounded-full bg-black" />
               </div>
             </div>
