@@ -1081,6 +1081,8 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationProps> = ({
       setFormState((prev) => ({
         ...prev,
         codigo: normalizarCodigoCliente(data.codigo || ''),
+        dataCadastro: formatarDataAtualBR(),
+        dataAtualizacao: formatarDataAtualBR(),
       }));
     } catch (error) {
       console.error('Erro ao gerar codigo automatico:', error);
