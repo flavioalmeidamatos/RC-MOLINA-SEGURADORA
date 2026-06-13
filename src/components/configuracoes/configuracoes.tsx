@@ -215,6 +215,8 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
       // Limpar nome de números e caracteres especiais
       let nome = line.replace(/\d+/g, '').replace(/[^a-zA-ZáàâãéèêíïóôõöúçñÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ\s]/g, '');
       nome = nome.replace(/\s+/g, ' ').trim().toUpperCase();
+      // Remover a palavra REMALHO do nome (pois ela já é adicionada automaticamente no campo Importado)
+      nome = nome.replace(/REMALHO/g, '').replace(/\s+/g, ' ').trim();
 
       // Extrair telefones (aceitando múltiplos separados por /, mantendo + e números)
       let telefonesStr = line.replace(/[^\d/+]/g, '');
