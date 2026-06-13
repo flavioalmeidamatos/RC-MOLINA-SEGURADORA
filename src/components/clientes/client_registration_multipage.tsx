@@ -1260,6 +1260,7 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationProps> = ({
       }
       await response.json();
       const nome = formState.nome || 'Cliente';
+      (window as any).__rcMolinaRefreshClientStats?.();
 
       if (isNew) {
         setFeedback(`Cliente ${nome} cadastrado com sucesso. Formulario limpo para novo cadastro.`);
@@ -1331,6 +1332,7 @@ export const ClientRegistrationMultipage: React.FC<ClientRegistrationProps> = ({
         resetForm();
         setIsClientFormEnabled(false);
         setFeedback(`🗑️ ${nome} excluído com sucesso.`);
+        (window as any).__rcMolinaRefreshClientStats?.();
       })
       .catch((error) => {
         console.error(error);

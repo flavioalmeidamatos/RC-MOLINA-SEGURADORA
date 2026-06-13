@@ -544,11 +544,35 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       }
     };
 
+    (window as any).__rcMolinaRefreshClientStats = () => loadClientStats();
+
     void loadAniversariantes();
     void loadClientStats();
 
+    const intervalId = window.setInterval(() => {
+      void loadClientStats();
+    }, 60000);
+
+    const handleFocus = () => {
+      void loadClientStats();
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void loadClientStats();
+      }
+    };
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     return () => {
       ignore = true;
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      if ((window as any).__rcMolinaRefreshClientStats) {
+        delete (window as any).__rcMolinaRefreshClientStats;
+      }
     };
   }, []);
 
