@@ -72,6 +72,78 @@ export const OcrModal: React.FC<OcrModalProps> = ({
   );
 };
 
+interface ImportInfoModalProps {
+  isOpen: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+
+export const ImportInfoModal: React.FC<ImportInfoModalProps> = ({
+  isOpen,
+  onConfirm,
+  onCancel,
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      
+      {/* Modal */}
+      <div className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
+        
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-slate-100">
+          <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+            📥 Importação Inteligente de Clientes (Excel)
+          </h2>
+        </div>
+
+        {/* Body */}
+        <div className="px-6 py-5 text-sm text-slate-600 space-y-4 leading-relaxed">
+          
+          <p>
+            A funcionalidade de <strong>Importação Inteligente de Clientes</strong> permite carregar dados diretamente de uma planilha Excel para o sistema, facilitando o cadastro em massa de contatos.
+          </p>
+
+          <p>
+            Para garantir o correto funcionamento, é necessário que o usuário selecione o arquivo Excel (.xlsx) e realize a <strong>associação dos campos do sistema às colunas correspondentes</strong> da planilha.
+          </p>
+
+          <p>
+            Após o mapeamento, os dados serão enviados para a integração com o <strong>Google Contacts</strong> da conta do usuário.
+          </p>
+
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-amber-800">
+            <strong>⚠️ Importante:</strong><br />
+            O sistema não se responsabiliza por inconsistências, perdas ou erros decorrentes de mapeamento incorreto dos campos durante o processo de importação.  
+            A correta associação das colunas é de inteira responsabilidade do usuário.
+          </div>
+
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-slate-100 flex justify-end gap-3">
+          
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-50 transition"
+          >
+            Cancelar
+          </button>
+
+          <button
+            onClick={onConfirm}
+            className="px-5 py-2 rounded-xl bg-[#0078d4] text-white font-semibold hover:bg-[#006cbd] transition"
+          >
+            Entendi e continuar
+          </button>
+
+        </div>
+      </div>
+    </div>
+  );
+};
+
 declare global {
   interface Window {
     chrome?: {
@@ -101,6 +173,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
   const [showWarningPopup, setShowWarningPopup] = useState<boolean>(false);
   const [showScannerOffPopup, setShowScannerOffPopup] = useState<boolean>(false);
   const [showOcrModal, setShowOcrModal] = useState<boolean>(false);
+  const [showImportInfoModal, setShowImportInfoModal] = useState<boolean>(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isImporting, setIsImporting] = useState<boolean>(false);
@@ -1173,7 +1246,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
 
                   <button
                     type="button"
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={() => setShowImportInfoModal(true)}
                     className="flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#0078d4] px-6 text-sm font-bold text-white shadow-lg shadow-[#0078d4]/20 transition-all hover:bg-[#006cbd]"
                   >
                     <UploadCloud size={18} />
@@ -1400,6 +1473,15 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
           </div>
         </div>
       )}
+
+      <ImportInfoModal 
+        isOpen={showImportInfoModal} 
+        onConfirm={() => {
+          setShowImportInfoModal(false);
+          fileInputRef.current?.click();
+        }} 
+        onCancel={() => setShowImportInfoModal(false)} 
+      />
     </div>
   );
 };
