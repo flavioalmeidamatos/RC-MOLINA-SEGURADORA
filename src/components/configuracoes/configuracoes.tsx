@@ -47,14 +47,6 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
     { id: 'celular', label: 'Celular' },
     { id: 'email', label: 'E-mail' },
     { id: 'cpf', label: 'CPF' },
-    { id: 'rg', label: 'RG' },
-    { id: 'cnpj', label: 'CNPJ' },
-    { id: 'data_nascimento', label: 'Data Nascimento' },
-    { id: 'cep', label: 'CEP' },
-    { id: 'logradouro', label: 'Logradouro' },
-    { id: 'bairro', label: 'Bairro' },
-    { id: 'cidade', label: 'Cidade' },
-    { id: 'uf', label: 'UF' },
     { id: 'observacoes_extras', label: 'Observações' }
   ];
 
