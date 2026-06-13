@@ -228,6 +228,8 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const [reminderSnoozeMinutes, setReminderSnoozeMinutes] = useState("5");
   const [clientStats, setClientStats] = useState({ total: 0, ativos: 0, inativos: 0, leads: 0 });
   const [isLoadingClientStats, setIsLoadingClientStats] = useState(false);
+  const [produtosStats, setProdutosStats] = useState<{produto: string, quantidade: number}[]>([]);
+  const [isLoadingProdutosStats, setIsLoadingProdutosStats] = useState(false);
   const [systemUsers, setSystemUsers] = useState<UsuarioPerfil[]>([]);
   const [isLoadingSystemUsers, setIsLoadingSystemUsers] = useState(false);
   const [systemUsersError, setSystemUsersError] = useState("");
@@ -554,21 +556,44 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       }
     };
 
-    (window as any).__rcMolinaRefreshClientStats = () => loadClientStats();
+    const loadProdutosStats = async () => {
+      setIsLoadingProdutosStats(true);
+      try {
+        const response = await fetch(`/api/clientes/produtos-stats?t=${Date.now()}`, {
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
+        });
+        if (!response.ok) throw new Error("Falha ao carregar estatísticas de produtos.");
+        const data = await response.json();
+        if (!ignore) setProdutosStats(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error("Erro ao carregar produtos:", error);
+      } finally {
+        if (!ignore) setIsLoadingProdutosStats(false);
+      }
+    };
+
+    (window as any).__rcMolinaRefreshClientStats = () => { loadClientStats(); loadProdutosStats(); };
 
     void loadAniversariantes();
     void loadClientStats();
+    void loadProdutosStats();
 
     const intervalId = window.setInterval(() => {
       void loadClientStats();
+      void loadProdutosStats();
     }, 60000);
 
     const handleFocus = () => {
       void loadClientStats();
+      void loadProdutosStats();
     };
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
         void loadClientStats();
+        void loadProdutosStats();
       }
     };
 
@@ -1261,7 +1286,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                     })}
                   </div>
 
-                  <div className="flex flex-col gap-3 lg:flex-row">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:flex-wrap">
                     <section className="flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm max-w-sm h-[360px]">
                       <div className="flex flex-col h-full">
                         <div className="relative overflow-hidden bg-[#0c1826] p-4 text-white shrink-0">
@@ -1512,6 +1537,57 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                 </div>
                               </div>
                             ))}
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+
+                    <section className="flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm max-w-sm h-[360px]">
+                      <div className="flex flex-col h-full">
+                        <div className="relative overflow-hidden bg-[#0c1826] p-4 text-white shrink-0">
+                          <div className="absolute -right-8 -top-10 h-28 w-28 rounded-full bg-[#d4af37]/10 blur-3xl" />
+                          <div className="relative flex items-center justify-between">
+                            <div>
+                              <p className="text-[9px] font-black uppercase tracking-[0.22em] text-[#d4af37]/90">
+                                Produtos comercializados
+                              </p>
+                              <h2 className="mt-0.5 text-2xl font-black tracking-tight">{produtosStats.reduce((acc, curr) => acc + curr.quantidade, 0)}</h2>
+                              <p className="mt-1 text-[11px] font-medium text-white/50">
+                                {isLoadingProdutosStats ? "Carregando..." : "Total de produtos ativos"}
+                              </p>
+                            </div>
+                            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/5 text-[#d4af37] ring-1 ring-white/10 backdrop-blur-sm">
+                              <Briefcase size={22} strokeWidth={1.5} />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="custom-scrollbar flex-1 overflow-y-auto bg-slate-50/50 p-2.5">
+                          <div className="flex flex-col gap-2">
+                            {produtosStats.length > 0 ? produtosStats.map((item, i) => (
+                              <div
+                                key={i}
+                                className="group relative overflow-hidden rounded-xl border border-white bg-white p-3 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#25D366]/30 hover:shadow-md cursor-default"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#25D366]/10 text-[#128C7E] transition-all duration-300 group-hover:bg-[#25D366]/20">
+                                    <Briefcase size={16} />
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <p className="truncate text-xs font-bold text-[#0c1826] transition-colors group-hover:text-[#128C7E]">
+                                      {item.produto.toUpperCase()}
+                                    </p>
+                                  </div>
+                                  <div className="flex shrink-0 items-center justify-center rounded-lg bg-[#25D366]/10 px-2.5 py-1">
+                                    <span className="text-sm font-black text-[#128C7E]">{item.quantidade}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            )) : (
+                              <div className="flex flex-col items-center justify-center py-8 text-center">
+                                <p className="text-xs font-bold text-slate-400">Nenhum produto</p>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
