@@ -4,6 +4,74 @@ import Tesseract from 'tesseract.js';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 
+interface OcrModalProps {
+  isOpen: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+
+export const OcrModal: React.FC<OcrModalProps> = ({
+  isOpen,
+  onConfirm,
+  onCancel,
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      
+      {/* Modal container */}
+      <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
+        
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-slate-100">
+          <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+            ⚠️ Atenção sobre a Digitalização (OCR)
+          </h2>
+        </div>
+
+        {/* Body */}
+        <div className="px-6 py-5 text-sm text-slate-600 space-y-3 leading-relaxed">
+          <p>
+            O recurso de digitalização (OCR) converte automaticamente imagens em texto através de tecnologia inteligente.
+          </p>
+
+          <p>
+            Embora seja uma ferramenta avançada, <strong>os resultados podem não ser 100% precisos</strong>, dependendo da qualidade da imagem, iluminação, escrita ou formatação do documento.
+          </p>
+
+          <p>
+            Recomendamos que os dados extraídos sejam <strong>sempre verificados antes ou após a utilização</strong>, garantindo maior segurança e confiabilidade das informações.
+          </p>
+
+          <p>
+            Ao continuar, você declara estar ciente de que podem ocorrer pequenas variações ou inconsistências na leitura automática dos dados.
+          </p>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-slate-100 flex justify-end gap-3">
+          
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-50 transition"
+          >
+            Cancelar
+          </button>
+
+          <button
+            onClick={onConfirm}
+            className="px-4 py-2 rounded-xl bg-[#0c1826] text-white font-semibold hover:bg-[#1a2e44] transition"
+          >
+            Entendi e continuar
+          </button>
+
+        </div>
+      </div>
+    </div>
+  );
+};
+
 declare global {
   interface Window {
     chrome?: {
@@ -32,6 +100,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
   const [extractedData, setExtractedData] = useState<Array<{ nome: string, celular: string, importado: string }>>([]);
   const [showWarningPopup, setShowWarningPopup] = useState<boolean>(false);
   const [showScannerOffPopup, setShowScannerOffPopup] = useState<boolean>(false);
+  const [showOcrModal, setShowOcrModal] = useState<boolean>(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isImporting, setIsImporting] = useState<boolean>(false);
@@ -785,6 +854,15 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
 
   return (
     <div className="flex flex-col h-full bg-slate-50 rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <OcrModal 
+        isOpen={showOcrModal} 
+        onCancel={() => setShowOcrModal(false)} 
+        onConfirm={() => {
+          setShowOcrModal(false);
+          escanearDocumento();
+        }} 
+      />
+
       <div className="bg-[#0c1826] p-4 text-white shrink-0 relative overflow-hidden flex items-center justify-between">
         <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-[#d4af37]/10 blur-3xl" />
         <div className="flex items-center gap-3 relative z-10">
@@ -912,7 +990,7 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
               <div className="flex gap-4 pt-2">
                 <button
                   type="button"
-                  onClick={escanearDocumento}
+                  onClick={() => setShowOcrModal(true)}
                   disabled={(!useIpScanner && !selectedScanner) || (useIpScanner && !scannerIp) || isScanning}
                   className="flex h-11 items-center gap-2 rounded-xl bg-[#b58c2a] px-5 text-sm font-semibold text-white transition-colors hover:bg-[#a27d25] disabled:cursor-not-allowed disabled:opacity-70"
                 >
