@@ -298,8 +298,8 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
 
     rejectedContacts.forEach((contact, index) => {
       const addedRow = worksheet.addRow({
-        name: contact.name,
-        phone: contact.phone,
+        name: contact.name || contact.nome_completo || '',
+        phone: contact.phone || contact.celular || '',
         reason: contact.reason
       });
 
