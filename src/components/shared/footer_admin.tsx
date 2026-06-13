@@ -35,7 +35,7 @@ export const FooterAdmin: React.FC = () => {
         'Webmail': true,
         'Campanhas': true,
         'Financeiro': true,
-        'Configurações': true,
+        'Importações': true,
     });
 
     // Form states
@@ -126,7 +126,7 @@ export const FooterAdmin: React.FC = () => {
                         'Webmail': true,
                         'Campanhas': true,
                         'Financeiro': true,
-                        'Configurações': true,
+                        'Importações': true,
                     });
                 } else if (user.permissoes) {
                     setPermissions({
@@ -137,7 +137,7 @@ export const FooterAdmin: React.FC = () => {
                         'Webmail': user.permissoes['Webmail'] ?? true,
                         'Campanhas': user.permissoes['Campanhas'] ?? true,
                         'Financeiro': user.permissoes['Financeiro'] ?? true,
-                        'Configurações': user.permissoes['Configurações'] ?? true,
+                        'Importações': user.permissoes['Importações'] ?? user.permissoes['Configurações'] ?? true,
                     });
                 } else {
                     setPermissions({
@@ -148,7 +148,7 @@ export const FooterAdmin: React.FC = () => {
                         'Webmail': true,
                         'Campanhas': true,
                         'Financeiro': true,
-                        'Configurações': true,
+                        'Importações': true,
                     });
                 }
             }

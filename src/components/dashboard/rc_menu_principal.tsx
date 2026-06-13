@@ -854,15 +854,25 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     if (perfil?.email === 'admin@rcmolina.com.br') {
       return true;
     }
-    if (perfil?.permissoes && perfil.permissoes[menuName] === false) {
-      setShowRestrictedModal(true);
-      return false;
+    if (perfil?.permissoes) {
+      if (menuName === 'Importações') {
+        const hasImportacoes = perfil.permissoes['Importações'] ?? perfil.permissoes['Configurações'] ?? true;
+        if (!hasImportacoes) {
+          setShowRestrictedModal(true);
+          return false;
+        }
+        return true;
+      }
+      if (perfil.permissoes[menuName] === false) {
+        setShowRestrictedModal(true);
+        return false;
+      }
     }
     return true;
   };
 
   const handleMenuClick = async (title: string) => {
-    const permTitle = (title === "Importações" || title === "Importações Especiais") ? "Configurações" : title;
+    const permTitle = (title === "Importações" || title === "Importações Especiais") ? "Importações" : title;
     if (!checkPermission(permTitle)) return;
 
     if (title === "Links") {
@@ -910,7 +920,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     }
 
     if (line1 === "Configurar" || line1 === "Configurações" || line1 === "Importações Especiais" || line1 === "Importações") {
-      if (!checkPermission("Configurações")) return;
+      if (!checkPermission("Importações")) return;
       setActiveMenu("Configurações");
       return;
     }
