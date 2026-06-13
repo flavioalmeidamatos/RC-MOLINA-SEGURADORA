@@ -157,13 +157,13 @@ export function WhatsAppMessagePreview({
 }: WhatsAppMessagePreviewProps) {
   const lines = splitWhatsAppMessageLines(message);
   const [currentTime, setCurrentTime] = useState(() => {
-    return new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+    return new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
   });
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentTime(new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }));
-    }, 10000);
+      setCurrentTime(new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
+    }, 1000);
     return () => clearInterval(timer);
   }, []);
 
@@ -189,9 +189,9 @@ export function WhatsAppMessagePreview({
           <div className="relative overflow-hidden flex-1 flex flex-col min-h-0 rounded-[38px] bg-[#efeae2] border-[4px] border-black">
             
             {/* iPhone Status Bar (Notch + Time/Date) */}
-            <div className="absolute top-0 left-0 right-0 h-[28px] z-20 flex justify-between items-center px-5 pointer-events-none">
+            <div className="absolute top-0 left-0 right-0 h-[28px] z-20 flex justify-between items-center px-4 pointer-events-none">
               {/* Left Side: Time */}
-              <div className="text-[11px] font-bold text-white tracking-wide mt-0.5">
+              <div className="w-[85px] text-center text-[10px] font-bold text-white tracking-wide mt-0.5">
                 {currentTime}
               </div>
 
@@ -202,7 +202,7 @@ export function WhatsAppMessagePreview({
               </div>
 
               {/* Right Side: Date */}
-              <div className="text-[10px] font-bold text-white mt-0.5">
+              <div className="w-[85px] text-center text-[10px] font-bold text-white mt-0.5">
                 {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
               </div>
             </div>
