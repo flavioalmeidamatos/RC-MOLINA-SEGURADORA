@@ -919,43 +919,9 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
                   </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 xl:grid-cols-4 gap-4">
-                  {/* Campos do Banco (Esquerda) */}
-                  <div className="xl:col-span-1 border border-slate-200 rounded-xl bg-slate-50 p-4">
-                    <h3 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
-                      <Database size={16} className="text-[#b58c2a]" />
-                      Campos do Sistema
-                    </h3>
-                    <p className="text-xs text-slate-500 mb-4 leading-relaxed">
-                      Arraste estes campos e solte sobre as colunas da planilha ao lado.
-                    </p>
-
-                    <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
-                      {dbFields.map(field => {
-                        const isMapped = Object.values(columnMappings).includes(field.id);
-                        return (
-                          <div
-                            key={field.id}
-                            draggable={!isMapped}
-                            onDragStart={(e) => {
-                              e.dataTransfer.setData('fieldId', field.id);
-                              e.dataTransfer.effectAllowed = 'copy';
-                            }}
-                            className={`px-3 py-2.5 rounded-lg border text-sm font-semibold shadow-sm transition-all flex items-center justify-between ${isMapped
-                                ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-60'
-                                : 'bg-white border-slate-200 text-slate-700 cursor-grab hover:border-[#b58c2a] hover:shadow-md'
-                              }`}
-                          >
-                            {field.label}
-                            <GripVertical size={14} className={isMapped ? "text-slate-300" : "text-slate-400"} />
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Preview da Planilha (Direita) */}
-                  <div className="xl:col-span-3 border border-slate-200 rounded-xl bg-white flex flex-col overflow-hidden min-h-[400px]">
+                <div className="flex flex-col gap-4 h-full">
+                  {/* Preview da Planilha (Acima) */}
+                  <div className="border border-slate-200 rounded-xl bg-white flex flex-col overflow-hidden flex-1 min-h-[400px]">
                     <div className="bg-slate-50 p-4 border-b border-slate-200 flex items-center justify-between">
                       <div>
                         <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
@@ -1067,6 +1033,40 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
                           {isImporting ? `Importando... ${importProgress}%` : 'Executar Importação'}
                         </span>
                       </button>
+                    </div>
+                  </div>
+
+                  {/* Campos do Banco (Abaixo) */}
+                  <div className="border border-slate-200 rounded-xl bg-slate-50 p-4 shrink-0">
+                    <h3 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                      <Database size={16} className="text-[#b58c2a]" />
+                      Campos do Sistema
+                    </h3>
+                    <p className="text-xs text-slate-500 mb-4 leading-relaxed">
+                      Arraste estes campos e solte sobre as colunas da planilha acima.
+                    </p>
+
+                    <div className="grid grid-rows-2 grid-flow-col gap-3 overflow-x-auto pb-2 custom-scrollbar">
+                      {dbFields.map(field => {
+                        const isMapped = Object.values(columnMappings).includes(field.id);
+                        return (
+                          <div
+                            key={field.id}
+                            draggable={!isMapped}
+                            onDragStart={(e) => {
+                              e.dataTransfer.setData('fieldId', field.id);
+                              e.dataTransfer.effectAllowed = 'copy';
+                            }}
+                            className={`px-3 py-2.5 rounded-lg border text-sm font-semibold shadow-sm transition-all flex items-center justify-between w-48 shrink-0 ${isMapped
+                                ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-60'
+                                : 'bg-white border-slate-200 text-slate-700 cursor-grab hover:border-[#b58c2a] hover:shadow-md'
+                              }`}
+                          >
+                            {field.label}
+                            <GripVertical size={14} className={isMapped ? "text-slate-300" : "text-slate-400"} />
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
