@@ -226,7 +226,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const [agendaReminderState, setAgendaReminderState] = useState<AgendaReminderState>({});
   const [activeAgendaReminder, setActiveAgendaReminder] = useState<ActiveAgendaReminder | null>(null);
   const [reminderSnoozeMinutes, setReminderSnoozeMinutes] = useState("5");
-  const [clientStats, setClientStats] = useState({ total: 0, ativos: 0, inativos: 0 });
+  const [clientStats, setClientStats] = useState({ total: 0, ativos: 0, inativos: 0, leads: 0 });
   const [isLoadingClientStats, setIsLoadingClientStats] = useState(false);
   const [systemUsers, setSystemUsers] = useState<UsuarioPerfil[]>([]);
   const [isLoadingSystemUsers, setIsLoadingSystemUsers] = useState(false);
@@ -1550,6 +1550,32 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                                 <div
                                   className="h-full bg-red-400 transition-all duration-1000"
                                   style={{ width: `${clientStats.total > 0 ? (clientStats.inativos / clientStats.total) * 100 : 0}%` }}
+                                />
+                              </div>
+                            </div>
+
+                            <div 
+                              className="group relative overflow-hidden rounded-xl border border-white bg-white p-3 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-blue-400/30 hover:shadow-md cursor-pointer"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-500 transition-all duration-300 group-hover:bg-blue-100">
+                                  <User size={16} />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-sm font-bold text-[#0c1826] transition-colors group-hover:text-blue-600">
+                                    Clientes aguardando contato (leads)
+                                  </p>
+                                  <div className="mt-0.5 flex items-center gap-2 text-[11px] font-semibold text-slate-500">
+                                    <span className="font-bold text-blue-500">{clientStats.leads}</span>
+                                    <span className="h-1 w-1 rounded-full bg-slate-300" />
+                                    <span>{clientStats.total > 0 ? Math.round((clientStats.leads / clientStats.total) * 100) : 0}% do total</span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-slate-100">
+                                <div
+                                  className="h-full bg-blue-400 transition-all duration-1000"
+                                  style={{ width: `${clientStats.total > 0 ? (clientStats.leads / clientStats.total) * 100 : 0}%` }}
                                 />
                               </div>
                             </div>

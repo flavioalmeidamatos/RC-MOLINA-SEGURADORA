@@ -545,15 +545,17 @@ export const clientStatsHandler = async (_req: express.Request, res: express.Res
       SELECT 
         COUNT(*) as total,
         COUNT(*) FILTER (WHERE status_cliente = 'ATIVO' OR status_cliente IS NULL OR status_cliente = '') as ativos,
-        COUNT(*) FILTER (WHERE status_cliente = 'INATIVO') as inativos
+        COUNT(*) FILTER (WHERE status_cliente = 'INATIVO') as inativos,
+        COUNT(*) FILTER (WHERE como_conheceu = '6 - Lead') as leads
       FROM "RCMOLINASEGUROS"."CLIENTES"
     `);
     
-    const stats = result.rows[0] || { total: 0, ativos: 0, inativos: 0 };
+    const stats = result.rows[0] || { total: 0, ativos: 0, inativos: 0, leads: 0 };
     res.json({
       total: Number(stats.total),
       ativos: Number(stats.ativos),
-      inativos: Number(stats.inativos)
+      inativos: Number(stats.inativos),
+      leads: Number(stats.leads || 0)
     });
   } catch (error: any) {
     console.error('Error getting client stats:', error);
