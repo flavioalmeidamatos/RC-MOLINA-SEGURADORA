@@ -614,9 +614,9 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
 
   return (
     <div className="flex flex-col h-full bg-slate-50 rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-      <div className="bg-[#0c1826] p-4 text-white shrink-0 relative overflow-hidden">
+      <div className="bg-[#0c1826] p-4 text-white shrink-0 relative overflow-hidden flex items-center justify-between">
         <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-[#d4af37]/10 blur-3xl" />
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 relative z-10">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-[#d4af37] ring-1 ring-white/10 backdrop-blur-sm">
             <ScannerIcon size={20} />
           </div>
@@ -628,11 +628,32 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
           </div>
         </div>
 
+        {excelPreview && (
+          <div className="absolute left-1/2 -translate-x-1/2 z-10">
+            <button
+              onClick={handleExecuteImport}
+              disabled={isImporting || Object.keys(columnMappings).length === 0}
+              className="relative flex h-10 items-center justify-center gap-2 rounded-xl bg-[#0078d4] px-6 font-bold text-white shadow-lg shadow-[#0078d4]/20 transition-all hover:bg-[#006cbd] disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden"
+            >
+              {isImporting && (
+                <div
+                  className="absolute left-0 top-0 bottom-0 bg-[#004e8c] transition-all duration-300 ease-out"
+                  style={{ width: `${importProgress}%` }}
+                />
+              )}
+              <span className="relative z-10 flex items-center gap-2 text-sm">
+                {isImporting ? <Loader2 size={16} className="animate-spin" /> : <UploadCloud size={16} />}
+                {isImporting ? `Importando... ${importProgress}%` : 'Executar Importação'}
+              </span>
+            </button>
+          </div>
+        )}
+
         {onClose && (
           <button
             type="button"
             onClick={onClose}
-            className="absolute top-6 right-6 flex h-10 w-10 items-center justify-center rounded-full bg-white/5 text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
+            className="relative z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/5 text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
           >
             <X size={20} />
           </button>
@@ -912,7 +933,41 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
                 </div>
               ) : (
                 <div className="flex flex-col gap-4 h-full">
-                  {/* Preview da Planilha (Acima) */}
+                  {/* Campos do Banco (Acima) */}
+                  <div className="border border-slate-200 rounded-xl bg-slate-50 p-4 shrink-0">
+                    <h3 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                      <Database size={16} className="text-[#b58c2a]" />
+                      Campos do Sistema
+                    </h3>
+                    <p className="text-xs text-slate-500 mb-4 leading-relaxed">
+                      Arraste estes campos e solte sobre as colunas da planilha abaixo.
+                    </p>
+
+                    <div className="grid grid-rows-2 grid-flow-col gap-3 overflow-x-auto pb-2 custom-scrollbar">
+                      {dbFields.map(field => {
+                        const isMapped = Object.values(columnMappings).includes(field.id);
+                        return (
+                          <div
+                            key={field.id}
+                            draggable={!isMapped}
+                            onDragStart={(e) => {
+                              e.dataTransfer.setData('fieldId', field.id);
+                              e.dataTransfer.effectAllowed = 'copy';
+                            }}
+                            className={`px-3 py-2.5 rounded-lg border text-sm font-semibold shadow-sm transition-all flex items-center justify-between w-48 shrink-0 ${isMapped
+                                ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-60'
+                                : 'bg-white border-slate-200 text-slate-700 cursor-grab hover:border-[#b58c2a] hover:shadow-md'
+                              }`}
+                          >
+                            {field.label}
+                            <GripVertical size={14} className={isMapped ? "text-slate-300" : "text-slate-400"} />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Preview da Planilha (Abaixo) */}
                   <div className="border border-slate-200 rounded-xl bg-white flex flex-col overflow-hidden flex-1 min-h-[400px]">
                     <div className="bg-slate-50 p-4 border-b border-slate-200 flex items-center justify-between">
                       <div>
@@ -938,13 +993,13 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
                     </div>
 
                     <div className="flex-1 overflow-x-auto p-4 custom-scrollbar">
-                      <div className="flex gap-4 min-w-max pb-4">
+                      <div className="flex gap-4 w-full pb-4">
                         {excelPreview.headers.map((header, colIndex) => {
                           const mappedFieldId = columnMappings[colIndex];
                           const mappedField = dbFields.find(f => f.id === mappedFieldId);
 
                           return (
-                            <div key={colIndex} className="flex flex-col w-48 shrink-0">
+                            <div key={colIndex} className="flex flex-col flex-1 min-w-[120px] max-w-[200px] shrink-0">
                               {/* Dropzone */}
                               <div
                                 className={`h-12 mb-2 rounded-lg border-2 border-dashed flex items-center justify-center transition-colors relative group ${mappedField
@@ -1006,59 +1061,6 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
                           );
                         })}
                       </div>
-                    </div>
-
-                    <div className="bg-slate-50 p-4 border-t border-slate-200 flex justify-end">
-                      <button
-                        onClick={handleExecuteImport}
-                        disabled={isImporting || Object.keys(columnMappings).length === 0}
-                        className="relative flex h-12 items-center justify-center gap-2 rounded-xl bg-[#0078d4] px-8 font-bold text-white shadow-lg shadow-[#0078d4]/20 transition-all hover:bg-[#006cbd] disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden"
-                      >
-                        {isImporting && (
-                          <div
-                            className="absolute left-0 top-0 bottom-0 bg-[#004e8c] transition-all duration-300 ease-out"
-                            style={{ width: `${importProgress}%` }}
-                          />
-                        )}
-                        <span className="relative z-10 flex items-center gap-2">
-                          {isImporting ? <Loader2 size={18} className="animate-spin" /> : <UploadCloud size={18} />}
-                          {isImporting ? `Importando... ${importProgress}%` : 'Executar Importação'}
-                        </span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Campos do Banco (Abaixo) */}
-                  <div className="border border-slate-200 rounded-xl bg-slate-50 p-4 shrink-0">
-                    <h3 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
-                      <Database size={16} className="text-[#b58c2a]" />
-                      Campos do Sistema
-                    </h3>
-                    <p className="text-xs text-slate-500 mb-4 leading-relaxed">
-                      Arraste estes campos e solte sobre as colunas da planilha acima.
-                    </p>
-
-                    <div className="grid grid-rows-2 grid-flow-col gap-3 overflow-x-auto pb-2 custom-scrollbar">
-                      {dbFields.map(field => {
-                        const isMapped = Object.values(columnMappings).includes(field.id);
-                        return (
-                          <div
-                            key={field.id}
-                            draggable={!isMapped}
-                            onDragStart={(e) => {
-                              e.dataTransfer.setData('fieldId', field.id);
-                              e.dataTransfer.effectAllowed = 'copy';
-                            }}
-                            className={`px-3 py-2.5 rounded-lg border text-sm font-semibold shadow-sm transition-all flex items-center justify-between w-48 shrink-0 ${isMapped
-                                ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-60'
-                                : 'bg-white border-slate-200 text-slate-700 cursor-grab hover:border-[#b58c2a] hover:shadow-md'
-                              }`}
-                          >
-                            {field.label}
-                            <GripVertical size={14} className={isMapped ? "text-slate-300" : "text-slate-400"} />
-                          </div>
-                        );
-                      })}
                     </div>
                   </div>
                 </div>
