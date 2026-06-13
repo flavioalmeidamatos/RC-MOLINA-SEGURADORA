@@ -218,9 +218,19 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
       // Remover a palavra REMALHO do nome (pois ela já é adicionada automaticamente no campo Importado)
       nome = nome.replace(/REMALHO/g, '').replace(/\s+/g, ' ').trim();
 
+      // Remover palavras duplicadas no nome (ex: "MARCIA DA MARCIA DA" -> "MARCIA DA")
+      const palavrasNome = nome.split(' ').filter(p => p.length > 0);
+      nome = Array.from(new Set(palavrasNome)).join(' ');
+
       // Extrair telefones (aceitando múltiplos separados por /, mantendo + e números)
       let telefonesStr = line.replace(/[^\d/+]/g, '');
-      let telefones = telefonesStr.split('/').filter(t => t.length >= 6); // Aceitar telefones um pouco mais curtos caso o OCR falhe alguns dígitos
+      let telefones = telefonesStr.split('/').map(t => {
+        // Se o OCR "comeu" o símbolo de + mas o número começa com 55 (DDI do Brasil), vamos forçar o +
+        if (t.startsWith('55') && t.length >= 12 && !t.startsWith('+')) {
+          return '+' + t;
+        }
+        return t;
+      }).filter(t => t.length >= 6); // Aceitar telefones um pouco mais curtos caso o OCR falhe alguns dígitos
 
       if (nome && telefones.length === 0) {
         if (pendingNome) {
