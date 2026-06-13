@@ -110,16 +110,54 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
     }
   }, [scannedImage]);
 
+  const preprocessImage = (base64: string): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return resolve(base64);
+        
+        ctx.drawImage(img, 0, 0);
+        
+        try {
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const data = imageData.data;
+          
+          for (let i = 0; i < data.length; i += 4) {
+            // Escala de cinza
+            const gray = (data[i] * 0.299 + data[i+1] * 0.587 + data[i+2] * 0.114);
+            // Binarização para aumentar o contraste (textos ficam bem pretos, fundo bem branco)
+            const color = gray < 180 ? 0 : 255;
+            data[i] = data[i+1] = data[i+2] = color;
+          }
+          
+          ctx.putImageData(imageData, 0, 0);
+          resolve(canvas.toDataURL('image/png'));
+        } catch (e) {
+          resolve(base64);
+        }
+      };
+      img.onerror = () => resolve(base64);
+      img.src = base64;
+    });
+  };
+
   const processOcr = async (imageBase64: string) => {
     setIsOcrProcessing(true);
-    setOcrStatus('Iniciando reconhecimento de texto...');
+    setOcrStatus('Tratando imagem para melhorar leitura...');
     setOcrProgress(0);
 
     try {
+      // Pré-processar a imagem para aumentar o contraste antes do OCR
+      const processedImage = await preprocessImage(imageBase64);
+
       const worker = await Tesseract.createWorker('por', 1, {
         logger: m => {
           if (m.status === 'recognizing text') {
-            setOcrStatus('Extraindo texto...');
+            setOcrStatus('Extraindo texto da imagem...');
             setOcrProgress(Math.round(m.progress * 100));
           } else {
             setOcrStatus(m.status);
@@ -127,12 +165,14 @@ export const Configuracoes: React.FC<{ onClose?: () => void }> = ({ onClose }) =
         }
       });
 
-      // Melhorar o reconhecimento para listas e blocos de texto (PSM 6)
+      // PSM 4: Assume a single column of text of variable sizes (melhor para listas longas)
+      // preserve_interword_spaces para evitar que nomes e números se juntem indevidamente
       await worker.setParameters({
-        tessedit_pageseg_mode: '6' as any
+        tessedit_pageseg_mode: '4' as any,
+        preserve_interword_spaces: '1'
       });
 
-      const { data: { text } } = await worker.recognize(imageBase64);
+      const { data: { text } } = await worker.recognize(processedImage);
       await worker.terminate();
 
       parseOcrText(text);
