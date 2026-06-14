@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Eye, EyeOff, Camera, User } from 'lucide-react';
+import { Eye, EyeOff, Camera, User, Mail } from 'lucide-react';
 import { apiEmailExists, apiRegister } from '../../lib/local_api';
 import { validarEmailRFC5322 } from '../../lib/validacoes';
 import { FooterAdmin } from '../shared/footer_admin';
@@ -34,6 +34,7 @@ export const Cadastro: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showGmailModal, setShowGmailModal] = useState(false);
 
   const sanitizeOrganizacao = (value: string) =>
     value.toUpperCase().replace(/[^A-ZÀ-ÿ0-9\s.&'/-]/g, '');
@@ -126,6 +127,11 @@ export const Cadastro: React.FC = () => {
     // Validação de E-mail RFC 5322
     if (!validarEmailRFC5322(normalizedEmail)) {
       setError('Por favor, insira um e-mail em formato válido.');
+      return;
+    }
+
+    if (!normalizedEmail.endsWith('@gmail.com')) {
+      setShowGmailModal(true);
       return;
     }
 
@@ -397,6 +403,25 @@ export const Cadastro: React.FC = () => {
 
         <FooterAdmin />
       </div>
+
+      {/* Modal Somente Gmail */}
+      {showGmailModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+          <div className="flex w-full max-w-sm animate-in flex-col items-center rounded-2xl border border-red-500/30 bg-[#1a1a1a] p-8 shadow-2xl duration-300 zoom-in-95">
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10">
+              <Mail className="h-8 w-8 text-red-500" />
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2 text-center">Acesso Restrito</h3>
+            <p className="text-sm text-gray-300 mb-6 text-center">Por questões de integração com os serviços da plataforma, o sistema aceita <strong>apenas</strong> contas de e-mail do Google (terminadas em @gmail.com).</p>
+            <button
+              onClick={() => setShowGmailModal(false)}
+              className="w-full rounded-lg bg-[#ccff00] px-4 py-3 text-sm font-black text-black transition-colors hover:bg-[#b3e600]"
+            >
+              OK, Entendi
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

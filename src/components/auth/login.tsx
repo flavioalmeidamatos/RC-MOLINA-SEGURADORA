@@ -28,6 +28,7 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
   const [otpCode, setOtpCode] = useState('');
   const [cooldown, setCooldown] = useState(0);
   const [showApprovalModal, setShowApprovalModal] = useState(false);
+  const [showGmailModal, setShowGmailModal] = useState(false);
   const heading = 'Bem vindo de volta';
   const subtitle = loginMethod === 'password'
     ? 'Inicie sessão na sua conta para continuar.'
@@ -118,6 +119,11 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
       return;
     }
 
+    if (!normalizedEmail.endsWith('@gmail.com')) {
+      setShowGmailModal(true);
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -162,6 +168,11 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
     const normalizedEmail = email.trim().toLowerCase();
     if (!validarEmailRFC5322(normalizedEmail)) {
       setError('Por favor, insira um e-mail em formato válido.');
+      return;
+    }
+
+    if (!normalizedEmail.endsWith('@gmail.com')) {
+      setShowGmailModal(true);
       return;
     }
 
@@ -494,6 +505,25 @@ export const Login: React.FC<LoginProps> = ({ embedded = false, onLogin }) => {
               className="w-full rounded-lg bg-[#242424] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#333333] border border-gray-800"
             >
               Entendi
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Somente Gmail */}
+      {showGmailModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+          <div className="flex w-full max-w-sm animate-in flex-col items-center rounded-2xl border border-red-500/30 bg-[#1a1a1a] p-8 shadow-2xl duration-300 zoom-in-95">
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10">
+              <Mail className="h-8 w-8 text-red-500" />
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2 text-center">Acesso Restrito</h3>
+            <p className="text-sm text-gray-300 mb-6 text-center">Por questões de integração com os serviços da plataforma, o sistema aceita <strong>apenas</strong> contas de e-mail do Google (terminadas em @gmail.com).</p>
+            <button
+              onClick={() => setShowGmailModal(false)}
+              className="w-full rounded-lg bg-[#ccff00] px-4 py-3 text-sm font-black text-black transition-colors hover:bg-[#b3e600]"
+            >
+              OK, Entendi
             </button>
           </div>
         </div>
