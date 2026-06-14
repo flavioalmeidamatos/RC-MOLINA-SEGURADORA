@@ -31,7 +31,8 @@ import {
   modifyMicrosoftMessage,
   createMicrosoftDraft,
   sendMicrosoftDraft,
-  deleteMicrosoftDraft
+  deleteMicrosoftDraft,
+  emptyMicrosoftTrash
 } from './microsoft_service.js';
 
 
@@ -839,7 +840,11 @@ registerRoute('patch', '/email/messages/:id/restore', async (req, res) => {
 });
 
 registerRoute('post', ['/email/trash/empty', '/gmail/trash/empty'], async (req, res) => {
-  res.json(await emptyTrash(requireAccountEmail(req), requestActorFrom(req)));
+  const accountEmail = requireAccountEmail(req);
+  if (isMicrosoftEmail(accountEmail)) {
+    return res.json(await emptyMicrosoftTrash(accountEmail));
+  }
+  res.json(await emptyTrash(accountEmail, requestActorFrom(req)));
 });
 
 registerRoute('delete', '/gmail/messages/:id', async (req, res) => {

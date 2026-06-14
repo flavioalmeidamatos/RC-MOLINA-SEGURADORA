@@ -7,6 +7,21 @@ export function isMicrosoftEmail(email) {
   return lower.endsWith('@hotmail.com') || lower.endsWith('@outlook.com') || lower.endsWith('@live.com');
 }
 
+// Helper to check Graph API response status and map 401/403 to insufficient_scope
+async function checkResponse(response, contextMessage) {
+  if (!response.ok) {
+    const errorText = await response.text();
+    if (response.status === 401 || response.status === 403) {
+      const error = new Error(`Permissões da Microsoft insuficientes. Reconecte a conta.`);
+      error.status = 403;
+      error.code = 'insufficient_scope';
+      throw error;
+    }
+    throw new Error(`${contextMessage}: ${errorText}`);
+  }
+  return response;
+}
+
 // Retrieves and refreshes the Access Token for MS Graph
 export async function getMicrosoftAccessToken(accountEmail) {
   const lowerEmail = String(accountEmail).trim().toLowerCase();
@@ -20,7 +35,10 @@ export async function getMicrosoftAccessToken(accountEmail) {
   );
   
   if (result.rowCount === 0) {
-    throw new Error(`Integração da conta Microsoft não encontrada ou desconectada para o e-mail: ${accountEmail}`);
+    const error = new Error(`Integração da conta Microsoft não encontrada ou desconectada para o e-mail: ${accountEmail}`);
+    error.status = 403;
+    error.code = 'insufficient_scope';
+    throw error;
   }
   
   const integration = result.rows[0];
@@ -53,7 +71,10 @@ export async function getMicrosoftAccessToken(accountEmail) {
         `update user_email_integrations set status = 'disconnected', updated_at = now() where id = $1`,
         [integration.id]
       );
-      throw new Error(`Falha ao renovar token da Microsoft: ${errorText}`);
+      const error = new Error(`Falha ao renovar token da Microsoft: ${errorText}`);
+      error.status = 403;
+      error.code = 'insufficient_scope';
+      throw error;
     }
     
     const tokenData = await response.json();
@@ -147,10 +168,7 @@ export async function listMicrosoftMessages(accountEmail, { folder = 'inbox', ma
     headers: { Authorization: `Bearer ${token}` }
   });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Erro ao buscar mensagens do Graph: ${errorText}`);
-  }
+  await checkResponse(response, 'Erro ao buscar mensagens do Graph');
 
   const data = await response.json();
   const messages = (data.value || []).map(toMessageSummary);
@@ -170,10 +188,7 @@ export async function getMicrosoftMessage(accountEmail, messageId) {
     headers: { Authorization: `Bearer ${token}` }
   });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Erro ao carregar detalhes da mensagem do Graph: ${errorText}`);
-  }
+  await checkResponse(response, 'Erro ao carregar detalhes da mensagem do Graph');
 
   const msg = await response.json();
   const summary = toMessageSummary(msg);
@@ -239,10 +254,7 @@ export async function downloadMicrosoftAttachment(accountEmail, messageId, attac
     headers: { Authorization: `Bearer ${token}` }
   });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Erro ao baixar anexo da Microsoft: ${errorText}`);
-  }
+  await checkResponse(response, 'Erro ao baixar anexo da Microsoft');
 
   const att = await response.json();
   if (!att.contentBytes) {
@@ -314,10 +326,7 @@ export async function sendMicrosoftMessage(accountEmail, emailData, files = []) 
     body: JSON.stringify(requestBody)
   });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Erro ao enviar e-mail pelo Graph: ${errorText}`);
-  }
+  await checkResponse(response, 'Erro ao enviar e-mail pelo Graph');
 
   // Graph sendMail returns 202 Accepted on success with no body
   return { id: 'ms-sent-' + Date.now() };
@@ -506,5 +515,39 @@ export async function deleteMicrosoftDraft(accountEmail, id) {
     throw new Error(`Erro ao excluir rascunho na Microsoft: ${errorText}`);
   }
   return { success: true };
+}
+
+// Empty Microsoft Trash (Deleted Items) folder
+export async function emptyMicrosoftTrash(accountEmail) {
+  const token = await getMicrosoftAccessToken(accountEmail);
+
+  // 1. List messages in deleteditems
+  const listUrl = `https://graph.microsoft.com/v1.0/me/mailFolders/deleteditems/messages?$top=50&$select=id`;
+  const response = await fetch(listUrl, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Erro ao listar mensagens da lixeira na Microsoft: ${errorText}`);
+  }
+
+  const data = await response.json();
+  const messages = data.value || [];
+
+  // 2. Delete them in parallel
+  const deletePromises = messages.map(async (msg) => {
+    const delResponse = await fetch(`https://graph.microsoft.com/v1.0/me/messages/${msg.id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!delResponse.ok && delResponse.status !== 404) {
+      const errorText = await delResponse.text();
+      console.error(`Falha ao excluir permanentemente mensagem ${msg.id}: ${errorText}`);
+    }
+  });
+
+  await Promise.all(deletePromises);
+  return { deletedCount: messages.length };
 }
 
