@@ -31,12 +31,12 @@ const getPool = () => {
       databaseUrl
         ? { connectionString: databaseUrl }
         : {
-            host: process.env.PGHOST || '127.0.0.1',
-            port: Number(process.env.PGPORT || 5432),
-            database: process.env.PGDATABASE || 'rcmolina',
-            user: process.env.PGUSER || 'rcmolina',
-            password: process.env.PGPASSWORD || '',
-          },
+          host: process.env.PGHOST || '127.0.0.1',
+          port: Number(process.env.PGPORT || 5432),
+          database: process.env.PGDATABASE || 'rcmolina',
+          user: process.env.PGUSER || 'rcmolina',
+          password: process.env.PGPASSWORD || '',
+        },
     );
   }
 
@@ -323,7 +323,7 @@ const seedAdminUser = async () => {
   for (const email of masterEmails) {
     const isPrimary = email === adminEmail;
     const pwd = isPrimary ? (adminPassword || 'rcmolina123') : 'rcmolina123'; // Default temp pwd for flavio, can be changed
-    
+
     const existing = await getPool().query('select 1 from "RCMOLINASEGUROS"."USUARIOS" where lower(email) = $1 limit 1', [
       email,
     ]);
