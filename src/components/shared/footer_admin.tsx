@@ -103,14 +103,30 @@ export const FooterAdmin: React.FC = () => {
     }, [showAdminPanel, adminToken]);
 
     useEffect(() => {
-        if (selectedUserId && formData.email) {
-            const api = createGmailApi({ userId: selectedUserId, userEmail: formData.email });
-            api.status(formData.email)
-                .then(res => setGmailStatus(res))
-                .catch(() => setGmailStatus(null));
-        } else {
-            setGmailStatus(null);
+        let timer: NodeJS.Timeout;
+
+        const checkStatus = () => {
+            if (selectedUserId && formData.email) {
+                const api = createGmailApi({ userId: selectedUserId, userEmail: formData.email });
+                api.status(formData.email)
+                    .then(res => setGmailStatus(res))
+                    .catch(() => setGmailStatus(null));
+            } else {
+                setGmailStatus(null);
+            }
+        };
+
+        checkStatus();
+
+        if (showAdminPanel && selectedUserId && formData.email) {
+            timer = setInterval(checkStatus, 3000);
         }
+
+        return () => {
+            if (timer) {
+                clearInterval(timer);
+            }
+        };
     }, [selectedUserId, formData.email, showAdminPanel]);
 
     const handleSelectUser = (e: React.ChangeEvent<HTMLSelectElement>) => {
