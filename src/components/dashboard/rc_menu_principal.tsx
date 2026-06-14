@@ -278,6 +278,14 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   const initializedAccountsRef = useRef<Set<string>>(new Set());
   const inboxPollInFlightRef = useRef(false);
 
+  const isRCMolinaContext = useCallback(() => {
+    if (!isMasterAdminUser) {
+      return normalizeFullName(perfil?.organizacao || "") === "RC MOLINA";
+    }
+    const selectedCompany = masterCompanies.find((c) => c.id === masterSelectedCompanyId);
+    return selectedCompany ? selectedCompany.nome === "RC MOLINA" : false;
+  }, [isMasterAdminUser, perfil?.organizacao, masterCompanies, masterSelectedCompanyId]);
+
   function compactSender(value: string) {
     return value.replace(/<[^>]+>/g, "").trim() || value;
   }
@@ -441,6 +449,10 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   }, []);
 
   useEffect(() => {
+    if (!isRCMolinaContext()) {
+      setInboxNotifications([]);
+      return;
+    }
     const actorUserId = perfil?.id || session?.user?.id || null;
     const actorUserEmail = perfil?.email || session?.user?.email || null;
     if (!actorUserId || !actorUserEmail) return;
@@ -527,7 +539,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
       window.removeEventListener("focus", handleWindowFocus);
       inboxPollInFlightRef.current = false;
     };
-  }, [perfil?.id, perfil?.email, session?.user?.id, session?.user?.email]);
+  }, [perfil?.id, perfil?.email, session?.user?.id, session?.user?.email, isRCMolinaContext]);
 
   useEffect(() => {
     if (forcedMenu) {
@@ -990,7 +1002,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     { title: "Meus clientes", icon: Briefcase },
     { title: "Agenda", icon: Calendar },
     { title: "Links", icon: Link2 },
-    { title: "Webmail", icon: Mail },
+    ...(isRCMolinaContext() ? [{ title: "Webmail", icon: Mail }] : []),
     { title: "Campanhas", icon: Megaphone },
     { title: "Financeiro", icon: Banknote },
     { title: "Importações", icon: Wrench },
@@ -1000,7 +1012,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     { line1: "Meus", line2: "clientes", icon: Briefcase },
     { line1: "Agenda", line2: "", icon: Calendar },
     { line1: "Links", line2: "", icon: Link2 },
-    { line1: "Webmail", line2: "", icon: Mail },
+    ...(isRCMolinaContext() ? [{ line1: "Webmail", line2: "", icon: Mail }] : []),
     { line1: "Campanhas", line2: "", icon: Megaphone },
     { line1: "Financeiro", line2: "", icon: Banknote },
     { line1: "Importações", line2: "especiais", icon: Wrench },
