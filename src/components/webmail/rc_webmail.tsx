@@ -243,12 +243,13 @@ function buildPreviewHtml(message: FullMessage, accountEmail: string, actor?: RC
   return `<!doctype html><html><head>${previewStyle}</head><body>${resolvedHtml}</body></html>`;
 }
 
-function buildReconnectMessage(scopes: string[] = []) {
+function buildReconnectMessage(scopes: string[] = [], isMicrosoft = false) {
+  const provider = isMicrosoft ? 'Microsoft/Outlook' : 'Gmail';
   if (scopes.length === 0) {
-    return 'Permissões do Gmail insuficientes. Reconecte a conta.';
+    return `Permissões do ${provider} insuficientes. Reconecte a conta.`;
   }
 
-  return `Permissões do Gmail insuficientes. Reconecte a conta e aceite: ${scopes.join(', ')}.`;
+  return `Permissões do ${provider} insuficientes. Reconecte a conta e aceite: ${scopes.join(', ')}.`;
 }
 
 function buildTransmissionLimitMessage(compose: ComposeState) {
@@ -361,7 +362,7 @@ export function RCWebmail({
   const activePermissionIssue = permissionIssue
     || (selectedAccount?.needsReconnect
       ? {
-          message: buildReconnectMessage(selectedAccount.missingScopes || []),
+          message: buildReconnectMessage(selectedAccount.missingScopes || [], detectEmailProvider(accountEmail) === 'microsoft'),
           missingScopes: selectedAccount.missingScopes || [],
         }
       : null);
@@ -895,7 +896,7 @@ export function RCWebmail({
       mode === 'send'
         ? 'Mensagem enviada'
         : mode === 'draft'
-          ? 'Rascunho salvo no Gmail'
+          ? (detectEmailProvider(accountEmail) === 'microsoft' ? 'Rascunho salvo na Microsoft' : 'Rascunho salvo no Gmail')
           : 'Mensagem adicionada a fila local',
     );
 
@@ -906,7 +907,7 @@ export function RCWebmail({
         mode === 'send'
           ? 'Mensagem enviada'
           : mode === 'draft'
-            ? 'Rascunho salvo no Gmail'
+            ? (detectEmailProvider(accountEmail) === 'microsoft' ? 'Rascunho salvo na Microsoft' : 'Rascunho salvo no Gmail')
             : 'Mensagem adicionada a fila local',
       );
     }
@@ -983,7 +984,8 @@ export function RCWebmail({
     const nextAccount = routeParams.get('account');
 
     if (connected === 'connected') {
-      setStatus('Conta Gmail conectada com sucesso.');
+      const isMs = nextAccount && (nextAccount.endsWith('@hotmail.com') || nextAccount.endsWith('@outlook.com') || nextAccount.endsWith('@live.com'));
+      setStatus(isMs ? 'Conta Microsoft conectada com sucesso.' : 'Conta Gmail conectada com sucesso.');
       if (nextAccount) {
         setAccountEmail(nextAccount);
       }
@@ -1356,7 +1358,7 @@ export function RCWebmail({
                       </div>
                     ) : (
                       <div className="mt-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
-                        Os escopos principais do Gmail estão completos.
+                        Os escopos principais do {detectEmailProvider(accountEmail) === 'microsoft' ? 'Outlook' : 'Gmail'} estão completos.
                       </div>
                     )}
                     {(connectionStatus?.missingTrashScopes || []).length > 0 ? (
@@ -1427,7 +1429,7 @@ export function RCWebmail({
                   <h3 className="mt-0.5 text-base font-black text-[#0c1826]">Ajustes da Conta</h3>
                 </div>
                 <div className="min-h-0 flex-1 overflow-y-auto pt-4 px-6 pb-6">
-                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Conexão Gmail</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Conexão {detectEmailProvider(accountEmail) === 'microsoft' ? 'Microsoft' : 'Gmail'}</p>
                   <h3 className="mt-1 text-lg font-black text-[#0c1826]">
                     Painel de configurações do Webmail
                   </h3>
@@ -1472,12 +1474,38 @@ export function RCWebmail({
                       <div className="flex flex-wrap gap-2 pt-2">
                         <button
                           type="button"
-                          onClick={() => void connectAccount()}
+                          onClick={() => {
+                            if (detectEmailProvider(accountEmail) === 'microsoft') {
+                              void (async () => {
+                                try {
+                                  setBusy(true);
+                                  setError('');
+                                  const response = await fetch('/api/microsoft/auth', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ userId, userEmail: accountEmail }),
+                                  });
+                                  const res = await response.json();
+                                  if (res?.url) {
+                                    window.open(res.url, "_blank");
+                                  } else {
+                                    setError('Ainda não implementado (Microsoft API)');
+                                  }
+                                } catch (e: any) {
+                                  setError(e.message || 'Erro ao iniciar autenticação OAuth da Microsoft');
+                                } finally {
+                                  setBusy(false);
+                                }
+                              })();
+                            } else {
+                              void connectAccount();
+                            }
+                          }}
                           disabled={busy}
                           className="inline-flex min-h-10 items-center gap-2 rounded-full bg-[#0c1826] px-5 py-2 text-xs font-semibold text-white transition hover:bg-[#16283c] disabled:opacity-60"
                         >
                           <Mail size={16} />
-                          {selectedAccount ? 'Reconectar Gmail' : 'Conectar Gmail'}
+                          {selectedAccount ? (detectEmailProvider(accountEmail) === 'microsoft' ? 'Reconectar Microsoft' : 'Reconectar Gmail') : (detectEmailProvider(accountEmail) === 'microsoft' ? 'Conectar Microsoft' : 'Conectar Gmail')}
                         </button>
                         {selectedAccount ? (
                           <button
@@ -1673,7 +1701,7 @@ export function RCWebmail({
                 </div>
                 <h3 className="mt-5 text-xl font-black text-[#0c1826]">Selecione uma mensagem</h3>
                 <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">
-                  A leitura abre no painel da direita com suporte a HTML seguro em iframe, anexos e ações do Gmail.
+                  A leitura abre no painel da direita com suporte a HTML seguro em iframe, anexos e ações do e-mail.
                 </p>
               </div>
             )}

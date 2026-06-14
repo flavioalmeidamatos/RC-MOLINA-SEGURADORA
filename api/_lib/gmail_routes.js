@@ -22,6 +22,18 @@ import { logEvent, query, withTransaction } from './gmail_db.js';
 import { gmailConfig } from './gmail_config.js';
 import { normalizeUploadedFiles, normalizeUtf8Text } from './gmail_text_encoding.js';
 import { validateRecipientFields } from './gmail_email_address.js';
+import {
+  isMicrosoftEmail,
+  listMicrosoftMessages,
+  getMicrosoftMessage,
+  downloadMicrosoftAttachment,
+  sendMicrosoftMessage,
+  modifyMicrosoftMessage,
+  createMicrosoftDraft,
+  sendMicrosoftDraft,
+  deleteMicrosoftDraft
+} from './microsoft_service.js';
+
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -358,14 +370,26 @@ async function sendOutboxMessage(req) {
   );
 
   try {
-    const sent = await sendMessage(accountEmail, {
-      to: item.to_recipients,
-      cc: item.cc_recipients,
-      bcc: item.bcc_recipients,
-      subject: item.subject,
-      text: item.body_text,
-      html: item.body_html,
-    }, files, actor);
+    let sent;
+    if (isMicrosoftEmail(accountEmail)) {
+      sent = await sendMicrosoftMessage(accountEmail, {
+        to: item.to_recipients,
+        cc: item.cc_recipients,
+        bcc: item.bcc_recipients,
+        subject: item.subject,
+        text: item.body_text,
+        html: item.body_html,
+      }, files);
+    } else {
+      sent = await sendMessage(accountEmail, {
+        to: item.to_recipients,
+        cc: item.cc_recipients,
+        bcc: item.bcc_recipients,
+        subject: item.subject,
+        text: item.body_text,
+        html: item.body_html,
+      }, files, actor);
+    }
 
     const updated = await query(
       `update email_outbox
@@ -394,7 +418,11 @@ async function sendOutboxMessage(req) {
 }
 
 async function sendDraft(req) {
-  const gmail = await getAuthedGmail(requireAccountEmail(req), requestActorFrom(req));
+  const accountEmail = requireAccountEmail(req);
+  if (isMicrosoftEmail(accountEmail)) {
+    return await sendMicrosoftDraft(accountEmail, req.params.id);
+  }
+  const gmail = await getAuthedGmail(accountEmail, requestActorFrom(req));
   const result = await gmail.users.drafts.send({
     userId: 'me',
     requestBody: { id: req.params.id },
@@ -404,7 +432,11 @@ async function sendDraft(req) {
 }
 
 async function deleteDraft(req) {
-  const gmail = await getAuthedGmail(requireAccountEmail(req), requestActorFrom(req));
+  const accountEmail = requireAccountEmail(req);
+  if (isMicrosoftEmail(accountEmail)) {
+    return await deleteMicrosoftDraft(accountEmail, req.params.id);
+  }
+  const gmail = await getAuthedGmail(accountEmail, requestActorFrom(req));
   let draftId = req.params.id;
   let messageId = null;
 
@@ -433,8 +465,14 @@ async function deleteDraft(req) {
 }
 
 async function modifyMessageResponse(req, action) {
+  const accountEmail = requireAccountEmail(req);
+  if (isMicrosoftEmail(accountEmail)) {
+    return {
+      message: await modifyMicrosoftMessage(accountEmail, req.params.id, action),
+    };
+  }
   return {
-    message: await modifyMessage(requireAccountEmail(req), req.params.id, action, requestActorFrom(req)),
+    message: await modifyMessage(accountEmail, req.params.id, action, requestActorFrom(req)),
   };
 }
 
@@ -534,37 +572,64 @@ registerRoute('get', ['/email/logs', '/gmail/logs'], async (req, res) => {
 });
 
 registerRoute('get', '/email/inbox', async (req, res) => {
-  res.json(await listMessages(requireAccountEmail(req), {
+  const accountEmail = requireAccountEmail(req);
+  const options = {
     ...listMessagesOptions(req, 'inbox'),
     content: req.query.content,
     status: req.query.status || (req.query.unread === 'true' ? 'unread' : undefined),
-  }, requestActorFrom(req)));
+  };
+  if (isMicrosoftEmail(accountEmail)) {
+    return res.json(await listMicrosoftMessages(accountEmail, options));
+  }
+  res.json(await listMessages(accountEmail, options, requestActorFrom(req)));
 });
 
 registerRoute('get', '/email/sent', async (req, res) => {
-  res.json(await listMessages(requireAccountEmail(req), {
+  const accountEmail = requireAccountEmail(req);
+  const options = {
     ...listMessagesOptions(req, 'sent'),
     content: req.query.content,
-  }, requestActorFrom(req)));
+  };
+  if (isMicrosoftEmail(accountEmail)) {
+    return res.json(await listMicrosoftMessages(accountEmail, options));
+  }
+  res.json(await listMessages(accountEmail, options, requestActorFrom(req)));
 });
 
 registerRoute('get', '/email/trash', async (req, res) => {
-  res.json(await listMessages(requireAccountEmail(req), {
+  const accountEmail = requireAccountEmail(req);
+  const options = {
     ...listMessagesOptions(req, 'trash'),
     content: req.query.content,
-  }, requestActorFrom(req)));
+  };
+  if (isMicrosoftEmail(accountEmail)) {
+    return res.json(await listMicrosoftMessages(accountEmail, options));
+  }
+  res.json(await listMessages(accountEmail, options, requestActorFrom(req)));
 });
 
 registerRoute('get', '/email/search', async (req, res) => {
-  res.json(await listMessages(requireAccountEmail(req), {
+  const accountEmail = requireAccountEmail(req);
+  const options = {
     ...listMessagesOptions(req, 'inbox'),
     content: req.query.q || req.query.content,
-  }, requestActorFrom(req)));
+  };
+  if (isMicrosoftEmail(accountEmail)) {
+    return res.json(await listMicrosoftMessages(accountEmail, options));
+  }
+  res.json(await listMessages(accountEmail, options, requestActorFrom(req)));
 });
 
 registerRoute('get', '/gmail/messages', async (req, res) => {
-  res.json(await listMessages(requireAccountEmail(req), listMessagesOptions(req, folderFromQuery(req)), requestActorFrom(req)));
+  const accountEmail = requireAccountEmail(req);
+  const folder = folderFromQuery(req);
+  const options = listMessagesOptions(req, folder);
+  if (isMicrosoftEmail(accountEmail)) {
+    return res.json(await listMicrosoftMessages(accountEmail, options));
+  }
+  res.json(await listMessages(accountEmail, options, requestActorFrom(req)));
 });
+
 
 registerRoute('get', ['/email/outbox', '/gmail/outbox'], async (req, res) => {
   const accountEmail = requireAccountEmail(req);
@@ -590,8 +655,14 @@ registerRoute('delete', ['/email/outbox/:id', '/gmail/outbox/:id'], async (req, 
 });
 
 registerRoute('get', ['/email/messages/:id', '/gmail/messages/:id'], async (req, res) => {
+  const accountEmail = requireAccountEmail(req);
+  if (isMicrosoftEmail(accountEmail)) {
+    return res.json({
+      message: await getMicrosoftMessage(accountEmail, req.params.id)
+    });
+  }
   res.json({
-    message: await getMessage(requireAccountEmail(req), req.params.id, requestActorFrom(req)),
+    message: await getMessage(accountEmail, req.params.id, requestActorFrom(req)),
   });
 });
 
@@ -600,6 +671,11 @@ registerRoute('post', '/email/send', upload.none(), async (req, res) => {
   assertValidRecipients(req.body, { requireTo: true });
   const payload = mailPayloadFromBody(req.body);
   assertTransmissionCapacity(payload, []);
+  if (isMicrosoftEmail(accountEmail)) {
+    return res.status(201).json({
+      message: await sendMicrosoftMessage(accountEmail, payload, [])
+    });
+  }
   res.status(201).json({
     message: await sendMessage(accountEmail, payload, [], requestActorFrom(req)),
   });
@@ -611,6 +687,11 @@ registerRoute('post', '/email/send-with-attachments', upload.array('attachments'
   const payload = mailPayloadFromBody(req.body);
   const files = normalizeUploadedFiles(req.files || []);
   assertTransmissionCapacity(payload, files);
+  if (isMicrosoftEmail(accountEmail)) {
+    return res.status(201).json({
+      message: await sendMicrosoftMessage(accountEmail, payload, files)
+    });
+  }
   res.status(201).json({
     message: await sendMessage(accountEmail, payload, files, requestActorFrom(req)),
   });
@@ -622,26 +703,52 @@ registerRoute('post', '/gmail/send', upload.array('attachments'), async (req, re
   const payload = mailPayloadFromBody(req.body);
   const files = normalizeUploadedFiles(req.files || []);
   assertTransmissionCapacity(payload, files);
+  if (isMicrosoftEmail(accountEmail)) {
+    return res.status(201).json({
+      message: await sendMicrosoftMessage(accountEmail, payload, files)
+    });
+  }
   res.status(201).json({
     message: await sendMessage(accountEmail, payload, files, requestActorFrom(req)),
   });
 });
 
 registerRoute('get', ['/email/messages/:messageId/attachments', '/gmail/messages/:messageId/attachments'], async (req, res) => {
-  const message = await getMessage(requireAccountEmail(req), req.params.messageId, requestActorFrom(req));
+  const accountEmail = requireAccountEmail(req);
+  if (isMicrosoftEmail(accountEmail)) {
+    const message = await getMicrosoftMessage(accountEmail, req.params.messageId);
+    return res.json({ attachments: message.attachments });
+  }
+  const message = await getMessage(accountEmail, req.params.messageId, requestActorFrom(req));
   res.json({ attachments: message.attachments });
 });
 
 registerRoute('get', ['/email/messages/:messageId/attachments/:attachmentId', '/gmail/messages/:messageId/attachments/:attachmentId'], async (req, res) => {
-  const buffer = await downloadAttachment(
-    requireAccountEmail(req),
-    req.params.messageId,
-    req.params.attachmentId,
-    requestActorFrom(req),
-  );
+  const accountEmail = requireAccountEmail(req);
+  let buffer;
+  let filename = req.query.filename;
+  let mimeType = req.query.mimeType;
 
-  const filename = normalizeUtf8Text(req.query.filename || 'attachment');
-  const mimeType = req.query.mimeType || 'application/octet-stream';
+  if (isMicrosoftEmail(accountEmail)) {
+    const att = await downloadMicrosoftAttachment(
+      accountEmail,
+      req.params.messageId,
+      req.params.attachmentId
+    );
+    buffer = att.data;
+    filename = filename || att.filename;
+    mimeType = mimeType || att.mimeType;
+  } else {
+    buffer = await downloadAttachment(
+      accountEmail,
+      req.params.messageId,
+      req.params.attachmentId,
+      requestActorFrom(req),
+    );
+  }
+
+  filename = normalizeUtf8Text(filename || 'attachment');
+  mimeType = mimeType || 'application/octet-stream';
   const disposition = req.query.inline === 'true' ? 'inline' : 'attachment';
   const fallbackFilename = asciiFilenameFallback(filename);
   const encodedFilename = encodeHeaderParameter(String(filename));
@@ -655,9 +762,14 @@ registerRoute('get', ['/email/messages/:messageId/attachments/:attachmentId', '/
 });
 
 registerRoute('get', ['/email/drafts', '/gmail/drafts'], async (req, res) => {
+  const accountEmail = requireAccountEmail(req);
+  const options = listMessagesOptions(req, 'drafts');
+  if (isMicrosoftEmail(accountEmail)) {
+    return res.json(await listMicrosoftMessages(accountEmail, { folder: 'drafts', ...options }));
+  }
   res.json(await listDrafts(
-    requireAccountEmail(req),
-    listMessagesOptions(req, 'drafts'),
+    accountEmail,
+    options,
     requestActorFrom(req),
   ));
 });
@@ -668,6 +780,9 @@ registerRoute('post', '/email/drafts', upload.array('attachments'), async (req, 
   const payload = mailPayloadFromBody(req.body);
   const files = normalizeUploadedFiles(req.files || []);
   assertTransmissionCapacity(payload, files);
+  if (isMicrosoftEmail(accountEmail)) {
+    return res.status(201).json(await createMicrosoftDraft(accountEmail, payload, files));
+  }
   res.status(201).json({
     draft: await createDraft(accountEmail, payload, files, requestActorFrom(req)),
   });
@@ -679,6 +794,9 @@ registerRoute('post', '/gmail/draft', upload.array('attachments'), async (req, r
   const payload = mailPayloadFromBody(req.body);
   const files = normalizeUploadedFiles(req.files || []);
   assertTransmissionCapacity(payload, files);
+  if (isMicrosoftEmail(accountEmail)) {
+    return res.status(201).json(await createMicrosoftDraft(accountEmail, payload, files));
+  }
   res.status(201).json({
     draft: await createDraft(accountEmail, payload, files, requestActorFrom(req)),
   });
