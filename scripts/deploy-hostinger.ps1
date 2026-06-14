@@ -83,7 +83,7 @@ release=$AppPath/releases/`$(date +%Y%m%d%H%M%S)
 mkdir -p "`$release"
 tar -xzf $remoteDeployPath/app.tgz -C "`$release"
 if [ -f "$AppPath/shared/.env.local" ]; then
-  cp "$AppPath/shared/.env.local" "`$release/.env.local"
+  ln -sf "$AppPath/shared/.env.local" "`$release/.env.local"
 fi
 cd "`$release"
 npm ci

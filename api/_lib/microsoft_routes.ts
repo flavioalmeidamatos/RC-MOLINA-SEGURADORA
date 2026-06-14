@@ -32,6 +32,15 @@ microsoftRouter.get('/auth/microsoft/connect', async (req, res) => {
       return res.status(400).send('Parâmetro userEmail é obrigatório.');
     }
 
+    const clientId = process.env.MICROSOFT_CLIENT_ID;
+    const clientSecret = process.env.MICROSOFT_CLIENT_SECRET;
+    const redirectUri = process.env.MICROSOFT_REDIRECT_URI;
+
+    if (!clientId || !clientSecret || !redirectUri) {
+      console.error('[MICROSOFT CONNECT] Credenciais da Microsoft ausentes no arquivo .env.local.');
+      return res.status(500).send('Erro: Credenciais do Azure AD/Microsoft Graph (MICROSOFT_CLIENT_ID, MICROSOFT_CLIENT_SECRET, MICROSOFT_REDIRECT_URI) não estão configuradas no servidor.');
+    }
+
     // Generate state and persist temporarily for security verification
     const state = crypto.randomBytes(24).toString('hex');
     await query(
