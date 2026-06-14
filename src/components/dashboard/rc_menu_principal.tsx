@@ -449,7 +449,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
   }, []);
 
   useEffect(() => {
-    if (!isRCMolinaContext()) {
+    if (!(isRCMolinaContext() || perfil?.permissoes?.['Webmail'])) {
       setInboxNotifications([]);
       return;
     }
@@ -1002,7 +1002,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     { title: "Meus clientes", icon: Briefcase },
     { title: "Agenda", icon: Calendar },
     { title: "Links", icon: Link2 },
-    ...(isRCMolinaContext() ? [{ title: "Webmail", icon: Mail }] : []),
+    ...(isRCMolinaContext() || perfil?.permissoes?.['Webmail'] ? [{ title: "Webmail", icon: Mail }] : []),
     { title: "Campanhas", icon: Megaphone },
     { title: "Financeiro", icon: Banknote },
     { title: "Importações", icon: Wrench },
@@ -1012,7 +1012,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     { line1: "Meus", line2: "clientes", icon: Briefcase },
     { line1: "Agenda", line2: "", icon: Calendar },
     { line1: "Links", line2: "", icon: Link2 },
-    ...(isRCMolinaContext() ? [{ line1: "Webmail", line2: "", icon: Mail }] : []),
+    ...(isRCMolinaContext() || perfil?.permissoes?.['Webmail'] ? [{ line1: "Webmail", line2: "", icon: Mail }] : []),
     { line1: "Campanhas", line2: "", icon: Megaphone },
     { line1: "Financeiro", line2: "", icon: Banknote },
     { line1: "Importações", line2: "especiais", icon: Wrench },
