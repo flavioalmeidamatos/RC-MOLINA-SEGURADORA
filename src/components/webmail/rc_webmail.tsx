@@ -46,6 +46,24 @@ import {
 
 const DEFAULT_ACCOUNT = 'rcmolina.invest.segurosaude@gmail.com';
 const MAX_TRANSMISSION_BYTES = 25 * 1024 * 1024;
+
+export function detectEmailProvider(email: string) {
+  if (!email) return 'unknown';
+  
+  if (email.endsWith('@gmail.com')) {
+    return 'google';
+  }
+
+  if (
+    email.endsWith('@hotmail.com') ||
+    email.endsWith('@outlook.com') ||
+    email.endsWith('@live.com')
+  ) {
+    return 'microsoft';
+  }
+
+  return 'unknown';
+}
 const EmailRichTextEditor = lazy(async () => {
   const module = await import('./email_rich_text_editor');
   return { default: module.EmailRichTextEditor };
