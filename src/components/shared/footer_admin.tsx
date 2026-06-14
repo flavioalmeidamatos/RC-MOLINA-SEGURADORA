@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, User, Lock, Trash2, Save, X } from 'lucide-react';
+import { Camera, User, Lock, Trash2, Save, X, ExternalLink } from 'lucide-react';
 import {
     apiAdminDeleteUser,
     apiAdminListUsers,
@@ -510,6 +510,20 @@ export const FooterAdmin: React.FC = () => {
                                                 >
                                                     {gmailStatus?.connected ? "Reautorizar Conta Gmail" : "Autorizar Conta Gmail"}
                                                 </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        window.open("https://console.cloud.google.com/auth/audience?project=rcmolina", "GoogleCloudAudience", "width=1200,height=800,scrollbars=yes,resizable=yes");
+                                                    }}
+                                                    className="w-full mt-2 bg-[#ccff00]/10 text-[#ccff00] hover:bg-[#ccff00]/20 border border-[#ccff00]/30 font-bold text-xs rounded-xl p-2 transition flex justify-center items-center gap-2"
+                                                    title="Devido a restrições de segurança do Google (X-Frame-Options), o console do Google Cloud é aberto em uma janela popup dedicada"
+                                                >
+                                                    <ExternalLink size={12} />
+                                                    Liberar Usuário no Google Cloud
+                                                </button>
+                                                <p className="text-[9px] text-gray-500 mt-1.5 leading-tight text-center">
+                                                    * O e-mail deve estar cadastrado como "Testador" no Google Cloud antes de autorizar o Gmail.
+                                                </p>
                                             </div>
                                         )}
                                     </div>
