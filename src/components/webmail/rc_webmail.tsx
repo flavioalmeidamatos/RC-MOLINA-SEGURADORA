@@ -297,6 +297,9 @@ export function RCWebmail({
   const location = useLocation();
   const params = useParams<{ id?: string }>();
   const gmailApi = createGmailApi({ userId, userEmail });
+  const isMasterAdmin =
+    userEmail?.trim().toLowerCase() === 'admin@rcmolina.com.br' ||
+    userEmail?.trim().toLowerCase() === 'matos.almeida.flavio@gmail.com';
   const activeSection = useMemo<MailSection>(
     () => (isSettingsRoute(location.pathname) ? 'settings' : getFolderFromRoute(location.pathname, location.search)),
     [location.pathname, location.search],
@@ -1501,8 +1504,9 @@ export function RCWebmail({
                               void connectAccount();
                             }
                           }}
-                          disabled={busy}
-                          className="inline-flex min-h-10 items-center gap-2 rounded-full bg-[#0c1826] px-5 py-2 text-xs font-semibold text-white transition hover:bg-[#16283c] disabled:opacity-60"
+                          disabled={busy || !isMasterAdmin}
+                          title={!isMasterAdmin ? 'Apenas administradores podem gerenciar conexões' : undefined}
+                          className="inline-flex min-h-10 items-center gap-2 rounded-full bg-[#0c1826] px-5 py-2 text-xs font-semibold text-white transition hover:bg-[#16283c] disabled:opacity-60 disabled:cursor-not-allowed"
                         >
                           <Mail size={16} />
                           {selectedAccount ? (detectEmailProvider(accountEmail) === 'microsoft' ? 'Reconectar Microsoft' : 'Reconectar Gmail') : (detectEmailProvider(accountEmail) === 'microsoft' ? 'Conectar Microsoft' : 'Conectar Gmail')}
@@ -1511,8 +1515,9 @@ export function RCWebmail({
                           <button
                             type="button"
                             onClick={() => void disconnectAccountHandler()}
-                            disabled={busy}
-                            className="inline-flex min-h-10 items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2 text-xs font-semibold text-slate-600 transition hover:border-red-200 hover:text-red-600"
+                            disabled={busy || !isMasterAdmin}
+                            title={!isMasterAdmin ? 'Apenas administradores podem desconectar contas' : undefined}
+                            className="inline-flex min-h-10 items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2 text-xs font-semibold text-slate-600 transition hover:border-red-200 hover:text-red-600 disabled:opacity-60 disabled:cursor-not-allowed"
                           >
                             <Unplug size={16} />
                             Desconectar
