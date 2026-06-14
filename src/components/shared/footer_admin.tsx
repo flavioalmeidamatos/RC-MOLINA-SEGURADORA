@@ -517,7 +517,7 @@ export const FooterAdmin: React.FC = () => {
                                                             }}
                                                             className="w-full bg-[#1e293b] text-white hover:bg-[#334155] border border-gray-700 font-bold text-xs rounded-xl p-2 transition flex justify-center items-center gap-2"
                                                         >
-                                                            {gmailStatus?.connected ? "Reautorizar Conta Hotmail/Outlook/Live" : "Autorizar Conta Hotmail/Outlook/Live"}
+                                                            {gmailStatus?.connected ? "Revogar Acesso a Conta Microsoft (Outlook/Hotmail/Live)" : "Revogar Acesso a Conta Microsoft (Outlook/Hotmail/Live)"}
                                                         </button>
                                                         <a
                                                             href="https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade"
@@ -527,7 +527,7 @@ export const FooterAdmin: React.FC = () => {
                                                             title="O console do Azure será aberto em uma nova aba"
                                                         >
                                                             <ExternalLink size={12} />
-                                                            Liberar Usuário no Microsoft Azure
+                                                            Conectar Conta Microsoft (Outlook/Hotmail/Live)
                                                         </a>
                                                         <p className="text-[9px] text-gray-500 mt-1.5 leading-tight text-center">
                                                             * O e-mail deve ter permissões configuradas no Azure App Registration.
