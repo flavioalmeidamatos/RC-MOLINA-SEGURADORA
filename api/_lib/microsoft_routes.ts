@@ -62,7 +62,13 @@ microsoftRouter.get('/auth/microsoft/connect', async (req, res) => {
 // 3. Callback endpoint (destination from Azure AD redirect)
 microsoftRouter.get('/auth/microsoft/callback', async (req, res) => {
   try {
-    const { code, state } = req.query;
+    const { code, state, error, error_description } = req.query;
+
+    if (error) {
+      console.error('[MICROSOFT CALLBACK] Erro retornado pela Microsoft:', error, error_description);
+      return res.status(400).send(`Erro na autorização da Microsoft: ${error_description || error}`);
+    }
+
     if (!code || !state) {
       return res.status(400).send('Parâmetros de callback (code/state) inválidos.');
     }
