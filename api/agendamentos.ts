@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { getPool } from './clientes'; // reuse getPool
+import { getTenantContext } from './_lib/tenant_context';
 
 const agendamentoSelect = `
   SELECT a.*,
@@ -28,7 +29,20 @@ const agendamentoSelect = `
 export const listAgendamentosHandler = async (req: Request, res: Response) => {
   const pool = getPool();
   try {
-    const result = await pool.query(`${agendamentoSelect} ORDER BY a.data_agendamento ASC, a.hora_inicio ASC`);
+    const context = await getTenantContext(req);
+    let queryText = agendamentoSelect;
+    const params: any[] = [context.companyId];
+
+    queryText += ' WHERE a.company_id = $1';
+
+    if (context.userId) {
+      queryText += ' AND a.usuario_id = $2';
+      params.push(context.userId);
+    }
+
+    queryText += ' ORDER BY a.data_agendamento ASC, a.hora_inicio ASC';
+
+    const result = await pool.query(queryText, params);
     res.json({ data: result.rows });
   } catch (error: any) {
     console.error('Error fetching agendamentos:', error);
@@ -59,13 +73,17 @@ export const createAgendamentoHandler = async (req: Request, res: Response) => {
   const { id_cliente, data_agendamento, hora_inicio, hora_fim, duracao_minutos, observacao, repetir, enviar_sms } = req.body;
 
   try {
+    const context = await getTenantContext(req);
+    const targetUserId = context.userId || context.currentUserId;
+
     const conflict = await pool.query(
       `SELECT id_agendamento
        FROM "RCMOLINASEGUROS"."AGENDAMENTOS"
        WHERE data_agendamento = $1
          AND hora_inicio = $2
+         AND company_id = $3
        LIMIT 1`,
-      [data_agendamento, hora_inicio]
+      [data_agendamento, hora_inicio, context.companyId]
     );
 
     if ((conflict.rowCount || 0) > 0) {
@@ -77,9 +95,9 @@ export const createAgendamentoHandler = async (req: Request, res: Response) => {
 
     const result = await pool.query(
       `INSERT INTO "RCMOLINASEGUROS"."AGENDAMENTOS" (
-        id_cliente, data_agendamento, hora_inicio, hora_fim, duracao_minutos, observacao, repetir, enviar_sms
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-      [id_cliente, data_agendamento, hora_inicio, hora_fim, duracao_minutos, observacao, repetir, enviar_sms || false]
+        id_cliente, data_agendamento, hora_inicio, hora_fim, duracao_minutos, observacao, repetir, enviar_sms, company_id, usuario_id
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
+      [id_cliente, data_agendamento, hora_inicio, hora_fim, duracao_minutos, observacao, repetir, enviar_sms || false, context.companyId, targetUserId]
     );
 
     res.status(201).json(result.rows[0]);
@@ -106,6 +124,9 @@ export const updateAgendamentoHandler = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Agendamento not found' });
     }
 
+    const context = await getTenantContext(req);
+    const targetUserId = context.userId || context.currentUserId;
+
     const targetDate = data_agendamento || currentResult.rows[0].data_agendamento;
     const targetTime = hora_inicio || currentResult.rows[0].hora_inicio;
     const conflict = await pool.query(
@@ -114,8 +135,9 @@ export const updateAgendamentoHandler = async (req: Request, res: Response) => {
        WHERE data_agendamento = $1
          AND hora_inicio = $2
          AND id_agendamento <> $3
+         AND company_id = $4
        LIMIT 1`,
-      [targetDate, targetTime, id]
+      [targetDate, targetTime, id, context.companyId]
     );
 
     if ((conflict.rowCount || 0) > 0) {
@@ -134,9 +156,11 @@ export const updateAgendamentoHandler = async (req: Request, res: Response) => {
         duracao_minutos = coalesce($5, duracao_minutos),
         observacao = coalesce($6, observacao),
         repetir = coalesce($7, repetir),
-        enviar_sms = coalesce($8, enviar_sms)
+        enviar_sms = coalesce($8, enviar_sms),
+        company_id = coalesce(company_id, $10),
+        usuario_id = coalesce(usuario_id, $11)
       WHERE id_agendamento = $9 RETURNING *`,
-      [id_cliente, data_agendamento, hora_inicio, hora_fim, duracao_minutos, observacao, repetir, enviar_sms, id]
+      [id_cliente, data_agendamento, hora_inicio, hora_fim, duracao_minutos, observacao, repetir, enviar_sms, id, context.companyId, targetUserId]
     );
 
     if (result.rowCount === 0) {

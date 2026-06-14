@@ -6,6 +6,7 @@ export interface TenantContext {
   companyId: string;
   userId: string | null;
   isMaster: boolean;
+  currentUserId: string | null;
 }
 
 export const getTenantContext = async (req: Request): Promise<TenantContext> => {
@@ -19,7 +20,8 @@ export const getTenantContext = async (req: Request): Promise<TenantContext> => 
     return {
       companyId: defaultCompanyRes.rows[0]?.id || '',
       userId: null,
-      isMaster: false
+      isMaster: false,
+      currentUserId: null
     };
   }
 
@@ -35,7 +37,8 @@ export const getTenantContext = async (req: Request): Promise<TenantContext> => 
     return {
       companyId: defaultCompanyRes.rows[0]?.id || '',
       userId: null,
-      isMaster: false
+      isMaster: false,
+      currentUserId: null
     };
   }
 
@@ -48,13 +51,15 @@ export const getTenantContext = async (req: Request): Promise<TenantContext> => 
     return {
       companyId: qCompanyId || user.company_id,
       userId: qUserId && qUserId !== 'all' ? qUserId : null,
-      isMaster: true
+      isMaster: true,
+      currentUserId: user.id
     };
   }
 
   return {
     companyId: user.company_id,
     userId: null,
-    isMaster: false
+    isMaster: false,
+    currentUserId: user.id
   };
 };

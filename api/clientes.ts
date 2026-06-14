@@ -4,6 +4,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { Pool } from 'pg';
 import { initLocalDatabase } from './_lib/local_db';
+import { getTenantContext } from './_lib/tenant_context';
 
 export const getPool = () => {
   const databaseUrl = process.env.DATABASE_URL || '';
@@ -191,10 +192,13 @@ export const createClienteHandler = async (req: express.Request, res: express.Re
       }
     }
 
+    const context = await getTenantContext(req);
+    const targetUserId = context.userId || context.currentUserId;
+
     const clienteResult = await client.query(
       `INSERT INTO "RCMOLINASEGUROS"."CLIENTES" 
-       (nome_completo, cpf, rg, cnpj, data_nascimento, status_cliente, codigo, data_cadastro, data_atualizacao, cep, logradouro, numero, complemento, ponto_referencia, bairro, cidade, uf, observacoes_extras, como_conheceu, produto_comercializado, status_negociacao, valor_proposta, numero_proposta, forma_pagamento, data_fechamento, permite_agendar_online, documentacao_anotacoes, idade)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, COALESCE($8::date, current_date), COALESCE($9::date, current_date), $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28)
+       (nome_completo, cpf, rg, cnpj, data_nascimento, status_cliente, codigo, data_cadastro, data_atualizacao, cep, logradouro, numero, complemento, ponto_referencia, bairro, cidade, uf, observacoes_extras, como_conheceu, produto_comercializado, status_negociacao, valor_proposta, numero_proposta, forma_pagamento, data_fechamento, permite_agendar_online, documentacao_anotacoes, idade, company_id, usuario_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, COALESCE($8::date, current_date), COALESCE($9::date, current_date), $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30)
        RETURNING id_cliente`,
       [
         data.nome || '',
@@ -224,7 +228,9 @@ export const createClienteHandler = async (req: express.Request, res: express.Re
         parseDateBR(data.dataFechamento),
         resolvePermiteAgendarOnline(data) !== false,
         data.documentacao || null,
-        data.idade || null
+        data.idade || null,
+        context.companyId,
+        targetUserId
       ]
     );
 
@@ -293,11 +299,20 @@ export const listClientesHandler = async (req: express.Request, res: express.Res
   await initLocalDatabase();
   const pool = getPool();
   try {
-    const result = await pool.query(`
-      ${clienteSelect}
-      ORDER BY data_cadastro DESC
-      LIMIT 10
-    `);
+    const context = await getTenantContext(req);
+    let queryText = clienteSelect;
+    const params: any[] = [context.companyId];
+
+    queryText += ' WHERE c.company_id = $1';
+
+    if (context.userId) {
+      queryText += ' AND c.usuario_id = $2';
+      params.push(context.userId);
+    }
+
+    queryText += ' ORDER BY data_cadastro DESC LIMIT 10';
+
+    const result = await pool.query(queryText, params);
     res.json(result.rows);
   } catch (error: any) {
     console.error('Error listing clientes:', error);
@@ -313,11 +328,18 @@ export const listClientesByStatusHandler = async (req: express.Request, res: exp
     if (!status || (status !== 'ATIVO' && status !== 'INATIVO')) {
       return res.status(400).json({ error: 'Status inválido' });
     }
-    const result = await pool.query(`
-      ${clienteSelect}
-      WHERE status_cliente = $1
-      ORDER BY nome_completo ASC
-    `, [status]);
+    const context = await getTenantContext(req);
+    let queryText = `${clienteSelect} WHERE status_cliente = $1 AND c.company_id = $2`;
+    const params: any[] = [status, context.companyId];
+
+    if (context.userId) {
+      queryText += ' AND c.usuario_id = $3';
+      params.push(context.userId);
+    }
+
+    queryText += ' ORDER BY nome_completo ASC';
+
+    const result = await pool.query(queryText, params);
     res.json(result.rows);
   } catch (error: any) {
     console.error('Error listing clientes:', error);
@@ -344,12 +366,13 @@ export const nextClienteCodigoHandler = async (_req: express.Request, res: expre
   }
 };
 
-export const aniversariantesMesHandler = async (_req: express.Request, res: express.Response) => {
+export const aniversariantesMesHandler = async (req: express.Request, res: express.Response) => {
   await initLocalDatabase();
   const pool = getPool();
 
   try {
-    const result = await pool.query(`
+    const context = await getTenantContext(req);
+    let queryText = `
       select
         codigo,
         nome_completo,
@@ -359,9 +382,18 @@ export const aniversariantesMesHandler = async (_req: express.Request, res: expr
         uf,
         status_cliente
       from "RCMOLINASEGUROS"."CLIENTES"
-      where data_nascimento is not null
-      order by extract(month from data_nascimento), extract(day from data_nascimento), nome_completo
-    `);
+      where data_nascimento is not null AND company_id = $1
+    `;
+    const params: any[] = [context.companyId];
+
+    if (context.userId) {
+      queryText += ' AND usuario_id = $2';
+      params.push(context.userId);
+    }
+
+    queryText += ' order by extract(month from data_nascimento), extract(day from data_nascimento), nome_completo';
+
+    const result = await pool.query(queryText, params);
 
     res.json(result.rows);
   } catch (error: any) {
@@ -383,16 +415,10 @@ export const searchClientesHandler = async (req: express.Request, res: express.R
   }
 
   try {
+    const context = await getTenantContext(req);
     const searchTerm = `%${query.trim()}%`;
-    const params: any[] = [searchTerm, limit];
-    let campaignFilter = '';
-
-    if (campaign && campaign.trim() !== '') {
-      params.push(`%${campaign.trim()}%`);
-      campaignFilter = `AND (c.documentacao_anotacoes IS NULL OR c.documentacao_anotacoes NOT ILIKE $3)`;
-    }
-
-    const result = await pool.query(`
+    const params: any[] = [searchTerm, limit, context.companyId];
+    let queryText = `
       ${clienteSelect}
       WHERE (
          c.nome_completo ILIKE $1 
@@ -409,11 +435,22 @@ export const searchClientesHandler = async (req: express.Request, res: express.R
              )
          )
       )
-      ${campaignFilter}
-      ORDER BY c.nome_completo ASC
-      LIMIT $2
-    `, params);
-    
+      AND c.company_id = $3
+    `;
+
+    if (context.userId) {
+      params.push(context.userId);
+      queryText += ` AND c.usuario_id = $${params.length}`;
+    }
+
+    if (campaign && campaign.trim() !== '') {
+      params.push(`%${campaign.trim()}%`);
+      queryText += ` AND (c.documentacao_anotacoes IS NULL OR c.documentacao_anotacoes NOT ILIKE $${params.length})`;
+    }
+
+    queryText += ` ORDER BY c.nome_completo ASC LIMIT $2`;
+
+    const result = await pool.query(queryText, params);
     
     res.json(result.rows);
   } catch (error: any) {
@@ -460,6 +497,9 @@ export const updateClienteHandler = async (req: express.Request, res: express.Re
     const dataCadastro = parseDateBR(data.dataCadastro);
     const dataAtualizacao = parseDateBR(data.dataAtualizacao);
 
+    const context = await getTenantContext(req);
+    const targetUserId = context.userId || context.currentUserId;
+
     await client.query(
       `UPDATE "RCMOLINASEGUROS"."CLIENTES" SET 
         nome_completo = $1, cpf = $2, rg = $3, cnpj = $4, data_nascimento = $5,
@@ -469,7 +509,9 @@ export const updateClienteHandler = async (req: express.Request, res: express.Re
         observacoes_extras = $18, como_conheceu = $19, produto_comercializado = $20,
         status_negociacao = $21, valor_proposta = $22, numero_proposta = $23,
         forma_pagamento = $24, data_fechamento = $25, permite_agendar_online = $26,
-        documentacao_anotacoes = $27, idade = $29
+        documentacao_anotacoes = $27, idade = $29,
+        company_id = COALESCE(company_id, $30),
+        usuario_id = COALESCE(usuario_id, $31)
        WHERE id_cliente = $28`,
       [
         data.nome || '',
@@ -500,7 +542,9 @@ export const updateClienteHandler = async (req: express.Request, res: express.Re
         resolvePermiteAgendarOnline(data) !== false,
         data.documentacao || null,
         id,
-        data.idade || null
+        data.idade || null,
+        context.companyId,
+        targetUserId
       ]
     );
 
@@ -538,18 +582,28 @@ export const updateClienteHandler = async (req: express.Request, res: express.Re
   }
 };
 
-export const clientStatsHandler = async (_req: express.Request, res: express.Response) => {
+export const clientStatsHandler = async (req: express.Request, res: express.Response) => {
   await initLocalDatabase();
   const pool = getPool();
   try {
-    const result = await pool.query(`
+    const context = await getTenantContext(req);
+    let queryText = `
       SELECT 
         COUNT(*) as total,
         COUNT(*) FILTER (WHERE status_cliente = 'ATIVO' OR status_cliente IS NULL OR status_cliente = '') as ativos,
         COUNT(*) FILTER (WHERE status_cliente = 'INATIVO') as inativos,
         COUNT(*) FILTER (WHERE como_conheceu = '6 - Lead') as leads
       FROM "RCMOLINASEGUROS"."CLIENTES"
-    `);
+      WHERE company_id = $1
+    `;
+    const params: any[] = [context.companyId];
+
+    if (context.userId) {
+      queryText += ' AND usuario_id = $2';
+      params.push(context.userId);
+    }
+
+    const result = await pool.query(queryText, params);
     
     const stats = result.rows[0] || { total: 0, ativos: 0, inativos: 0, leads: 0 };
     res.json({
@@ -564,19 +618,31 @@ export const clientStatsHandler = async (_req: express.Request, res: express.Res
   }
 };
 
-export const clientProdutosStatsHandler = async (_req: express.Request, res: express.Response) => {
+export const clientProdutosStatsHandler = async (req: express.Request, res: express.Response) => {
   await initLocalDatabase();
   const pool = getPool();
   try {
-    const result = await pool.query(`
+    const context = await getTenantContext(req);
+    let queryText = `
       SELECT 
         produto_comercializado as produto,
         COUNT(*) as quantidade
       FROM "RCMOLINASEGUROS"."CLIENTES"
-      WHERE produto_comercializado IS NOT NULL AND produto_comercializado != ''
+      WHERE produto_comercializado IS NOT NULL AND produto_comercializado != '' AND company_id = $1
+    `;
+    const params: any[] = [context.companyId];
+
+    if (context.userId) {
+      queryText += ' AND usuario_id = $2';
+      params.push(context.userId);
+    }
+
+    queryText += `
       GROUP BY produto_comercializado
       ORDER BY quantidade DESC
-    `);
+    `;
+
+    const result = await pool.query(queryText, params);
     
     // Converte quantidade para Number
     const data = result.rows.map(row => ({
@@ -591,19 +657,31 @@ export const clientProdutosStatsHandler = async (_req: express.Request, res: exp
   }
 };
 
-export const clientNegociacaoStatsHandler = async (_req: express.Request, res: express.Response) => {
+export const clientNegociacaoStatsHandler = async (req: express.Request, res: express.Response) => {
   await initLocalDatabase();
   const pool = getPool();
   try {
-    const result = await pool.query(`
+    const context = await getTenantContext(req);
+    let queryText = `
       SELECT 
         status_negociacao as status,
         COUNT(*) as quantidade
       FROM "RCMOLINASEGUROS"."CLIENTES"
-      WHERE status_negociacao IS NOT NULL AND status_negociacao != ''
+      WHERE status_negociacao IS NOT NULL AND status_negociacao != '' AND company_id = $1
+    `;
+    const params: any[] = [context.companyId];
+
+    if (context.userId) {
+      queryText += ' AND usuario_id = $2';
+      params.push(context.userId);
+    }
+
+    queryText += `
       GROUP BY status_negociacao
       ORDER BY quantidade DESC
-    `);
+    `;
+
+    const result = await pool.query(queryText, params);
     
     // Converte quantidade para Number
     const data = result.rows.map(row => ({
@@ -645,11 +723,21 @@ export const listClientesByNegociacaoHandler = async (req: express.Request, res:
     if (!status) {
       return res.status(400).json({ error: 'Status de negociação é obrigatório' });
     }
-    const result = await pool.query(`
+    const context = await getTenantContext(req);
+    let queryText = `
       ${clienteSelect}
-      WHERE status_negociacao = $1
-      ORDER BY nome_completo ASC
-    `, [status]);
+      WHERE status_negociacao = $1 AND c.company_id = $2
+    `;
+    const params: any[] = [status, context.companyId];
+
+    if (context.userId) {
+      queryText += ' AND c.usuario_id = $3';
+      params.push(context.userId);
+    }
+
+    queryText += ' ORDER BY nome_completo ASC';
+
+    const result = await pool.query(queryText, params);
     res.json(result.rows);
   } catch (error: any) {
     console.error('Error listing clientes by negociacao:', error);

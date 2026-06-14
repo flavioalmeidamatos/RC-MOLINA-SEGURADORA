@@ -654,7 +654,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
         delete (window as any).__rcMolinaRefreshClientStats;
       }
     };
-  }, []);
+  }, [masterSelectedCompanyId, masterSelectedMemberId]);
 
   useEffect(() => {
     setAgendaReminderState(loadAgendaReminderState());
@@ -707,7 +707,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
         delete (window as any).__rcMolinaRefreshAgendamentos;
       }
     };
-  }, []);
+  }, [masterSelectedCompanyId, masterSelectedMemberId]);
 
   useEffect(() => {
     const findDueReminder = () => {
@@ -1148,13 +1148,11 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
     setMasterSelectedMemberId('');
     sessionStorage.setItem('rc_master_company_id', companyId);
     sessionStorage.removeItem('rc_master_member_id');
-    window.location.reload();
   };
 
   const handleMasterMemberChange = (memberId: string) => {
     setMasterSelectedMemberId(memberId);
     sessionStorage.setItem('rc_master_member_id', memberId);
-    window.location.reload();
   };
 
   const showClientArea = activeMenu === "Meus clientes";
@@ -1242,7 +1240,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
         </div>
       </aside>
 
-      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+      <div key={`${masterSelectedCompanyId}-${masterSelectedMemberId}`} className="relative flex min-h-0 min-w-0 flex-1 flex-col">
         <header id="main-dashboard-header" className="flex flex-col gap-4 bg-black border-b border-slate-800 px-4 py-4 shadow-sm sm:px-6 md:px-8 lg:h-16 lg:flex-row lg:items-center lg:justify-between lg:gap-0 lg:py-0">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
             <div className="flex flex-col items-start px-2 py-1">
@@ -1269,7 +1267,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
               <div className="flex items-center gap-2 border-l border-slate-700 pl-4">
                 {/* Combobox de Empresa */}
                 <div className="relative">
-                  <div className="flex items-center gap-1.5 rounded-lg border border-[#b58c2a] bg-[#152a42] px-3 py-1.5 text-sm text-white min-w-[160px] max-w-[220px]">
+                  <div className="flex items-center gap-1.5 rounded-lg border border-[#b58c2a] bg-[#152a42] px-3 py-1.5 text-sm text-white min-w-[160px] max-w-[280px]">
                     <Building2 size={14} className="shrink-0 text-[#d4af37]" />
                     {isLoadingMasterCompanies ? (
                       <Loader2 size={12} className="animate-spin text-white" />
@@ -1293,7 +1291,7 @@ export const SCR_MENUPRINCIPAL: React.FC<DashboardProps> = ({
                 {/* Combobox de Pessoa (só aparece quando empresa selecionada) */}
                 {masterSelectedCompanyId && (
                   <div className="relative">
-                    <div className="flex items-center gap-1.5 rounded-lg border border-slate-500 bg-[#152a42] px-3 py-1.5 text-sm text-white min-w-[150px] max-w-[200px]">
+                    <div className="flex items-center gap-1.5 rounded-lg border border-slate-500 bg-[#152a42] px-3 py-1.5 text-sm text-white min-w-[150px] max-w-[320px]">
                       <User size={14} className="shrink-0 text-slate-300" />
                       {isLoadingMasterMembers ? (
                         <Loader2 size={12} className="animate-spin text-white" />
