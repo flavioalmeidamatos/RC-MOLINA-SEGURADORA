@@ -1084,7 +1084,12 @@ export function RCWebmail({
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => openComposeModal()}
-              className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#b58c2a] px-6 py-2 text-sm font-bold text-white shadow-md shadow-[#b58c2a]/20 transition-all hover:bg-[#a17c1f] hover:shadow-lg active:scale-95"
+              disabled={!selectedAccount}
+              className={`inline-flex min-h-11 items-center gap-2 rounded-full px-6 py-2 text-sm font-bold text-white shadow-md transition-all active:scale-95 ${
+                !selectedAccount
+                  ? 'bg-slate-400 shadow-none cursor-not-allowed opacity-70'
+                  : 'bg-[#b58c2a] shadow-[#b58c2a]/20 hover:bg-[#a17c1f] hover:shadow-lg'
+              }`}
             >
               <MailPlus size={18} />
               Novo E-mail
