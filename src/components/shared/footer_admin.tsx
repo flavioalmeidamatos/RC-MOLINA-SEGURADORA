@@ -513,10 +513,10 @@ export const FooterAdmin: React.FC = () => {
                                                 <button
                                                     type="button"
                                                     onClick={() => {
-                                                        window.open("https://console.cloud.google.com/auth/audience?project=rcmolina", "GoogleCloudAudience", "width=1200,height=800,scrollbars=yes,resizable=yes");
+                                                        window.open("https://console.cloud.google.com/auth/audience?project=rcmolina", "_blank");
                                                     }}
                                                     className="w-full mt-2 bg-[#ccff00]/10 text-[#ccff00] hover:bg-[#ccff00]/20 border border-[#ccff00]/30 font-bold text-xs rounded-xl p-2 transition flex justify-center items-center gap-2"
-                                                    title="Devido a restrições de segurança do Google (X-Frame-Options), o console do Google Cloud é aberto em uma janela popup dedicada"
+                                                    title="O console do Google Cloud será aberto em uma nova aba"
                                                 >
                                                     <ExternalLink size={12} />
                                                     Liberar Usuário no Google Cloud
