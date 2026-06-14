@@ -1113,8 +1113,17 @@ export function RCWebmail({
       {!selectedAccount ? (
         <section className="rounded-[28px] border border-slate-200 bg-white p-8 shadow-sm">
           <div className="mx-auto max-w-3xl text-center">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-[#0c1826] text-white">
-              <Mail size={28} />
+            <div className={`mx-auto flex h-16 w-16 items-center justify-center rounded-3xl ${detectEmailProvider(accountEmail) === 'microsoft' ? 'bg-white border border-gray-200 shadow-sm' : 'bg-[#0c1826] text-white'}`}>
+              {detectEmailProvider(accountEmail) === 'microsoft' ? (
+                <svg width={28} height={28} viewBox="0 0 21 21" xmlns="http://www.w3.org/2000/svg">
+                  <path fill="#f25022" d="M1 1h9v9H1z"/>
+                  <path fill="#7fba00" d="M11 1h9v9h-9z"/>
+                  <path fill="#00a4ef" d="M1 11h9v9H1z"/>
+                  <path fill="#ffb900" d="M11 11h9v9h-9z"/>
+                </svg>
+              ) : (
+                <Mail size={28} />
+              )}
             </div>
             <h3 className="mt-5 text-2xl font-black text-[#0c1826]">
               Conecte sua conta do {detectEmailProvider(accountEmail) === 'microsoft' ? 'Hotmail/Outlook/Live' : 'Gmail'}
