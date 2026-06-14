@@ -1116,14 +1116,40 @@ export function RCWebmail({
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-[#0c1826] text-white">
               <Mail size={28} />
             </div>
-            <h3 className="mt-5 text-2xl font-black text-[#0c1826]">Conecte sua conta do Gmail</h3>
+            <h3 className="mt-5 text-2xl font-black text-[#0c1826]">
+              Conecte sua conta do {detectEmailProvider(accountEmail) === 'microsoft' ? 'Hotmail/Outlook/Live' : 'Gmail'}
+            </h3>
             <p className="mt-3 text-sm leading-6 text-slate-500">
-              O Webmail agora funciona de forma individual. Conecte sua conta de e-mail do Google para gerenciar a comunicação com seus clientes diretamente do sistema.
+              O Webmail agora funciona de forma individual. Conecte sua conta de e-mail do {detectEmailProvider(accountEmail) === 'microsoft' ? 'Microsoft' : 'Google'} para gerenciar a comunicação com seus clientes diretamente do sistema.
             </p>
             <div className="mt-6 flex justify-center">
               <button
                 type="button"
-                onClick={() => void connectAccount()}
+                onClick={async () => {
+                  if (detectEmailProvider(accountEmail) === 'microsoft') {
+                    try {
+                      setBusy(true);
+                      setError('');
+                      const response = await fetch('/api/microsoft/auth', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ userId, userEmail: accountEmail }),
+                      });
+                      const res = await response.json();
+                      if (res?.url) {
+                          window.open(res.url, "_blank");
+                      } else {
+                          setError('Ainda não implementado (Microsoft API)');
+                      }
+                    } catch (e: any) {
+                      setError(e.message || 'Erro ao iniciar autenticação OAuth da Microsoft');
+                    } finally {
+                      setBusy(false);
+                    }
+                  } else {
+                    void connectAccount();
+                  }
+                }}
                 className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#b58c2a] px-6 py-2 text-sm font-semibold text-white transition hover:bg-[#a17c1f]"
               >
                 <Mail size={16} />
