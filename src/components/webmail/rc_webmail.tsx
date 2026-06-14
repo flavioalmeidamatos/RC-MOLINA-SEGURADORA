@@ -302,7 +302,13 @@ export function RCWebmail({
   const activeThreadId = params.id || getThreadIdFromPathname(location.pathname);
   const composeRouteOpen = isComposeRoute(location.pathname);
   const [accounts, setAccounts] = useState<Account[]>([]);
-  const [accountEmail, setAccountEmail] = useState(DEFAULT_ACCOUNT);
+  const [accountEmail, setAccountEmail] = useState(userEmail || DEFAULT_ACCOUNT);
+
+  useEffect(() => {
+    if (userEmail) {
+      setAccountEmail((current) => (current === DEFAULT_ACCOUNT ? userEmail : current));
+    }
+  }, [userEmail]);
 
   const [messages, setMessages] = useState<MessageSummary[]>([]);
   const [drafts, setDrafts] = useState<DraftSummary[]>([]);
@@ -476,7 +482,10 @@ export function RCWebmail({
     if (result.accounts.length > 0) {
       setAccountEmail((current) => {
         const exists = result.accounts.some((account) => account.email === current);
-        return exists ? current : result.accounts[0].email;
+        if (exists || current === userEmail) {
+          return current;
+        }
+        return result.accounts[0].email;
       });
     }
   }
