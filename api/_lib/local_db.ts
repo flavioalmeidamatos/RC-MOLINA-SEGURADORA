@@ -260,11 +260,13 @@ where coalesce(nullif(trim(u.organizacao), ''), 'RC MOLINA') = e.nome
   and u.company_id is null;
 
 update "RCMOLINASEGUROS"."CLIENTES"
-set company_id = (select id from "RCMOLINASEGUROS"."EMPRESAS" order by created_at asc limit 1)
+set company_id = coalesce((select id from "RCMOLINASEGUROS"."EMPRESAS" where nome = 'RC MOLINA' limit 1), (select id from "RCMOLINASEGUROS"."EMPRESAS" order by created_at asc limit 1)),
+    usuario_id = (select id from "RCMOLINASEGUROS"."USUARIOS" where lower(email) = 'rcmolina.invest.segurosaude@gmail.com' limit 1)
 where company_id is null;
 
 update "RCMOLINASEGUROS"."AGENDAMENTOS"
-set company_id = (select id from "RCMOLINASEGUROS"."EMPRESAS" order by created_at asc limit 1)
+set company_id = coalesce((select id from "RCMOLINASEGUROS"."EMPRESAS" where nome = 'RC MOLINA' limit 1), (select id from "RCMOLINASEGUROS"."EMPRESAS" order by created_at asc limit 1)),
+    usuario_id = (select id from "RCMOLINASEGUROS"."USUARIOS" where lower(email) = 'rcmolina.invest.segurosaude@gmail.com' limit 1)
 where company_id is null;
 
 
