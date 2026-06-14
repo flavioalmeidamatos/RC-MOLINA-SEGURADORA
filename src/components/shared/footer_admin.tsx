@@ -8,6 +8,7 @@ import {
 } from '../../lib/local_api';
 import { getStoredSession, isMasterAdmin, type UsuarioPerfil } from '../../lib/local_auth';
 import { validarEmailRFC5322 } from '../../lib/validacoes';
+import { createGmailApi } from '../../lib/gmail_api';
 
 const senhaAtendeCriterios = (senha: string) =>
     senha.length >= 8 && /[A-Za-z]/.test(senha) && /\d/.test(senha) && /[^A-Za-z0-9\s]/.test(senha);
@@ -25,6 +26,7 @@ export const FooterAdmin: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState({ text: '', type: '' });
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [gmailStatus, setGmailStatus] = useState<{ connected: boolean; email?: string } | null>(null);
 
     const isSuperAdmin = isMasterAdmin(getStoredSession()?.user?.email) || isMasterAdmin(adminEmail);
     const [permissions, setPermissions] = useState<Record<string, boolean>>({
@@ -99,6 +101,17 @@ export const FooterAdmin: React.FC = () => {
             fetchUsers();
         }
     }, [showAdminPanel, adminToken]);
+
+    useEffect(() => {
+        if (selectedUserId && formData.email) {
+            const api = createGmailApi({ userId: selectedUserId, userEmail: formData.email });
+            api.status(formData.email)
+                .then(res => setGmailStatus(res))
+                .catch(() => setGmailStatus(null));
+        } else {
+            setGmailStatus(null);
+        }
+    }, [selectedUserId, formData.email, showAdminPanel]);
 
     const handleSelectUser = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const id = e.target.value;
@@ -471,6 +484,34 @@ export const FooterAdmin: React.FC = () => {
                                             className="w-full bg-[#121212] border border-gray-700 rounded-xl p-2 focus:outline-none focus:border-[#ccff00] transition"
                                             required
                                         />
+                                        {selectedUserId && (
+                                            <div className="mt-2 p-3 bg-[#1e293b]/30 rounded-xl border border-gray-800">
+                                                <div className="flex items-center justify-between text-xs text-gray-400 mb-2">
+                                                    <span>Status do Gmail/Webmail:</span>
+                                                    <span className={gmailStatus?.connected ? "text-green-500 font-bold" : "text-red-500 font-bold"}>
+                                                        {gmailStatus?.connected ? "CONECTADO" : "DESCONECTADO"}
+                                                    </span>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={async () => {
+                                                        try {
+                                                            const api = createGmailApi({ userId: selectedUserId, userEmail: formData.email });
+                                                            const res = await api.startOAuth(formData.email);
+                                                            if (res?.url) {
+                                                                // Redirect to initiate Gmail OAuth
+                                                                window.location.href = res.url;
+                                                            }
+                                                        } catch (e: any) {
+                                                            setMessage({ text: e.message || 'Erro ao iniciar autenticação OAuth', type: 'error' });
+                                                        }
+                                                    }}
+                                                    className="w-full bg-[#1e293b] text-white hover:bg-[#334155] border border-gray-700 font-bold text-xs rounded-xl p-2 transition flex justify-center items-center gap-2"
+                                                >
+                                                    {gmailStatus?.connected ? "Reautorizar Conta Gmail" : "Autorizar Conta Gmail"}
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div>

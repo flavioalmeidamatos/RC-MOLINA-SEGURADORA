@@ -74,15 +74,7 @@ export function ensureGmailOAuthConfig() {
 }
 
 export function ensureAllowedAccount(accountEmail) {
-  const expected = String(gmailConfig.google.allowedAccount || '').trim().toLowerCase();
-  const received = String(accountEmail || '').trim().toLowerCase();
-
-  if (expected && received && expected !== received) {
-    const error = new Error(
-      `Conta Gmail nao autorizada. Esperado: ${expected}. Recebido: ${received}.`,
-    );
-    error.status = 403;
-    error.code = 'gmail_account_not_allowed';
-    throw error;
-  }
+  // Para permitir que múltiplos usuários configurem suas próprias contas de Gmail/Webmail,
+  // permitimos qualquer e-mail que seja autenticado via fluxo OAuth do Google.
+  return;
 }
