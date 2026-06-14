@@ -510,17 +510,16 @@ export const FooterAdmin: React.FC = () => {
                                                 >
                                                     {gmailStatus?.connected ? "Reautorizar Conta Gmail" : "Autorizar Conta Gmail"}
                                                 </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        window.open("https://console.cloud.google.com/auth/audience?project=rcmolina", "_blank");
-                                                    }}
+                                                <a
+                                                    href="https://console.cloud.google.com/auth/audience?project=rcmolina"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
                                                     className="w-full mt-2 bg-[#ccff00]/10 text-[#ccff00] hover:bg-[#ccff00]/20 border border-[#ccff00]/30 font-bold text-xs rounded-xl p-2 transition flex justify-center items-center gap-2"
                                                     title="O console do Google Cloud será aberto em uma nova aba"
                                                 >
                                                     <ExternalLink size={12} />
                                                     Liberar Usuário no Google Cloud
-                                                </button>
+                                                </a>
                                                 <p className="text-[9px] text-gray-500 mt-1.5 leading-tight text-center">
                                                     * O e-mail deve estar cadastrado como "Testador" no Google Cloud antes de autorizar o Gmail.
                                                 </p>
