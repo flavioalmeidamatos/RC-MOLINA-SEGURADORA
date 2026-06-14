@@ -450,15 +450,81 @@ registerRoute('get', ['/auth/google/callback', '/gmail/callback'], async (req, r
 });
 
 registerRoute('get', ['/email/auth/status', '/gmail/status'], async (req, res) => {
-  res.json(await getAccountStatus(String(accountEmailFrom(req) || ''), requestActorFrom(req)));
+  const email = String(accountEmailFrom(req) || '').trim().toLowerCase();
+  if (email.endsWith('@hotmail.com') || email.endsWith('@outlook.com') || email.endsWith('@live.com')) {
+    const actor = requestActorFrom(req);
+    const result = await query(
+      `select * from user_email_integrations 
+       where provider = 'microsoft' 
+         and (lower(provider_email) = $1 or lower(user_email) = $1 or user_email = $2)
+       limit 1`,
+      [email, actor.userEmail || '']
+    );
+    if (result.rowCount > 0) {
+      const integration = result.rows[0];
+      return res.json({
+        connected: integration.status === 'connected',
+        email: integration.provider_email,
+        scope: 'openid profile email offline_access User.Read Mail.Read Mail.Send Mail.ReadWrite',
+        userId: actor.userId,
+        status: integration.status,
+        missingScopes: [],
+        needsReconnect: false,
+        missingTrashScopes: [],
+        needsTrashReconnect: false
+      });
+    } else {
+      return res.json({ connected: false });
+    }
+  }
+  res.json(await getAccountStatus(email, requestActorFrom(req)));
 });
 
 registerRoute('post', ['/email/auth/disconnect', '/gmail/disconnect'], async (req, res) => {
-  res.json(await disconnectAccount(requireAccountEmail(req), requestActorFrom(req)));
+  const email = String(requireAccountEmail(req) || '').trim().toLowerCase();
+  if (email.endsWith('@hotmail.com') || email.endsWith('@outlook.com') || email.endsWith('@live.com')) {
+    const actor = requestActorFrom(req);
+    await query(
+      `update user_email_integrations 
+       set status = 'disconnected', 
+           access_token = '', 
+           refresh_token = '', 
+           updated_at = now() 
+       where provider = 'microsoft' 
+         and (lower(provider_email) = $1 or lower(user_email) = $1 or user_email = $2)`,
+      [email, actor.userEmail || '']
+    );
+    return res.json({ success: true });
+  }
+  res.json(await disconnectAccount(email, requestActorFrom(req)));
 });
 
 registerRoute('get', ['/email/accounts', '/gmail/accounts'], async (req, res) => {
-  res.json({ accounts: await listAccounts(requestActorFrom(req)) });
+  const actor = requestActorFrom(req);
+  const gmailAccounts = await listAccounts(actor);
+
+  const msResult = await query(
+    `select provider_email as email, status, expires_at as expiry_date, created_at as connected_at, updated_at 
+     from user_email_integrations 
+     where provider = 'microsoft' 
+       and (user_email = $1 or provider_email = $1)`,
+    [actor.userEmail || '']
+  );
+
+  const msAccounts = msResult.rows.map((row) => ({
+    email: row.email,
+    scope: 'openid profile email offline_access User.Read Mail.Read Mail.Send Mail.ReadWrite',
+    status: row.status,
+    expiry_date: row.expiry_date ? row.expiry_date.toISOString() : new Date().toISOString(),
+    connected_at: row.connected_at ? row.connected_at.toISOString() : new Date().toISOString(),
+    updated_at: row.updated_at ? row.updated_at.toISOString() : new Date().toISOString(),
+    missingScopes: [],
+    needsReconnect: false,
+    missingTrashScopes: [],
+    needsTrashReconnect: false,
+  }));
+
+  res.json({ accounts: [...gmailAccounts, ...msAccounts] });
 });
 
 registerRoute('get', ['/email/logs', '/gmail/logs'], async (req, res) => {

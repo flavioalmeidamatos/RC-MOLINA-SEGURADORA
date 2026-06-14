@@ -7,6 +7,8 @@ import { spawn } from 'child_process';
 import dotenv from 'dotenv';
 import { registerLocalAuthRoutes } from './api/_lib/local_auth_routes';
 import { gmailRouter } from './api/_lib/gmail_routes.js';
+import { microsoftRouter } from './api/_lib/microsoft_routes';
+import { initLocalDatabase } from './api/_lib/local_db';
 import { ImportLeadHttpError, importLeadFromSistemaQuer } from './api/_lib/import_lead';
 import importLeadAssetHandler from './api/import-lead-asset';
 import sendLoginCodeHandler from './api/send-login-code';
@@ -683,6 +685,14 @@ async function startServer() {
   const PORT = Number(process.env.PORT) || 3000;
   const uploadDir = process.env.UPLOAD_DIR || path.join(__dirname, 'uploads');
 
+  // Inicializa o banco de dados e as tabelas locais no arranque
+  try {
+    await initLocalDatabase();
+    console.log('[DB] Banco de dados local inicializado com sucesso.');
+  } catch (error) {
+    console.error('[DB] Erro ao inicializar o banco de dados:', error);
+  }
+
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ extended: true, limit: '50mb' }));
   app.use('/uploads', express.static(uploadDir));
@@ -690,6 +700,7 @@ async function startServer() {
 
   registerLocalAuthRoutes(app);
   app.use('/api', gmailRouter);
+  app.use(microsoftRouter);
 
   app.post('/api/send-login-code', sendLoginCodeHandler);
   registerWhatsAppBridgeRoutes(app);

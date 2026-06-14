@@ -269,6 +269,19 @@ set company_id = coalesce((select id from "RCMOLINASEGUROS"."EMPRESAS" where nom
     usuario_id = (select id from "RCMOLINASEGUROS"."USUARIOS" where lower(email) = 'rcmolina.invest.segurosaude@gmail.com' limit 1)
 where company_id is null;
 
+create table if not exists user_email_integrations (
+  id uuid primary key default gen_random_uuid(),
+  user_email text not null,
+  provider text not null,
+  provider_email text not null,
+  access_token text not null,
+  refresh_token text not null,
+  expires_at timestamptz not null,
+  status text not null default 'connected',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (user_email, provider)
+);
 
 `;
 
