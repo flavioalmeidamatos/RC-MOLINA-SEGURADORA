@@ -275,7 +275,13 @@ namespace RCMolinaApp.Views
             {
                 ev.Handled = true;
                 
-                if (ev.Uri != null && (ev.Uri.StartsWith("https://console.cloud.google.com/") || ev.Uri.StartsWith("https://accounts.google.com/")))
+                if (ev.Uri != null && (
+                    ev.Uri.StartsWith("https://console.cloud.google.com/") || 
+                    ev.Uri.StartsWith("https://accounts.google.com/") ||
+                    ev.Uri.Contains("/auth/microsoft/connect") ||
+                    ev.Uri.StartsWith("https://login.microsoftonline.com/") ||
+                    ev.Uri.StartsWith("https://login.live.com/")
+                ))
                 {
                     // Open in default external system browser
                     System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo

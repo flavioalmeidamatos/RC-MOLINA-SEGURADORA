@@ -69,7 +69,7 @@ export class MicrosoftGraphProvider implements IEmailProvider {
       prompt: 'consent',
     });
 
-    return `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?${params.toString()}`;
+    return `https://login.microsoftonline.com/consumers/oauth2/v2.0/authorize?${params.toString()}`;
   }
 }
 

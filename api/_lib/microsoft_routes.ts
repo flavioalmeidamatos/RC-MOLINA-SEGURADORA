@@ -100,7 +100,7 @@ microsoftRouter.get('/auth/microsoft/callback', async (req, res) => {
       grant_type: 'authorization_code',
     });
 
-    const tokenResponse = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
+    const tokenResponse = await fetch('https://login.microsoftonline.com/consumers/oauth2/v2.0/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: tokenParams.toString(),
