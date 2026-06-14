@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Camera, User, Lock, Trash2, Save, X, ExternalLink } from 'lucide-react';
 import {
     apiAdminDeleteUser,
@@ -22,6 +22,9 @@ export const FooterAdmin: React.FC = () => {
     const [showAdminPanel, setShowAdminPanel] = useState(false);
     const [adminToken, setAdminToken] = useState('');
     const [users, setUsers] = useState<UsuarioPerfil[]>([]);
+    const organizationOptions = useMemo(() => {
+        return Array.from(new Set(users.map(u => u.organizacao).filter(Boolean))).sort((a, b) => a!.localeCompare(b!));
+    }, [users]);
     const [selectedUserId, setSelectedUserId] = useState<string>('');
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState({ text: '', type: '' });
@@ -608,6 +611,7 @@ export const FooterAdmin: React.FC = () => {
                                         <label htmlFor="edit_org" className="block text-sm font-bold mb-1">Organização</label>
                                         <input
                                             id="edit_org"
+                                            list="org_list"
                                             title="Organização"
                                             type="text"
                                             value={formData.organizacao}
@@ -617,6 +621,11 @@ export const FooterAdmin: React.FC = () => {
                                             }}
                                             className="w-full bg-[#121212] border border-gray-700 rounded-xl p-2 focus:outline-none focus:border-[#ccff00] transition uppercase"
                                         />
+                                        <datalist id="org_list">
+                                            {organizationOptions.map(org => (
+                                                <option key={org} value={org} />
+                                            ))}
+                                        </datalist>
                                     </div>
 
                                     <div className="flex gap-4 pt-2">
