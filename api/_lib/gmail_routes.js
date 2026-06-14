@@ -766,7 +766,13 @@ registerRoute('get', ['/email/drafts', '/gmail/drafts'], async (req, res) => {
   const accountEmail = requireAccountEmail(req);
   const options = listMessagesOptions(req, 'drafts');
   if (isMicrosoftEmail(accountEmail)) {
-    return res.json(await listMicrosoftMessages(accountEmail, { folder: 'drafts', ...options }));
+    const msResult = await listMicrosoftMessages(accountEmail, { folder: 'drafts', ...options });
+    const drafts = (msResult.messages || []).map(msg => ({
+      ...msg,
+      draftId: msg.id,
+      gmailMessageId: msg.id
+    }));
+    return res.json({ drafts });
   }
   res.json(await listDrafts(
     accountEmail,
