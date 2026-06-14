@@ -499,8 +499,8 @@ export const FooterAdmin: React.FC = () => {
                                                             const api = createGmailApi({ userId: selectedUserId, userEmail: formData.email });
                                                             const res = await api.startOAuth(formData.email);
                                                             if (res?.url) {
-                                                                // Redirect to initiate Gmail OAuth
-                                                                window.location.href = res.url;
+                                                                // Open in a new tab/window so it can be caught by WPF and opened externally
+                                                                window.open(res.url, "_blank");
                                                             }
                                                         } catch (e: any) {
                                                             setMessage({ text: e.message || 'Erro ao iniciar autenticação OAuth', type: 'error' });

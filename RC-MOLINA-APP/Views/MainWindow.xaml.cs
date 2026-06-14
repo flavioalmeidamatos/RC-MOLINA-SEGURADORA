@@ -274,7 +274,20 @@ namespace RCMolinaApp.Views
             AppWebView.CoreWebView2.NewWindowRequested += (s, ev) =>
             {
                 ev.Handled = true;
-                AppWebView.CoreWebView2.Navigate(ev.Uri);
+                
+                if (ev.Uri != null && (ev.Uri.StartsWith("https://console.cloud.google.com/") || ev.Uri.StartsWith("https://accounts.google.com/")))
+                {
+                    // Open in default external system browser
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = ev.Uri,
+                        UseShellExecute = true
+                    });
+                }
+                else
+                {
+                    AppWebView.CoreWebView2.Navigate(ev.Uri);
+                }
             };
 
             AppWebView.CoreWebView2.WebMessageReceived += AppWebView_WebMessageReceived;
