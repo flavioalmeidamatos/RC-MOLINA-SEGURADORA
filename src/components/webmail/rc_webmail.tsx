@@ -1105,10 +1105,9 @@ export function RCWebmail({
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-[#0c1826] text-white">
               <Mail size={28} />
             </div>
-            <h3 className="mt-5 text-2xl font-black text-[#0c1826]">Conecte o Gmail da corretora</h3>
+            <h3 className="mt-5 text-2xl font-black text-[#0c1826]">Conecte sua conta do Gmail</h3>
             <p className="mt-3 text-sm leading-6 text-slate-500">
-              O Webmail agora roda integralmente dentro da estrutura principal da RC Molina Seguros, sem depender
-              da aplicação legada separada.
+              O Webmail agora funciona de forma individual. Conecte sua conta de e-mail do Google para gerenciar a comunicação com seus clientes diretamente do sistema.
             </p>
             <div className="mt-6 flex justify-center">
               <button
