@@ -6,6 +6,25 @@ export const validarEmailRFC5322 = (email: string): boolean => {
   return re.test(email);
 };
 
+export const detectEmailProvider = (email: string): string => {
+  if (!email) return 'unknown';
+  const lowerEmail = email.toLowerCase();
+  
+  if (lowerEmail.endsWith('@gmail.com')) {
+    return 'google';
+  }
+
+  if (
+    lowerEmail.endsWith('@hotmail.com') ||
+    lowerEmail.endsWith('@outlook.com') ||
+    lowerEmail.endsWith('@live.com')
+  ) {
+    return 'microsoft';
+  }
+
+  return 'unknown';
+};
+
 export const traduzirErroAutenticacao = (msg: string): string => {
   if (!msg) return 'Ocorreu um erro desconhecido.';
   const m = msg.toLowerCase();

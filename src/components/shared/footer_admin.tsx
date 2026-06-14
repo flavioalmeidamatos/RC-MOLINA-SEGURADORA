@@ -7,7 +7,7 @@ import {
     apiAdminUpdateUser,
 } from '../../lib/local_api';
 import { getStoredSession, isMasterAdmin, type UsuarioPerfil } from '../../lib/local_auth';
-import { validarEmailRFC5322 } from '../../lib/validacoes';
+import { validarEmailRFC5322, detectEmailProvider } from '../../lib/validacoes';
 import { createGmailApi } from '../../lib/gmail_api';
 
 const senhaAtendeCriterios = (senha: string) =>
@@ -487,42 +487,90 @@ export const FooterAdmin: React.FC = () => {
                                         {selectedUserId && (
                                             <div className="mt-2 p-3 bg-[#1e293b]/30 rounded-xl border border-gray-800">
                                                 <div className="flex items-center justify-between text-xs text-gray-400 mb-2">
-                                                    <span>Status do Gmail/Webmail:</span>
+                                                    <span>Status do {detectEmailProvider(formData.email) === 'microsoft' ? 'Hotmail/Webmail' : 'Gmail/Webmail'}:</span>
                                                     <span className={gmailStatus?.connected ? "text-green-500 font-bold" : "text-red-500 font-bold"}>
                                                         {gmailStatus?.connected ? "CONECTADO" : "DESCONECTADO"}
                                                     </span>
                                                 </div>
-                                                <button
-                                                    type="button"
-                                                    onClick={async () => {
-                                                        try {
-                                                            const api = createGmailApi({ userId: selectedUserId, userEmail: formData.email });
-                                                            const res = await api.startOAuth(formData.email);
-                                                            if (res?.url) {
-                                                                // Open in a new tab/window so it can be caught by WPF and opened externally
-                                                                window.open(res.url, "_blank");
-                                                            }
-                                                        } catch (e: any) {
-                                                            setMessage({ text: e.message || 'Erro ao iniciar autenticação OAuth', type: 'error' });
-                                                        }
-                                                    }}
-                                                    className="w-full bg-[#1e293b] text-white hover:bg-[#334155] border border-gray-700 font-bold text-xs rounded-xl p-2 transition flex justify-center items-center gap-2"
-                                                >
-                                                    {gmailStatus?.connected ? "Reautorizar Conta Gmail" : "Autorizar Conta Gmail"}
-                                                </button>
-                                                <a
-                                                    href="https://console.cloud.google.com/auth/audience?project=rcmolina"
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="w-full mt-2 bg-[#ccff00]/10 text-[#ccff00] hover:bg-[#ccff00]/20 border border-[#ccff00]/30 font-bold text-xs rounded-xl p-2 transition flex justify-center items-center gap-2"
-                                                    title="O console do Google Cloud será aberto em uma nova aba"
-                                                >
-                                                    <ExternalLink size={12} />
-                                                    Liberar Usuário no Google Cloud
-                                                </a>
-                                                <p className="text-[9px] text-gray-500 mt-1.5 leading-tight text-center">
-                                                    * O e-mail deve estar cadastrado como "Testador" no Google Cloud antes de autorizar o Gmail.
-                                                </p>
+
+                                                {detectEmailProvider(formData.email) === 'microsoft' ? (
+                                                    <>
+                                                        <button
+                                                            type="button"
+                                                            onClick={async () => {
+                                                                try {
+                                                                    // Placeholder implementation for Microsoft OAuth URL
+                                                                    const response = await fetch('/api/microsoft/auth', {
+                                                                        method: 'POST',
+                                                                        headers: { 'Content-Type': 'application/json' },
+                                                                        body: JSON.stringify({ userId: selectedUserId, userEmail: formData.email }),
+                                                                    });
+                                                                    const res = await response.json();
+                                                                    if (res?.url) {
+                                                                        window.open(res.url, "_blank");
+                                                                    } else {
+                                                                        setMessage({ text: 'Ainda não implementado (Microsoft API)', type: 'error' });
+                                                                    }
+                                                                } catch (e: any) {
+                                                                    setMessage({ text: e.message || 'Erro ao iniciar autenticação OAuth da Microsoft', type: 'error' });
+                                                                }
+                                                            }}
+                                                            className="w-full bg-[#1e293b] text-white hover:bg-[#334155] border border-gray-700 font-bold text-xs rounded-xl p-2 transition flex justify-center items-center gap-2"
+                                                        >
+                                                            {gmailStatus?.connected ? "Reautorizar Conta Hotmail/Outlook" : "Autorizar Conta Hotmail/Outlook"}
+                                                        </button>
+                                                        <a
+                                                            href="https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade"
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="w-full mt-2 bg-[#ccff00]/10 text-[#ccff00] hover:bg-[#ccff00]/20 border border-[#ccff00]/30 font-bold text-xs rounded-xl p-2 transition flex justify-center items-center gap-2"
+                                                            title="O console do Azure será aberto em uma nova aba"
+                                                        >
+                                                            <ExternalLink size={12} />
+                                                            Liberar Usuário no Microsoft Azure
+                                                        </a>
+                                                        <p className="text-[9px] text-gray-500 mt-1.5 leading-tight text-center">
+                                                            * O e-mail deve ter permissões configuradas no Azure App Registration.
+                                                        </p>
+                                                    </>
+                                                ) : detectEmailProvider(formData.email) === 'google' ? (
+                                                    <>
+                                                        <button
+                                                            type="button"
+                                                            onClick={async () => {
+                                                                try {
+                                                                    const api = createGmailApi({ userId: selectedUserId, userEmail: formData.email });
+                                                                    const res = await api.startOAuth(formData.email);
+                                                                    if (res?.url) {
+                                                                        window.open(res.url, "_blank");
+                                                                    }
+                                                                } catch (e: any) {
+                                                                    setMessage({ text: e.message || 'Erro ao iniciar autenticação OAuth', type: 'error' });
+                                                                }
+                                                            }}
+                                                            className="w-full bg-[#1e293b] text-white hover:bg-[#334155] border border-gray-700 font-bold text-xs rounded-xl p-2 transition flex justify-center items-center gap-2"
+                                                        >
+                                                            {gmailStatus?.connected ? "Reautorizar Conta Gmail" : "Autorizar Conta Gmail"}
+                                                        </button>
+                                                        <a
+                                                            href="https://console.cloud.google.com/auth/audience?project=rcmolina"
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="w-full mt-2 bg-[#ccff00]/10 text-[#ccff00] hover:bg-[#ccff00]/20 border border-[#ccff00]/30 font-bold text-xs rounded-xl p-2 transition flex justify-center items-center gap-2"
+                                                            title="O console do Google Cloud será aberto em uma nova aba"
+                                                        >
+                                                            <ExternalLink size={12} />
+                                                            Liberar Usuário no Google Cloud
+                                                        </a>
+                                                        <p className="text-[9px] text-gray-500 mt-1.5 leading-tight text-center">
+                                                            * O e-mail deve estar cadastrado como "Testador" no Google Cloud antes de autorizar o Gmail.
+                                                        </p>
+                                                    </>
+                                                ) : (
+                                                    <div className="w-full bg-red-900/20 text-red-400 border border-red-900/50 text-xs rounded-xl p-2 text-center mt-2">
+                                                        Provedor de e-mail não suportado para Webmail.
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
                                     </div>
