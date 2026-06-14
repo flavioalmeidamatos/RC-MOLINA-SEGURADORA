@@ -1067,7 +1067,7 @@ export function RCWebmail({
       <section className="rounded-[28px] border border-slate-200 bg-white px-5 py-3 shadow-sm">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
-            <h2 className="text-xl font-black text-[#0c1826]">Gmail integrado</h2>
+            <h2 className="text-xl font-black text-[#0c1826]">Email Integrado</h2>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
