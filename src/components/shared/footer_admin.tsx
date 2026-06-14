@@ -517,7 +517,7 @@ export const FooterAdmin: React.FC = () => {
                                                             }}
                                                             className="w-full bg-[#1e293b] text-white hover:bg-[#334155] border border-gray-700 font-bold text-xs rounded-xl p-2 transition flex justify-center items-center gap-2"
                                                         >
-                                                            {gmailStatus?.connected ? "Reautorizar Conta Hotmail/Outlook" : "Autorizar Conta Hotmail/Outlook"}
+                                                            {gmailStatus?.connected ? "Reautorizar Conta Hotmail/Outlook/Live" : "Autorizar Conta Hotmail/Outlook/Live"}
                                                         </button>
                                                         <a
                                                             href="https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade"
